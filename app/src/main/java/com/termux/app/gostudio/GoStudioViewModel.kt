@@ -398,8 +398,62 @@ class GoStudioViewModel(application: Application) : AndroidViewModel(application
     enum class Screen { HOME, EDITOR }
     private val _currentScreen = MutableStateFlow(Screen.HOME)
     val currentScreen: StateFlow<Screen> = _currentScreen.asStateFlow()
+
+    // 暗色模式
+    private val _darkMode = MutableStateFlow(true) // 默认暗色
+    val darkMode: StateFlow<Boolean> = _darkMode.asStateFlow()
+    fun toggleDarkMode() { _darkMode.value = !_darkMode.value }
+
+    // 抽屉状态（由 Compose 层同步）
+    private val _drawerOpenCount = MutableStateFlow(0)
+    fun onDrawerOpened() { _drawerOpenCount.value = _drawerOpenCount.value + 1 }
+    fun onDrawerClosed() { if (_drawerOpenCount.value > 0) _drawerOpenCount.value -= 1 }
+    val hasOpenDrawer: Boolean get() = _drawerOpenCount.value > 0
+
+    // 教程详情页状态（由 Compose 层同步）
+    var tutorialDetailOpen = false
+    private val _closeTutorialDetailRequest = MutableStateFlow(0)
+    val closeTutorialDetailRequest: StateFlow<Int> = _closeTutorialDetailRequest.asStateFlow()
+    fun requestCloseTutorialDetail() {
+        _closeTutorialDetailRequest.value = _closeTutorialDetailRequest.value + 1
+    }
+    fun consumeCloseTutorialDetail() {
+        _closeTutorialDetailRequest.value = 0
+    }
+
+    // 关闭一个抽屉（优先级：教程详情 → 教程抽屉 → 诊断抽屉 → 文件抽屉）
+    private val _closeDrawerRequest = MutableStateFlow(0)
+    val closeDrawerRequest: StateFlow<Int> = _closeDrawerRequest.asStateFlow()
+    fun closeOneDrawer(): Boolean {
+        if (tutorialDetailOpen) {
+            // 教程详情页打开，请求回到目录
+            requestCloseTutorialDetail()
+            return true
+        }
+        if (_drawerOpenCount.value > 0) {
+            _closeDrawerRequest.value = _closeDrawerRequest.value + 1
+            return true
+        }
+        return false
+    }
+    fun consumeCloseRequest() {
+        _closeDrawerRequest.value = 0
+    }
+
     fun navigateToHome() { _currentScreen.value = Screen.HOME }
     fun navigateToEditor() { _currentScreen.value = Screen.EDITOR }
+
+    // 双击返回主页
+    private var _lastBackTime = 0L
+    fun shouldExitToHome(): Boolean {
+        val now = System.currentTimeMillis()
+        if (now - _lastBackTime < 2000) {
+            _lastBackTime = 0L
+            return true
+        }
+        _lastBackTime = now
+        return false
+    }
 
     private val _projects = MutableStateFlow<List<String>>(emptyList())
     val projects: StateFlow<List<String>> = _projects.asStateFlow()
@@ -412,8 +466,6 @@ class GoStudioViewModel(application: Application) : AndroidViewModel(application
         }
         // 加载项目列表
         refreshProjects()
-        // 尝试加载上次的项目
-        loadLastProject()
     }
 
     private fun checkEnvironment() {

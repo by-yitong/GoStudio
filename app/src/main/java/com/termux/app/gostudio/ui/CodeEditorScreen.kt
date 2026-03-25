@@ -45,6 +45,8 @@ import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.DownloadDone
 import androidx.compose.material.icons.filled.ArrowBack
@@ -68,6 +70,7 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -102,6 +105,7 @@ import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
+import androidx.compose.material3.Snackbar
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.KeyEvent
@@ -211,6 +215,9 @@ fun CodeEditorScreen(
         return
     }
 
+    val diagDrawerState = rememberDrawerState(androidx.compose.material3.DrawerValue.Closed)
+    var showTutorialDrawer by remember { mutableStateOf(false) }
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -224,12 +231,10 @@ fun CodeEditorScreen(
     val diagnostics by viewModel.diagnostics.collectAsState()
     val currentFileName by viewModel.currentFileName.collectAsState()
     val currentDiags = diagnostics[currentFileName] ?: emptyList()
-    val diagDrawerState = rememberDrawerState(androidx.compose.material3.DrawerValue.Closed)
     val hasErrors = currentDiags.any { it.severityLevel == Diagnostic.Severity.ERROR }
     val hasWarnings = currentDiags.any { it.severityLevel == Diagnostic.Severity.WARNING }
     val hasDiags = currentDiags.isNotEmpty()
 
-    // 右侧诊断抽屉
     ModalNavigationDrawer(
         drawerState = diagDrawerState,
         drawerContent = {
@@ -243,6 +248,32 @@ fun CodeEditorScreen(
         },
         gesturesEnabled = false
     ) {
+    // 同步抽屉开关状态给 ViewModel
+    LaunchedEffect(drawerState.isOpen) {
+        if (drawerState.isOpen) viewModel.onDrawerOpened() else viewModel.onDrawerClosed()
+    }
+    LaunchedEffect(diagDrawerState.isOpen) {
+        if (diagDrawerState.isOpen) viewModel.onDrawerOpened() else viewModel.onDrawerClosed()
+    }
+    LaunchedEffect(showTutorialDrawer) {
+        if (showTutorialDrawer) viewModel.onDrawerOpened() else viewModel.onDrawerClosed()
+    }
+
+    // 监听 Activity 发来的关闭抽屉请求（按优先级关闭）
+    val closeReq by viewModel.closeDrawerRequest.collectAsState()
+    LaunchedEffect(closeReq) {
+        if (closeReq > 0) {
+            viewModel.consumeCloseRequest()
+            if (showTutorialDrawer) {
+                showTutorialDrawer = false
+            } else if (diagDrawerState.isOpen) {
+                diagDrawerState.close()
+            } else if (drawerState.isOpen) {
+                drawerState.close()
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             EditorTopBar(
@@ -251,7 +282,8 @@ fun CodeEditorScreen(
                 hasDiags = hasDiags,
                 hasErrors = hasErrors,
                 hasWarnings = hasWarnings,
-                onToggleDiagDrawer = { scope.launch { if (diagDrawerState.isClosed) diagDrawerState.open() else diagDrawerState.close() } }
+                onToggleDiagDrawer = { scope.launch { if (diagDrawerState.isClosed) diagDrawerState.open() else diagDrawerState.close() } },
+                onToggleTutorialDrawer = { showTutorialDrawer = true }
             )
         },
         modifier = modifier
@@ -415,6 +447,15 @@ fun CodeEditorScreen(
     } // Scaffold
     } // 诊断抽屉 ModalNavigationDrawer
     } // 文件抽屉 ModalNavigationDrawer
+
+    // 右侧教程抽屉（覆盖层，放在最外层避免被 ModalNavigationDrawer 遮挡）
+    if (showTutorialDrawer) {
+        GoTutorialDrawer(
+            visible = showTutorialDrawer,
+            viewModel = viewModel,
+            onDismiss = { showTutorialDrawer = false }
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -721,6 +762,7 @@ fun ProjectHomeScreen(
     var showRenameDialog by remember { mutableStateOf<String?>(null) }
     var contextMenuProject by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
+    var showTutorialDrawer by remember { mutableStateOf(false) }
 
     // 删除确认对话框
     showDeleteConfirm?.let { projName ->
@@ -847,6 +889,22 @@ fun ProjectHomeScreen(
                 containerColor = Color(0xFF16213E)
             ),
             actions = {
+                IconButton(onClick = { viewModel.toggleDarkMode() }) {
+                    Icon(
+                        if (viewModel.darkMode.collectAsState().value) Icons.Default.LightMode else Icons.Default.DarkMode,
+                        contentDescription = "切换主题",
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                IconButton(onClick = { showTutorialDrawer = true }) {
+                    Icon(
+                        Icons.Default.MenuBook,
+                        contentDescription = "Go教程",
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
                 IconButton(onClick = {
                     val intent = android.content.Intent(context, com.termux.app.TermuxActivity::class.java)
                     context.startActivity(intent)
@@ -963,6 +1021,15 @@ fun ProjectHomeScreen(
                 }
             }
         }
+    }
+
+    // 教程抽屉（覆盖层）
+    if (showTutorialDrawer) {
+        GoTutorialDrawer(
+            visible = showTutorialDrawer,
+            viewModel = viewModel,
+            onDismiss = { showTutorialDrawer = false }
+        )
     }
 }
 
@@ -1202,6 +1269,8 @@ private fun FileDrawer(
 
     var showNewFile by remember { mutableStateOf(false) }
     var showNewFolder by remember { mutableStateOf(false) }
+    var newFilePrefix by remember { mutableStateOf("") }
+    var newFolderPrefix by remember { mutableStateOf("") }
     // 长按菜单相关状态
     var contextMenuFile by remember { mutableStateOf<String?>(null) }
     var showDeleteConfirm by remember { mutableStateOf<String?>(null) }
@@ -1240,11 +1309,11 @@ private fun FileDrawer(
                 overflow = TextOverflow.Ellipsis
             )
             // 新建文件夹
-            IconButton(onClick = { showNewFolder = true }, modifier = Modifier.size(32.dp)) {
+            IconButton(onClick = { newFolderPrefix = ""; showNewFolder = true }, modifier = Modifier.size(32.dp)) {
                 Icon(Icons.Default.Folder, "新建文件夹", tint = Color(0xFF4FC1FF), modifier = Modifier.size(16.dp))
             }
             // 新建文件
-            IconButton(onClick = { showNewFile = true }, modifier = Modifier.size(32.dp)) {
+            IconButton(onClick = { newFilePrefix = ""; showNewFile = true }, modifier = Modifier.size(32.dp)) {
                 Icon(Icons.Default.Add, "新建文件", tint = Color(0xFF4CAF50), modifier = Modifier.size(16.dp))
             }
             // 关闭
@@ -1361,10 +1430,12 @@ private fun FileDrawer(
     if (showNewFile) {
         NewFileDialog(
             existingFiles = files.keys,
-            onDismiss = { showNewFile = false },
+            prefix = newFilePrefix,
+            onDismiss = { showNewFile = false; newFilePrefix = "" },
             onCreate = { name ->
                 viewModel.createFile(name)
                 showNewFile = false
+                newFilePrefix = ""
                 onCloseDrawer()
             }
         )
@@ -1390,6 +1461,37 @@ private fun FileDrawer(
                             Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("复制文件", color = Color(0xFFD4D4D4), fontSize = 14.sp)
+                        }
+                    }
+                    // 文件夹专属：新建子文件夹、新建子文件
+                    if (targetIsFolder) {
+                        TextButton(
+                            onClick = {
+                                contextMenuFile = null
+                                // 设置新建文件夹的默认路径为当前文件夹下
+                                newFolderPrefix = "$targetFile/"
+                                showNewFolder = true
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            contentPadding = PaddingValues(start = 8.dp, top = 4.dp, end = 8.dp, bottom = 4.dp)
+                        ) {
+                            Icon(Icons.Default.CreateNewFolder, contentDescription = null, modifier = Modifier.size(18.dp), tint = Color(0xFF4FC1FF))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("新建文件夹", color = Color(0xFFD4D4D4), fontSize = 14.sp)
+                        }
+                        TextButton(
+                            onClick = {
+                                contextMenuFile = null
+                                // 设置新建文件的默认路径为当前文件夹下
+                                newFilePrefix = "$targetFile/"
+                                showNewFile = true
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            contentPadding = PaddingValues(start = 8.dp, top = 4.dp, end = 8.dp, bottom = 4.dp)
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp), tint = Color(0xFF4CAF50))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("新建文件", color = Color(0xFFD4D4D4), fontSize = 14.sp)
                         }
                     }
                     // 重命名
@@ -1548,19 +1650,24 @@ private fun FileDrawer(
         var folderName by remember { mutableStateOf("") }
         var folderError by remember { mutableStateOf<String?>(null) }
         AlertDialog(
-            onDismissRequest = { showNewFolder = false },
+            onDismissRequest = { showNewFolder = false; newFolderPrefix = "" },
             title = { Text("新建文件夹") },
             text = {
-                OutlinedTextField(
-                    value = folderName,
-                    onValueChange = { folderName = it; folderError = null },
-                    label = { Text("文件夹名") },
-                    placeholder = { Text("例如 utils") },
-                    singleLine = true,
-                    isError = folderError != null,
-                    supportingText = folderError?.let { { Text(it) } },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Column {
+                    if (newFolderPrefix.isNotEmpty()) {
+                        Text("路径: $newFolderPrefix", fontSize = 12.sp, color = Color(0xFF888888))
+                    }
+                    OutlinedTextField(
+                        value = folderName,
+                        onValueChange = { folderName = it; folderError = null },
+                        label = { Text("文件夹名") },
+                        placeholder = { Text("例如 utils") },
+                        singleLine = true,
+                        isError = folderError != null,
+                        supportingText = folderError?.let { { Text(it) } },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             },
             confirmButton = {
                 TextButton(onClick = {
@@ -1570,13 +1677,15 @@ private fun FileDrawer(
                     } else if (name.contains("/") || name.contains("\\")) {
                         folderError = "文件夹名不能包含 / 或 \\"
                     } else {
-                        viewModel.createFolder(name)
+                        val fullPath = if (newFolderPrefix.isNotEmpty()) "$newFolderPrefix$name" else name
+                        viewModel.createFolder(fullPath)
                         showNewFolder = false
+                        newFolderPrefix = ""
                     }
                 }) { Text("创建") }
             },
             dismissButton = {
-                TextButton(onClick = { showNewFolder = false }) { Text("取消") }
+                TextButton(onClick = { showNewFolder = false; newFolderPrefix = "" }) { Text("取消") }
             }
         )
     }
@@ -1660,7 +1769,8 @@ fun EditorTopBar(
     hasDiags: Boolean = false,
     hasErrors: Boolean = false,
     hasWarnings: Boolean = false,
-    onToggleDiagDrawer: () -> Unit = {}
+    onToggleDiagDrawer: () -> Unit = {},
+    onToggleTutorialDrawer: () -> Unit = {}
 ) {
     val currentFileName by viewModel.currentFileName.collectAsState()
     val unsavedFiles by viewModel.unsavedFiles.collectAsState()
@@ -1737,12 +1847,11 @@ fun EditorTopBar(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = if (currentFileName in unsavedFiles) "● $currentFileName" else currentFileName,
+                    text = currentFileName,
                     fontWeight = FontWeight.Medium,
                     fontSize = 14.sp,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    color = if (currentFileName in unsavedFiles) Color(0xFFFFCC00) else Color.Unspecified
+                    overflow = TextOverflow.Ellipsis
                 )
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowDown,
@@ -1910,8 +2019,18 @@ fun EditorTopBar(
                 }
             }
             Spacer(modifier = Modifier.width(2.dp))
+            // 5. Go 教程
+            IconButton(onClick = onToggleTutorialDrawer, modifier = Modifier.size(32.dp)) {
+                Icon(
+                    Icons.Default.MenuBook,
+                    "Go教程",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(2.dp))
 
-            // 5. 更多
+            // 6. 更多
             Box {
                 IconButton(onClick = { showMoreMenu = true }, modifier = Modifier.size(32.dp)) {
                     Icon(Icons.Default.MoreVert, "更多", modifier = Modifier.size(20.dp))
@@ -2015,6 +2134,7 @@ fun EditorTopBar(
 @Composable
 fun NewFileDialog(
     existingFiles: Set<String>,
+    prefix: String = "",
     onDismiss: () -> Unit,
     onCreate: (String) -> Unit
 ) {
@@ -2030,9 +2150,10 @@ fun NewFileDialog(
                     value = fileName,
                     onValueChange = { input ->
                         fileName = input
+                        val fullName = if (prefix.isNotEmpty()) "$prefix$input" else input
                         val err = when {
                             input.isBlank() -> null
-                            existingFiles.contains(input) -> "文件已存在"
+                            existingFiles.contains(fullName) -> "文件已存在"
                             !input.endsWith(".go") && !input.endsWith(".mod") && !input.endsWith(".sum") ->
                                 "建议使用 .go / .mod / .sum 后缀"
                             else -> null
@@ -2040,9 +2161,9 @@ fun NewFileDialog(
                         errorText = err
                     },
                     label = { Text("文件名") },
-                    placeholder = { Text("例如: utils.go") },
+                    placeholder = { Text(if (prefix.isNotEmpty()) "例如: ${prefix}utils.go" else "例如: utils.go") },
                     singleLine = true,
-                    isError = errorText != null && fileName.isNotBlank() && existingFiles.contains(fileName),
+                    isError = errorText != null && fileName.isNotBlank() && existingFiles.contains(if (prefix.isNotEmpty()) "$prefix$fileName" else fileName),
                     modifier = Modifier.fillMaxWidth()
                 )
                 val err = errorText
@@ -2060,11 +2181,12 @@ fun NewFileDialog(
             TextButton(
                 onClick = {
                     val name = fileName.trim()
-                    if (name.isNotBlank() && !existingFiles.contains(name)) {
-                        onCreate(name)
+                    val fullName = if (prefix.isNotEmpty()) "$prefix$name" else name
+                    if (name.isNotBlank() && !existingFiles.contains(fullName)) {
+                        onCreate(fullName)
                     }
                 },
-                enabled = fileName.trim().isNotBlank() && !existingFiles.contains(fileName.trim())
+                enabled = fileName.trim().isNotBlank() && !existingFiles.contains(if (prefix.isNotEmpty()) "${prefix}${fileName.trim()}" else fileName.trim())
             ) {
                 Text("创建")
             }
