@@ -9,6 +9,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import com.termux.app.gostudio.ui.CodeEditorScreen
 import com.termux.app.gostudio.ui.theme.GoStudioTheme
 
@@ -37,8 +39,9 @@ class GoEditorActivity : ComponentActivity() {
         // 先确保 Termux bootstrap 完成，再进入编辑器
         TermuxInstaller.setupBootstrapIfNeeded(this) {
             setContent {
-                GoStudioTheme {
-                    viewModel = viewModel()
+                viewModel = viewModel()
+                val darkMode by viewModel.darkMode.collectAsState()
+                GoStudioTheme(darkTheme = darkMode) {
                     CodeEditorScreen(viewModel = viewModel)
                 }
             }
@@ -46,9 +49,18 @@ class GoEditorActivity : ComponentActivity() {
     }
 
     override fun onBackPressed() {
-        when (viewModel.currentScreen.value) {
-            com.termux.app.gostudio.GoStudioViewModel.Screen.EDITOR -> viewModel.navigateToHome()
-            else -> super.onBackPressed()
+        val screen = viewModel.currentScreen.value
+        if (screen == com.termux.app.gostudio.GoStudioViewModel.Screen.EDITOR) {
+            // 编辑页：优先关闭抽屉
+            if (viewModel.closeOneDrawer()) return
+            // 无抽屉：双击返回主页
+            if (viewModel.shouldExitToHome()) {
+                viewModel.navigateToHome()
+            } else {
+                android.widget.Toast.makeText(this, "再按一次返回主页", android.widget.Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            super.onBackPressed()
         }
     }
 }
