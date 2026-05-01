@@ -131,6 +131,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.termux.app.gostudio.GoStudioViewModel
+import com.termux.app.gostudio.ai.AiAssistantViewModel
 import com.termux.app.gostudio.editor.GoExamples
 import com.termux.app.gostudio.editor.GoSyntaxColors
 import com.termux.app.gostudio.editor.highlightGo
@@ -146,6 +147,7 @@ import kotlinx.coroutines.flow.debounce
 @Composable
 fun CodeEditorScreen(
     viewModel: GoStudioViewModel,
+    aiViewModel: AiAssistantViewModel,
     modifier: Modifier = Modifier
 ) {
     val termuxAvailable by viewModel.termuxAvailable.collectAsState()
@@ -217,6 +219,7 @@ fun CodeEditorScreen(
 
     val diagDrawerState = rememberDrawerState(androidx.compose.material3.DrawerValue.Closed)
     var showTutorialDrawer by remember { mutableStateOf(false) }
+    var showAiPanel by remember { mutableStateOf(false) }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -283,7 +286,8 @@ fun CodeEditorScreen(
                 hasErrors = hasErrors,
                 hasWarnings = hasWarnings,
                 onToggleDiagDrawer = { scope.launch { if (diagDrawerState.isClosed) diagDrawerState.open() else diagDrawerState.close() } },
-                onToggleTutorialDrawer = { showTutorialDrawer = true }
+                onToggleTutorialDrawer = { showTutorialDrawer = true },
+                onToggleAiPanel = { showAiPanel = !showAiPanel }
             )
         },
         modifier = modifier
@@ -312,49 +316,78 @@ fun CodeEditorScreen(
                 )
             }
 
-            Box(
+            Row(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
             ) {
-                GoCodeEditor(
-                    viewModel = viewModel,
-                    modifier = Modifier.fillMaxSize()
-                )
+                Box(
+                    modifier = Modifier
+                        .weight(if (showAiPanel) 0.6f else 1f)
+                        .fillMaxHeight()
+                ) {
+                    GoCodeEditor(
+                        viewModel = viewModel,
+                        modifier = Modifier.fillMaxSize()
+                    )
 
-                // 选中函数名提示卡片（悬浮在编辑器底部）
-                val selectedWord by viewModel.selectedWord.collectAsState()
-                if (selectedWord.isNotEmpty()) {
+                    // 选中函数名提示卡片（悬浮在编辑器底部）
+                    val selectedWord by viewModel.selectedWord.collectAsState()
+                    if (selectedWord.isNotEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .align(androidx.compose.ui.Alignment.BottomCenter)
+                                .padding(bottom = 8.dp, start = 12.dp, end = 12.dp)
+                        ) {
+                            Button(
+                                onClick = {
+                                    val (start, end) = viewModel.lastSelection.value
+                                    Log.d("GoStudio", "跳转定义按钮 clicked, selection=$start..$end")
+                                    viewModel.gotoDefinitionDirect(start, end)
+                                },
+                                colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF2D2D30),
+                                    contentColor = Color.White
+                                ),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text(
+                                    text = selectedWord,
+                                    color = Color(0xFF4FC1FF),
+                                    fontSize = 12.sp,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Text(
+                                    text = "→ 跳转定义",
+                                    color = Color(0xFFAAAAAA),
+                                    fontSize = 11.sp
+                                )
+                            }
+                        }
+                    }
+                }
+                
+                if (showAiPanel) {
+                    val currentFiles by viewModel.files.collectAsState()
+                    val currentFileName by viewModel.currentFileName.collectAsState()
+                    
                     Box(
                         modifier = Modifier
-                            .align(androidx.compose.ui.Alignment.BottomCenter)
-                            .padding(bottom = 8.dp, start = 12.dp, end = 12.dp)
+                            .weight(0.4f)
+                            .fillMaxHeight()
                     ) {
-                        Button(
-                            onClick = {
-                                val (start, end) = viewModel.lastSelection.value
-                                Log.d("GoStudio", "跳转定义按钮 clicked, selection=$start..$end")
-                                viewModel.gotoDefinitionDirect(start, end)
-                            },
-                            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF2D2D30),
-                                contentColor = Color.White
-                            ),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Text(
-                                text = selectedWord,
-                                color = Color(0xFF4FC1FF),
-                                fontSize = 12.sp,
-                                fontFamily = FontFamily.Monospace
-                            )
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Text(
-                                text = "→ 跳转定义",
-                                color = Color(0xFFAAAAAA),
-                                fontSize = 11.sp
-                            )
-                        }
+                        AiAssistantPanel(
+                            viewModel = aiViewModel,
+                            currentFileContent = currentFiles[currentFileName],
+                            currentFileName = currentFileName,
+                            onInsertCode = { code ->
+                                val currentCode = viewModel.getCurrentFileCode()
+                                val cursor = viewModel.currentCursor.value
+                                val newCode = currentCode.substring(0, cursor) + code + currentCode.substring(cursor)
+                                viewModel.updateEditorCode(newCode)
+                            }
+                        )
                     }
                 }
             }
@@ -1770,7 +1803,8 @@ fun EditorTopBar(
     hasErrors: Boolean = false,
     hasWarnings: Boolean = false,
     onToggleDiagDrawer: () -> Unit = {},
-    onToggleTutorialDrawer: () -> Unit = {}
+    onToggleTutorialDrawer: () -> Unit = {},
+    onToggleAiPanel: () -> Unit = {}
 ) {
     val currentFileName by viewModel.currentFileName.collectAsState()
     val unsavedFiles by viewModel.unsavedFiles.collectAsState()
@@ -2029,8 +2063,19 @@ fun EditorTopBar(
                 )
             }
             Spacer(modifier = Modifier.width(2.dp))
+            
+            // 6. AI Assistant
+            IconButton(onClick = onToggleAiPanel, modifier = Modifier.size(32.dp)) {
+                Icon(
+                    Icons.Default.AutoFixHigh,
+                    "AI Assistant",
+                    tint = Color(0xFF9B59B6),
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(2.dp))
 
-            // 6. 更多
+            // 7. 更多
             Box {
                 IconButton(onClick = { showMoreMenu = true }, modifier = Modifier.size(32.dp)) {
                     Icon(Icons.Default.MoreVert, "更多", modifier = Modifier.size(20.dp))
