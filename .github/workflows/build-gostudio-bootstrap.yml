@@ -1,0 +1,137 @@
+name: Build GoStudio bootstrap
+
+on:
+  workflow_dispatch:
+    inputs:
+      termux_packages_ref:
+        description: "termux-packages branch, tag, or commit"
+        required: true
+        default: "master"
+      architectures:
+        description: "Comma-separated architectures: aarch64,arm,i686,x86_64"
+        required: true
+        default: "aarch64"
+      additional_packages:
+        description: "Comma-separated extra packages to include in bootstrap"
+        required: true
+        default: "golang,gopls,git,ca-certificates,openssl"
+      apt_repository_url:
+        description: "APT repository base URL containing dists/ and pool/"
+        required: true
+        default: "https://example.com/gostudio-apt-repo"
+      publish_release:
+        description: "Publish bootstrap zips to a GitHub release"
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gostudio-bootstrap-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build bootstrap
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+
+    steps:
+      - name: Checkout GoStudio
+        uses: actions/checkout@v4
+
+      - name: Checkout termux-packages
+        uses: actions/checkout@v4
+        with:
+          repository: termux/termux-packages
+          ref: ${{ inputs.termux_packages_ref }}
+          path: termux-packages
+
+      - name: Free disk space
+        shell: bash
+        run: |
+          set -euxo pipefail
+          df -h
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android/sdk/ndk || true
+          docker system prune -af || true
+          df -h
+
+      - name: Patch Termux package name
+        working-directory: termux-packages
+        shell: bash
+        run: |
+          set -euxo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("scripts/properties.sh")
+          text = path.read_text()
+          replacements = {
+              'TERMUX_APP__PACKAGE_NAME="com.termux"': 'TERMUX_APP__PACKAGE_NAME="com.jmwl.gostudio"',
+              'TERMUX_REPO_APP__PACKAGE_NAME="com.termux"': 'TERMUX_REPO_APP__PACKAGE_NAME="com.jmwl.gostudio"',
+              'TERMUX_REPO_APP__DATA_DIR="/data/data/com.termux"': 'TERMUX_REPO_APP__DATA_DIR="/data/data/com.jmwl.gostudio"',
+              'TERMUX_REPO__CORE_DIR="/data/data/com.termux/termux/core"': 'TERMUX_REPO__CORE_DIR="/data/data/com.jmwl.gostudio/termux/core"',
+              'TERMUX_REPO__APPS_DIR="/data/data/com.termux/termux/app"': 'TERMUX_REPO__APPS_DIR="/data/data/com.jmwl.gostudio/termux/app"',
+              'TERMUX_REPO__ROOTFS="/data/data/com.termux/files"': 'TERMUX_REPO__ROOTFS="/data/data/com.jmwl.gostudio/files"',
+              'TERMUX_REPO__HOME="/data/data/com.termux/files/home"': 'TERMUX_REPO__HOME="/data/data/com.jmwl.gostudio/files/home"',
+              'TERMUX_REPO__PREFIX="/data/data/com.termux/files/usr"': 'TERMUX_REPO__PREFIX="/data/data/com.jmwl.gostudio/files/usr"',
+          }
+          for old, new in replacements.items():
+              if old not in text:
+                  raise SystemExit(f"Expected text not found: {old}")
+              text = text.replace(old, new)
+          path.write_text(text)
+          PY
+          grep -E 'TERMUX_APP__PACKAGE_NAME|TERMUX_REPO_APP__PACKAGE_NAME|TERMUX_REPO__PREFIX' scripts/properties.sh
+
+      - name: Patch repository URL
+        working-directory: termux-packages
+        shell: bash
+        env:
+          APT_REPOSITORY_URL: ${{ inputs.apt_repository_url }}
+        run: |
+          set -euxo pipefail
+          jq --arg url "$APT_REPOSITORY_URL" '.packages.url = $url | del(."root-packages") | del(."x11-packages")' repo.json > repo.gostudio.json
+          mv repo.gostudio.json repo.json
+          cat repo.json
+
+      - name: Build bootstrap archives
+        working-directory: termux-packages
+        shell: bash
+        run: |
+          set -euxo pipefail
+          ./scripts/run-docker.sh ./scripts/build-bootstraps.sh \
+            --architectures "${{ inputs.architectures }}" \
+            --add "${{ inputs.additional_packages }}"
+
+      - name: Collect bootstrap archives
+        working-directory: termux-packages
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p ../gostudio-bootstrap
+          cp -v bootstrap-*.zip ../gostudio-bootstrap/
+          cd ../gostudio-bootstrap
+          sha256sum bootstrap-*.zip | tee SHA256SUMS.txt
+
+      - name: Upload bootstrap artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: gostudio-bootstrap-${{ inputs.architectures }}-${{ github.run_number }}
+          path: gostudio-bootstrap/*
+          if-no-files-found: error
+
+      - name: Publish release
+        if: ${{ inputs.publish_release }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euxo pipefail
+          tag="gostudio-bootstrap-$(date -u +%Y.%m.%d)-run${GITHUB_RUN_NUMBER}"
+          gh release create "$tag" \
+            --title "GoStudio bootstrap ${tag}" \
+            --notes "Package: com.jmwl.gostudio"$'\n'"Architectures: ${{ inputs.architectures }}" \
+            gostudio-bootstrap/*

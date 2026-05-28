@@ -1,0 +1,204 @@
+name: Build GoStudio packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      termux_packages_ref:
+        description: "termux-packages branch, tag, or commit"
+        required: true
+        default: "master"
+      architectures:
+        description: "Comma-separated architectures: aarch64,arm,i686,x86_64"
+        required: true
+        default: "aarch64"
+      packages:
+        description: "Comma-separated packages to build with dependencies"
+        required: true
+        default: "golang,gopls,git,ca-certificates,openssl"
+      publish_release:
+        description: "Publish apt repo archive to a GitHub release"
+        type: boolean
+        required: true
+        default: false
+      publish_pages:
+        description: "Publish apt repo to GitHub Pages"
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: gostudio-packages-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build packages
+    runs-on: ubuntu-24.04
+    timeout-minutes: 720
+
+    steps:
+      - name: Checkout GoStudio
+        uses: actions/checkout@v4
+
+      - name: Checkout termux-packages
+        uses: actions/checkout@v4
+        with:
+          repository: termux/termux-packages
+          ref: ${{ inputs.termux_packages_ref }}
+          path: termux-packages
+
+      - name: Install repository tools
+        shell: bash
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y dpkg-dev xz-utils
+
+      - name: Free disk space
+        shell: bash
+        run: |
+          set -euxo pipefail
+          df -h
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android/sdk/ndk || true
+          docker system prune -af || true
+          df -h
+
+      - name: Patch Termux package name
+        working-directory: termux-packages
+        shell: bash
+        run: |
+          set -euxo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("scripts/properties.sh")
+          text = path.read_text()
+          replacements = {
+              'TERMUX_APP__PACKAGE_NAME="com.termux"': 'TERMUX_APP__PACKAGE_NAME="com.jmwl.gostudio"',
+              'TERMUX_REPO_APP__PACKAGE_NAME="com.termux"': 'TERMUX_REPO_APP__PACKAGE_NAME="com.jmwl.gostudio"',
+              'TERMUX_REPO_APP__DATA_DIR="/data/data/com.termux"': 'TERMUX_REPO_APP__DATA_DIR="/data/data/com.jmwl.gostudio"',
+              'TERMUX_REPO__CORE_DIR="/data/data/com.termux/termux/core"': 'TERMUX_REPO__CORE_DIR="/data/data/com.jmwl.gostudio/termux/core"',
+              'TERMUX_REPO__APPS_DIR="/data/data/com.termux/termux/app"': 'TERMUX_REPO__APPS_DIR="/data/data/com.jmwl.gostudio/termux/app"',
+              'TERMUX_REPO__ROOTFS="/data/data/com.termux/files"': 'TERMUX_REPO__ROOTFS="/data/data/com.jmwl.gostudio/files"',
+              'TERMUX_REPO__HOME="/data/data/com.termux/files/home"': 'TERMUX_REPO__HOME="/data/data/com.jmwl.gostudio/files/home"',
+              'TERMUX_REPO__PREFIX="/data/data/com.termux/files/usr"': 'TERMUX_REPO__PREFIX="/data/data/com.jmwl.gostudio/files/usr"',
+          }
+          for old, new in replacements.items():
+              if old not in text:
+                  raise SystemExit(f"Expected text not found: {old}")
+              text = text.replace(old, new)
+          path.write_text(text)
+          PY
+          grep -E 'TERMUX_APP__PACKAGE_NAME|TERMUX_REPO_APP__PACKAGE_NAME|TERMUX_REPO__PREFIX' scripts/properties.sh
+
+      - name: Limit repositories to main
+        working-directory: termux-packages
+        shell: bash
+        run: |
+          set -euxo pipefail
+          jq 'del(."root-packages") | del(."x11-packages")' repo.json > repo.gostudio.json
+          mv repo.gostudio.json repo.json
+          cat repo.json
+
+      - name: Build packages and dependencies
+        working-directory: termux-packages
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          IFS=',' read -r -a arch_list <<< "${{ inputs.architectures }}"
+          IFS=',' read -r -a raw_package_list <<< "${{ inputs.packages }}"
+          package_list=()
+          for package_name in "${raw_package_list[@]}"; do
+            package_name="$(echo "$package_name" | xargs)"
+            [ -n "$package_name" ] && package_list+=("$package_name")
+          done
+
+          for arch in "${arch_list[@]}"; do
+            arch="$(echo "$arch" | xargs)"
+            [ -n "$arch" ] || continue
+
+            rm -rf output
+            mkdir -p output
+
+            ./scripts/run-docker.sh ./build-package.sh \
+              -C \
+              -F \
+              -a "$arch" \
+              "${package_list[@]}"
+
+            mkdir -p "../gostudio-built-debs/$arch"
+            find output -maxdepth 1 -type f -name '*.deb' -print -exec cp -v {} "../gostudio-built-debs/$arch/" \;
+          done
+
+      - name: Generate apt repository
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          repo_root="gostudio-apt-repo"
+          rm -rf "$repo_root"
+          mkdir -p "$repo_root"
+
+          IFS=',' read -r -a arch_list <<< "${{ inputs.architectures }}"
+          for arch in "${arch_list[@]}"; do
+            arch="$(echo "$arch" | xargs)"
+            [ -n "$arch" ] || continue
+
+            pool_dir="$repo_root/pool/main/$arch"
+            binary_dir="$repo_root/dists/stable/main/binary-$arch"
+            mkdir -p "$pool_dir" "$binary_dir"
+
+            cp -v "gostudio-built-debs/$arch/"*.deb "$pool_dir/"
+            (
+              cd "$repo_root"
+              dpkg-scanpackages "pool/main/$arch" /dev/null > "dists/stable/main/binary-$arch/Packages"
+            )
+            gzip -9c "$binary_dir/Packages" > "$binary_dir/Packages.gz"
+            xz -9c "$binary_dir/Packages" > "$binary_dir/Packages.xz"
+          done
+
+          find "$repo_root" -type f -print0 | sort -z | xargs -0 sha256sum > "$repo_root/SHA256SUMS.txt"
+          tar -czf gostudio-apt-repo.tar.gz "$repo_root"
+
+      - name: Upload package artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: gostudio-packages-${{ inputs.architectures }}-${{ github.run_number }}
+          path: |
+            gostudio-built-debs/**
+            gostudio-apt-repo/**
+            gostudio-apt-repo.tar.gz
+          if-no-files-found: error
+
+      - name: Configure Pages
+        if: ${{ inputs.publish_pages }}
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        if: ${{ inputs.publish_pages }}
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: gostudio-apt-repo
+
+      - name: Deploy to GitHub Pages
+        if: ${{ inputs.publish_pages }}
+        uses: actions/deploy-pages@v4
+
+      - name: Publish release
+        if: ${{ inputs.publish_release }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euxo pipefail
+          tag="gostudio-packages-$(date -u +%Y.%m.%d)-run${GITHUB_RUN_NUMBER}"
+          gh release create "$tag" \
+            --title "GoStudio packages ${tag}" \
+            --notes "Package: com.jmwl.gostudio"$'\n'"Architectures: ${{ inputs.architectures }}" \
+            gostudio-apt-repo.tar.gz

@@ -811,7 +811,7 @@ func handleTodoByID(w http.ResponseWriter, r *http.Request) {
             appendOutput(OutputLine("── 安装 Go ──", OutputLine.Type.INFO))
 
             currentProcess = shellExecutor.createStreamingProcess(
-                command = "pkg install -y golang 2>&1",
+                command = "pkg install -y golang gopls 2>&1",
                 onOutput = { for (l in it.lines()) appendOutput(OutputLine(l, OutputLine.Type.STDOUT)) },
                 onComplete = { code ->
                     _goInstalled.value = shellExecutor.isGoInstalled()
@@ -841,7 +841,7 @@ func handleTodoByID(w http.ResponseWriter, r *http.Request) {
             appendOutput(OutputLine("── 安装 gopls ──", OutputLine.Type.INFO))
 
             currentProcess = shellExecutor.createStreamingProcess(
-                command = "go install golang.org/x/tools/gopls@latest 2>&1",
+                command = "pkg install -y gopls 2>&1",
                 onOutput = { for (l in it.lines()) appendOutput(OutputLine(l, OutputLine.Type.STDOUT)) },
                 onComplete = { code ->
                     _goplsInstalled.value = shellExecutor.isGoplsInstalled()
@@ -871,7 +871,7 @@ func handleTodoByID(w http.ResponseWriter, r *http.Request) {
             try {
                 val service = com.termux.app.gostudio.lsp.LspService(goplsPath)
                 service.onDiagnostics = { uri, diags ->
-                    // uri 格式: file:///data/data/com.termux/files/home/gostudio_projects/项目名/file.go
+                    // uri 格式: file:///data/data/com.jmwl.gostudio/files/home/gostudio_projects/项目名/file.go
                     val prefix = "file://$runDir/"
                     val fileName = if (uri.startsWith(prefix)) uri.removePrefix(prefix) else uri.substringAfterLast("/")
                     _diagnostics.value = _diagnostics.value.toMutableMap().apply { put(fileName, diags) }
