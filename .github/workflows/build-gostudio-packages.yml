@@ -133,7 +133,10 @@ jobs:
               "${package_list[@]}"
 
             mkdir -p "../gostudio-built-debs/$arch"
-            find output -maxdepth 1 -type f -name '*.deb' -print -exec cp -v {} "../gostudio-built-debs/$arch/" \;
+            find output -maxdepth 1 -type f -name '*.deb' -print0 | while IFS= read -r -d '' deb_file; do
+              safe_name="$(basename "$deb_file" | sed 's/[:"<>|*?]/_/g')"
+              cp -v "$deb_file" "../gostudio-built-debs/$arch/$safe_name"
+            done
           done
 
       - name: Generate apt repository
