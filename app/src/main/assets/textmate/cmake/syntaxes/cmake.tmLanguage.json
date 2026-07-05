@@ -1,0 +1,129 @@
+{
+  "scopeName": "source.cmake",
+  "name": "CMake",
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#commands"
+    },
+    {
+      "include": "#variables"
+    },
+    {
+      "include": "#strings"
+    },
+    {
+      "include": "#numbers"
+    },
+    {
+      "include": "#operators"
+    },
+    {
+      "include": "#functions"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "begin": "#",
+          "end": "$",
+          "name": "comment.line.number-sign.cmake"
+        }
+      ]
+    },
+    "commands": {
+      "patterns": [
+        {
+          "match": "(?i)\\b(add_compile_options|add_custom_command|add_custom_target|add_definitions|add_dependencies|add_executable|add_library|add_subdirectory|add_test|cmake_minimum_required|cmake_policy|configure_file|else|elseif|endif|endfunction|endmacro|file|find_file|find_library|find_package|find_path|find_program|foreach|function|get_property|get_target_property|get_test_property|if|include|install|list|macro|mark_as_advanced|message|option|project|set|set_property|set_target_properties|set_tests_properties|string|target_compile_definitions|target_compile_features|target_compile_options|target_include_directories|target_link_directories|target_link_libraries|target_link_options|target_sources|try_compile|try_run|while)\\b",
+          "name": "keyword.control.cmake"
+        }
+      ]
+    },
+    "variables": {
+      "patterns": [
+        {
+          "match": "\\$\\{([A-Za-z0-9_]+)\\}\\$?",
+          "captures": {
+            "1": {
+              "name": "variable.other.cmake"
+            }
+          }
+        },
+        {
+          "match": "\\$ENV\\{([A-Za-z0-9_]+)\\}\\$?",
+          "captures": {
+            "1": {
+              "name": "variable.other.environment.cmake"
+            }
+          }
+        },
+        {
+          "match": "\\$<([A-Za-z0-9_:]+)>",
+          "captures": {
+            "1": {
+              "name": "support.function.generator-expression.cmake"
+            }
+          }
+        },
+        {
+          "match": "(?i)\\b(CMAKE_[A-Z][A-Z0-9_]*|PROJECT_(NAME|SOURCE_DIR|BINARY_DIR|VERSION)|[A-Z][A-Z0-9_]*_(OUTPUT_DIRECTORY|OUTPUT_NAME|PREFIX|SUFFIX))\\b",
+          "name": "support.constant.cmake"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "begin": "\"",
+          "end": "\"",
+          "name": "string.quoted.double.cmake",
+          "patterns": [
+            {
+              "match": "\\\\(\\\\|n|t|r|\\\"|\\$)",
+              "name": "constant.character.escape.cmake"
+            }
+          ]
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "match": "\\b[0-9]+\\b",
+          "name": "constant.numeric.cmake"
+        },
+        {
+          "match": "\\b0x[0-9A-Fa-f]+\\b",
+          "name": "constant.numeric.hex.cmake"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "match": "(?i)\\b(AND|OR|NOT|COMMAND|DEFINED|EXISTS|EQUAL|LESS|GREATER|LESS_EQUAL|GREATER_EQUAL|STREQUAL|STRLESS|STRGREATER|STRLESS_EQUAL|STRGREATER_EQUAL|VERSION_LESS|VERSION_GREATER|VERSION_EQUAL|VERSION_LESS_EQUAL|VERSION_GREATER_EQUAL|MATCHES|IN_LIST)\\b",
+          "name": "keyword.operator.cmake"
+        },
+        {
+          "match": "(=|=<|=>|!=|\\+|\\-|\\*|/)",
+          "name": "keyword.operator.cmake"
+        }
+      ]
+    },
+    "functions": {
+      "patterns": [
+        {
+          "match": "(?i)\\b([a-z_][a-z0-9_]*)\\s*\\(",
+          "captures": {
+            "1": {
+              "name": "entity.name.function.cmake"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

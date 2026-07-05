@@ -1,0 +1,14 @@
+/home/admins/AndroidStudioProjects/XCode/modules/sora-oniguruma-native/.cxx/Debug/1s414i11/arm64-v8a/CMakeFiles/oniguruma-binding.dir
+/home/admins/AndroidStudioProjects/XCode/modules/sora-oniguruma-native/.cxx/Debug/1s414i11/arm64-v8a/CMakeFiles/edit_cache.dir
+/home/admins/AndroidStudioProjects/XCode/modules/sora-oniguruma-native/.cxx/Debug/1s414i11/arm64-v8a/CMakeFiles/rebuild_cache.dir
+/home/admins/AndroidStudioProjects/XCode/modules/sora-oniguruma-native/.cxx/Debug/1s414i11/arm64-v8a/CMakeFiles/list_install_components.dir
+/home/admins/AndroidStudioProjects/XCode/modules/sora-oniguruma-native/.cxx/Debug/1s414i11/arm64-v8a/CMakeFiles/install.dir
+/home/admins/AndroidStudioProjects/XCode/modules/sora-oniguruma-native/.cxx/Debug/1s414i11/arm64-v8a/CMakeFiles/install/local.dir
+/home/admins/AndroidStudioProjects/XCode/modules/sora-oniguruma-native/.cxx/Debug/1s414i11/arm64-v8a/CMakeFiles/install/strip.dir
+/home/admins/AndroidStudioProjects/XCode/modules/sora-oniguruma-native/.cxx/Debug/1s414i11/arm64-v8a/oniguruma/CMakeFiles/onig.dir
+/home/admins/AndroidStudioProjects/XCode/modules/sora-oniguruma-native/.cxx/Debug/1s414i11/arm64-v8a/oniguruma/CMakeFiles/edit_cache.dir
+/home/admins/AndroidStudioProjects/XCode/modules/sora-oniguruma-native/.cxx/Debug/1s414i11/arm64-v8a/oniguruma/CMakeFiles/rebuild_cache.dir
+/home/admins/AndroidStudioProjects/XCode/modules/sora-oniguruma-native/.cxx/Debug/1s414i11/arm64-v8a/oniguruma/CMakeFiles/list_install_components.dir
+/home/admins/AndroidStudioProjects/XCode/modules/sora-oniguruma-native/.cxx/Debug/1s414i11/arm64-v8a/oniguruma/CMakeFiles/install.dir
+/home/admins/AndroidStudioProjects/XCode/modules/sora-oniguruma-native/.cxx/Debug/1s414i11/arm64-v8a/oniguruma/CMakeFiles/install/local.dir
+/home/admins/AndroidStudioProjects/XCode/modules/sora-oniguruma-native/.cxx/Debug/1s414i11/arm64-v8a/oniguruma/CMakeFiles/install/strip.dir

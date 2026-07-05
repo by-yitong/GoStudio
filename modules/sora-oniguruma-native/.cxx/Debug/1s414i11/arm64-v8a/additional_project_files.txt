@@ -1,0 +1,4 @@
+/home/admins/AndroidStudioProjects/XCode/modules/sora-oniguruma-native/src/main/cpp/oniguruma/src/regint.h
+/home/admins/AndroidStudioProjects/XCode/modules/sora-oniguruma-native/src/main/cpp/oniguruma/src/regparse.h
+/home/admins/AndroidStudioProjects/XCode/modules/sora-oniguruma-native/src/main/cpp/oniguruma/src/regenc.h
+/home/admins/AndroidStudioProjects/XCode/modules/sora-oniguruma-native/src/main/cpp/oniguruma/src/st.h

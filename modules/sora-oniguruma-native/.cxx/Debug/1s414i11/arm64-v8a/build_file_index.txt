@@ -1,0 +1,6 @@
+/home/admins/AndroidStudioProjects/XCode/modules/sora-oniguruma-native/src/main/cpp/CMakeLists.txt
+/home/admins/AndroidStudioProjects/XCode/modules/sora-oniguruma-native/src/main/cpp/oniguruma/CMakeLists.txt
+/home/admins/AndroidStudioProjects/XCode/modules/sora-oniguruma-native/src/main/cpp/oniguruma/cmake/Config.cmake.in
+/home/admins/AndroidStudioProjects/XCode/modules/sora-oniguruma-native/src/main/cpp/oniguruma/onig-config.cmake.in
+/home/admins/AndroidStudioProjects/XCode/modules/sora-oniguruma-native/src/main/cpp/oniguruma/oniguruma.pc.cmake.in
+/home/admins/AndroidStudioProjects/XCode/modules/sora-oniguruma-native/src/main/cpp/oniguruma/src/config.h.cmake.in

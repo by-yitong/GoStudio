@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <!-- 网络权限 -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    
+    <!-- 存储权限 -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+    
+    <!-- 前台服务权限 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    
+    <!-- 保活权限 -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    
+    <!-- 通知权限 -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    
+    <!-- 其他 -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+    
+    <application
+        android:allowBackup="true"
+        android:supportsRtl="true"
+        android:name=".xc_application"
+        android:label="@string/app_name"
+        android:icon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="true"
+        android:requestLegacyExternalStorage="true"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:theme="@style/Theme.ComposeEmptyActivity">
+        
+        <activity
+            android:name=".activity.splash_activity"
+            android:exported="true"
+            android:theme="@style/Theme.ComposeEmptyActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        
+        <activity
+            android:name=".activity.crash.crash_activity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/Theme.ComposeEmptyActivity" />
+        
+        <activity
+            android:name=".activity.main_activity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/Theme.ComposeEmptyActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+            
+        <activity
+            android:name=".activity.install_activity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/Theme.ComposeEmptyActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+            
+        <activity
+            android:name=".activity.terminal_activity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/Theme.ComposeEmptyActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+            
+        <activity
+            android:name=".activity.editor_activity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/Theme.ComposeEmptyActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+            
+        <service
+            android:name=".service.keep_alive_service"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse" >
+            <property
+                android:name="android.foreground_service_type_special_use_description"
+                android:value="Continuous operation in the background" />
+        </service>
+        
+    </application>
+</manifest>
