@@ -1,0 +1,185 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"install"
+		],
+		"files" : 
+		[
+			"oniguruma/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 188,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 199,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 207,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 214,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 222,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 229,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 250,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 253,
+				"parent" : 0
+			}
+		]
+	},
+	"codemodelVersion" : 
+	{
+		"major" : 2,
+		"minor" : 10
+	},
+	"installers" : 
+	[
+		{
+			"backtrace" : 1,
+			"component" : "Unspecified",
+			"destination" : "lib",
+			"paths" : 
+			[
+				"/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/build/intermediates/cxx/RelWithDebInfo/2m4s4y1m/obj/arm64-v8a/libonig.so"
+			],
+			"targetId" : "onig::@5acf2c6e2fc8dcda7e4c",
+			"targetIndex" : 0,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 2,
+			"component" : "Unspecified",
+			"destination" : "include",
+			"paths" : 
+			[
+				"oniguruma/src/oniguruma.h",
+				"oniguruma/src/oniggnu.h"
+			],
+			"type" : "file"
+		},
+		{
+			"backtrace" : 3,
+			"component" : "Unspecified",
+			"destination" : "lib/cmake/oniguruma",
+			"paths" : 
+			[
+				"/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/oniguruma/generated/onigurumaConfig.cmake",
+				"/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/oniguruma/generated/onigurumaConfigVersion.cmake"
+			],
+			"type" : "file"
+		},
+		{
+			"backtrace" : 4,
+			"component" : "Unspecified",
+			"destination" : "lib/cmake/oniguruma",
+			"exportName" : "onigurumaTargets",
+			"exportTargets" : 
+			[
+				{
+					"id" : "onig::@5acf2c6e2fc8dcda7e4c",
+					"index" : 0
+				}
+			],
+			"paths" : 
+			[
+				"oniguruma/CMakeFiles/Export/8c73ef290f98ec84adf6bb2530e3b311/onigurumaTargets.cmake"
+			],
+			"type" : "export"
+		},
+		{
+			"backtrace" : 5,
+			"component" : "Unspecified",
+			"destination" : "share/doc/onig",
+			"paths" : 
+			[
+				"oniguruma/doc/API",
+				"oniguruma/doc/API.ja",
+				"oniguruma/doc/RE",
+				"oniguruma/doc/RE.ja",
+				"oniguruma/doc/FAQ",
+				"oniguruma/doc/FAQ.ja",
+				"oniguruma/doc/CALLOUTS.BUILTIN",
+				"oniguruma/doc/CALLOUTS.BUILTIN.ja",
+				"oniguruma/doc/CALLOUTS.API",
+				"oniguruma/doc/CALLOUTS.API.ja",
+				"oniguruma/doc/UNICODE_PROPERTIES"
+			],
+			"type" : "file"
+		},
+		{
+			"backtrace" : 6,
+			"component" : "Unspecified",
+			"destination" : "share/doc/onig",
+			"paths" : 
+			[
+				"oniguruma/AUTHORS",
+				"oniguruma/COPYING",
+				"oniguruma/HISTORY",
+				"oniguruma/README.md"
+			],
+			"type" : "file"
+		},
+		{
+			"backtrace" : 7,
+			"component" : "Unspecified",
+			"destination" : "lib/pkgconfig",
+			"paths" : 
+			[
+				"/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/oniguruma/oniguruma.pc"
+			],
+			"type" : "file"
+		},
+		{
+			"backtrace" : 8,
+			"component" : "Unspecified",
+			"destination" : "bin",
+			"paths" : 
+			[
+				"/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/oniguruma/onig-config"
+			],
+			"type" : "file"
+		}
+	],
+	"paths" : 
+	{
+		"build" : "oniguruma",
+		"source" : "oniguruma"
+	}
+}

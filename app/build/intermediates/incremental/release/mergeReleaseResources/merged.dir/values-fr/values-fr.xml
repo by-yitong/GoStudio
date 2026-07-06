@@ -1,0 +1,775 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:ns1="urn:oasis:names:tc:xliff:document:1.2" xmlns:ns2="http://schemas.android.com/tools">
+    <string-array name="exo_controls_playback_speeds">
+    <item>x 0,25</item>
+    <item>x 0,5</item>
+    <item>x 0,75</item>
+    <item>Normal</item>
+    <item>x 1,25</item>
+    <item>x 1,5</item>
+    <item>x 2</item>
+  </string-array>
+    <plurals name="exo_controls_fastforward_by_amount_description">
+    <item quantity="one">Avancer de %d seconde</item>
+    <item quantity="other">Avancer de %d secondes</item>
+  </plurals>
+    <plurals name="exo_controls_rewind_by_amount_description">
+    <item quantity="one">Revenir en arrière de %d seconde</item>
+    <item quantity="other">Revenir en arrière de %d secondes</item>
+  </plurals>
+    <plurals name="mtrl_badge_content_description">
+    <item quantity="one">%d nouvelle notification</item>
+    <item quantity="other">%d nouvelles notifications</item>
+  </plurals>
+    <plurals name="stream_compose_channel_item_unread">
+    <item quantity="one">"%d message non lu"</item>
+    <item quantity="other">"%d messages non lus"</item>
+  </plurals>
+    <plurals name="stream_compose_channel_list_typing_many">
+    <item quantity="one">"%d personne écrit"</item>
+    <item quantity="other">"%d personnes écrivent"</item>
+  </plurals>
+    <plurals name="stream_compose_files_preview">
+    <item quantity="one">"%d Fichier"</item>
+    <item quantity="other">"%d Fichiers"</item>
+  </plurals>
+    <plurals name="stream_compose_member_count">
+    <item quantity="one">"%1$d Membre"</item>
+    <item quantity="other">"%1$d Membres"</item>
+  </plurals>
+    <plurals name="stream_compose_message_list_thread_separator">
+    <item quantity="one">"%d Réponse"</item>
+    <item quantity="other">"%d Réponses"</item>
+  </plurals>
+    <plurals name="stream_compose_message_list_unread_separator">
+    <item quantity="one">"%d message non lu"</item>
+    <item quantity="other">"%d messages non lus"</item>
+  </plurals>
+    <plurals name="stream_compose_message_reactions">
+    <item quantity="one">"%d Réaction"</item>
+    <item quantity="other">"%d Réactions"</item>
+  </plurals>
+    <plurals name="stream_compose_photos_preview">
+    <item quantity="one">"%d Photo"</item>
+    <item quantity="other">"%d Photos"</item>
+  </plurals>
+    <plurals name="stream_compose_poll_total_vote_counts">
+    <item quantity="one">"%d vote au total"</item>
+    <item quantity="other">"%d votes au total"</item>
+  </plurals>
+    <plurals name="stream_compose_poll_vote_counts">
+    <item quantity="one">"%d vote"</item>
+    <item quantity="other">"%d votes"</item>
+  </plurals>
+    <plurals name="stream_compose_quoted_message_files">
+    <item quantity="one">"%d fichier"</item>
+    <item quantity="other">"%d fichiers"</item>
+  </plurals>
+    <plurals name="stream_compose_quoted_message_images">
+    <item quantity="one">"%d photo"</item>
+    <item quantity="other">"%d photos"</item>
+  </plurals>
+    <plurals name="stream_compose_quoted_message_videos">
+    <item quantity="one">"%d vidéo"</item>
+    <item quantity="other">"%d vidéos"</item>
+  </plurals>
+    <plurals name="stream_compose_thread_list_item_reply_count">
+    <item quantity="one">"%d réponse"</item>
+    <item quantity="other">"%d réponses"</item>
+  </plurals>
+    <plurals name="stream_compose_thread_list_new_threads">
+    <item quantity="one">"%d nouveau fil"</item>
+    <item quantity="other">"%d nouveaux fils"</item>
+  </plurals>
+    <plurals name="stream_compose_videos_preview">
+    <item quantity="one">"%d Vidéo"</item>
+    <item quantity="other">"%d Vidéos"</item>
+  </plurals>
+    <plurals name="stream_ui_channel_info_member_count">
+    <item quantity="one">"%d membre"</item>
+    <item quantity="other">"%d membres"</item>
+  </plurals>
+    <plurals name="stream_ui_message_list_semantics_message_reactions">
+    <item quantity="one">"%d réaction"</item>
+    <item quantity="other">"%d réactions"</item>
+  </plurals>
+    <plurals name="stream_ui_poll_action_view_comments">
+    <item quantity="one">"Voir %d commentaire"</item>
+    <item quantity="other">"Voir %d commentaires"</item>
+  </plurals>
+    <string msgid="5976598919945601918" name="abc_action_bar_home_description">"Revenir à l\'accueil"</string>
+    <string msgid="8388173803310557296" name="abc_action_bar_up_description">"Revenir en haut de la page"</string>
+    <string msgid="3937310113216875497" name="abc_action_menu_overflow_description">"Autres options"</string>
+    <string msgid="4692188335987374352" name="abc_action_mode_done">"OK"</string>
+    <string msgid="1189761859438369441" name="abc_activity_chooser_view_see_all">"Tout afficher"</string>
+    <string msgid="2165779757652331008" name="abc_activitychooserview_choose_application">"Sélectionner une application"</string>
+    <string msgid="4215997306490295099" name="abc_capital_off">"NON"</string>
+    <string msgid="884982626291842264" name="abc_capital_on">"OUI"</string>
+    <string msgid="8833365367933412986" name="abc_menu_alt_shortcut_label">"Alt+"</string>
+    <string msgid="2223301931652355242" name="abc_menu_ctrl_shortcut_label">"Ctrl+"</string>
+    <string msgid="838001238306846836" name="abc_menu_delete_shortcut_label">"supprimer"</string>
+    <string msgid="7986526966204849475" name="abc_menu_enter_shortcut_label">"entrée"</string>
+    <string msgid="375214403600139847" name="abc_menu_function_shortcut_label">"Fonction+"</string>
+    <string msgid="4192209724446364286" name="abc_menu_meta_shortcut_label">"Méta+"</string>
+    <string msgid="4741552369836443843" name="abc_menu_shift_shortcut_label">"Maj+"</string>
+    <string msgid="5473865519181928982" name="abc_menu_space_shortcut_label">"espace"</string>
+    <string msgid="6180552449598693998" name="abc_menu_sym_shortcut_label">"Sym+"</string>
+    <string msgid="5520303668377388990" name="abc_prepend_shortcut_label">"Menu+"</string>
+    <string msgid="7208076849092622260" name="abc_search_hint">"Rechercher…"</string>
+    <string msgid="3741173234950517107" name="abc_searchview_description_clear">"Effacer la requête"</string>
+    <string msgid="693312494995508443" name="abc_searchview_description_query">"Requête de recherche"</string>
+    <string msgid="3417662926640357176" name="abc_searchview_description_search">"Rechercher"</string>
+    <string msgid="1486535517437947103" name="abc_searchview_description_submit">"Envoyer la requête"</string>
+    <string msgid="2293578557972875415" name="abc_searchview_description_voice">"Recherche vocale"</string>
+    <string msgid="8875138169939072951" name="abc_shareactionprovider_share_with">"Partager avec"</string>
+    <string msgid="9055268688411532828" name="abc_shareactionprovider_share_with_application">"Partager avec <ns1:g id="APPLICATION_NAME">%s</ns1:g>"</string>
+    <string msgid="1656852541809559762" name="abc_toolbar_collapse_description">"Réduire"</string>
+    <string msgid="389117264260014992" name="autofill">"Saisie automatique"</string>
+    <string name="bottomsheet_action_collapse">Réduire la bottom sheet</string>
+    <string name="bottomsheet_action_expand">Développer la bottom sheet</string>
+    <string name="bottomsheet_action_expand_halfway">Développer en entier</string>
+    <string name="bottomsheet_drag_handle_clicked">A appuyé deux fois sur la poignée de déplacement</string>
+    <string name="bottomsheet_drag_handle_content_description">Poignée de déplacement</string>
+    <string msgid="881409763997275156" name="call_notification_answer_action">"Répondre"</string>
+    <string msgid="8793775615905189152" name="call_notification_answer_video_action">"Vidéo"</string>
+    <string msgid="3229508546291798546" name="call_notification_decline_action">"Refuser"</string>
+    <string msgid="2659457946726154263" name="call_notification_hang_up_action">"Raccrocher"</string>
+    <string msgid="6107532579223922871" name="call_notification_incoming_text">"Appel entrant"</string>
+    <string msgid="8623827134497363134" name="call_notification_ongoing_text">"Appel en cours"</string>
+    <string msgid="59049573811482460" name="call_notification_screening_text">"Filtrage d\'un appel entrant"</string>
+    <string name="character_counter_content_description">Caractères saisis %1$d sur %2$d</string>
+    <string name="character_counter_overflowed_content_description">Nombre maximal de caractères dépassé : %1$d sur %2$d</string>
+    <string name="clear_text_end_icon_content_description">Effacer le texte</string>
+    <string msgid="406453423630273620" name="close_drawer">"Fermer le menu de navigation"</string>
+    <string msgid="7573152094250666567" name="close_sheet">"Fermer la feuille"</string>
+    <string msgid="8038256446254964252" name="default_error_message">"Données incorrectes"</string>
+    <string msgid="6312721426453364202" name="default_popup_window_title">"Fenêtre pop-up"</string>
+    <string msgid="1890207353314751437" name="dropdown_menu">"Menu déroulant"</string>
+    <string name="error_a11y_label">Erreur : Non valide</string>
+    <string name="error_icon_content_description">Erreur</string>
+    <string name="exo_controls_cc_disabled_description">Activer les sous-titres</string>
+    <string name="exo_controls_cc_enabled_description">Désactiver les sous-titres</string>
+    <string name="exo_controls_fastforward_description">Avance rapide</string>
+    <string name="exo_controls_fullscreen_enter_description">Activer le mode plein écran</string>
+    <string name="exo_controls_fullscreen_exit_description">Quitter le mode plein écran</string>
+    <string name="exo_controls_hide">Masquer les commandes du lecteur</string>
+    <string name="exo_controls_next_description">Suivant</string>
+    <string name="exo_controls_overflow_hide_description">Masquer les paramètres supplémentaires</string>
+    <string name="exo_controls_overflow_show_description">Afficher les paramètres supplémentaires</string>
+    <string name="exo_controls_pause_description">Pause</string>
+    <string name="exo_controls_play_description">Lecture</string>
+    <string name="exo_controls_playback_speed">Vitesse</string>
+    <string name="exo_controls_previous_description">Précédent</string>
+    <string name="exo_controls_repeat_all_description">Mode actuel : tout répéter. Changer le mode répétition.</string>
+    <string name="exo_controls_repeat_off_description">Mode actuel : sans répétition. Changer le mode répétition.</string>
+    <string name="exo_controls_repeat_one_description">Mode actuel : une répétition. Changer le mode répétition.</string>
+    <string name="exo_controls_rewind_description">Retour arrière</string>
+    <string name="exo_controls_seek_bar_description">Progression de la lecture</string>
+    <string name="exo_controls_settings_description">Paramètres</string>
+    <string name="exo_controls_show">Afficher les commandes du lecteur</string>
+    <string name="exo_controls_shuffle_off_description">Activer le mode aléatoire</string>
+    <string name="exo_controls_shuffle_on_description">Désactiver le mode aléatoire</string>
+    <string name="exo_controls_stop_description">Arrêter</string>
+    <string name="exo_controls_vr_description">Mode RV</string>
+    <string name="exo_download_completed">Téléchargement terminé</string>
+    <string name="exo_download_description">Télécharger</string>
+    <string name="exo_download_downloading">Téléchargement…</string>
+    <string name="exo_download_failed">Échec du téléchargement</string>
+    <string name="exo_download_notification_channel_name">Téléchargements</string>
+    <string name="exo_download_paused">Téléchargements mis en pause</string>
+    <string name="exo_download_paused_for_network">Téléchargements en attente de réseau</string>
+    <string name="exo_download_paused_for_wifi">Téléchargements en attente de Wi-Fi</string>
+    <string name="exo_download_removing">Suppression des téléchargements…</string>
+    <string name="exo_item_list">%1$s, %2$s</string>
+    <string name="exo_track_bitrate">%1$.2f Mbit/s</string>
+    <string name="exo_track_mono">Mono</string>
+    <string name="exo_track_resolution">%1$d × %2$d</string>
+    <string name="exo_track_role_alternate">Piste alternative</string>
+    <string name="exo_track_role_closed_captions">Sous-titres</string>
+    <string name="exo_track_role_commentary">Commentaires</string>
+    <string name="exo_track_role_supplementary">Piste supplémentaire</string>
+    <string name="exo_track_selection_auto">Automatique</string>
+    <string name="exo_track_selection_none">Aucun</string>
+    <string name="exo_track_selection_title_audio">Audio</string>
+    <string name="exo_track_stereo">Stéréo</string>
+    <string name="exo_track_surround">Son surround</string>
+    <string name="exo_track_surround_5_point_1">Son surround 5.1</string>
+    <string name="exo_track_surround_7_point_1">Son surround 7.1</string>
+    <string name="exo_track_unknown">Inconnu</string>
+    <string name="exo_track_unknown_name">Inconnu (%1$s)</string>
+    <string name="exposed_dropdown_menu_content_description">Afficher le menu déroulant</string>
+    <string name="icon_content_description">Icône de la boîte de dialogue</string>
+    <string msgid="6827826412747255547" name="in_progress">"En cours"</string>
+    <string msgid="7933458017204019916" name="indeterminate">"Partiellement coché"</string>
+    <string name="item_view_role_description">Tabulation</string>
+    <string msgid="2988463736136100848" name="m3c_bottom_sheet_collapse_description">"Réduire la bottom sheet"</string>
+    <string msgid="1555567894577437024" name="m3c_bottom_sheet_dismiss_description">"Fermer la bottom sheet"</string>
+    <string msgid="8403354765404029791" name="m3c_bottom_sheet_drag_handle_description">"Poignée de déplacement"</string>
+    <string msgid="6670819569745899763" name="m3c_bottom_sheet_expand_description">"Développer la bottom sheet"</string>
+    <string msgid="3010635850035863127" name="m3c_bottom_sheet_pane_title">"Bottom sheet"</string>
+    <string msgid="8166741421776570875" name="m3c_date_input_headline">"Date saisie"</string>
+    <string msgid="229313757840775812" name="m3c_date_input_headline_description">"Date saisie : %1$s"</string>
+    <string msgid="6116910750161463197" name="m3c_date_input_invalid_for_pattern">"La date ne correspond pas au format attendu : %1$s"</string>
+    <string msgid="2521768508935305279" name="m3c_date_input_invalid_not_allowed">"Date non autorisée : %1$s"</string>
+    <string msgid="7052898923934555305" name="m3c_date_input_invalid_year_range">"Date hors de la plage d\'années attendue : %1$s - %2$s"</string>
+    <string msgid="2895559812010326913" name="m3c_date_input_label">"Date"</string>
+    <string msgid="1237013946323089826" name="m3c_date_input_no_input_description">"Aucun"</string>
+    <string msgid="7306227249789210568" name="m3c_date_input_title">"Sélectionner une date"</string>
+    <string msgid="7605002211875882969" name="m3c_date_picker_headline">"Date sélectionnée"</string>
+    <string msgid="3664277305226978227" name="m3c_date_picker_headline_description">"Sélection actuelle : %1$s"</string>
+    <string msgid="8436650776581492840" name="m3c_date_picker_navigate_to_year_description">"Accéder à l\'année %1$s"</string>
+    <string msgid="5811000998184572395" name="m3c_date_picker_no_selection_description">"Aucun"</string>
+    <string msgid="7813882352367152251" name="m3c_date_picker_scroll_to_earlier_years">"Faites défiler pour afficher les années précédentes"</string>
+    <string msgid="5727367015496556177" name="m3c_date_picker_scroll_to_later_years">"Faites défiler pour afficher les années suivantes"</string>
+    <string msgid="1804346892470238807" name="m3c_date_picker_switch_to_calendar_mode">"Passer au mode de saisie Agenda"</string>
+    <string msgid="395627960681594326" name="m3c_date_picker_switch_to_day_selection">"Balayez l\'écran pour sélectionner une année ou appuyez pour revenir à la sélection d\'un jour"</string>
+    <string msgid="2219746470065162704" name="m3c_date_picker_switch_to_input_mode">"Passer au mode de saisie Texte"</string>
+    <string msgid="7142101321095356500" name="m3c_date_picker_switch_to_next_month">"Passer au mois suivant"</string>
+    <string msgid="228438865139394590" name="m3c_date_picker_switch_to_previous_month">"Passer au mois précédent"</string>
+    <string msgid="791651718641787594" name="m3c_date_picker_switch_to_year_selection">"Passer à la sélection d\'une année"</string>
+    <string msgid="7430790972741451689" name="m3c_date_picker_title">"Sélectionner une date"</string>
+    <string msgid="3199387177749801575" name="m3c_date_picker_today_description">"Aujourd\'hui"</string>
+    <string msgid="2068382232816991922" name="m3c_date_picker_year_picker_pane_title">"Sélecteur d\'année visible"</string>
+    <string msgid="3190049423327661366" name="m3c_date_range_input_invalid_range_input">"Plage de dates non valide"</string>
+    <string msgid="3148384720560189467" name="m3c_date_range_input_title">"Saisir des dates"</string>
+    <string msgid="2138321128465719402" name="m3c_date_range_picker_day_in_range">"Dans la plage"</string>
+    <string msgid="4947636797751277713" name="m3c_date_range_picker_end_headline">"Date de fin"</string>
+    <string msgid="602077859540990149" name="m3c_date_range_picker_scroll_to_next_month">"Faites défiler pour afficher le mois suivant"</string>
+    <string msgid="4592174524846109496" name="m3c_date_range_picker_scroll_to_previous_month">"Faites défiler pour afficher le mois précédent"</string>
+    <string msgid="4665981448952749820" name="m3c_date_range_picker_start_headline">"Date de début"</string>
+    <string msgid="3134165431120340385" name="m3c_date_range_picker_title">"Sélectionner des dates"</string>
+    <string msgid="7617233117134790350" name="m3c_dialog">"Boîte de dialogue"</string>
+    <string msgid="3177828188723359358" name="m3c_dropdown_menu_collapsed">"Réduit"</string>
+    <string msgid="2360841780724299882" name="m3c_dropdown_menu_expanded">"Développé"</string>
+    <string msgid="8687821690726149911" name="m3c_dropdown_menu_toggle">"Activer/désactiver le menu déroulant"</string>
+    <string msgid="6072492480528318635" name="m3c_floating_toolbar_collapse">"Réduire la barre d\'outils"</string>
+    <string msgid="6880757017246780255" name="m3c_floating_toolbar_expand">"Développer la barre d\'outils"</string>
+    <string msgid="6152806324422087846" name="m3c_search_bar_search">"Rechercher"</string>
+    <string msgid="6152755701819882931" name="m3c_snackbar_dismiss">"Fermer"</string>
+    <string msgid="3868801555855510515" name="m3c_snackbar_pane_title">"Alerte"</string>
+    <string msgid="7655536806087401899" name="m3c_suggestions_available">"Suggestions ci-dessous"</string>
+    <string msgid="409352516511718051" name="m3c_time_input_dialog_title">"Saisir l\'heure"</string>
+    <string msgid="2786685010796619560" name="m3c_time_picker_am">"AM"</string>
+    <string msgid="7412665527536641863" name="m3c_time_picker_dialog_title">"Sélectionner l\'heure"</string>
+    <string msgid="2349193472625211372" name="m3c_time_picker_hour">"Heure"</string>
+    <string msgid="9179527532316922345" name="m3c_time_picker_hour_24h_suffix">"%1$d heures"</string>
+    <string msgid="8876759303332837035" name="m3c_time_picker_hour_selection">"Sélectionner une heure"</string>
+    <string msgid="3458167507790628988" name="m3c_time_picker_hour_suffix">"%1$d heures"</string>
+    <string msgid="6973808109666874069" name="m3c_time_picker_hour_text_field">"en heures"</string>
+    <string msgid="4313071914266462005" name="m3c_time_picker_minute">"Minute"</string>
+    <string msgid="4699133535056739733" name="m3c_time_picker_minute_selection">"Sélectionner des minutes"</string>
+    <string msgid="5064177921781937179" name="m3c_time_picker_minute_suffix">"%1$d minutes"</string>
+    <string msgid="7661234488295443182" name="m3c_time_picker_minute_text_field">"en minutes"</string>
+    <string msgid="5865171949528594571" name="m3c_time_picker_period_toggle_description">"Sélectionner le format AM ou PM"</string>
+    <string msgid="6616362054113087709" name="m3c_time_picker_pm">"PM"</string>
+    <string msgid="4145073906612931838" name="m3c_time_picker_toggle_keyboard">"Passer en mode de saisie de texte pour indiquer l\'heure"</string>
+    <string msgid="8841786098195101324" name="m3c_time_picker_toggle_touch">"Passer en mode horloge pour la saisie de l\'heure"</string>
+    <string msgid="1805687647081129904" name="m3c_tooltip_long_press_label">"Afficher l\'info-bulle"</string>
+    <string msgid="5460405025248574620" name="m3c_tooltip_pane_description">"Info-bulle"</string>
+    <string msgid="6564222473543418073" name="m3c_wide_navigation_rail_close_rail">"Fermer le rail"</string>
+    <string msgid="8350283435461615411" name="m3c_wide_navigation_rail_pane_title">"Rail de navigation"</string>
+    <string name="material_clock_toggle_content_description">Sélectionner le format AM ou PM</string>
+    <string name="material_hour_24h_suffix">%1$s heures</string>
+    <string name="material_hour_selection">Sélectionnez une heure</string>
+    <string name="material_hour_suffix">%1$s h</string>
+    <string name="material_minute_selection">Sélectionner des minutes</string>
+    <string name="material_minute_suffix">%1$s min</string>
+    <string name="material_timepicker_am">AM</string>
+    <string name="material_timepicker_clock_mode_description">Passer en mode horloge pour la saisie de l\'heure.</string>
+    <string name="material_timepicker_hour">Heure</string>
+    <string name="material_timepicker_minute">Minute</string>
+    <string name="material_timepicker_pm">PM</string>
+    <string name="material_timepicker_select_time">Sélectionner l\'heure</string>
+    <string name="material_timepicker_text_input_mode_description">Passer en mode saisie de texte pour la saisie de l\'heure.</string>
+    <string msgid="8471891128988107974" name="mc2_snackbar_pane_title">"Alerte"</string>
+    <string name="mtrl_badge_numberless_content_description">Nouvelle notification</string>
+    <string name="mtrl_checkbox_state_description_checked">Cochée</string>
+    <string name="mtrl_checkbox_state_description_indeterminate">Partiellement cochée</string>
+    <string name="mtrl_checkbox_state_description_unchecked">Non cochée</string>
+    <string name="mtrl_chip_close_icon_content_description">Supprimer %1$s</string>
+    <string name="mtrl_exceed_max_badge_number_content_description" ns2:ignore="PluralsCandidate">Plus de %1$d nouvelles notifications</string>
+    <string name="mtrl_picker_a11y_next_month">Passer au mois suivant</string>
+    <string name="mtrl_picker_a11y_prev_month">Passer au mois précédent</string>
+    <string name="mtrl_picker_announce_current_range_selection">Date de début sélectionnée : %1$s – Date de fin sélectionnée : %2$s</string>
+    <string name="mtrl_picker_announce_current_selection">Sélection actuelle : %1$s</string>
+    <string name="mtrl_picker_announce_current_selection_none">aucune</string>
+    <string name="mtrl_picker_cancel">Annuler</string>
+    <string name="mtrl_picker_confirm">OK</string>
+    <string name="mtrl_picker_date_header_selected">%1$s</string>
+    <string name="mtrl_picker_date_header_title">Sélectionnez une date</string>
+    <string name="mtrl_picker_date_header_unselected">Date sélectionnée</string>
+    <string name="mtrl_picker_day_of_week_column_header">%1$s</string>
+    <string name="mtrl_picker_end_date_description">Date de fin : %1$s</string>
+    <string name="mtrl_picker_invalid_format">Format incorrect.</string>
+    <string name="mtrl_picker_invalid_format_example">Exemple : %1$s</string>
+    <string name="mtrl_picker_invalid_format_use">Utiliser %1$s</string>
+    <string name="mtrl_picker_invalid_range">Plage non valide.</string>
+    <string name="mtrl_picker_navigate_to_current_year_description">Accéder à l\'année en cours : %1$d</string>
+    <string name="mtrl_picker_navigate_to_year_description">Accéder à l\'année %1$d</string>
+    <string name="mtrl_picker_out_of_range">Hors limite : %1$s</string>
+    <string name="mtrl_picker_range_header_only_end_selected">Date de début – %1$s</string>
+    <string name="mtrl_picker_range_header_only_start_selected">%1$s – Date de fin</string>
+    <string name="mtrl_picker_range_header_selected">%1$s - %2$s</string>
+    <string name="mtrl_picker_range_header_title">Sélectionnez une période</string>
+    <string name="mtrl_picker_range_header_unselected">Date de début – Date de fin</string>
+    <string name="mtrl_picker_save">Enregistrer</string>
+    <string name="mtrl_picker_start_date_description">Date de début : %1$s</string>
+    <string name="mtrl_picker_text_input_date_hint">Date</string>
+    <string name="mtrl_picker_text_input_date_range_end_hint">Date de fin</string>
+    <string name="mtrl_picker_text_input_date_range_start_hint">Date de début</string>
+    <string name="mtrl_picker_text_input_day_abbr">j</string>
+    <string name="mtrl_picker_text_input_month_abbr">m</string>
+    <string name="mtrl_picker_text_input_year_abbr">a</string>
+    <string name="mtrl_picker_today_description">Aujourd\'hui : %1$s</string>
+    <string name="mtrl_picker_toggle_to_calendar_input_mode">Passer au mode de saisie Agenda</string>
+    <string name="mtrl_picker_toggle_to_day_selection">Appuyer pour passer à la vue \"Agenda\"</string>
+    <string name="mtrl_picker_toggle_to_text_input_mode">Passer au mode de saisie Texte</string>
+    <string name="mtrl_picker_toggle_to_year_selection">Appuyer pour passer à la vue \"Année\"</string>
+    <string name="mtrl_timepicker_cancel">Annuler</string>
+    <string name="mtrl_timepicker_confirm">OK</string>
+    <string msgid="542007171693138492" name="navigation_menu">"Menu de navigation"</string>
+    <string msgid="6610465462668679431" name="not_selected">"Non sélectionné"</string>
+    <string name="password_toggle_content_description">Afficher le mot de passe</string>
+    <string msgid="5941395253238309765" name="range_end">"Fin de plage"</string>
+    <string msgid="7097486360902471446" name="range_start">"Début de plage"</string>
+    <string msgid="6264217191555673260" name="search_menu_title">"Rechercher"</string>
+    <string name="searchview_clear_text_content_description">Effacer le texte</string>
+    <string name="searchview_navigation_content_description">Retour</string>
+    <string msgid="6043586758067023" name="selected">"Sélectionné"</string>
+    <string name="side_sheet_accessibility_pane_title">Feuille latérale</string>
+    <string msgid="2792228137354697160" name="snackbar_pane_title">"Alerte"</string>
+    <string msgid="4139871816613051306" name="state_empty">"Vide"</string>
+    <string msgid="5834637030682409883" name="state_off">"Désactivé"</string>
+    <string msgid="1490883874751719580" name="state_on">"Activé"</string>
+    <string msgid="6277540029070332960" name="status_bar_notification_info_overflow">"999+"</string>
+    <string name="stream_chat_error_notification_group_summary_content_text">"Vous avez reçu de nouveaux messages"</string>
+    <string name="stream_chat_error_notification_group_summary_title">"Messages de discussion"</string>
+    <string name="stream_chat_load_notification_data_title">"Chargement des données de notification"</string>
+    <string name="stream_chat_notification_channel_name">"Nouveaux messages de discussion"</string>
+    <string name="stream_chat_notification_content">"Vous avez reçu un nouveau message"</string>
+    <string name="stream_chat_notification_empty_username">"Utilisateur sans nom"</string>
+    <string name="stream_chat_notification_group_summary_content_text">"Vous avez reçu de nouveaux messages"</string>
+    <string name="stream_chat_notification_read">"Marquer comme lu"</string>
+    <string name="stream_chat_notification_reminder_due_title">"Vous avez demandé un rappel pour ce message"</string>
+    <string name="stream_chat_notification_reply">"Réponse"</string>
+    <string name="stream_chat_notification_title">"Message de discussion"</string>
+    <string name="stream_chat_notification_type_hint">"Tapez votre message"</string>
+    <string name="stream_chat_other_notifications_channel_name">"Autres notifications"</string>
+    <string name="stream_compose_add_answer">"Ajouter un commentaire"</string>
+    <string name="stream_compose_add_answer_placeholder">"Votre commentaire"</string>
+    <string name="stream_compose_add_members_already_member">"Déjà membre"</string>
+    <string name="stream_compose_add_members_no_results">"Aucun utilisateur trouvé"</string>
+    <string name="stream_compose_add_members_title">"Ajouter des membres"</string>
+    <string name="stream_compose_also_sent_to_channel">"Également envoyé dans le canal"</string>
+    <string name="stream_compose_attachment_added_audio">"Enregistrement audio joint"</string>
+    <string name="stream_compose_attachment_added_file">"Fichier joint"</string>
+    <string name="stream_compose_attachment_added_photo">"Photo jointe"</string>
+    <string name="stream_compose_attachment_added_video">"Vidéo jointe"</string>
+    <string name="stream_compose_attachment_camera_picker">"Caméra"</string>
+    <string name="stream_compose_attachment_camera_picker_content">"Prendre une photo et la partager"</string>
+    <string name="stream_compose_attachment_camera_picker_cta">"Ouvrir la caméra"</string>
+    <string name="stream_compose_attachment_commands_picker">"Commandes"</string>
+    <string name="stream_compose_attachment_file_picker">"Fichiers"</string>
+    <string name="stream_compose_attachment_media_picker">"Médias"</string>
+    <string name="stream_compose_attachment_picker">"Sélecteur de pièces jointes"</string>
+    <string name="stream_compose_attachment_picker_photo">"Photo"</string>
+    <string name="stream_compose_attachment_picker_remove">"retirer"</string>
+    <string name="stream_compose_attachment_picker_select">"sélectionner"</string>
+    <string name="stream_compose_attachment_picker_video">"Vidéo"</string>
+    <string name="stream_compose_attachment_poll_picker_content">"Créer un sondage et laisser tout le monde voter"</string>
+    <string name="stream_compose_attachment_poll_picker_cta">"Créer un sondage"</string>
+    <string name="stream_compose_attachment_polls_picker">"Sondages"</string>
+    <string name="stream_compose_attachment_removed">"Pièce jointe supprimée"</string>
+    <string name="stream_compose_audio_playback_pause">"Pause"</string>
+    <string name="stream_compose_audio_recording_confirm">"Confirmer l\'enregistrement"</string>
+    <string name="stream_compose_audio_recording_delete">"Supprimer l\'enregistrement"</string>
+    <string name="stream_compose_audio_recording_hint_save">"Maintenez pour enregistrer. Relâchez pour sauvegarder."</string>
+    <string name="stream_compose_audio_recording_hint_send">"Maintenez pour enregistrer. Relâchez pour envoyer."</string>
+    <string name="stream_compose_audio_recording_label">"Enregistrement audio"</string>
+    <string name="stream_compose_audio_recording_lock">"Verrouiller l\'enregistrement"</string>
+    <string name="stream_compose_audio_recording_locked">"Enregistrement verrouillé"</string>
+    <string name="stream_compose_audio_recording_locked_label">"Enregistrement audio en cours"</string>
+    <string name="stream_compose_audio_recording_pause">"Pause"</string>
+    <string name="stream_compose_audio_recording_play">"Lecture"</string>
+    <string name="stream_compose_audio_recording_preview">"Message vocal"</string>
+    <string name="stream_compose_audio_recording_progress">"Progression de l\'enregistrement audio"</string>
+    <string name="stream_compose_audio_recording_send">"Envoyer l\'enregistrement"</string>
+    <string name="stream_compose_audio_recording_slide_to_cancel">"Glisser pour annuler"</string>
+    <string name="stream_compose_audio_recording_start">"Enregistrer un message audio. Maintenez appuyé pour enregistrer."</string>
+    <string name="stream_compose_audio_recording_state_cancelled">"Enregistrement annulé"</string>
+    <string name="stream_compose_audio_recording_state_started">"Enregistrement démarré. Glissez à gauche pour annuler, vers le haut pour verrouiller."</string>
+    <string name="stream_compose_audio_recording_stop">"Arrêter l\'enregistrement"</string>
+    <string name="stream_compose_avatar_overflow_count">"+%1$d"</string>
+    <string name="stream_compose_block_user">"Bloquer l\'utilisateur"</string>
+    <string name="stream_compose_cancel">"Annuler"</string>
+    <string name="stream_compose_cd_play_button">"Bouton de lecture"</string>
+    <string name="stream_compose_channel_item_muted">"en sourdine"</string>
+    <string name="stream_compose_channel_item_open">"Ouvrir la conversation"</string>
+    <string name="stream_compose_channel_item_options">"Ouvrir les options de conversation"</string>
+    <string name="stream_compose_channel_item_pinned">"épinglé"</string>
+    <string name="stream_compose_channel_list_draft">"Brouillon : "</string>
+    <string name="stream_compose_channel_list_empty_channels">"Aucune conversation pour le moment"</string>
+    <string name="stream_compose_channel_list_empty_search_results">"Aucun résultat pour \"%1$s\""</string>
+    <string name="stream_compose_channel_list_header_new_chat">"Nouvelle discussion"</string>
+    <string name="stream_compose_channel_list_start_chat">"Démarrer une discussion"</string>
+    <string name="stream_compose_channel_list_typing">"Écrit"</string>
+    <string name="stream_compose_channel_list_typing_one">"%s écrit"</string>
+    <string name="stream_compose_channel_list_typing_two">"%1$s et %2$s écrivent"</string>
+    <string name="stream_compose_channel_list_you">"Vous"</string>
+    <string name="stream_compose_confirm">"Confirmer"</string>
+    <string name="stream_compose_copy_message">"Copier le message"</string>
+    <string name="stream_compose_delete_message">"Supprimer le message"</string>
+    <string name="stream_compose_delete_message_text">"Êtes-vous sûr de vouloir supprimer ce message ?"</string>
+    <string name="stream_compose_delete_message_title">"Supprimer le message"</string>
+    <string name="stream_compose_disconnected">"Déconnecté"</string>
+    <string name="stream_compose_dismiss">"Ignorer"</string>
+    <string name="stream_compose_edit_answer">"Mettre à jour votre commentaire"</string>
+    <string name="stream_compose_edit_message">"Modifier le message"</string>
+    <string name="stream_compose_file_preview">"Fichier"</string>
+    <string name="stream_compose_flag_message">"Signaler le message"</string>
+    <string name="stream_compose_flag_message_text">"Voulez-vous envoyer une copie de ce message à un modérateur pour une enquête plus approfondie ?"</string>
+    <string name="stream_compose_flag_message_title">"Signaler le message"</string>
+    <string name="stream_compose_giphy_label">"GIPHY"</string>
+    <string name="stream_compose_giphy_preview">"Giphy"</string>
+    <string name="stream_compose_image_options">"Options de l\'image"</string>
+    <string name="stream_compose_image_order">"%1$d sur %2$d"</string>
+    <string name="stream_compose_image_preview_cancel_sharing">"Annuler le partage"</string>
+    <string name="stream_compose_image_preview_photos">"Photos"</string>
+    <string name="stream_compose_image_preview_share">"Partager"</string>
+    <string name="stream_compose_in">" dans "</string>
+    <string name="stream_compose_link_preview">"Lien"</string>
+    <string name="stream_compose_mark_as_unread">"Marquer comme non lu"</string>
+    <string name="stream_compose_media_gallery_preview_could_not_share_attachment">"Impossible de partager la pièce jointe"</string>
+    <string name="stream_compose_media_gallery_preview_delete">"Supprimer"</string>
+    <string name="stream_compose_media_gallery_preview_preparing">"Préparation..."</string>
+    <string name="stream_compose_media_gallery_preview_reply">"Répondre"</string>
+    <string name="stream_compose_media_gallery_preview_save_image">"Enregistrer le média"</string>
+    <string name="stream_compose_media_gallery_preview_show_in_chat">"Afficher dans le chat"</string>
+    <string name="stream_compose_media_gallery_share_large_file_prompt_message">"%.2f Mo doivent être téléchargés avant le partage."</string>
+    <string name="stream_compose_media_gallery_share_large_file_prompt_title">"Fichier volumineux"</string>
+    <string name="stream_compose_member_count_online">"%1$s, %2$d en ligne"</string>
+    <string name="stream_compose_message_attachment_open">"Ouvrir la pièce jointe"</string>
+    <string name="stream_compose_message_composer_attachments">"Pièces jointes"</string>
+    <string name="stream_compose_message_composer_attachments_close">"Fermer les pièces jointes"</string>
+    <string name="stream_compose_message_composer_attachments_collapsed">"réduit"</string>
+    <string name="stream_compose_message_composer_attachments_expanded">"développé"</string>
+    <string name="stream_compose_message_composer_attachments_open">"Ouvrir les pièces jointes"</string>
+    <string name="stream_compose_message_composer_cancel_command_to_edit">"Annulez la commande pour modifier"</string>
+    <string name="stream_compose_message_composer_cancel_command_to_reply">"Annulez la commande pour répondre"</string>
+    <string name="stream_compose_message_composer_cancel_editing">"Annuler la modification"</string>
+    <string name="stream_compose_message_composer_cancel_reply">"Annuler la réponse"</string>
+    <string name="stream_compose_message_composer_command_template">"/%1$s %2$s"</string>
+    <string name="stream_compose_message_composer_command_unavailable_in_edit">"Indisponible lors de la modification"</string>
+    <string name="stream_compose_message_composer_command_unavailable_in_reply">"Indisponible lors d\'une réponse"</string>
+    <string name="stream_compose_message_composer_commands_unavailable_in_edit">"Les commandes sont indisponibles lors de la modification"</string>
+    <string name="stream_compose_message_composer_error_attachment_count">"Le nombre de pièces jointes (%1$d) est dépassé."</string>
+    <string name="stream_compose_message_composer_error_file_size">"Le fichier est trop volumineux - %1$s maximum."</string>
+    <string name="stream_compose_message_composer_error_message_length">"Longueur maximale du message (%1$d) dépassée."</string>
+    <string name="stream_compose_message_composer_error_sending_links_not_allowed">"L\'envoi de liens n\'est pas autorisé dans cette conversation."</string>
+    <string name="stream_compose_message_composer_file_not_supported">"Type de fichier non pris en charge"</string>
+    <string name="stream_compose_message_composer_instant_commands">"Commandes instantanées"</string>
+    <string name="stream_compose_message_composer_save_action">"Enregistrer les modifications"</string>
+    <string name="stream_compose_message_composer_save_button">"Enregistrer"</string>
+    <string name="stream_compose_message_composer_send_action">"Envoyer le message"</string>
+    <string name="stream_compose_message_composer_send_button">"Envoyer"</string>
+    <string name="stream_compose_message_composer_show_in_channel">"Envoyer aussi dans le canal"</string>
+    <string name="stream_compose_message_composer_unsupported_attachment">"Pièce jointe non prise en charge"</string>
+    <string name="stream_compose_message_deleted">"Message supprimé"</string>
+    <string name="stream_compose_message_deleted_preview">"Message supprimé"</string>
+    <string name="stream_compose_message_item_open_thread">"Ouvrir le fil"</string>
+    <string name="stream_compose_message_item_options">"Afficher les options du message"</string>
+    <string name="stream_compose_message_list_auto_translated">"Traduit"</string>
+    <string name="stream_compose_message_list_empty_messages">"Aucun message"</string>
+    <string name="stream_compose_message_list_error_cannot_open_link">"Aucune application pour ouvrir cette URL :\n%s"</string>
+    <string name="stream_compose_message_list_footnote_edited">"Modifié"</string>
+    <string name="stream_compose_message_list_giphy_cancel">"Annuler"</string>
+    <string name="stream_compose_message_list_giphy_send">"Envoyer"</string>
+    <string name="stream_compose_message_list_giphy_shuffle">"Mélanger"</string>
+    <string name="stream_compose_message_list_remind_me">"Me rappeler"</string>
+    <string name="stream_compose_message_list_saved_for_later">"Enregistré pour plus tard"</string>
+    <string name="stream_compose_message_list_show_translation">"Afficher la traduction"</string>
+    <string name="stream_compose_message_list_thread_footnote_thread_replies">"%d réponses"</string>
+    <string name="stream_compose_message_list_thread_footnote_thread_reply">"%d réponse"</string>
+    <string name="stream_compose_message_list_unsupported_attachment">"Pièce jointe non prise en charge"</string>
+    <string name="stream_compose_message_list_view">"Voir"</string>
+    <string name="stream_compose_message_list_view_original">"Voir l\'original"</string>
+    <string name="stream_compose_message_list_you">"Vous"</string>
+    <string name="stream_compose_message_moderated">"Le message a été bloqué par les règles de modération"</string>
+    <string name="stream_compose_message_preview_sender">"&lt;b>%1$s&lt;/b> dans &lt;b>%2$s&lt;/b>"</string>
+    <string name="stream_compose_message_reactions_show">"Afficher les réactions"</string>
+    <string name="stream_compose_mute_user">"Mettre en sourdine l\'utilisateur"</string>
+    <string name="stream_compose_no_messages_yet">"Aucun message pour le moment"</string>
+    <string name="stream_compose_ok">"OK"</string>
+    <string name="stream_compose_only_visible_to_you">"Visible uniquement par vous"</string>
+    <string name="stream_compose_photo_preview">"Photo"</string>
+    <string name="stream_compose_pin_message">"Épingler à ce chat"</string>
+    <string name="stream_compose_pinned_message_list_empty_description">"Maintenez un message pour l\'épingler au chat"</string>
+    <string name="stream_compose_pinned_message_list_empty_title">"Aucun message épinglé"</string>
+    <string name="stream_compose_pinned_message_list_results_error">"Une erreur est survenue"</string>
+    <string name="stream_compose_pinned_to_channel">"Épinglé"</string>
+    <string name="stream_compose_pinned_to_channel_by">"Épinglé par %1$s"</string>
+    <string name="stream_compose_poll_answers">"Commentaires du sondage"</string>
+    <string name="stream_compose_poll_closed_preview">"Sondage terminé : %s"</string>
+    <string name="stream_compose_poll_create_action">"créer un sondage"</string>
+    <string name="stream_compose_poll_created_preview">"Sondage créé : %s"</string>
+    <string name="stream_compose_poll_end_confirmation_action">"Terminer le sondage"</string>
+    <string name="stream_compose_poll_end_confirmation_message">"Voulez-vous terminer ce sondage maintenant ? Plus personne ne pourra voter dans ce sondage."</string>
+    <string name="stream_compose_poll_end_confirmation_title">"Terminer ce sondage ?"</string>
+    <string name="stream_compose_poll_end_vote">"Terminer le sondage"</string>
+    <string name="stream_compose_poll_ended_failure">"Impossible de clôturer le sondage"</string>
+    <string name="stream_compose_poll_ended_success">"Sondage terminé"</string>
+    <string name="stream_compose_poll_option_description">"Ajouter une option"</string>
+    <string name="stream_compose_poll_option_discard_dialog_cancel">"Continuer l\'édition"</string>
+    <string name="stream_compose_poll_option_discard_dialog_confirm">"Abandonner"</string>
+    <string name="stream_compose_poll_option_discard_dialog_description">"Êtes-vous sûr de vouloir abandonner votre sondage ?"</string>
+    <string name="stream_compose_poll_option_discard_dialog_title">"Abandonner le sondage"</string>
+    <string name="stream_compose_poll_option_error_duplicated">"L\'option existe déjà"</string>
+    <string name="stream_compose_poll_option_hint">"Ajouter une option"</string>
+    <string name="stream_compose_poll_option_label">"Option %d"</string>
+    <string name="stream_compose_poll_option_limit_votes">"Limiter les votes par personne"</string>
+    <string name="stream_compose_poll_option_limit_votes_decrease">"Diminuer les votes par personne"</string>
+    <string name="stream_compose_poll_option_limit_votes_description">"Choisir entre 2\u201310 options"</string>
+    <string name="stream_compose_poll_option_limit_votes_increase">"Augmenter les votes par personne"</string>
+    <string name="stream_compose_poll_option_limit_votes_input">"Votes par personne"</string>
+    <string name="stream_compose_poll_option_move_down">"Déplacer vers le bas"</string>
+    <string name="stream_compose_poll_option_move_up">"Déplacer vers le haut"</string>
+    <string name="stream_compose_poll_option_remove">"Supprimer l\'option %s"</string>
+    <string name="stream_compose_poll_option_reorder">"Réorganiser l\'option %s"</string>
+    <string name="stream_compose_poll_option_results_error">"Une erreur est survenue lors du chargement des résultats de l\'option du sondage. Veuillez réessayer plus tard."</string>
+    <string name="stream_compose_poll_option_switch_add_comment">"Ajouter un commentaire"</string>
+    <string name="stream_compose_poll_option_switch_add_comment_description">"Permettre aux autres d\'ajouter des commentaires"</string>
+    <string name="stream_compose_poll_option_switch_anonymous_poll">"Sondage anonyme"</string>
+    <string name="stream_compose_poll_option_switch_anonymous_poll_description">"Masquer qui a voté"</string>
+    <string name="stream_compose_poll_option_switch_multiple_answers">"Votes multiples"</string>
+    <string name="stream_compose_poll_option_switch_multiple_answers_description">"Sélectionner plus d\'une option"</string>
+    <string name="stream_compose_poll_option_switch_suggest_option">"Suggérer une option"</string>
+    <string name="stream_compose_poll_option_switch_suggest_option_description">"Permettre aux autres d\'ajouter des options"</string>
+    <string name="stream_compose_poll_option_title">"Options"</string>
+    <string name="stream_compose_poll_options">"Options du sondage"</string>
+    <string name="stream_compose_poll_question_label">"Question"</string>
+    <string name="stream_compose_poll_questions_description">"Poser une question"</string>
+    <string name="stream_compose_poll_questions_title">"Question"</string>
+    <string name="stream_compose_poll_results">"Résultats du sondage"</string>
+    <string name="stream_compose_poll_suggest_option">"Suggérer une option"</string>
+    <string name="stream_compose_poll_title">"Créer un sondage"</string>
+    <string name="stream_compose_poll_view_more">"Tout voir"</string>
+    <string name="stream_compose_poll_view_result">"Voir les résultats"</string>
+    <string name="stream_compose_poll_winner_badge">"Gagnant"</string>
+    <string name="stream_compose_quoted_message_audio_recording">"Message vocal (%s)"</string>
+    <string name="stream_compose_quoted_message_giphy_tag">"Giphy"</string>
+    <string name="stream_compose_quoted_message_media">"%d média"</string>
+    <string name="stream_compose_quoted_message_reply_to">"Répondre à %s"</string>
+    <string name="stream_compose_quoted_message_reply_to_you">"Répondre à vous-même"</string>
+    <string name="stream_compose_quoted_message_you">"Vous"</string>
+    <string name="stream_compose_reactions_add">"Ajouter une réaction"</string>
+    <string name="stream_compose_reactions_remove">"Appuyez pour supprimer"</string>
+    <string name="stream_compose_reactions_you">"Vous"</string>
+    <string name="stream_compose_recent_files">"Fichiers récents"</string>
+    <string name="stream_compose_remaining_media_attachments_count">"+%1$d"</string>
+    <string name="stream_compose_remove_attachment_file">"Supprimer le fichier"</string>
+    <string name="stream_compose_remove_attachment_file_named">"Supprimer le fichier %1$s"</string>
+    <string name="stream_compose_remove_attachment_photo">"Supprimer la photo"</string>
+    <string name="stream_compose_remove_attachment_photo_named">"Supprimer la photo %1$s"</string>
+    <string name="stream_compose_remove_attachment_video">"Supprimer la vidéo"</string>
+    <string name="stream_compose_remove_attachment_video_named">"Supprimer la vidéo %1$s"</string>
+    <string name="stream_compose_remove_attachment_voice_message">"Supprimer le message vocal"</string>
+    <string name="stream_compose_replied_to_thread">"A répondu dans un fil"</string>
+    <string name="stream_compose_reply">"Répondre"</string>
+    <string name="stream_compose_resend_message">"Renvoyer"</string>
+    <string name="stream_compose_scroll_to_bottom">"Aller en bas"</string>
+    <string name="stream_compose_search_input_cancel">"Annuler"</string>
+    <string name="stream_compose_search_input_hint">"Rechercher"</string>
+    <string name="stream_compose_selected_channel_menu_archive_chat">"Archiver le chat"</string>
+    <string name="stream_compose_selected_channel_menu_archive_group">"Archiver le groupe"</string>
+    <string name="stream_compose_selected_channel_menu_block_user">"Bloquer l\'utilisateur"</string>
+    <string name="stream_compose_selected_channel_menu_delete_chat">"Supprimer le chat"</string>
+    <string name="stream_compose_selected_channel_menu_delete_chat_confirmation_message">"Voulez-vous supprimer le chat avec %1$s ?"</string>
+    <string name="stream_compose_selected_channel_menu_delete_chat_confirmation_title">"Supprimer le chat"</string>
+    <string name="stream_compose_selected_channel_menu_delete_group">"Supprimer le groupe"</string>
+    <string name="stream_compose_selected_channel_menu_delete_group_confirmation_message">"Voulez-vous supprimer le groupe %1$s ?"</string>
+    <string name="stream_compose_selected_channel_menu_delete_group_confirmation_title">"Supprimer le groupe"</string>
+    <string name="stream_compose_selected_channel_menu_leave_group">"Quitter le groupe"</string>
+    <string name="stream_compose_selected_channel_menu_leave_group_confirmation_message">"Voulez-vous quitter le groupe %1$s ?"</string>
+    <string name="stream_compose_selected_channel_menu_leave_group_confirmation_title">"Quitter le groupe"</string>
+    <string name="stream_compose_selected_channel_menu_mute_user">"Mettre en sourdine l\'utilisateur"</string>
+    <string name="stream_compose_selected_channel_menu_pin_chat">"Épingler le chat"</string>
+    <string name="stream_compose_selected_channel_menu_pin_group">"Épingler le groupe"</string>
+    <string name="stream_compose_selected_channel_menu_unarchive_chat">"Désarchiver le chat"</string>
+    <string name="stream_compose_selected_channel_menu_unarchive_group">"Désarchiver le groupe"</string>
+    <string name="stream_compose_selected_channel_menu_unblock_user">"Débloquer l\'utilisateur"</string>
+    <string name="stream_compose_selected_channel_menu_unmute_user">"Réactiver les notifications de l\'utilisateur"</string>
+    <string name="stream_compose_selected_channel_menu_unpin_chat">"Détacher le chat"</string>
+    <string name="stream_compose_selected_channel_menu_unpin_group">"Détacher le groupe"</string>
+    <string name="stream_compose_selected_channel_menu_view_info">"Voir les informations"</string>
+    <string name="stream_compose_show_more_reactions">"Afficher plus de réactions"</string>
+    <string name="stream_compose_suggest_an_option">"Suggérer une option"</string>
+    <string name="stream_compose_swipe_action_more">"Plus"</string>
+    <string name="stream_compose_swipe_action_mute">"Sourdine"</string>
+    <string name="stream_compose_swipe_action_unmute">"Réactiver"</string>
+    <string name="stream_compose_thread_list_banner_error">"Impossible de charger les nouveaux fils. Appuyez pour réessayer"</string>
+    <string name="stream_compose_thread_list_banner_loading">"Chargement…"</string>
+    <string name="stream_compose_thread_list_empty_title">"Répondez à un message pour démarrer un fil"</string>
+    <string name="stream_compose_thread_reply">"Répondre dans le fil"</string>
+    <string name="stream_compose_thread_subtitle">"avec %1$s"</string>
+    <string name="stream_compose_thread_title">"Réponse dans le fil"</string>
+    <string name="stream_compose_unblock_user">"Débloquer l\'utilisateur"</string>
+    <string name="stream_compose_unmute_user">"Réactiver les notifications de l\'utilisateur"</string>
+    <string name="stream_compose_unpin_message">"Détacher de ce chat"</string>
+    <string name="stream_compose_user_status_last_seen">"Vu pour la dernière fois %1$s"</string>
+    <string name="stream_compose_user_status_last_seen_just_now">"Vu à l\'instant"</string>
+    <string name="stream_compose_user_status_online">"En ligne"</string>
+    <string name="stream_compose_video_preview">"Vidéo"</string>
+    <string name="stream_compose_waiting_for_network">"En attente de réseau"</string>
+    <string name="stream_ui_attachment_picker_error_unresolvable_attachments">"Certains fichiers n\'ont pas pu être chargés et ont été ignorés."</string>
+    <string name="stream_ui_back_button">"Retour"</string>
+    <string name="stream_ui_channel_attachments_files_empty_text">"Partagez un fichier pour le voir ici"</string>
+    <string name="stream_ui_channel_attachments_files_empty_title">"Aucun fichier"</string>
+    <string name="stream_ui_channel_attachments_files_load_error">"Échec du chargement des fichiers joints !"</string>
+    <string name="stream_ui_channel_attachments_files_title">"Fichiers"</string>
+    <string name="stream_ui_channel_attachments_media_empty_text">"Partagez une photo ou une vidéo pour la voir ici"</string>
+    <string name="stream_ui_channel_attachments_media_empty_title">"Aucune photo ni vidéo"</string>
+    <string name="stream_ui_channel_attachments_media_item_photo">"Photo"</string>
+    <string name="stream_ui_channel_attachments_media_item_photo_from_user">"Photo de %1$s"</string>
+    <string name="stream_ui_channel_attachments_media_item_video">"Vidéo"</string>
+    <string name="stream_ui_channel_attachments_media_item_video_from_user">"Vidéo de %1$s"</string>
+    <string name="stream_ui_channel_attachments_media_load_error">"Échec du chargement des fichiers multimédias !"</string>
+    <string name="stream_ui_channel_attachments_media_title">"Photos et Vidéos"</string>
+    <string name="stream_ui_channel_info_add_members_error">"Échec de l\'ajout des membres"</string>
+    <string name="stream_ui_channel_info_ban_member_error">"Échec du bannissement du membre"</string>
+    <string name="stream_ui_channel_info_ban_member_modal_no_timeout">"Définitivement"</string>
+    <string name="stream_ui_channel_info_ban_member_modal_timeout_one_day">"Un jour"</string>
+    <string name="stream_ui_channel_info_ban_member_modal_timeout_one_hour">"Une heure"</string>
+    <string name="stream_ui_channel_info_ban_member_modal_timeout_one_week">"Une semaine"</string>
+    <string name="stream_ui_channel_info_ban_member_modal_title">"Bannir %s pour :"</string>
+    <string name="stream_ui_channel_info_block_user_error">"Échec du changement de l\'état de blocage de l\'utilisateur"</string>
+    <string name="stream_ui_channel_info_contact_title">"Informations de contact"</string>
+    <string name="stream_ui_channel_info_delete_conversation_error">"Échec de la suppression de la conversation"</string>
+    <string name="stream_ui_channel_info_delete_conversation_modal_message">"Êtes-vous sûr de vouloir supprimer cette conversation ?"</string>
+    <string name="stream_ui_channel_info_delete_group_error">"Échec de la suppression du groupe"</string>
+    <string name="stream_ui_channel_info_delete_group_modal_message">"Êtes-vous sûr de vouloir supprimer ce groupe ?"</string>
+    <string name="stream_ui_channel_info_edit_action">"Modifier"</string>
+    <string name="stream_ui_channel_info_edit_choose_from_library">"Choisir une image"</string>
+    <string name="stream_ui_channel_info_edit_group_picture">"Modifier la photo du groupe"</string>
+    <string name="stream_ui_channel_info_edit_name_field_placeholder">"Ajouter un nom de groupe"</string>
+    <string name="stream_ui_channel_info_edit_remove_picture">"Réinitialiser la photo"</string>
+    <string name="stream_ui_channel_info_edit_save_action">"Enregistrer les modifications"</string>
+    <string name="stream_ui_channel_info_edit_save_error">"Échec de l\'enregistrement des modifications"</string>
+    <string name="stream_ui_channel_info_edit_take_photo">"Prendre une photo"</string>
+    <string name="stream_ui_channel_info_edit_title">"Modifier"</string>
+    <string name="stream_ui_channel_info_edit_upload_picture">"Télécharger"</string>
+    <string name="stream_ui_channel_info_expand_button">"%d de plus"</string>
+    <string name="stream_ui_channel_info_group_title">"Informations du groupe"</string>
+    <string name="stream_ui_channel_info_leave_conversation_error">"Échec pour quitter la conversation"</string>
+    <string name="stream_ui_channel_info_leave_conversation_modal_message">"Êtes-vous sûr de vouloir quitter cette conversation ?"</string>
+    <string name="stream_ui_channel_info_leave_group_error">"Échec pour quitter le groupe"</string>
+    <string name="stream_ui_channel_info_leave_group_modal_message">"Êtes-vous sûr de vouloir quitter ce groupe ?"</string>
+    <string name="stream_ui_channel_info_member_add_button">"Ajouter"</string>
+    <string name="stream_ui_channel_info_member_count_online">"%1$d membres · %2$d en ligne"</string>
+    <string name="stream_ui_channel_info_member_modal_ban_expired">"Le bannissement a déjà expiré"</string>
+    <string name="stream_ui_channel_info_member_modal_ban_expires_at">"Le bannissement expire %s"</string>
+    <string name="stream_ui_channel_info_member_modal_ban_no_expiration">"Le bannissement n\'a pas de date d\'expiration"</string>
+    <string name="stream_ui_channel_info_member_modal_option_ban_member">"Bannir l\'utilisateur"</string>
+    <string name="stream_ui_channel_info_member_modal_option_block_user">"Bloquer l\'utilisateur"</string>
+    <string name="stream_ui_channel_info_member_modal_option_message_member">"Envoyer un message direct"</string>
+    <string name="stream_ui_channel_info_member_modal_option_mute_user">"Mettre en sourdine"</string>
+    <string name="stream_ui_channel_info_member_modal_option_remove_member">"Retirer du groupe"</string>
+    <string name="stream_ui_channel_info_member_modal_option_unban_member">"Lever le bannissement"</string>
+    <string name="stream_ui_channel_info_member_modal_option_unblock_user">"Débloquer l\'utilisateur"</string>
+    <string name="stream_ui_channel_info_member_modal_option_unmute_user">"Réactiver les notifications"</string>
+    <string name="stream_ui_channel_info_member_moderator">"Modérateur"</string>
+    <string name="stream_ui_channel_info_member_owner">"Propriétaire"</string>
+    <string name="stream_ui_channel_info_mute_conversation_error">"Échec du changement de l\'état de sourdine de la conversation"</string>
+    <string name="stream_ui_channel_info_mute_group_error">"Échec du changement de l\'état de sourdine du groupe"</string>
+    <string name="stream_ui_channel_info_mute_user_error">"Échec du changement de l\'état de sourdine de l\'utilisateur"</string>
+    <string name="stream_ui_channel_info_name_field_label">"NOM"</string>
+    <string name="stream_ui_channel_info_name_field_placeholder">"Ajouter un nom de groupe"</string>
+    <string name="stream_ui_channel_info_option_block_user">"Bloquer l\'utilisateur"</string>
+    <string name="stream_ui_channel_info_option_delete_conversation">"Supprimer la conversation"</string>
+    <string name="stream_ui_channel_info_option_delete_group">"Supprimer le groupe"</string>
+    <string name="stream_ui_channel_info_option_files_attachments">"Fichiers"</string>
+    <string name="stream_ui_channel_info_option_leave_conversation">"Quitter la conversation"</string>
+    <string name="stream_ui_channel_info_option_leave_group">"Quitter le groupe"</string>
+    <string name="stream_ui_channel_info_option_media_attachments">"Photos et Vidéos"</string>
+    <string name="stream_ui_channel_info_option_mute_conversation">"Mettre la discussion en sourdine"</string>
+    <string name="stream_ui_channel_info_option_mute_group">"Mettre le groupe en sourdine"</string>
+    <string name="stream_ui_channel_info_option_mute_user">"Mettre l\'utilisateur en sourdine"</string>
+    <string name="stream_ui_channel_info_option_pinned_messages">"Messages épinglés"</string>
+    <string name="stream_ui_channel_info_option_unblock_user">"Débloquer l\'utilisateur"</string>
+    <string name="stream_ui_channel_info_remove_member_error">"Échec de la suppression du membre"</string>
+    <string name="stream_ui_channel_info_remove_member_modal_message">"Êtes-vous sûr de vouloir retirer\n%s?"</string>
+    <string name="stream_ui_channel_info_rename_group_error">"Échec du renommage du groupe"</string>
+    <string name="stream_ui_channel_info_unban_member_error">"Échec de la levée du bannissement du membre"</string>
+    <string name="stream_ui_channel_info_view_all">"Voir tout"</string>
+    <string name="stream_ui_channel_list_untitled_channel">"Canal sans nom"</string>
+    <string name="stream_ui_channel_list_untitled_channel_plus_more">"%1$s +%2$d de plus"</string>
+    <string name="stream_ui_location_live_message_text">"Position en direct"</string>
+    <string name="stream_ui_location_static_message_text">"Position"</string>
+    <string name="stream_ui_mention_list_empty">"Aucune mention pour le moment…"</string>
+    <string name="stream_ui_mention_list_error">"Une erreur est survenue"</string>
+    <string name="stream_ui_message_composer_attachment_picker_capture">"Capturer"</string>
+    <string name="stream_ui_message_composer_attachment_picker_files">"Fichiers"</string>
+    <string name="stream_ui_message_composer_attachment_picker_media">"Multimédia"</string>
+    <string name="stream_ui_message_composer_attachment_picker_poll">"Sondage"</string>
+    <string name="stream_ui_message_composer_capture_media">"Prendre une photo ou une vidéo"</string>
+    <string name="stream_ui_message_composer_capture_media_take_photo">"Prendre une photo"</string>
+    <string name="stream_ui_message_composer_capture_media_video">"Capturer une vidéo"</string>
+    <string name="stream_ui_message_composer_grant_permission_button">"Autoriser"</string>
+    <string name="stream_ui_message_composer_permission_audio_record_message">"L\'autorisation d\'enregistrement audio est nécessaire pour pouvoir enregistrer et envoyer des fichiers audio"</string>
+    <string name="stream_ui_message_composer_permission_audio_record_title">"Autorisations d\'enregistrement audio"</string>
+    <string name="stream_ui_message_composer_permission_camera_message">"L\'autorisation d\'accès à la caméra est nécessaire pour pouvoir prendre des photos et des vidéos"</string>
+    <string name="stream_ui_message_composer_permission_camera_title">"Autorisation d\'accès à la caméra"</string>
+    <string name="stream_ui_message_composer_permission_setting_message">"Activez les autorisations dans les paramètres de l\'application"</string>
+    <string name="stream_ui_message_composer_permission_storage_message">"L\'autorisation d\'accès au stockage est nécessaire pour pouvoir envoyer et sauvegarder des fichiers"</string>
+    <string name="stream_ui_message_composer_permission_storage_title">"Autorisation d\'accès au stockage"</string>
+    <string name="stream_ui_message_composer_permissions_files_allow_audio_access">"Autoriser l\'accès aux fichiers audio"</string>
+    <string name="stream_ui_message_composer_permissions_files_allow_more_visual_media">"Autoriser l\'accès à plus de médias visuels"</string>
+    <string name="stream_ui_message_composer_permissions_files_allow_visual_media_access">"Autoriser l\'accès aux médias visuels"</string>
+    <string name="stream_ui_message_composer_permissions_setting_button">"Paramètres"</string>
+    <string name="stream_ui_message_composer_permissions_visual_media_add_more">"Ajouter plus"</string>
+    <string name="stream_ui_message_composer_placeholder_cannot_send_messages">"Vous ne pouvez pas envoyer de messages dans ce canal"</string>
+    <string name="stream_ui_message_composer_placeholder_command_ban">"\@username"</string>
+    <string name="stream_ui_message_composer_placeholder_command_giphy">"Rechercher des GIFs"</string>
+    <string name="stream_ui_message_composer_placeholder_command_mute">"\@username"</string>
+    <string name="stream_ui_message_composer_placeholder_command_unban">"\@username"</string>
+    <string name="stream_ui_message_composer_placeholder_command_unmute">"\@username"</string>
+    <string name="stream_ui_message_composer_placeholder_default">"Envoyer un message"</string>
+    <string name="stream_ui_message_input_permission_notifications_message">"Notifications bloquées"</string>
+    <string name="stream_ui_message_list_attachment_display_error">"Erreur. Le fichier ne peut pas être affiché"</string>
+    <string name="stream_ui_message_list_attachment_download_failed">"Échec du téléchargement du fichier : %s"</string>
+    <string name="stream_ui_message_list_attachment_downloading">"Téléchargement… %1$s / %2$s"</string>
+    <string name="stream_ui_message_list_attachment_invalid_mime_type">"Un problème est survenu. Impossible d\'ouvrir la pièce jointe : %s"</string>
+    <string name="stream_ui_message_list_attachment_invalid_url">"Le chargement a échoué en raison d\'une URL non valide."</string>
+    <string name="stream_ui_message_list_attachment_load_failed">"Le chargement a échoué en raison d\'une erreur inconnue."</string>
+    <string name="stream_ui_message_list_attachment_no_app">"Aucune application disponible pour ouvrir ce fichier"</string>
+    <string name="stream_ui_message_list_attachment_opening">"Ouverture…"</string>
+    <string name="stream_ui_message_list_error_cannot_open_link">"Aucune application pour afficher cette URL :\n%s"</string>
+    <string name="stream_ui_message_list_footnote_edited_now">"à l\'instant"</string>
+    <string name="stream_ui_message_list_message_deleted">"Ce message a été supprimé."</string>
+    <string name="stream_ui_message_list_semantics_message_attachment_image">"Image jointe"</string>
+    <string name="stream_ui_message_list_semantics_message_attachment_video">"Vidéo jointe"</string>
+    <string name="stream_ui_message_list_semantics_message_attachments">"%d pièces jointes"</string>
+    <string name="stream_ui_message_list_semantics_message_status_delivered">"Message distribué"</string>
+    <string name="stream_ui_message_list_semantics_message_status_failed">"Échec de l\'envoi du message"</string>
+    <string name="stream_ui_message_list_semantics_message_status_pending">"Message en attente"</string>
+    <string name="stream_ui_message_list_semantics_message_status_read">"Message lu"</string>
+    <string name="stream_ui_message_list_semantics_message_status_read_by">"Message lu par %d membres"</string>
+    <string name="stream_ui_message_list_semantics_message_status_sent">"Message envoyé"</string>
+    <string name="stream_ui_message_list_video_display_error">"Erreur. La vidéo ne peut pas être affichée"</string>
+    <string name="stream_ui_moderation_dialog_delete">"Supprimer le message"</string>
+    <string name="stream_ui_moderation_dialog_description">"Ce message pourrait enfreindre notre politique de modération. Êtes-vous sûr de vouloir l\'envoyer ? Veuillez consulter nos règles de la communauté."</string>
+    <string name="stream_ui_moderation_dialog_edit">"Modifier le message"</string>
+    <string name="stream_ui_moderation_dialog_send">"Envoyer quand même"</string>
+    <string name="stream_ui_moderation_dialog_title">"Échec de l\'envoi du message"</string>
+    <string name="stream_ui_poll_action_see_all">"Voir les %d options"</string>
+    <string name="stream_ui_poll_description_closed">"Vote terminé"</string>
+    <string name="stream_ui_poll_description_multiple_answers">"Sélectionnez jusqu\'à %d"</string>
+    <string name="stream_ui_poll_description_single_answer">"Sélectionnez-en un"</string>
+    <string name="stream_ui_poll_description_unlimited_answers">"Sélectionnez-en un ou plusieurs"</string>
+    <string name="stream_ui_poll_multiple_answers_error">"Saisissez un nombre de %1$s à %2$s"</string>
+    <string name="stream_ui_yesterday">"Hier"</string>
+    <string msgid="2561197295334830845" name="switch_role">"Changer"</string>
+    <string msgid="1672349317127674378" name="tab">"Onglet"</string>
+    <string msgid="5946805113151406391" name="template_percent">"<ns1:g id="PERCENTAGE">%1$d</ns1:g> pour cent."</string>
+    <string msgid="3765533235322692011" name="tooltip_description">"Info-bulle"</string>
+    <string msgid="3124740595719787496" name="tooltip_label">"Afficher l\'info-bulle"</string>
+</resources>

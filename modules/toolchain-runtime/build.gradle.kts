@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.xc.code.toolchain.runtime"
+    namespace = "com.jmwl.gostudio.toolchain.runtime"
     compileSdk = 36
 
     defaultConfig {

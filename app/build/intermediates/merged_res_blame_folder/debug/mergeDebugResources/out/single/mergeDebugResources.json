@@ -1,0 +1,42 @@
+[
+    {
+        "merged": "com.jmwl.gostudio.app-debug-73:/font_jetbrains_mono_regular.ttf.flat",
+        "source": "com.jmwl.gostudio.app-main-75:/font/jetbrains_mono_regular.ttf"
+    },
+    {
+        "merged": "com.jmwl.gostudio.app-debug-73:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "com.jmwl.gostudio.app-main-75:/mipmap-anydpi-v26/ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.jmwl.gostudio.app-debug-73:/xml_backup_rules.xml.flat",
+        "source": "com.jmwl.gostudio.app-main-75:/xml/backup_rules.xml"
+    },
+    {
+        "merged": "com.jmwl.gostudio.app-debug-73:/xml_data_extraction_rules.xml.flat",
+        "source": "com.jmwl.gostudio.app-main-75:/xml/data_extraction_rules.xml"
+    },
+    {
+        "merged": "com.jmwl.gostudio.app-debug-73:/font_roboto_regular.ttf.flat",
+        "source": "com.jmwl.gostudio.app-main-75:/font/roboto_regular.ttf"
+    },
+    {
+        "merged": "com.jmwl.gostudio.app-debug-73:/drawable_ic_gostudio_logo.xml.flat",
+        "source": "com.jmwl.gostudio.app-main-75:/drawable/ic_gostudio_logo.xml"
+    },
+    {
+        "merged": "com.jmwl.gostudio.app-debug-73:/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "com.jmwl.gostudio.app-main-75:/mipmap-anydpi-v26/ic_launcher.xml"
+    },
+    {
+        "merged": "com.jmwl.gostudio.app-debug-73:/drawable_ic_launcher_background.xml.flat",
+        "source": "com.jmwl.gostudio.app-main-75:/drawable/ic_launcher_background.xml"
+    },
+    {
+        "merged": "com.jmwl.gostudio.app-debug-73:/drawable-v24_ic_launcher_foreground.xml.flat",
+        "source": "com.jmwl.gostudio.app-main-75:/drawable-v24/ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "com.jmwl.gostudio.app-debug-73:/drawable_ic_launcher_monochrome.xml.flat",
+        "source": "com.jmwl.gostudio.app-main-75:/drawable/ic_launcher_monochrome.xml"
+    }
+]

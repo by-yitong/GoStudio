@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.xc.code.editor.core"
+    namespace = "com.jmwl.gostudio.editor.core"
     compileSdk = 36
 
     defaultConfig {

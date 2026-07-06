@@ -1,0 +1,19 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.jmwl.gostudio.app-mergeDebugResources-71:/values-zh/values-zh.xml",
+            "map": [
+                {
+                    "source": "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-editor/build/intermediates/packaged_res/debug/packageDebugResources/values-zh/values-zh.xml",
+                    "from": {
+                        "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "55,132,203,268,336,406,454,510,558,606,657,713,770",
+                        "endColumns": "76,70,64,67,69,47,55,47,47,50,55,56,60",
+                        "endOffsets": "127,198,263,331,401,449,505,553,601,652,708,765,826"
+                    }
+                }
+            ]
+        }
+    ]
+}

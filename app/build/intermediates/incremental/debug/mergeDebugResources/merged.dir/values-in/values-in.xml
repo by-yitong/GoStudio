@@ -1,0 +1,758 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:ns1="urn:oasis:names:tc:xliff:document:1.2" xmlns:ns2="http://schemas.android.com/tools">
+    <string-array name="exo_controls_playback_speeds">
+    <item>0,25x</item>
+    <item>0,5x</item>
+    <item>0,75x</item>
+    <item>Normal</item>
+    <item>1,25x</item>
+    <item>1,5x</item>
+    <item>2x</item>
+  </string-array>
+    <plurals name="exo_controls_fastforward_by_amount_description">
+    <item quantity="one">Maju cepat %d detik</item>
+    <item quantity="other">Maju cepat %d detik</item>
+  </plurals>
+    <plurals name="exo_controls_rewind_by_amount_description">
+    <item quantity="one">Mundur %d detik</item>
+    <item quantity="other">Mundur %d detik</item>
+  </plurals>
+    <plurals name="mtrl_badge_content_description">
+    <item quantity="one">%d notifikasi baru</item>
+    <item quantity="other">%d notifikasi baru</item>
+  </plurals>
+    <plurals name="stream_compose_channel_item_unread">
+    <item quantity="one">"%d pesan belum dibaca"</item>
+    <item quantity="other">"%d pesan belum dibaca"</item>
+  </plurals>
+    <plurals name="stream_compose_channel_list_typing_many">
+    <item quantity="other">"%d orang sedang mengetik"</item>
+  </plurals>
+    <plurals name="stream_compose_files_preview">
+    <item quantity="other">"%d File"</item>
+  </plurals>
+    <plurals name="stream_compose_member_count">
+    <item quantity="other">"%1$d Anggota"</item>
+  </plurals>
+    <plurals name="stream_compose_message_list_thread_separator">
+    <item quantity="other">"%d Balasan"</item>
+  </plurals>
+    <plurals name="stream_compose_message_list_unread_separator">
+    <item quantity="one">"%d pesan belum dibaca"</item>
+    <item quantity="other">"%d pesan belum dibaca"</item>
+  </plurals>
+    <plurals name="stream_compose_message_reactions">
+    <item quantity="other">"%d Reaksi"</item>
+  </plurals>
+    <plurals name="stream_compose_photos_preview">
+    <item quantity="other">"%d Foto"</item>
+  </plurals>
+    <plurals name="stream_compose_poll_total_vote_counts">
+    <item quantity="other">"%d suara total"</item>
+  </plurals>
+    <plurals name="stream_compose_poll_vote_counts">
+    <item quantity="other">"%d suara"</item>
+  </plurals>
+    <plurals name="stream_compose_quoted_message_files">
+    <item quantity="other">"%d file"</item>
+  </plurals>
+    <plurals name="stream_compose_quoted_message_images">
+    <item quantity="other">"%d foto"</item>
+  </plurals>
+    <plurals name="stream_compose_quoted_message_videos">
+    <item quantity="other">"%d video"</item>
+  </plurals>
+    <plurals name="stream_compose_thread_list_item_reply_count">
+    <item quantity="other">"%d balasan"</item>
+  </plurals>
+    <plurals name="stream_compose_thread_list_new_threads">
+    <item quantity="other">"%d utas baru"</item>
+  </plurals>
+    <plurals name="stream_compose_videos_preview">
+    <item quantity="other">"%d Video"</item>
+  </plurals>
+    <plurals name="stream_ui_channel_info_member_count">
+    <item quantity="other">"%d anggota"</item>
+  </plurals>
+    <plurals name="stream_ui_message_list_semantics_message_reactions">
+    <item quantity="other">"%d reaksi"</item>
+  </plurals>
+    <plurals name="stream_ui_poll_action_view_comments">
+    <item quantity="other">"Lihat %d Komentar"</item>
+  </plurals>
+    <string msgid="5976598919945601918" name="abc_action_bar_home_description">"Tunjukkan jalan ke rumah"</string>
+    <string msgid="8388173803310557296" name="abc_action_bar_up_description">"Kembali ke atas"</string>
+    <string msgid="3937310113216875497" name="abc_action_menu_overflow_description">"Opsi lainnya"</string>
+    <string msgid="4692188335987374352" name="abc_action_mode_done">"Selesai"</string>
+    <string msgid="1189761859438369441" name="abc_activity_chooser_view_see_all">"Lihat semua"</string>
+    <string msgid="2165779757652331008" name="abc_activitychooserview_choose_application">"Pilih aplikasi"</string>
+    <string msgid="4215997306490295099" name="abc_capital_off">"NONAKTIF"</string>
+    <string msgid="884982626291842264" name="abc_capital_on">"AKTIF"</string>
+    <string msgid="8833365367933412986" name="abc_menu_alt_shortcut_label">"Alt+"</string>
+    <string msgid="2223301931652355242" name="abc_menu_ctrl_shortcut_label">"Ctrl+"</string>
+    <string msgid="838001238306846836" name="abc_menu_delete_shortcut_label">"delete"</string>
+    <string msgid="7986526966204849475" name="abc_menu_enter_shortcut_label">"enter"</string>
+    <string msgid="375214403600139847" name="abc_menu_function_shortcut_label">"Function+"</string>
+    <string msgid="4192209724446364286" name="abc_menu_meta_shortcut_label">"Meta+"</string>
+    <string msgid="4741552369836443843" name="abc_menu_shift_shortcut_label">"Shift+"</string>
+    <string msgid="5473865519181928982" name="abc_menu_space_shortcut_label">"spasi"</string>
+    <string msgid="6180552449598693998" name="abc_menu_sym_shortcut_label">"Sym+"</string>
+    <string msgid="5520303668377388990" name="abc_prepend_shortcut_label">"Menu+"</string>
+    <string msgid="7208076849092622260" name="abc_search_hint">"Telusuri..."</string>
+    <string msgid="3741173234950517107" name="abc_searchview_description_clear">"Hapus kueri"</string>
+    <string msgid="693312494995508443" name="abc_searchview_description_query">"Telusuri kueri"</string>
+    <string msgid="3417662926640357176" name="abc_searchview_description_search">"Telusuri"</string>
+    <string msgid="1486535517437947103" name="abc_searchview_description_submit">"Kirim kueri"</string>
+    <string msgid="2293578557972875415" name="abc_searchview_description_voice">"Penelusuran suara"</string>
+    <string msgid="8875138169939072951" name="abc_shareactionprovider_share_with">"Bagikan dengan"</string>
+    <string msgid="9055268688411532828" name="abc_shareactionprovider_share_with_application">"Bagikan dengan <ns1:g id="APPLICATION_NAME">%s</ns1:g>"</string>
+    <string msgid="1656852541809559762" name="abc_toolbar_collapse_description">"Ciutkan"</string>
+    <string msgid="389117264260014992" name="autofill">"Isi otomatis"</string>
+    <string name="bottomsheet_action_collapse">Menciutkan sheet bawah</string>
+    <string name="bottomsheet_action_expand">Meluaskan sheet bawah</string>
+    <string name="bottomsheet_action_expand_halfway">Luaskan setengah</string>
+    <string name="bottomsheet_drag_handle_clicked">Handel geser diketuk dua kali</string>
+    <string name="bottomsheet_drag_handle_content_description">Handel geser</string>
+    <string msgid="881409763997275156" name="call_notification_answer_action">"Jawab"</string>
+    <string msgid="8793775615905189152" name="call_notification_answer_video_action">"Video"</string>
+    <string msgid="3229508546291798546" name="call_notification_decline_action">"Tolak"</string>
+    <string msgid="2659457946726154263" name="call_notification_hang_up_action">"Tutup"</string>
+    <string msgid="6107532579223922871" name="call_notification_incoming_text">"Panggilan masuk"</string>
+    <string msgid="8623827134497363134" name="call_notification_ongoing_text">"Panggilan sedang berlangsung"</string>
+    <string msgid="59049573811482460" name="call_notification_screening_text">"Menyaring panggilan masuk"</string>
+    <string name="character_counter_content_description">Karakter yang dimasukkan %1$d dari %2$d</string>
+    <string name="character_counter_overflowed_content_description">Melebihi batas karakter %1$d dari %2$d</string>
+    <string name="clear_text_end_icon_content_description">Menghapus teks</string>
+    <string msgid="406453423630273620" name="close_drawer">"Tutup menu navigasi"</string>
+    <string msgid="7573152094250666567" name="close_sheet">"Tutup sheet"</string>
+    <string msgid="8038256446254964252" name="default_error_message">"Input tidak valid"</string>
+    <string msgid="6312721426453364202" name="default_popup_window_title">"Jendela Pop-Up"</string>
+    <string msgid="1890207353314751437" name="dropdown_menu">"Menu dropdown"</string>
+    <string name="error_a11y_label">Error: tidak valid</string>
+    <string name="error_icon_content_description">Error</string>
+    <string name="exo_controls_cc_disabled_description">Aktifkan subtitel</string>
+    <string name="exo_controls_cc_enabled_description">Nonaktifkan subtitel</string>
+    <string name="exo_controls_fastforward_description">Maju cepat</string>
+    <string name="exo_controls_fullscreen_enter_description">Masuk layar penuh</string>
+    <string name="exo_controls_fullscreen_exit_description">Keluar dari layar penuh</string>
+    <string name="exo_controls_hide">Menyembunyikan kontrol pemutar</string>
+    <string name="exo_controls_next_description">Berikutnya</string>
+    <string name="exo_controls_overflow_hide_description">Sembunyikan setelan tambahan</string>
+    <string name="exo_controls_overflow_show_description">Tampilkan setelan tambahan</string>
+    <string name="exo_controls_pause_description">Jeda</string>
+    <string name="exo_controls_play_description">Putar</string>
+    <string name="exo_controls_playback_speed">Kecepatan</string>
+    <string name="exo_controls_previous_description">Sebelumnya</string>
+    <string name="exo_controls_repeat_all_description">Mode saat ini: Ulang semua. Alihkan mode berulang.</string>
+    <string name="exo_controls_repeat_off_description">Mode saat ini: Tidak berulang. Alihkan mode berulang.</string>
+    <string name="exo_controls_repeat_one_description">Mode saat ini: Ulang sekali. Alihkan mode berulang.</string>
+    <string name="exo_controls_rewind_description">Putar Ulang</string>
+    <string name="exo_controls_seek_bar_description">Progres pemutaran</string>
+    <string name="exo_controls_settings_description">Setelan</string>
+    <string name="exo_controls_show">Menampilkan kontrol pemutar</string>
+    <string name="exo_controls_shuffle_off_description">Aktifkan mode acak</string>
+    <string name="exo_controls_shuffle_on_description">Nonaktifkan mode acak</string>
+    <string name="exo_controls_stop_description">Berhenti</string>
+    <string name="exo_controls_vr_description">Mode VR</string>
+    <string name="exo_download_completed">Download selesai</string>
+    <string name="exo_download_description">Download</string>
+    <string name="exo_download_downloading">Mendownload</string>
+    <string name="exo_download_failed">Download gagal</string>
+    <string name="exo_download_notification_channel_name">Download</string>
+    <string name="exo_download_paused">Download dijeda</string>
+    <string name="exo_download_paused_for_network">Download menunggu konektivitas jaringan</string>
+    <string name="exo_download_paused_for_wifi">Download menunggu konektivitas Wi-Fi</string>
+    <string name="exo_download_removing">Menghapus download</string>
+    <string name="exo_item_list">%1$s, %2$s</string>
+    <string name="exo_track_bitrate">%1$.2f Mbps</string>
+    <string name="exo_track_mono">Mono</string>
+    <string name="exo_track_resolution">%1$d × %2$d</string>
+    <string name="exo_track_role_alternate">Alternatif</string>
+    <string name="exo_track_role_closed_captions">CC</string>
+    <string name="exo_track_role_commentary">Komentar</string>
+    <string name="exo_track_role_supplementary">Tambahan</string>
+    <string name="exo_track_selection_auto">Otomatis</string>
+    <string name="exo_track_selection_none">Tidak ada</string>
+    <string name="exo_track_selection_title_audio">Audio</string>
+    <string name="exo_track_stereo">Stereo</string>
+    <string name="exo_track_surround">Suara surround</string>
+    <string name="exo_track_surround_5_point_1">5.1 surround sound</string>
+    <string name="exo_track_surround_7_point_1">7.1 surround sound</string>
+    <string name="exo_track_unknown">Tidak diketahui</string>
+    <string name="exo_track_unknown_name">Tidak diketahui (%1$s)</string>
+    <string name="exposed_dropdown_menu_content_description">Tampilkan menu dropdown</string>
+    <string name="icon_content_description">Ikon Dialog</string>
+    <string msgid="6827826412747255547" name="in_progress">"Dalam proses"</string>
+    <string msgid="7933458017204019916" name="indeterminate">"Diperiksa sebagian"</string>
+    <string name="item_view_role_description">Tab</string>
+    <string msgid="2988463736136100848" name="m3c_bottom_sheet_collapse_description">"Menciutkan sheet bawah"</string>
+    <string msgid="1555567894577437024" name="m3c_bottom_sheet_dismiss_description">"Menutup sheet bawah"</string>
+    <string msgid="8403354765404029791" name="m3c_bottom_sheet_drag_handle_description">"Handel geser"</string>
+    <string msgid="6670819569745899763" name="m3c_bottom_sheet_expand_description">"Meluaskan sheet bawah"</string>
+    <string msgid="3010635850035863127" name="m3c_bottom_sheet_pane_title">"Sheet Bawah"</string>
+    <string msgid="8166741421776570875" name="m3c_date_input_headline">"Tanggal yang dimasukkan"</string>
+    <string msgid="229313757840775812" name="m3c_date_input_headline_description">"Tanggal yang dimasukkan: %1$s"</string>
+    <string msgid="6116910750161463197" name="m3c_date_input_invalid_for_pattern">"Tanggal tidak cocok dengan pola yang diharapkan: %1$s"</string>
+    <string msgid="2521768508935305279" name="m3c_date_input_invalid_not_allowed">"Tanggal tidak diizinkan: %1$s"</string>
+    <string msgid="7052898923934555305" name="m3c_date_input_invalid_year_range">"Tanggal di luar rentang tahun yang diharapkan %1$s - %2$s"</string>
+    <string msgid="2895559812010326913" name="m3c_date_input_label">"Tanggal"</string>
+    <string msgid="1237013946323089826" name="m3c_date_input_no_input_description">"Tidak ada"</string>
+    <string msgid="7306227249789210568" name="m3c_date_input_title">"Pilih tanggal"</string>
+    <string msgid="7605002211875882969" name="m3c_date_picker_headline">"Tanggal yang dipilih"</string>
+    <string msgid="3664277305226978227" name="m3c_date_picker_headline_description">"Pilihan saat ini: %1$s"</string>
+    <string msgid="8436650776581492840" name="m3c_date_picker_navigate_to_year_description">"Pilih tahun %1$s"</string>
+    <string msgid="5811000998184572395" name="m3c_date_picker_no_selection_description">"Tidak ada"</string>
+    <string msgid="7813882352367152251" name="m3c_date_picker_scroll_to_earlier_years">"Scroll untuk menampilkan tahun sebelumnya"</string>
+    <string msgid="5727367015496556177" name="m3c_date_picker_scroll_to_later_years">"Scroll untuk menampilkan tahun berikutnya"</string>
+    <string msgid="1804346892470238807" name="m3c_date_picker_switch_to_calendar_mode">"Beralih ke mode input kalender"</string>
+    <string msgid="395627960681594326" name="m3c_date_picker_switch_to_day_selection">"Geser untuk memilih tahun, atau ketuk untuk beralih kembali ke pemilihan tanggal"</string>
+    <string msgid="2219746470065162704" name="m3c_date_picker_switch_to_input_mode">"Beralih ke mode input teks"</string>
+    <string msgid="7142101321095356500" name="m3c_date_picker_switch_to_next_month">"Ubah ke bulan berikutnya"</string>
+    <string msgid="228438865139394590" name="m3c_date_picker_switch_to_previous_month">"Ubah ke bulan sebelumnya"</string>
+    <string msgid="791651718641787594" name="m3c_date_picker_switch_to_year_selection">"Beralih ke memilih tahun"</string>
+    <string msgid="7430790972741451689" name="m3c_date_picker_title">"Pilih tanggal"</string>
+    <string msgid="3199387177749801575" name="m3c_date_picker_today_description">"Hari ini"</string>
+    <string msgid="2068382232816991922" name="m3c_date_picker_year_picker_pane_title">"Pemilih tahun terlihat"</string>
+    <string msgid="3190049423327661366" name="m3c_date_range_input_invalid_range_input">"Input rentang tanggal tidak valid"</string>
+    <string msgid="3148384720560189467" name="m3c_date_range_input_title">"Masukkan tanggal"</string>
+    <string msgid="2138321128465719402" name="m3c_date_range_picker_day_in_range">"Dalam rentang"</string>
+    <string msgid="4947636797751277713" name="m3c_date_range_picker_end_headline">"Tanggal akhir"</string>
+    <string msgid="602077859540990149" name="m3c_date_range_picker_scroll_to_next_month">"Scroll untuk menampilkan bulan berikutnya"</string>
+    <string msgid="4592174524846109496" name="m3c_date_range_picker_scroll_to_previous_month">"Scroll untuk menampilkan bulan sebelumnya"</string>
+    <string msgid="4665981448952749820" name="m3c_date_range_picker_start_headline">"Tanggal mulai"</string>
+    <string msgid="3134165431120340385" name="m3c_date_range_picker_title">"Pilih tanggal"</string>
+    <string msgid="7617233117134790350" name="m3c_dialog">"Dialog"</string>
+    <string msgid="3177828188723359358" name="m3c_dropdown_menu_collapsed">"Diciutkan"</string>
+    <string msgid="2360841780724299882" name="m3c_dropdown_menu_expanded">"Diperluas"</string>
+    <string msgid="8687821690726149911" name="m3c_dropdown_menu_toggle">"Aktifkan/nonaktifkan menu dropdown"</string>
+    <string msgid="6072492480528318635" name="m3c_floating_toolbar_collapse">"Ciutkan toolbar"</string>
+    <string msgid="6880757017246780255" name="m3c_floating_toolbar_expand">"Luaskan toolbar"</string>
+    <string msgid="6152806324422087846" name="m3c_search_bar_search">"Telusuri"</string>
+    <string msgid="6152755701819882931" name="m3c_snackbar_dismiss">"Tutup"</string>
+    <string msgid="3868801555855510515" name="m3c_snackbar_pane_title">"Pemberitahuan"</string>
+    <string msgid="7655536806087401899" name="m3c_suggestions_available">"Saran di bawah"</string>
+    <string msgid="409352516511718051" name="m3c_time_input_dialog_title">"Masukkan Waktu"</string>
+    <string msgid="2786685010796619560" name="m3c_time_picker_am">"AM"</string>
+    <string msgid="7412665527536641863" name="m3c_time_picker_dialog_title">"Pilih Waktu"</string>
+    <string msgid="2349193472625211372" name="m3c_time_picker_hour">"Jam"</string>
+    <string msgid="9179527532316922345" name="m3c_time_picker_hour_24h_suffix">"%1$d jam"</string>
+    <string msgid="8876759303332837035" name="m3c_time_picker_hour_selection">"Pilih jam"</string>
+    <string msgid="3458167507790628988" name="m3c_time_picker_hour_suffix">"Pukul %1$d"</string>
+    <string msgid="6973808109666874069" name="m3c_time_picker_hour_text_field">"untuk jam"</string>
+    <string msgid="4313071914266462005" name="m3c_time_picker_minute">"Menit"</string>
+    <string msgid="4699133535056739733" name="m3c_time_picker_minute_selection">"Pilih menit"</string>
+    <string msgid="5064177921781937179" name="m3c_time_picker_minute_suffix">"%1$d menit"</string>
+    <string msgid="7661234488295443182" name="m3c_time_picker_minute_text_field">"untuk menit"</string>
+    <string msgid="5865171949528594571" name="m3c_time_picker_period_toggle_description">"Pilih AM atau PM"</string>
+    <string msgid="6616362054113087709" name="m3c_time_picker_pm">"PM"</string>
+    <string msgid="4145073906612931838" name="m3c_time_picker_toggle_keyboard">"Beralih ke mode input teks untuk input waktu"</string>
+    <string msgid="8841786098195101324" name="m3c_time_picker_toggle_touch">"Beralih ke mode jam untuk input waktu"</string>
+    <string msgid="1805687647081129904" name="m3c_tooltip_long_press_label">"Tampilkan tooltip"</string>
+    <string msgid="5460405025248574620" name="m3c_tooltip_pane_description">"Tooltip"</string>
+    <string msgid="6564222473543418073" name="m3c_wide_navigation_rail_close_rail">"Tutup kolom samping"</string>
+    <string msgid="8350283435461615411" name="m3c_wide_navigation_rail_pane_title">"Kolom samping navigasi"</string>
+    <string name="material_clock_toggle_content_description">Pilih AM atau PM</string>
+    <string name="material_hour_24h_suffix">%1$s jam</string>
+    <string name="material_hour_selection">Pilih jam</string>
+    <string name="material_hour_suffix">Pukul %1$s</string>
+    <string name="material_minute_selection">Pilih menit</string>
+    <string name="material_minute_suffix">%1$s menit</string>
+    <string name="material_timepicker_am">AM</string>
+    <string name="material_timepicker_clock_mode_description">Beralih ke mode jam untuk masukan waktu.</string>
+    <string name="material_timepicker_hour">Jam</string>
+    <string name="material_timepicker_minute">Menit</string>
+    <string name="material_timepicker_pm">PM</string>
+    <string name="material_timepicker_select_time">Pilih waktu</string>
+    <string name="material_timepicker_text_input_mode_description">Beralih ke mode masukan teks untuk masukan waktu.</string>
+    <string msgid="8471891128988107974" name="mc2_snackbar_pane_title">"Pemberitahuan"</string>
+    <string name="mtrl_badge_numberless_content_description">Notifikasi baru</string>
+    <string name="mtrl_checkbox_state_description_checked">Dicentang</string>
+    <string name="mtrl_checkbox_state_description_indeterminate">Dicentang sebagian</string>
+    <string name="mtrl_checkbox_state_description_unchecked">Tidak dicentang</string>
+    <string name="mtrl_chip_close_icon_content_description">Menghapus %1$s</string>
+    <string name="mtrl_exceed_max_badge_number_content_description" ns2:ignore="PluralsCandidate">Lebih dari %1$d notifikasi baru</string>
+    <string name="mtrl_picker_a11y_next_month">Ubah ke bulan berikutnya</string>
+    <string name="mtrl_picker_a11y_prev_month">Ubah ke bulan sebelumnya</string>
+    <string name="mtrl_picker_announce_current_range_selection">Pemilihan tanggal mulai: %1$s – Pemilihan tanggal akhir: %2$s</string>
+    <string name="mtrl_picker_announce_current_selection">Pilihan saat ini: %1$s</string>
+    <string name="mtrl_picker_announce_current_selection_none">tidak ada</string>
+    <string name="mtrl_picker_cancel">Batal</string>
+    <string name="mtrl_picker_confirm">Oke</string>
+    <string name="mtrl_picker_date_header_selected">%1$s</string>
+    <string name="mtrl_picker_date_header_title">Pilih Tanggal</string>
+    <string name="mtrl_picker_date_header_unselected">Tanggal yang dipilih</string>
+    <string name="mtrl_picker_day_of_week_column_header">%1$s</string>
+    <string name="mtrl_picker_end_date_description">Tanggal akhir %1$s</string>
+    <string name="mtrl_picker_invalid_format">Format tidak valid.</string>
+    <string name="mtrl_picker_invalid_format_example">Contoh: %1$s</string>
+    <string name="mtrl_picker_invalid_format_use">Gunakan: %1$s</string>
+    <string name="mtrl_picker_invalid_range">Rentang tidak valid.</string>
+    <string name="mtrl_picker_navigate_to_current_year_description">Pilih tahun ini %1$d</string>
+    <string name="mtrl_picker_navigate_to_year_description">Buka tahun %1$d</string>
+    <string name="mtrl_picker_out_of_range">Di luar rentang: %1$s</string>
+    <string name="mtrl_picker_range_header_only_end_selected">Tanggal mulai – %1$s</string>
+    <string name="mtrl_picker_range_header_only_start_selected">%1$s – Tanggal akhir</string>
+    <string name="mtrl_picker_range_header_selected">%1$s – %2$s</string>
+    <string name="mtrl_picker_range_header_title">Pilih Rentang</string>
+    <string name="mtrl_picker_range_header_unselected">Tanggal mulai – Tanggal akhir</string>
+    <string name="mtrl_picker_save">Simpan</string>
+    <string name="mtrl_picker_start_date_description">Tanggal mulai %1$s</string>
+    <string name="mtrl_picker_text_input_date_hint">Tanggal</string>
+    <string name="mtrl_picker_text_input_date_range_end_hint">Tanggal akhir</string>
+    <string name="mtrl_picker_text_input_date_range_start_hint">Tanggal mulai</string>
+    <string name="mtrl_picker_text_input_day_abbr">h</string>
+    <string name="mtrl_picker_text_input_month_abbr">b</string>
+    <string name="mtrl_picker_text_input_year_abbr">t</string>
+    <string name="mtrl_picker_today_description">Hari ini %1$s</string>
+    <string name="mtrl_picker_toggle_to_calendar_input_mode">Beralih ke mode masukan kalender</string>
+    <string name="mtrl_picker_toggle_to_day_selection">Ketuk untuk beralih ke tampilan Kalender</string>
+    <string name="mtrl_picker_toggle_to_text_input_mode">Beralih ke mode masukan teks</string>
+    <string name="mtrl_picker_toggle_to_year_selection">Ketuk untuk beralih ke tampilan tahun</string>
+    <string name="mtrl_timepicker_cancel">Batal</string>
+    <string name="mtrl_timepicker_confirm">Oke</string>
+    <string msgid="542007171693138492" name="navigation_menu">"Menu navigasi"</string>
+    <string msgid="6610465462668679431" name="not_selected">"Tidak dipilih"</string>
+    <string name="password_toggle_content_description">Tampilkan sandi</string>
+    <string msgid="5941395253238309765" name="range_end">"Rentang akhir"</string>
+    <string msgid="7097486360902471446" name="range_start">"Rentang awal"</string>
+    <string msgid="6264217191555673260" name="search_menu_title">"Telusuri"</string>
+    <string name="searchview_clear_text_content_description">Hapus teks</string>
+    <string name="searchview_navigation_content_description">Kembali</string>
+    <string msgid="6043586758067023" name="selected">"Dipilih"</string>
+    <string name="side_sheet_accessibility_pane_title">Sheet Samping</string>
+    <string msgid="2792228137354697160" name="snackbar_pane_title">"Pemberitahuan"</string>
+    <string msgid="4139871816613051306" name="state_empty">"Kosong"</string>
+    <string msgid="5834637030682409883" name="state_off">"Nonaktif"</string>
+    <string msgid="1490883874751719580" name="state_on">"Aktif"</string>
+    <string msgid="6277540029070332960" name="status_bar_notification_info_overflow">"999+"</string>
+    <string name="stream_chat_error_notification_group_summary_content_text">"Anda mendapat pesan baru"</string>
+    <string name="stream_chat_error_notification_group_summary_title">"Pesan obrolan"</string>
+    <string name="stream_chat_load_notification_data_title">"Memuat data notifikasi"</string>
+    <string name="stream_chat_notification_channel_name">"Pesan baru"</string>
+    <string name="stream_chat_notification_content">"Anda mendapat pesan baru"</string>
+    <string name="stream_chat_notification_empty_username">"Pengguna anonim"</string>
+    <string name="stream_chat_notification_group_summary_content_text">"Anda mendapat pesan baru"</string>
+    <string name="stream_chat_notification_read">"Tandai telah dibaca"</string>
+    <string name="stream_chat_notification_reminder_due_title">"Anda meminta saya mengingatkan Anda tentang pesan ini"</string>
+    <string name="stream_chat_notification_reply">"Balas"</string>
+    <string name="stream_chat_notification_title">"Pesan Obrolan"</string>
+    <string name="stream_chat_notification_type_hint">"Ketik pesan"</string>
+    <string name="stream_chat_other_notifications_channel_name">"Notifikasi lainnya"</string>
+    <string name="stream_compose_add_answer">"Tambahkan Komentar"</string>
+    <string name="stream_compose_add_answer_placeholder">"Komentar Anda"</string>
+    <string name="stream_compose_add_members_already_member">"Sudah menjadi anggota"</string>
+    <string name="stream_compose_add_members_no_results">"Pengguna tidak ditemukan"</string>
+    <string name="stream_compose_add_members_title">"Tambahkan Anggota"</string>
+    <string name="stream_compose_also_sent_to_channel">"Juga dikirim ke saluran"</string>
+    <string name="stream_compose_attachment_added_audio">"Rekaman audio dilampirkan"</string>
+    <string name="stream_compose_attachment_added_file">"File dilampirkan"</string>
+    <string name="stream_compose_attachment_added_photo">"Foto dilampirkan"</string>
+    <string name="stream_compose_attachment_added_video">"Video dilampirkan"</string>
+    <string name="stream_compose_attachment_camera_picker">"Kamera"</string>
+    <string name="stream_compose_attachment_camera_picker_content">"Ambil foto dan bagikan"</string>
+    <string name="stream_compose_attachment_camera_picker_cta">"Buka Kamera"</string>
+    <string name="stream_compose_attachment_commands_picker">"Perintah"</string>
+    <string name="stream_compose_attachment_file_picker">"File"</string>
+    <string name="stream_compose_attachment_media_picker">"Media"</string>
+    <string name="stream_compose_attachment_picker">"Pemilih lampiran"</string>
+    <string name="stream_compose_attachment_picker_photo">"Foto"</string>
+    <string name="stream_compose_attachment_picker_remove">"hapus"</string>
+    <string name="stream_compose_attachment_picker_select">"pilih"</string>
+    <string name="stream_compose_attachment_picker_video">"Video"</string>
+    <string name="stream_compose_attachment_poll_picker_content">"Buat polling dan biarkan semua orang memilih"</string>
+    <string name="stream_compose_attachment_poll_picker_cta">"Buat Polling"</string>
+    <string name="stream_compose_attachment_polls_picker">"Polling"</string>
+    <string name="stream_compose_attachment_removed">"Lampiran dihapus"</string>
+    <string name="stream_compose_audio_playback_pause">"Jeda"</string>
+    <string name="stream_compose_audio_recording_confirm">"Konfirmasi rekaman"</string>
+    <string name="stream_compose_audio_recording_delete">"Hapus rekaman"</string>
+    <string name="stream_compose_audio_recording_hint_save">"Tahan untuk merekam. Lepas untuk menyimpan."</string>
+    <string name="stream_compose_audio_recording_hint_send">"Tahan untuk merekam. Lepas untuk mengirim."</string>
+    <string name="stream_compose_audio_recording_label">"Perekaman audio"</string>
+    <string name="stream_compose_audio_recording_lock">"Kunci rekaman"</string>
+    <string name="stream_compose_audio_recording_locked">"Rekaman terkunci"</string>
+    <string name="stream_compose_audio_recording_locked_label">"Perekaman audio sedang berlangsung"</string>
+    <string name="stream_compose_audio_recording_pause">"Jeda"</string>
+    <string name="stream_compose_audio_recording_play">"Putar"</string>
+    <string name="stream_compose_audio_recording_preview">"Pesan suara"</string>
+    <string name="stream_compose_audio_recording_progress">"Progres rekaman audio"</string>
+    <string name="stream_compose_audio_recording_send">"Kirim rekaman"</string>
+    <string name="stream_compose_audio_recording_slide_to_cancel">"Geser untuk membatalkan"</string>
+    <string name="stream_compose_audio_recording_start">"Rekam pesan audio. Tekan dan tahan untuk merekam."</string>
+    <string name="stream_compose_audio_recording_state_cancelled">"Perekaman dibatalkan"</string>
+    <string name="stream_compose_audio_recording_state_started">"Perekaman dimulai. Geser kiri untuk membatalkan, ke atas untuk mengunci."</string>
+    <string name="stream_compose_audio_recording_stop">"Hentikan rekaman"</string>
+    <string name="stream_compose_avatar_overflow_count">"+%1$d"</string>
+    <string name="stream_compose_block_user">"Blokir pengguna"</string>
+    <string name="stream_compose_cancel">"Batal"</string>
+    <string name="stream_compose_cd_play_button">"Tombol putar"</string>
+    <string name="stream_compose_channel_item_muted">"dibisukan"</string>
+    <string name="stream_compose_channel_item_open">"Buka percakapan"</string>
+    <string name="stream_compose_channel_item_options">"Buka opsi percakapan"</string>
+    <string name="stream_compose_channel_item_pinned">"disematkan"</string>
+    <string name="stream_compose_channel_list_draft">"Draf: "</string>
+    <string name="stream_compose_channel_list_empty_channels">"Belum ada percakapan"</string>
+    <string name="stream_compose_channel_list_empty_search_results">"Tidak ada hasil untuk \"%1$s\""</string>
+    <string name="stream_compose_channel_list_header_new_chat">"Obrolan baru"</string>
+    <string name="stream_compose_channel_list_start_chat">"Mulai obrolan"</string>
+    <string name="stream_compose_channel_list_typing">"Mengetik"</string>
+    <string name="stream_compose_channel_list_typing_one">"%s sedang mengetik"</string>
+    <string name="stream_compose_channel_list_typing_two">"%1$s dan %2$s sedang mengetik"</string>
+    <string name="stream_compose_channel_list_you">"Anda"</string>
+    <string name="stream_compose_confirm">"Konfirmasi"</string>
+    <string name="stream_compose_copy_message">"Salin Pesan"</string>
+    <string name="stream_compose_delete_message">"Hapus Pesan"</string>
+    <string name="stream_compose_delete_message_text">"Apakah Anda yakin ingin menghapus pesan ini?"</string>
+    <string name="stream_compose_delete_message_title">"Hapus pesan"</string>
+    <string name="stream_compose_disconnected">"Terputus"</string>
+    <string name="stream_compose_dismiss">"Tutup"</string>
+    <string name="stream_compose_edit_answer">"Perbarui Komentar Anda"</string>
+    <string name="stream_compose_edit_message">"Edit Pesan"</string>
+    <string name="stream_compose_file_preview">"File"</string>
+    <string name="stream_compose_flag_message">"Tandai Pesan"</string>
+    <string name="stream_compose_flag_message_text">"Apakah Anda ingin mengirim salinan pesan ini ke moderator untuk investigasi lebih lanjut?"</string>
+    <string name="stream_compose_flag_message_title">"Tandai Pesan"</string>
+    <string name="stream_compose_giphy_label">"GIPHY"</string>
+    <string name="stream_compose_giphy_preview">"Giphy"</string>
+    <string name="stream_compose_image_options">"Opsi gambar"</string>
+    <string name="stream_compose_image_order">"%1$d dari %2$d"</string>
+    <string name="stream_compose_image_preview_cancel_sharing">"Batalkan Berbagi"</string>
+    <string name="stream_compose_image_preview_photos">"Foto"</string>
+    <string name="stream_compose_image_preview_share">"Bagikan"</string>
+    <string name="stream_compose_in">" di "</string>
+    <string name="stream_compose_link_preview">"Tautan"</string>
+    <string name="stream_compose_mark_as_unread">"Tandai sebagai Belum Dibaca"</string>
+    <string name="stream_compose_media_gallery_preview_could_not_share_attachment">"Tidak dapat membagikan lampiran"</string>
+    <string name="stream_compose_media_gallery_preview_delete">"Hapus"</string>
+    <string name="stream_compose_media_gallery_preview_preparing">"Mempersiapkan..."</string>
+    <string name="stream_compose_media_gallery_preview_reply">"Balas"</string>
+    <string name="stream_compose_media_gallery_preview_save_image">"Simpan media"</string>
+    <string name="stream_compose_media_gallery_preview_show_in_chat">"Tampilkan di obrolan"</string>
+    <string name="stream_compose_media_gallery_share_large_file_prompt_message">"%.2f MB perlu diunduh sebelum berbagi."</string>
+    <string name="stream_compose_media_gallery_share_large_file_prompt_title">"Peringatan file besar"</string>
+    <string name="stream_compose_member_count_online">"%1$s, %2$d Online"</string>
+    <string name="stream_compose_message_attachment_open">"Buka lampiran"</string>
+    <string name="stream_compose_message_composer_attachments">"Lampiran"</string>
+    <string name="stream_compose_message_composer_attachments_close">"Tutup lampiran"</string>
+    <string name="stream_compose_message_composer_attachments_collapsed">"diciutkan"</string>
+    <string name="stream_compose_message_composer_attachments_expanded">"diperluas"</string>
+    <string name="stream_compose_message_composer_attachments_open">"Buka lampiran"</string>
+    <string name="stream_compose_message_composer_cancel_command_to_edit">"Batalkan perintah untuk mengedit"</string>
+    <string name="stream_compose_message_composer_cancel_command_to_reply">"Batalkan perintah untuk membalas"</string>
+    <string name="stream_compose_message_composer_cancel_editing">"Batalkan pengeditan"</string>
+    <string name="stream_compose_message_composer_cancel_reply">"Batalkan balasan"</string>
+    <string name="stream_compose_message_composer_command_template">"/%1$s %2$s"</string>
+    <string name="stream_compose_message_composer_command_unavailable_in_edit">"Tidak tersedia saat mengedit"</string>
+    <string name="stream_compose_message_composer_command_unavailable_in_reply">"Tidak tersedia saat membalas"</string>
+    <string name="stream_compose_message_composer_commands_unavailable_in_edit">"Perintah tidak tersedia saat mengedit"</string>
+    <string name="stream_compose_message_composer_error_attachment_count">"Jumlah lampiran (%1$d) terlampaui."</string>
+    <string name="stream_compose_message_composer_error_file_size">"File terlalu besar - maksimal %1$s."</string>
+    <string name="stream_compose_message_composer_error_message_length">"Panjang pesan maksimal (%1$d) terlampaui."</string>
+    <string name="stream_compose_message_composer_error_sending_links_not_allowed">"Mengirim tautan tidak diizinkan dalam percakapan ini."</string>
+    <string name="stream_compose_message_composer_file_not_supported">"Tipe file tidak didukung"</string>
+    <string name="stream_compose_message_composer_instant_commands">"Perintah Instan"</string>
+    <string name="stream_compose_message_composer_save_action">"Simpan perubahan"</string>
+    <string name="stream_compose_message_composer_save_button">"Simpan"</string>
+    <string name="stream_compose_message_composer_send_action">"Kirim pesan"</string>
+    <string name="stream_compose_message_composer_send_button">"Kirim"</string>
+    <string name="stream_compose_message_composer_show_in_channel">"Juga kirim di Saluran"</string>
+    <string name="stream_compose_message_composer_unsupported_attachment">"Lampiran tidak didukung"</string>
+    <string name="stream_compose_message_deleted">"Pesan dihapus"</string>
+    <string name="stream_compose_message_deleted_preview">"Pesan dihapus"</string>
+    <string name="stream_compose_message_item_open_thread">"Buka utas"</string>
+    <string name="stream_compose_message_item_options">"Tampilkan opsi pesan"</string>
+    <string name="stream_compose_message_list_auto_translated">"Diterjemahkan"</string>
+    <string name="stream_compose_message_list_empty_messages">"Tidak ada pesan"</string>
+    <string name="stream_compose_message_list_error_cannot_open_link">"Tidak ada aplikasi untuk membuka URL ini:\n%s"</string>
+    <string name="stream_compose_message_list_footnote_edited">"Diedit"</string>
+    <string name="stream_compose_message_list_giphy_cancel">"Batal"</string>
+    <string name="stream_compose_message_list_giphy_send">"Kirim"</string>
+    <string name="stream_compose_message_list_giphy_shuffle">"Acak"</string>
+    <string name="stream_compose_message_list_remind_me">"Ingatkan saya"</string>
+    <string name="stream_compose_message_list_saved_for_later">"Disimpan untuk nanti"</string>
+    <string name="stream_compose_message_list_show_translation">"Tampilkan terjemahan"</string>
+    <string name="stream_compose_message_list_thread_footnote_thread_replies">"%d balasan"</string>
+    <string name="stream_compose_message_list_thread_footnote_thread_reply">"%d balasan"</string>
+    <string name="stream_compose_message_list_unsupported_attachment">"Lampiran tidak didukung"</string>
+    <string name="stream_compose_message_list_view">"Lihat"</string>
+    <string name="stream_compose_message_list_view_original">"Lihat aslinya"</string>
+    <string name="stream_compose_message_list_you">"Anda"</string>
+    <string name="stream_compose_message_moderated">"Pesan diblokir oleh kebijakan moderasi"</string>
+    <string name="stream_compose_message_preview_sender">"&lt;b>%1$s&lt;/b> di &lt;b>%2$s&lt;/b>"</string>
+    <string name="stream_compose_message_reactions_show">"Tampilkan reaksi"</string>
+    <string name="stream_compose_mute_user">"Bisukan Pengguna"</string>
+    <string name="stream_compose_no_messages_yet">"Belum ada pesan"</string>
+    <string name="stream_compose_ok">"OK"</string>
+    <string name="stream_compose_only_visible_to_you">"Hanya terlihat oleh Anda"</string>
+    <string name="stream_compose_photo_preview">"Foto"</string>
+    <string name="stream_compose_pin_message">"Sematkan ke Obrolan ini"</string>
+    <string name="stream_compose_pinned_message_list_empty_description">"Tekan lama pesan untuk menyematkannya ke obrolan"</string>
+    <string name="stream_compose_pinned_message_list_empty_title">"Tidak ada pesan yang disematkan"</string>
+    <string name="stream_compose_pinned_message_list_results_error">"Terjadi kesalahan"</string>
+    <string name="stream_compose_pinned_to_channel">"Disematkan"</string>
+    <string name="stream_compose_pinned_to_channel_by">"Disematkan oleh %1$s"</string>
+    <string name="stream_compose_poll_answers">"Komentar Polling"</string>
+    <string name="stream_compose_poll_closed_preview">"Polling ditutup: %s"</string>
+    <string name="stream_compose_poll_create_action">"buat polling"</string>
+    <string name="stream_compose_poll_created_preview">"Polling dibuat: %s"</string>
+    <string name="stream_compose_poll_end_confirmation_action">"Akhiri Polling"</string>
+    <string name="stream_compose_poll_end_confirmation_message">"Apakah Anda ingin mengakhiri polling ini sekarang? Tidak ada yang bisa memilih lagi dalam polling ini."</string>
+    <string name="stream_compose_poll_end_confirmation_title">"Akhiri polling ini?"</string>
+    <string name="stream_compose_poll_end_vote">"Akhiri Polling"</string>
+    <string name="stream_compose_poll_ended_failure">"Gagal menutup polling"</string>
+    <string name="stream_compose_poll_ended_success">"Polling berakhir"</string>
+    <string name="stream_compose_poll_option_description">"Tambahkan opsi"</string>
+    <string name="stream_compose_poll_option_discard_dialog_cancel">"Lanjutkan Mengedit"</string>
+    <string name="stream_compose_poll_option_discard_dialog_confirm">"Buang"</string>
+    <string name="stream_compose_poll_option_discard_dialog_description">"Apakah Anda yakin ingin membuang polling Anda?"</string>
+    <string name="stream_compose_poll_option_discard_dialog_title">"Buang polling"</string>
+    <string name="stream_compose_poll_option_error_duplicated">"Opsi sudah ada"</string>
+    <string name="stream_compose_poll_option_hint">"Tambahkan opsi"</string>
+    <string name="stream_compose_poll_option_label">"Opsi %d"</string>
+    <string name="stream_compose_poll_option_limit_votes">"Batasi suara per orang"</string>
+    <string name="stream_compose_poll_option_limit_votes_decrease">"Kurangi suara per orang"</string>
+    <string name="stream_compose_poll_option_limit_votes_description">"Pilih antara 2\u201310 opsi"</string>
+    <string name="stream_compose_poll_option_limit_votes_increase">"Tambah suara per orang"</string>
+    <string name="stream_compose_poll_option_limit_votes_input">"Suara per orang"</string>
+    <string name="stream_compose_poll_option_move_down">"Pindahkan ke bawah"</string>
+    <string name="stream_compose_poll_option_move_up">"Pindahkan ke atas"</string>
+    <string name="stream_compose_poll_option_remove">"Hapus opsi %s"</string>
+    <string name="stream_compose_poll_option_reorder">"Urutkan ulang opsi %s"</string>
+    <string name="stream_compose_poll_option_results_error">"Terjadi kesalahan saat memuat hasil opsi polling. Silakan coba lagi nanti."</string>
+    <string name="stream_compose_poll_option_switch_add_comment">"Tambahkan komentar"</string>
+    <string name="stream_compose_poll_option_switch_add_comment_description">"Izinkan orang lain menambahkan komentar"</string>
+    <string name="stream_compose_poll_option_switch_anonymous_poll">"Polling anonim"</string>
+    <string name="stream_compose_poll_option_switch_anonymous_poll_description">"Sembunyikan siapa yang memilih"</string>
+    <string name="stream_compose_poll_option_switch_multiple_answers">"Suara ganda"</string>
+    <string name="stream_compose_poll_option_switch_multiple_answers_description">"Pilih lebih dari satu opsi"</string>
+    <string name="stream_compose_poll_option_switch_suggest_option">"Sarankan opsi"</string>
+    <string name="stream_compose_poll_option_switch_suggest_option_description">"Izinkan orang lain menambahkan opsi"</string>
+    <string name="stream_compose_poll_option_title">"Opsi"</string>
+    <string name="stream_compose_poll_options">"Opsi Polling"</string>
+    <string name="stream_compose_poll_question_label">"Pertanyaan"</string>
+    <string name="stream_compose_poll_questions_description">"Ajukan pertanyaan"</string>
+    <string name="stream_compose_poll_questions_title">"Pertanyaan"</string>
+    <string name="stream_compose_poll_results">"Hasil Polling"</string>
+    <string name="stream_compose_poll_suggest_option">"Sarankan Opsi"</string>
+    <string name="stream_compose_poll_title">"Buat Polling"</string>
+    <string name="stream_compose_poll_view_more">"Lihat semua"</string>
+    <string name="stream_compose_poll_view_result">"Lihat Hasil"</string>
+    <string name="stream_compose_poll_winner_badge">"Pemenang"</string>
+    <string name="stream_compose_quoted_message_audio_recording">"Pesan suara (%s)"</string>
+    <string name="stream_compose_quoted_message_giphy_tag">"Giphy"</string>
+    <string name="stream_compose_quoted_message_media">"%d media"</string>
+    <string name="stream_compose_quoted_message_reply_to">"Balas ke %s"</string>
+    <string name="stream_compose_quoted_message_reply_to_you">"Balas ke diri sendiri"</string>
+    <string name="stream_compose_quoted_message_you">"Anda"</string>
+    <string name="stream_compose_reactions_add">"Tambahkan reaksi"</string>
+    <string name="stream_compose_reactions_remove">"Ketuk untuk menghapus"</string>
+    <string name="stream_compose_reactions_you">"Anda"</string>
+    <string name="stream_compose_recent_files">"File Terbaru"</string>
+    <string name="stream_compose_remaining_media_attachments_count">"+%1$d"</string>
+    <string name="stream_compose_remove_attachment_file">"Hapus file"</string>
+    <string name="stream_compose_remove_attachment_file_named">"Hapus file %1$s"</string>
+    <string name="stream_compose_remove_attachment_photo">"Hapus foto"</string>
+    <string name="stream_compose_remove_attachment_photo_named">"Hapus foto %1$s"</string>
+    <string name="stream_compose_remove_attachment_video">"Hapus video"</string>
+    <string name="stream_compose_remove_attachment_video_named">"Hapus video %1$s"</string>
+    <string name="stream_compose_remove_attachment_voice_message">"Hapus pesan suara"</string>
+    <string name="stream_compose_replied_to_thread">"Membalas di utas"</string>
+    <string name="stream_compose_reply">"Balas"</string>
+    <string name="stream_compose_resend_message">"Kirim ulang"</string>
+    <string name="stream_compose_scroll_to_bottom">"Gulir ke bawah"</string>
+    <string name="stream_compose_search_input_cancel">"Batal"</string>
+    <string name="stream_compose_search_input_hint">"Cari"</string>
+    <string name="stream_compose_selected_channel_menu_archive_chat">"Arsipkan Obrolan"</string>
+    <string name="stream_compose_selected_channel_menu_archive_group">"Arsipkan Grup"</string>
+    <string name="stream_compose_selected_channel_menu_block_user">"Blokir Pengguna"</string>
+    <string name="stream_compose_selected_channel_menu_delete_chat">"Hapus Obrolan"</string>
+    <string name="stream_compose_selected_channel_menu_delete_chat_confirmation_message">"Apakah Anda ingin menghapus obrolan dengan %1$s?"</string>
+    <string name="stream_compose_selected_channel_menu_delete_chat_confirmation_title">"Hapus Obrolan"</string>
+    <string name="stream_compose_selected_channel_menu_delete_group">"Hapus Grup"</string>
+    <string name="stream_compose_selected_channel_menu_delete_group_confirmation_message">"Apakah Anda ingin menghapus grup %1$s?"</string>
+    <string name="stream_compose_selected_channel_menu_delete_group_confirmation_title">"Hapus Grup"</string>
+    <string name="stream_compose_selected_channel_menu_leave_group">"Keluar dari grup"</string>
+    <string name="stream_compose_selected_channel_menu_leave_group_confirmation_message">"Apakah Anda ingin keluar dari grup %1$s?"</string>
+    <string name="stream_compose_selected_channel_menu_leave_group_confirmation_title">"Keluar dari grup"</string>
+    <string name="stream_compose_selected_channel_menu_mute_user">"Bisukan Pengguna"</string>
+    <string name="stream_compose_selected_channel_menu_pin_chat">"Sematkan Obrolan"</string>
+    <string name="stream_compose_selected_channel_menu_pin_group">"Sematkan Grup"</string>
+    <string name="stream_compose_selected_channel_menu_unarchive_chat">"Batalkan Arsip Obrolan"</string>
+    <string name="stream_compose_selected_channel_menu_unarchive_group">"Batalkan Arsip Grup"</string>
+    <string name="stream_compose_selected_channel_menu_unblock_user">"Buka Blokir Pengguna"</string>
+    <string name="stream_compose_selected_channel_menu_unmute_user">"Bunyikan Pengguna"</string>
+    <string name="stream_compose_selected_channel_menu_unpin_chat">"Lepas Sematan Obrolan"</string>
+    <string name="stream_compose_selected_channel_menu_unpin_group">"Lepas Sematan Grup"</string>
+    <string name="stream_compose_selected_channel_menu_view_info">"Lihat info"</string>
+    <string name="stream_compose_show_more_reactions">"Tampilkan lebih banyak reaksi"</string>
+    <string name="stream_compose_suggest_an_option">"Sarankan Opsi"</string>
+    <string name="stream_compose_swipe_action_more">"Lainnya"</string>
+    <string name="stream_compose_swipe_action_mute">"Bisukan"</string>
+    <string name="stream_compose_swipe_action_unmute">"Bunyikan"</string>
+    <string name="stream_compose_thread_list_banner_error">"Tidak dapat memuat utas baru. Ketuk untuk mencoba lagi"</string>
+    <string name="stream_compose_thread_list_banner_loading">"Memuat…"</string>
+    <string name="stream_compose_thread_list_empty_title">"Balas pesan untuk memulai utas"</string>
+    <string name="stream_compose_thread_reply">"Balas di utas"</string>
+    <string name="stream_compose_thread_subtitle">"dengan %1$s"</string>
+    <string name="stream_compose_thread_title">"Balasan di Utas"</string>
+    <string name="stream_compose_unblock_user">"Buka blokir pengguna"</string>
+    <string name="stream_compose_unmute_user">"Bunyikan Pengguna"</string>
+    <string name="stream_compose_unpin_message">"Lepas sematan dari Obrolan ini"</string>
+    <string name="stream_compose_user_status_last_seen">"Terakhir dilihat %1$s"</string>
+    <string name="stream_compose_user_status_last_seen_just_now">"Terakhir dilihat baru saja"</string>
+    <string name="stream_compose_user_status_online">"Online"</string>
+    <string name="stream_compose_video_preview">"Video"</string>
+    <string name="stream_compose_waiting_for_network">"Menunggu jaringan"</string>
+    <string name="stream_ui_attachment_picker_error_unresolvable_attachments">"Beberapa file tidak dapat dimuat dan dilewati."</string>
+    <string name="stream_ui_back_button">"Kembali"</string>
+    <string name="stream_ui_channel_attachments_files_empty_text">"Bagikan file untuk melihatnya di sini"</string>
+    <string name="stream_ui_channel_attachments_files_empty_title">"Tidak ada file"</string>
+    <string name="stream_ui_channel_attachments_files_load_error">"Gagal memuat lampiran file!"</string>
+    <string name="stream_ui_channel_attachments_files_title">"File"</string>
+    <string name="stream_ui_channel_attachments_media_empty_text">"Bagikan foto atau video untuk melihatnya di sini"</string>
+    <string name="stream_ui_channel_attachments_media_empty_title">"Tidak ada foto atau video"</string>
+    <string name="stream_ui_channel_attachments_media_item_photo">"Foto"</string>
+    <string name="stream_ui_channel_attachments_media_item_photo_from_user">"Foto dari %1$s"</string>
+    <string name="stream_ui_channel_attachments_media_item_video">"Video"</string>
+    <string name="stream_ui_channel_attachments_media_item_video_from_user">"Video dari %1$s"</string>
+    <string name="stream_ui_channel_attachments_media_load_error">"Gagal memuat lampiran media!"</string>
+    <string name="stream_ui_channel_attachments_media_title">"Foto &amp; Video"</string>
+    <string name="stream_ui_channel_info_add_members_error">"Gagal menambahkan anggota"</string>
+    <string name="stream_ui_channel_info_ban_member_error">"Gagal melarang anggota"</string>
+    <string name="stream_ui_channel_info_ban_member_modal_no_timeout">"Secara permanen"</string>
+    <string name="stream_ui_channel_info_ban_member_modal_timeout_one_day">"Satu hari"</string>
+    <string name="stream_ui_channel_info_ban_member_modal_timeout_one_hour">"Satu jam"</string>
+    <string name="stream_ui_channel_info_ban_member_modal_timeout_one_week">"Satu minggu"</string>
+    <string name="stream_ui_channel_info_ban_member_modal_title">"Melarang %s selama:"</string>
+    <string name="stream_ui_channel_info_block_user_error">"Gagal mengubah status pemblokiran pengguna"</string>
+    <string name="stream_ui_channel_info_contact_title">"Info Kontak"</string>
+    <string name="stream_ui_channel_info_delete_conversation_error">"Gagal menghapus percakapan"</string>
+    <string name="stream_ui_channel_info_delete_conversation_modal_message">"Apakah Anda yakin ingin menghapus percakapan ini?"</string>
+    <string name="stream_ui_channel_info_delete_group_error">"Gagal menghapus grup"</string>
+    <string name="stream_ui_channel_info_delete_group_modal_message">"Apakah Anda yakin ingin menghapus grup ini?"</string>
+    <string name="stream_ui_channel_info_edit_action">"Edit"</string>
+    <string name="stream_ui_channel_info_edit_choose_from_library">"Pilih Gambar"</string>
+    <string name="stream_ui_channel_info_edit_group_picture">"Edit Foto Grup"</string>
+    <string name="stream_ui_channel_info_edit_name_field_placeholder">"Tambahkan nama grup"</string>
+    <string name="stream_ui_channel_info_edit_remove_picture">"Atur Ulang Foto"</string>
+    <string name="stream_ui_channel_info_edit_save_action">"Simpan perubahan"</string>
+    <string name="stream_ui_channel_info_edit_save_error">"Gagal menyimpan perubahan"</string>
+    <string name="stream_ui_channel_info_edit_take_photo">"Ambil Foto"</string>
+    <string name="stream_ui_channel_info_edit_title">"Edit"</string>
+    <string name="stream_ui_channel_info_edit_upload_picture">"Unggah"</string>
+    <string name="stream_ui_channel_info_expand_button">"%d lainnya"</string>
+    <string name="stream_ui_channel_info_group_title">"Info Grup"</string>
+    <string name="stream_ui_channel_info_leave_conversation_error">"Gagal keluar dari percakapan"</string>
+    <string name="stream_ui_channel_info_leave_conversation_modal_message">"Apakah Anda yakin ingin keluar dari percakapan ini?"</string>
+    <string name="stream_ui_channel_info_leave_group_error">"Gagal keluar dari grup"</string>
+    <string name="stream_ui_channel_info_leave_group_modal_message">"Apakah Anda yakin ingin keluar dari grup ini?"</string>
+    <string name="stream_ui_channel_info_member_add_button">"Tambah"</string>
+    <string name="stream_ui_channel_info_member_count_online">"%1$d anggota · %2$d online"</string>
+    <string name="stream_ui_channel_info_member_modal_ban_expired">"Larangan telah berakhir"</string>
+    <string name="stream_ui_channel_info_member_modal_ban_expires_at">"Larangan berakhir %s"</string>
+    <string name="stream_ui_channel_info_member_modal_ban_no_expiration">"Larangan tidak memiliki batas waktu"</string>
+    <string name="stream_ui_channel_info_member_modal_option_ban_member">"Larang Pengguna"</string>
+    <string name="stream_ui_channel_info_member_modal_option_block_user">"Blokir Pengguna"</string>
+    <string name="stream_ui_channel_info_member_modal_option_message_member">"Kirim Pesan Langsung"</string>
+    <string name="stream_ui_channel_info_member_modal_option_mute_user">"Bisukan Pengguna"</string>
+    <string name="stream_ui_channel_info_member_modal_option_remove_member">"Keluarkan dari grup"</string>
+    <string name="stream_ui_channel_info_member_modal_option_unban_member">"Cabut Larangan Pengguna"</string>
+    <string name="stream_ui_channel_info_member_modal_option_unblock_user">"Buka Blokir Pengguna"</string>
+    <string name="stream_ui_channel_info_member_modal_option_unmute_user">"Bunyikan Pengguna"</string>
+    <string name="stream_ui_channel_info_member_moderator">"Moderator"</string>
+    <string name="stream_ui_channel_info_member_owner">"Pemilik"</string>
+    <string name="stream_ui_channel_info_mute_conversation_error">"Gagal mengubah status bisukan percakapan"</string>
+    <string name="stream_ui_channel_info_mute_group_error">"Gagal mengubah status bisukan grup"</string>
+    <string name="stream_ui_channel_info_mute_user_error">"Gagal mengubah status bisukan pengguna"</string>
+    <string name="stream_ui_channel_info_name_field_label">"NAMA"</string>
+    <string name="stream_ui_channel_info_name_field_placeholder">"Tambahkan nama grup"</string>
+    <string name="stream_ui_channel_info_option_block_user">"Blokir Pengguna"</string>
+    <string name="stream_ui_channel_info_option_delete_conversation">"Hapus Percakapan"</string>
+    <string name="stream_ui_channel_info_option_delete_group">"Hapus Grup"</string>
+    <string name="stream_ui_channel_info_option_files_attachments">"File"</string>
+    <string name="stream_ui_channel_info_option_leave_conversation">"Keluar dari Percakapan"</string>
+    <string name="stream_ui_channel_info_option_leave_group">"Keluar dari Grup"</string>
+    <string name="stream_ui_channel_info_option_media_attachments">"Foto &amp; Video"</string>
+    <string name="stream_ui_channel_info_option_mute_conversation">"Bisukan Obrolan"</string>
+    <string name="stream_ui_channel_info_option_mute_group">"Bisukan Grup"</string>
+    <string name="stream_ui_channel_info_option_mute_user">"Bisukan Pengguna"</string>
+    <string name="stream_ui_channel_info_option_pinned_messages">"Pesan Disematkan"</string>
+    <string name="stream_ui_channel_info_option_unblock_user">"Buka Blokir Pengguna"</string>
+    <string name="stream_ui_channel_info_remove_member_error">"Gagal mengeluarkan anggota"</string>
+    <string name="stream_ui_channel_info_remove_member_modal_message">"Apakah Anda yakin ingin mengeluarkan\n%s?"</string>
+    <string name="stream_ui_channel_info_rename_group_error">"Gagal mengganti nama grup"</string>
+    <string name="stream_ui_channel_info_unban_member_error">"Gagal mencabut larangan anggota"</string>
+    <string name="stream_ui_channel_info_view_all">"Lihat semua"</string>
+    <string name="stream_ui_channel_list_untitled_channel">"Kanal tanpa nama"</string>
+    <string name="stream_ui_channel_list_untitled_channel_plus_more">"%1$s +%2$d lainnya"</string>
+    <string name="stream_ui_location_live_message_text">"Lokasi langsung"</string>
+    <string name="stream_ui_location_static_message_text">"Lokasi"</string>
+    <string name="stream_ui_mention_list_empty">"Belum ada mention…"</string>
+    <string name="stream_ui_mention_list_error">"Terjadi kesalahan"</string>
+    <string name="stream_ui_message_composer_attachment_picker_capture">"Ambil"</string>
+    <string name="stream_ui_message_composer_attachment_picker_files">"File"</string>
+    <string name="stream_ui_message_composer_attachment_picker_media">"Media"</string>
+    <string name="stream_ui_message_composer_attachment_picker_poll">"Jajak Pendapat"</string>
+    <string name="stream_ui_message_composer_capture_media">"Ambil Gambar atau Video"</string>
+    <string name="stream_ui_message_composer_capture_media_take_photo">"Ambil Gambar"</string>
+    <string name="stream_ui_message_composer_capture_media_video">"Ambil Video"</string>
+    <string name="stream_ui_message_composer_grant_permission_button">"Berikan Izin"</string>
+    <string name="stream_ui_message_composer_permission_audio_record_message">"Izin perekaman audio diperlukan agar dapat merekam dan mengirim file audio"</string>
+    <string name="stream_ui_message_composer_permission_audio_record_title">"Izin Perekaman Audio"</string>
+    <string name="stream_ui_message_composer_permission_camera_message">"Izin akses kamera dan penyimpanan diperlukan agar dapat mengambil foto dan video"</string>
+    <string name="stream_ui_message_composer_permission_camera_title">"Izin Akses Kamera dan Penyimpanan"</string>
+    <string name="stream_ui_message_composer_permission_setting_message">"Aktifkan izin di Pengaturan Aplikasi"</string>
+    <string name="stream_ui_message_composer_permission_storage_message">"Izin akses penyimpanan diperlukan agar dapat mengirim dan menyimpan foto, video, musik, dan file lainnya"</string>
+    <string name="stream_ui_message_composer_permission_storage_title">"Izin Akses Penyimpanan"</string>
+    <string name="stream_ui_message_composer_permissions_files_allow_audio_access">"Izinkan akses ke file audio"</string>
+    <string name="stream_ui_message_composer_permissions_files_allow_more_visual_media">"Izinkan akses ke lebih banyak media visual"</string>
+    <string name="stream_ui_message_composer_permissions_files_allow_visual_media_access">"Izinkan akses ke media visual"</string>
+    <string name="stream_ui_message_composer_permissions_setting_button">"Pengaturan"</string>
+    <string name="stream_ui_message_composer_permissions_visual_media_add_more">"Tambah lagi"</string>
+    <string name="stream_ui_message_composer_placeholder_cannot_send_messages">"Anda tidak dapat mengirim pesan di kanal ini"</string>
+    <string name="stream_ui_message_composer_placeholder_command_ban">"\@username"</string>
+    <string name="stream_ui_message_composer_placeholder_command_giphy">"Cari GIF"</string>
+    <string name="stream_ui_message_composer_placeholder_command_mute">"\@username"</string>
+    <string name="stream_ui_message_composer_placeholder_command_unban">"\@username"</string>
+    <string name="stream_ui_message_composer_placeholder_command_unmute">"\@username"</string>
+    <string name="stream_ui_message_composer_placeholder_default">"Kirim pesan"</string>
+    <string name="stream_ui_message_input_permission_notifications_message">"Notifikasi diblokir"</string>
+    <string name="stream_ui_message_list_attachment_display_error">"Terjadi kesalahan. Berkas tidak dapat ditampilkan"</string>
+    <string name="stream_ui_message_list_attachment_download_failed">"Gagal mengunduh file: %s"</string>
+    <string name="stream_ui_message_list_attachment_downloading">"Mengunduh… %1$s / %2$s"</string>
+    <string name="stream_ui_message_list_attachment_invalid_mime_type">"Terjadi kesalahan. Tidak dapat membuka lampiran: %s"</string>
+    <string name="stream_ui_message_list_attachment_invalid_url">"Data gagal dimuat karena url tidak valid."</string>
+    <string name="stream_ui_message_list_attachment_load_failed">"Data gagal dimuat karena kesalahan yang tidak diketahui."</string>
+    <string name="stream_ui_message_list_attachment_no_app">"Tidak ada aplikasi untuk membuka file ini"</string>
+    <string name="stream_ui_message_list_attachment_opening">"Membuka…"</string>
+    <string name="stream_ui_message_list_error_cannot_open_link">"Tidak ada aplikasi untuk melihat URL ini:\n%s"</string>
+    <string name="stream_ui_message_list_footnote_edited_now">"baru saja"</string>
+    <string name="stream_ui_message_list_message_deleted">"Pesan ini telah dihapus."</string>
+    <string name="stream_ui_message_list_semantics_message_attachment_image">"Lampiran gambar"</string>
+    <string name="stream_ui_message_list_semantics_message_attachment_video">"Lampiran video"</string>
+    <string name="stream_ui_message_list_semantics_message_attachments">"%d lampiran"</string>
+    <string name="stream_ui_message_list_semantics_message_status_delivered">"Pesan terkirim"</string>
+    <string name="stream_ui_message_list_semantics_message_status_failed">"Pesan gagal dikirim"</string>
+    <string name="stream_ui_message_list_semantics_message_status_pending">"Pesan tertunda"</string>
+    <string name="stream_ui_message_list_semantics_message_status_read">"Pesan dibaca"</string>
+    <string name="stream_ui_message_list_semantics_message_status_read_by">"Pesan dibaca oleh %d anggota"</string>
+    <string name="stream_ui_message_list_semantics_message_status_sent">"Pesan terkirim"</string>
+    <string name="stream_ui_message_list_video_display_error">"Terjadi kesalahan. Video tidak dapat ditampilkan"</string>
+    <string name="stream_ui_moderation_dialog_delete">"Hapus pesan"</string>
+    <string name="stream_ui_moderation_dialog_description">"Pesan ini mungkin melanggar kebijakan moderasi kami. Apakah Anda yakin ingin mengirimnya? Silakan lihat Pedoman Komunitas kami."</string>
+    <string name="stream_ui_moderation_dialog_edit">"Edit pesan"</string>
+    <string name="stream_ui_moderation_dialog_send">"Kirim saja"</string>
+    <string name="stream_ui_moderation_dialog_title">"Gagal mengirim pesan"</string>
+    <string name="stream_ui_poll_action_see_all">"Lihat Semua %d Opsi"</string>
+    <string name="stream_ui_poll_description_closed">"Voting berakhir"</string>
+    <string name="stream_ui_poll_description_multiple_answers">"Pilih hingga %d"</string>
+    <string name="stream_ui_poll_description_single_answer">"Pilih satu"</string>
+    <string name="stream_ui_poll_description_unlimited_answers">"Pilih satu atau lebih"</string>
+    <string name="stream_ui_poll_multiple_answers_error">"Ketik angka dari %1$s sampai %2$s"</string>
+    <string name="stream_ui_yesterday">"Kemarin"</string>
+    <string msgid="2561197295334830845" name="switch_role">"Alihkan"</string>
+    <string msgid="1672349317127674378" name="tab">"Tab"</string>
+    <string msgid="5946805113151406391" name="template_percent">"<ns1:g id="PERCENTAGE">%1$d</ns1:g> persen."</string>
+    <string msgid="3765533235322692011" name="tooltip_description">"tooltip"</string>
+    <string msgid="3124740595719787496" name="tooltip_label">"tampilkan tooltip"</string>
+</resources>

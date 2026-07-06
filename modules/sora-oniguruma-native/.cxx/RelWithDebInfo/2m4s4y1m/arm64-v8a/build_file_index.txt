@@ -1,0 +1,6 @@
+/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/src/main/cpp/CMakeLists.txt
+/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/src/main/cpp/oniguruma/CMakeLists.txt
+/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/src/main/cpp/oniguruma/cmake/Config.cmake.in
+/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/src/main/cpp/oniguruma/onig-config.cmake.in
+/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/src/main/cpp/oniguruma/oniguruma.pc.cmake.in
+/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/src/main/cpp/oniguruma/src/config.h.cmake.in
