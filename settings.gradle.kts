@@ -15,7 +15,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "XCode"
+rootProject.name = "GoStudio"
 
 include(
     ":app",

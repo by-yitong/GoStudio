@@ -1,0 +1,236 @@
+{
+  "name": "XCode",
+  "colors": {
+    "editor.background": "#101820",
+    "editor.foreground": "#DDE7F0",
+    "editorCursor.foreground": "#6CB6FF",
+    "editor.selectionHandleBackground": "#6CB6FF",
+    "editor.selectionBackground": "#274966",
+    "editor.lineHighlightBackground": "#162330",
+    "editor.findMatchBackground": "#6CB6FF33",
+    "editor.findMatchBorder": "#6CB6FF",
+    "editor.findMatchHighlightBackground": "#FFD16626",
+    "editor.findMatchHighlightBorder": "#FFD166",
+    "highlightedDelimitersForeground": "#F7C948",
+    "editorIndentGuide.background": "#243442",
+    "editorIndentGuide.activeBackground": "#6CB6FF66",
+    "editorSideBlockLine.foreground": "#6CB6FF",
+    "editorWhitespace.foreground": "#3A4E5F",
+    "editorLineNumber.foreground": "#60798F",
+    "editorLineNumber.activeForeground": "#B9D9FF",
+    "editor.lineDivider": "#00000000",
+    "scrollbarSlider.background": "#6E7F9180",
+    "scrollbarSlider.activeBackground": "#B9D9FF",
+    "editor.wordHighlightBackground": "#6CB6FF22",
+    "editor.wordHighlightStrongBackground": "#F7C94830",
+    "editorError.foreground": "#FF6B7A",
+    "editorWarning.foreground": "#F7C948",
+    "editorInfo.foreground": "#6CB6FF",
+    "editorSuggestWidget.background": "#162330",
+    "editorSuggestWidget.foreground": "#DDE7F0",
+    "editorSuggestWidget.highlightForeground": "#6CB6FF",
+    "editorSuggestWidget.selectedBackground": "#22384A",
+    "tooltipBackground": "#162330",
+    "tooltipBriefMessageColor": "#F2F7FC",
+    "tooltipDetailedMessageColor": "#A9BED1",
+    "tooltipActionColor": "#6CB6FF"
+  },
+  "tokenColors": [
+    {
+      "name": "注释",
+      "scope": ["comment", "punctuation.definition.comment"],
+      "settings": { "foreground": "#6F8496", "fontStyle": "italic" }
+    },
+    {
+      "name": "文档注释",
+      "scope": ["comment.block.documentation", "comment.block.documentation.c", "comment.block.documentation.cpp"],
+      "settings": { "foreground": "#7F98AB", "fontStyle": "italic" }
+    },
+    {
+      "name": "TODO/FIXME",
+      "scope": ["comment.todo", "keyword.codetag.notation", "storage.type.class.doxygen"],
+      "settings": { "foreground": "#FF8A65", "fontStyle": "bold" }
+    },
+    {
+      "name": "关键字",
+      "scope": ["keyword", "keyword.control", "keyword.control.conditional", "keyword.control.loop", "keyword.control.switch", "keyword.control.trycatch", "keyword.control.return", "keyword.control.import", "keyword.other"],
+      "settings": { "foreground": "#FF8F73" }
+    },
+    {
+      "name": "声明与存储类型",
+      "scope": ["storage", "storage.type", "storage.type.primitive", "storage.type.built-in", "storage.type.class", "storage.type.struct", "storage.type.enum", "storage.type.union", "storage.type.namespace", "storage.modifier"],
+      "settings": { "foreground": "#C792EA" }
+    },
+    {
+      "name": "限定修饰符",
+      "scope": ["storage.modifier.const", "storage.modifier.static", "storage.modifier.inline", "storage.modifier.extern", "storage.modifier.mutable", "storage.modifier.volatile", "storage.modifier.register"],
+      "settings": { "foreground": "#B7A6FF" }
+    },
+    {
+      "name": "运算符",
+      "scope": ["keyword.operator", "keyword.operator.assignment", "keyword.operator.arithmetic", "keyword.operator.bitwise", "keyword.operator.comparison", "keyword.operator.logical", "keyword.operator.pointer", "keyword.operator.sizeof", "keyword.operator.wordlike"],
+      "settings": { "foreground": "#89DDFF" }
+    },
+    {
+      "name": "字符串",
+      "scope": ["string", "string.quoted", "string.quoted.double", "string.quoted.single", "string.quoted.raw"],
+      "settings": { "foreground": "#A6E3A1" }
+    },
+    {
+      "name": "字符与转义",
+      "scope": ["constant.character", "constant.character.escape", "constant.character.escape.c", "constant.character.escape.cpp"],
+      "settings": { "foreground": "#FFD166" }
+    },
+    {
+      "name": "格式化占位符",
+      "scope": ["constant.other.placeholder", "constant.other.placeholder.c", "constant.other.placeholder.cpp"],
+      "settings": { "foreground": "#F78C6C" }
+    },
+    {
+      "name": "数字",
+      "scope": ["constant.numeric", "constant.numeric.integer", "constant.numeric.float", "constant.numeric.hex", "constant.numeric.binary", "constant.numeric.octal"],
+      "settings": { "foreground": "#F6C177" }
+    },
+    {
+      "name": "语言常量",
+      "scope": ["constant.language", "constant.language.boolean", "constant.language.null", "constant.language.cpp", "constant.language.c"],
+      "settings": { "foreground": "#FFB86C" }
+    },
+    {
+      "name": "内置变量",
+      "scope": ["variable.language", "variable.language.this", "variable.language.self"],
+      "settings": { "foreground": "#FFB4A2" }
+    },
+    {
+      "name": "函数声明",
+      "scope": ["entity.name.function", "entity.name.function.definition", "meta.function.definition entity.name.function"],
+      "settings": { "foreground": "#7AD7C2" }
+    },
+    {
+      "name": "函数调用",
+      "scope": ["meta.function-call", "meta.function-call entity.name.function", "support.function", "support.function.std"],
+      "settings": { "foreground": "#82AAFF" }
+    },
+    {
+      "name": "函数参数",
+      "scope": ["variable.parameter", "meta.function.parameters variable.parameter"],
+      "settings": { "foreground": "#E6B673" }
+    },
+    {
+      "name": "类型名",
+      "scope": ["entity.name.type", "entity.name.type.class", "entity.name.type.struct", "entity.name.type.enum", "entity.name.type.union", "support.type", "support.type.std"],
+      "settings": { "foreground": "#80CBC4" }
+    },
+    {
+      "name": "类/结构/枚举名",
+      "scope": ["entity.name.class", "entity.name.struct", "entity.name.enum", "entity.name.union", "support.class", "support.class.std"],
+      "settings": { "foreground": "#B9D9FF" }
+    },
+    {
+      "name": "命名空间",
+      "scope": ["entity.name.namespace", "entity.name.scope-resolution", "support.namespace", "punctuation.separator.scope-resolution"],
+      "settings": { "foreground": "#B7A6FF" }
+    },
+    {
+      "name": "变量",
+      "scope": ["variable", "variable.other", "variable.other.readwrite"],
+      "settings": { "foreground": "#DDE7F0" }
+    },
+    {
+      "name": "成员变量/字段",
+      "scope": ["variable.other.member", "variable.other.property", "variable.other.field", "meta.member.access"],
+      "settings": { "foreground": "#9CDCFE" }
+    },
+    {
+      "name": "常量变量",
+      "scope": ["variable.other.constant", "constant.other", "constant.other.symbol"],
+      "settings": { "foreground": "#F78C6C" }
+    },
+    {
+      "name": "预处理指令",
+      "scope": ["meta.preprocessor", "keyword.control.directive", "keyword.control.import.include", "punctuation.definition.directive"],
+      "settings": { "foreground": "#C792EA" }
+    },
+    {
+      "name": "宏名",
+      "scope": ["entity.name.function.preprocessor", "constant.other.preprocessor", "meta.preprocessor.macro entity.name.function"],
+      "settings": { "foreground": "#FFD166" }
+    },
+    {
+      "name": "头文件路径",
+      "scope": ["string.quoted.other.lt-gt.include", "string.quoted.double.include", "meta.preprocessor.include string"],
+      "settings": { "foreground": "#A6E3A1" }
+    },
+    {
+      "name": "模板/泛型",
+      "scope": ["meta.template", "meta.template.arguments", "entity.name.type.template", "punctuation.section.angle-brackets"],
+      "settings": { "foreground": "#B7A6FF" }
+    },
+    {
+      "name": "标点符号",
+      "scope": ["punctuation", "punctuation.terminator", "punctuation.separator"],
+      "settings": { "foreground": "#8FA6B8" }
+    },
+    {
+      "name": "括号",
+      "scope": ["punctuation.section", "punctuation.section.block", "punctuation.section.parens", "punctuation.section.brackets"],
+      "settings": { "foreground": "#D8DEE9" }
+    },
+    {
+      "name": "属性/注解",
+      "scope": ["storage.type.attribute", "meta.attribute", "entity.other.attribute-name"],
+      "settings": { "foreground": "#F7C948" }
+    },
+    {
+      "name": "标签",
+      "scope": ["entity.name.label", "variable.other.label"],
+      "settings": { "foreground": "#FFB86C" }
+    },
+
+    {
+      "name": "CMake 注释",
+      "scope": ["comment.line.number-sign.cmake", "comment.line.cmake"],
+      "settings": { "foreground": "#6F8496", "fontStyle": "italic" }
+    },
+    {
+      "name": "CMake 命令",
+      "scope": ["keyword.control.cmake", "entity.name.function.cmake", "support.function.command.cmake"],
+      "settings": { "foreground": "#7AD7C2" }
+    },
+    {
+      "name": "CMake 变量",
+      "scope": ["variable.other.cmake", "variable.other.environment.cmake", "variable.other.readwrite.cmake"],
+      "settings": { "foreground": "#82AAFF" }
+    },
+    {
+      "name": "CMake 内置常量",
+      "scope": ["support.constant.cmake", "constant.language.cmake", "constant.other.cmake"],
+      "settings": { "foreground": "#FFB86C" }
+    },
+    {
+      "name": "CMake 生成器表达式",
+      "scope": ["support.function.generator-expression.cmake", "meta.generator-expression.cmake"],
+      "settings": { "foreground": "#B7A6FF" }
+    },
+    {
+      "name": "CMake 字符串",
+      "scope": ["string.quoted.double.cmake", "string.unquoted.cmake"],
+      "settings": { "foreground": "#A6E3A1" }
+    },
+    {
+      "name": "CMake 数字与转义",
+      "scope": ["constant.numeric.cmake", "constant.numeric.hex.cmake", "constant.character.escape.cmake"],
+      "settings": { "foreground": "#FFD166" }
+    },
+    {
+      "name": "CMake 运算符",
+      "scope": ["keyword.operator.cmake"],
+      "settings": { "foreground": "#89DDFF" }
+    },
+    {
+      "name": "无效代码",
+      "scope": "invalid",
+      "settings": { "foreground": "#FFFFFF", "background": "#D73A49" }
+    }
+  ]
+}

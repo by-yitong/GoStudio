@@ -1,0 +1,19 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.jmwl.gostudio.app-mergeReleaseResources-70:/values-en/values-en.xml",
+            "map": [
+                {
+                    "source": "/home/admins/.gradle/caches/9.0.0/transforms/41941d9e3619ba5eb281213ba2bda3c2/transformed/stream-chat-android-client-7.3.0/res/values-en/values-en.xml",
+                    "from": {
+                        "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "55,171,264,359,443,533,619,729,800,865,937,1013,1106",
+                        "endColumns": "115,92,94,83,89,85,109,70,64,71,75,92,106",
+                        "endOffsets": "166,259,354,438,528,614,724,795,860,932,1008,1101,1208"
+                    }
+                }
+            ]
+        }
+    ]
+}

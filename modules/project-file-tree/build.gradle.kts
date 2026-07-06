@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.xc.code.project_file_tree"
+    namespace = "com.jmwl.gostudio.project_file_tree"
     compileSdk = 36
 
     defaultConfig {

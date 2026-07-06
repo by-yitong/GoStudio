@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.xc.code.lsp.clangd"
+    namespace = "com.jmwl.gostudio.lsp.clangd"
     compileSdk = 36
 
     defaultConfig {

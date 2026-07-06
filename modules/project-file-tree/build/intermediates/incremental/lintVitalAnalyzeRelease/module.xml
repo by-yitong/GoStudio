@@ -1,0 +1,19 @@
+<lint-module
+    format="1"
+    dir="/run/media/admins/DATA/myitem/project/GoStudio2/modules/project-file-tree"
+    name=":modules:project-file-tree"
+    type="LIBRARY"
+    maven="GoStudio.modules:project-file-tree:unspecified"
+    agpVersion="8.13.0"
+    buildFolder="build"
+    bootClassPath="/home/admins/Android/Sdk/platforms/android-36/android.jar:/home/admins/Android/Sdk/build-tools/35.0.0/core-lambda-stubs.jar"
+    javaSourceLevel="17"
+    compileTarget="android-36"
+    neverShrinking="true">
+  <lintOptions
+      abortOnError="true"
+      absolutePaths="true"
+      checkReleaseBuilds="true"
+      explainIssues="true"/>
+  <variant name="release"/>
+</lint-module>

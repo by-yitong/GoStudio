@@ -1,0 +1,8 @@
+{
+	"InstallScripts" : 
+	[
+		"/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/cmake_install.cmake",
+		"/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/oniguruma/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

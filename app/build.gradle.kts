@@ -6,12 +6,12 @@ plugins {
 }
 
 android {
-    namespace = "com.xc.code"
+    namespace = "com.jmwl.gostudio"
     ndkVersion = "29.0.14206865"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.xc.code"
+        applicationId = "com.jmwl.gostudio"
         minSdk = 26
         targetSdk = 28
         versionCode = 100
@@ -47,10 +47,10 @@ android {
     
     signingConfigs {
         create("release") {
-            keyAlias = "release"
-            keyPassword = "11754840"
-            storePassword = "11754840"
-            storeFile = file("xcode-release-key.jks")
+            keyAlias = "gostudio"
+            keyPassword = "REDACTED"
+            storePassword = "REDACTED"
+            storeFile = file("gostudio-release.jks")
         }
     }
 
