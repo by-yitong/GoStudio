@@ -731,6 +731,20 @@
       externalAnnotations="annotations.zip"
       proguardRules="proguard.txt"/>
   <library
+      name=":@@:modules:gopls-lsp::release"
+      jars="/home/admins/.gradle/caches/9.0.0/transforms/68e3e478abce14a933056c4eaa498edd/transformed/out/jars/classes.jar:/home/admins/.gradle/caches/9.0.0/transforms/68e3e478abce14a933056c4eaa498edd/transformed/out/jars/libs/R.jar"
+      resolved="GoStudio.modules:gopls-lsp:unspecified"
+      partialResultsDir="/run/media/admins/DATA/myitem/project/GoStudio2/modules/gopls-lsp/build/intermediates/lint_vital_partial_results/release/lintVitalAnalyzeRelease/out"
+      folder="/home/admins/.gradle/caches/9.0.0/transforms/68e3e478abce14a933056c4eaa498edd/transformed/out"
+      manifest="AndroidManifest.xml"
+      resFolder="res"
+      assetsFolder="assets"
+      lintJar="lint.jar"
+      publicResources="public.txt"
+      symbolFile="R.txt"
+      externalAnnotations="annotations.zip"
+      proguardRules="proguard.txt"/>
+  <library
       name=":@@:modules:sora-language-textmate::release"
       jars="/home/admins/.gradle/caches/9.0.0/transforms/a0558eb2e11d0e0497a048ffb81579e7/transformed/out/jars/classes.jar:/home/admins/.gradle/caches/9.0.0/transforms/a0558eb2e11d0e0497a048ffb81579e7/transformed/out/jars/libs/R.jar"
       resolved="GoStudio.modules:sora-language-textmate:unspecified"

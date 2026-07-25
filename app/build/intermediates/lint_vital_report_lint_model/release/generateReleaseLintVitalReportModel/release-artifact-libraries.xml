@@ -687,6 +687,9 @@
       name=":@@:modules:clangd-lsp::release"
       project=":modules:clangd-lsp"/>
   <library
+      name=":@@:modules:gopls-lsp::release"
+      project=":modules:gopls-lsp"/>
+  <library
       name=":@@:modules:sora-language-textmate::release"
       project=":modules:sora-language-textmate"/>
   <library
