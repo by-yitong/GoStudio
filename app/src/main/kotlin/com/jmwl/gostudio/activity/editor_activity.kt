@@ -140,17 +140,6 @@ class editor_activity : ComponentActivity() {
                     output_panel_state.append_log("输出目录: $path")
                 }
             }
-            project_kind.CMAKE -> {
-                detected_project_info.build_dir?.let { path ->
-                    output_panel_state.append_log("Build dir: $path")
-                }
-                detected_project_info.build_file_path?.let { path ->
-                    output_panel_state.append_log("CMakeLists: $path")
-                }
-                detected_project_info.compile_commands_path?.let { path ->
-                    output_panel_state.append_log("compile_commands: $path")
-                }
-            }
             project_kind.UNKNOWN -> {
                 output_panel_state.append_log("未识别到项目（缺少 go.mod）", editor_output_line_level.WARNING)
             }

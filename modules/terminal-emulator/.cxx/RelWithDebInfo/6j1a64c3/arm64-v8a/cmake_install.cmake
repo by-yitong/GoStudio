@@ -1,4 +1,4 @@
-# Install script for directory: /run/media/admins/DATA/myitem/project/GoStudio2/modules/terminal-emulator/src/main/cpp
+# Install script for directory: /run/media/admins/DATA/myitem/project/GoStudio/modules/terminal-emulator/src/main/cpp
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -45,7 +45,7 @@ endif()
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
 if(CMAKE_INSTALL_LOCAL_ONLY)
-  file(WRITE "/run/media/admins/DATA/myitem/project/GoStudio2/modules/terminal-emulator/.cxx/RelWithDebInfo/6j1a64c3/arm64-v8a/install_local_manifest.txt"
+  file(WRITE "/run/media/admins/DATA/myitem/project/GoStudio/modules/terminal-emulator/.cxx/RelWithDebInfo/6j1a64c3/arm64-v8a/install_local_manifest.txt"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
 endif()
 if(CMAKE_INSTALL_COMPONENT)
@@ -61,6 +61,6 @@ else()
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
-  file(WRITE "/run/media/admins/DATA/myitem/project/GoStudio2/modules/terminal-emulator/.cxx/RelWithDebInfo/6j1a64c3/arm64-v8a/${CMAKE_INSTALL_MANIFEST}"
+  file(WRITE "/run/media/admins/DATA/myitem/project/GoStudio/modules/terminal-emulator/.cxx/RelWithDebInfo/6j1a64c3/arm64-v8a/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
 endif()

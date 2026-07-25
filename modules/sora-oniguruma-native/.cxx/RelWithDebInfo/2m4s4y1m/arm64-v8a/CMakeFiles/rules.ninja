@@ -95,7 +95,7 @@ rule C_SHARED_LIBRARY_LINKER__onig_RelWithDebInfo
 # Rule for re-running cmake.
 
 rule RERUN_CMAKE
-  command = /usr/bin/cmake --regenerate-during-build -S/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/src/main/cpp -B/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a
+  command = /usr/bin/cmake --regenerate-during-build -S/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/src/main/cpp -B/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a
   description = Re-running CMake...
   generator = 1
 

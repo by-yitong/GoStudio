@@ -77,7 +77,7 @@
 			"destination" : "lib",
 			"paths" : 
 			[
-				"/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/build/intermediates/cxx/RelWithDebInfo/2m4s4y1m/obj/arm64-v8a/libonig.so"
+				"/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/build/intermediates/cxx/RelWithDebInfo/2m4s4y1m/obj/arm64-v8a/libonig.so"
 			],
 			"targetId" : "onig::@5acf2c6e2fc8dcda7e4c",
 			"targetIndex" : 0,
@@ -100,8 +100,8 @@
 			"destination" : "lib/cmake/oniguruma",
 			"paths" : 
 			[
-				"/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/oniguruma/generated/onigurumaConfig.cmake",
-				"/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/oniguruma/generated/onigurumaConfigVersion.cmake"
+				"/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/oniguruma/generated/onigurumaConfig.cmake",
+				"/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/oniguruma/generated/onigurumaConfigVersion.cmake"
 			],
 			"type" : "file"
 		},
@@ -162,7 +162,7 @@
 			"destination" : "lib/pkgconfig",
 			"paths" : 
 			[
-				"/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/oniguruma/oniguruma.pc"
+				"/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/oniguruma/oniguruma.pc"
 			],
 			"type" : "file"
 		},
@@ -172,7 +172,7 @@
 			"destination" : "bin",
 			"paths" : 
 			[
-				"/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/oniguruma/onig-config"
+				"/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/oniguruma/onig-config"
 			],
 			"type" : "file"
 		}

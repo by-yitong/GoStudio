@@ -1,6 +1,6 @@
 <lint-module
     format="1"
-    dir="/run/media/admins/DATA/myitem/project/GoStudio2/modules/gopls-lsp"
+    dir="/run/media/admins/DATA/myitem/project/GoStudio/modules/gopls-lsp"
     name=":modules:gopls-lsp"
     type="LIBRARY"
     maven="GoStudio.modules:gopls-lsp:unspecified"

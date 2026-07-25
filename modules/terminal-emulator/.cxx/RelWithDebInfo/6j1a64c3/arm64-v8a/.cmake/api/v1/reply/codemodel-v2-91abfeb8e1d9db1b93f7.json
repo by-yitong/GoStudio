@@ -40,7 +40,7 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "termux::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-termux-RelWithDebInfo-6a166047e3a8548cb713.json",
+					"jsonFile" : "target-termux-RelWithDebInfo-e336febe9b6ac69aa6e5.json",
 					"name" : "termux",
 					"projectIndex" : 0
 				}
@@ -50,8 +50,8 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "/run/media/admins/DATA/myitem/project/GoStudio2/modules/terminal-emulator/.cxx/RelWithDebInfo/6j1a64c3/arm64-v8a",
-		"source" : "/run/media/admins/DATA/myitem/project/GoStudio2/modules/terminal-emulator/src/main/cpp"
+		"build" : "/run/media/admins/DATA/myitem/project/GoStudio/modules/terminal-emulator/.cxx/RelWithDebInfo/6j1a64c3/arm64-v8a",
+		"source" : "/run/media/admins/DATA/myitem/project/GoStudio/modules/terminal-emulator/src/main/cpp"
 	},
 	"version" : 
 	{

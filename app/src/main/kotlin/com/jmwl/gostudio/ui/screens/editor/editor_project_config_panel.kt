@@ -127,12 +127,18 @@ fun editor_project_config_panel(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(1.dp)
         ) {
-            project_config_extra_cmake_args_card(
+            project_config_extra_args_card(
                 value = config.build.build_tags,
+                title = "Build Tags",
+                subtitle = "传递给 go build 的构建标签",
+                placeholder = "netgo osusergo",
                 on_change = { tags -> config = config.copy(build = config.build.copy(build_tags = tags)) }
             )
-            project_config_extra_cmake_args_card(
+            project_config_extra_args_card(
                 value = config.build.ldflags,
+                title = "LDFLAGS",
+                subtitle = "传递给链接器的参数（-ldflags）",
+                placeholder = "-s -w",
                 on_change = { flags -> config = config.copy(build = config.build.copy(ldflags = flags)) }
             )
             project_config_parallel_jobs_card(
@@ -304,22 +310,25 @@ private fun project_config_parallel_jobs_card(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun project_config_extra_cmake_args_card(
+private fun project_config_extra_args_card(
     value: String,
+    title: String,
+    subtitle: String,
+    placeholder: String,
     on_change: (String) -> Unit
 ) {
     val colors = app_theme_provider.colors
     var input by remember(value) { mutableStateOf("") }
-    val args = remember(value) { split_cmake_args(value) }
+    val args = remember(value) { split_args(value) }
 
-    fun update_args(next_args: List<cmake_arg_chip>) {
+    fun update_args(next_args: List<arg_chip>) {
         on_change(next_args.joinToString(" ") { if (it.enabled) it.text else "#${it.text}" })
     }
 
     fun commit_input() {
         val next = input.trim().removePrefix("#")
         if (next.isBlank()) return
-        update_args(args + cmake_arg_chip(next, enabled = true))
+        update_args(args + arg_chip(next, enabled = true))
         input = ""
     }
 
@@ -342,8 +351,8 @@ private fun project_config_extra_cmake_args_card(
             ) {
                 project_config_icon(Icons.Default.Code)
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("额外 CMake 参数", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = colors.card_text_title)
-                    Text("追加到 CMake 初始化命令", fontSize = 10.sp, lineHeight = 12.sp, color = colors.card_text_subtitle)
+                    Text(title, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = colors.card_text_title)
+                    Text(subtitle, fontSize = 10.sp, lineHeight = 12.sp, color = colors.card_text_subtitle)
                 }
             }
 
@@ -389,7 +398,7 @@ private fun project_config_extra_cmake_args_card(
                     ) {
                         if (input.isEmpty()) {
                             Text(
-                                text = "-DXXX=ON",
+                                text = placeholder,
                                 color = colors.card_text_subtitle.copy(alpha = 0.62f),
                                 fontSize = 10.sp,
                                 maxLines = 1,
@@ -470,18 +479,18 @@ private fun project_config_arg_chip(
     }
 }
 
-private data class cmake_arg_chip(
+private data class arg_chip(
     val text: String,
     val enabled: Boolean
 )
 
-private fun split_cmake_args(value: String): List<cmake_arg_chip> {
+private fun split_args(value: String): List<arg_chip> {
     return value.split(Regex("\\s+"))
         .map { it.trim() }
         .filter { it.isNotBlank() }
         .map { raw ->
             val enabled = !raw.startsWith("#")
-            cmake_arg_chip(text = raw.removePrefix("#"), enabled = enabled)
+            arg_chip(text = raw.removePrefix("#"), enabled = enabled)
         }
 }
 

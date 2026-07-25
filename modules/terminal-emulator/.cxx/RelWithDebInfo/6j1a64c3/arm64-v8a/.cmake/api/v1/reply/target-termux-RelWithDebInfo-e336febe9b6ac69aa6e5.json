@@ -2,7 +2,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "/run/media/admins/DATA/myitem/project/GoStudio2/modules/terminal-emulator/build/intermediates/cxx/RelWithDebInfo/6j1a64c3/obj/arm64-v8a/libtermux.so"
+			"path" : "/run/media/admins/DATA/myitem/project/GoStudio/modules/terminal-emulator/build/intermediates/cxx/RelWithDebInfo/6j1a64c3/obj/arm64-v8a/libtermux.so"
 		}
 	],
 	"backtrace" : 1,

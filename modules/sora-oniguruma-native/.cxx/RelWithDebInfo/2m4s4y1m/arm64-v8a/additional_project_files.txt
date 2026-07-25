@@ -1,4 +1,4 @@
-/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/src/main/cpp/oniguruma/src/regint.h
-/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/src/main/cpp/oniguruma/src/regparse.h
-/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/src/main/cpp/oniguruma/src/regenc.h
-/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/src/main/cpp/oniguruma/src/st.h
+/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/src/main/cpp/oniguruma/src/regint.h
+/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/src/main/cpp/oniguruma/src/regparse.h
+/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/src/main/cpp/oniguruma/src/regenc.h
+/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/src/main/cpp/oniguruma/src/st.h

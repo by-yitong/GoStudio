@@ -1,9 +1,9 @@
 <libraries>
   <library
       name=":@@:modules:terminal-emulator::release"
-      jars="/home/admins/.gradle/caches/9.0.0/transforms/32c3e307eba0480ab25c588e0e389ee4/transformed/out/jars/classes.jar:/home/admins/.gradle/caches/9.0.0/transforms/32c3e307eba0480ab25c588e0e389ee4/transformed/out/jars/libs/R.jar"
+      jars="/home/admins/.gradle/caches/9.0.0/transforms/8cfdff73e1b8ff6ef9f432ab8e2e1f3f/transformed/out/jars/classes.jar:/home/admins/.gradle/caches/9.0.0/transforms/8cfdff73e1b8ff6ef9f432ab8e2e1f3f/transformed/out/jars/libs/R.jar"
       resolved="GoStudio.modules:terminal-emulator:unspecified"
-      folder="/home/admins/.gradle/caches/9.0.0/transforms/32c3e307eba0480ab25c588e0e389ee4/transformed/out"
+      folder="/home/admins/.gradle/caches/9.0.0/transforms/8cfdff73e1b8ff6ef9f432ab8e2e1f3f/transformed/out"
       manifest="AndroidManifest.xml"
       resFolder="res"
       assetsFolder="assets"

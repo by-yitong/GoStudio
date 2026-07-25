@@ -1,6 +1,6 @@
 <lint-module
     format="1"
-    dir="/run/media/admins/DATA/myitem/project/GoStudio2/modules/project-file-tree"
+    dir="/run/media/admins/DATA/myitem/project/GoStudio/modules/project-file-tree"
     name=":modules:project-file-tree"
     type="LIBRARY"
     maven="GoStudio.modules:project-file-tree:unspecified"

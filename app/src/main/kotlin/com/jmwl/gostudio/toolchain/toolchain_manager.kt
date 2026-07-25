@@ -155,7 +155,7 @@ object toolchain_manager {
     /**
      * 组装项目构建环境。
      *
-     * @param project_path 项目 host 路径（用于日志，Go 不像 cmake 需要工具链文件）
+     * @param project_path 项目 host 路径（用于日志）
      */
     fun project_environment(project_path: String): project_toolchain_environment {
         val go = installed_go()

@@ -1,1 +1,1 @@
-/run/media/admins/DATA/myitem/project/GoStudio2/modules/terminal-emulator/src/main/cpp/CMakeLists.txt
+/run/media/admins/DATA/myitem/project/GoStudio/modules/terminal-emulator/src/main/cpp/CMakeLists.txt

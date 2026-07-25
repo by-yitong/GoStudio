@@ -1,4 +1,4 @@
-                        -H/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/src/main/cpp
+                        -H/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/src/main/cpp
 -DCMAKE_SYSTEM_NAME=Android
 -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 -DCMAKE_SYSTEM_VERSION=26
@@ -9,10 +9,10 @@
 -DCMAKE_ANDROID_NDK=/home/admins/Android/Sdk/ndk/27.0.12077973
 -DCMAKE_TOOLCHAIN_FILE=/home/admins/Android/Sdk/ndk/27.0.12077973/build/cmake/android.toolchain.cmake
 -DCMAKE_MAKE_PROGRAM=/usr/bin/ninja
--DCMAKE_LIBRARY_OUTPUT_DIRECTORY=/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/build/intermediates/cxx/RelWithDebInfo/2m4s4y1m/obj/arm64-v8a
--DCMAKE_RUNTIME_OUTPUT_DIRECTORY=/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/build/intermediates/cxx/RelWithDebInfo/2m4s4y1m/obj/arm64-v8a
+-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/build/intermediates/cxx/RelWithDebInfo/2m4s4y1m/obj/arm64-v8a
+-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/build/intermediates/cxx/RelWithDebInfo/2m4s4y1m/obj/arm64-v8a
 -DCMAKE_BUILD_TYPE=RelWithDebInfo
--B/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a
+-B/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a
 -GNinja
                         Build command args: []
                         Version: 2

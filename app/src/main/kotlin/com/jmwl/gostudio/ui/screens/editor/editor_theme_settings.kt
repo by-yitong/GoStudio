@@ -372,11 +372,11 @@ private fun editor_theme_preview_card(preview_palette: editor_theme_preview_pale
                     modifier = Modifier
                         .horizontalScroll(scroll_state)
                 ) {
-                    editor_theme_cpp_preview_page(
+                    editor_theme_go_code_preview_page(
                         preview_palette = preview_palette,
                         modifier = Modifier.width(page_width)
                     )
-                    editor_theme_cmake_preview_page(
+                    editor_theme_go_mod_preview_page(
                         preview_palette = preview_palette,
                         modifier = Modifier.width(page_width)
                     )
@@ -387,7 +387,7 @@ private fun editor_theme_preview_card(preview_palette: editor_theme_preview_pale
 }
 
 @Composable
-private fun editor_theme_cpp_preview_page(
+private fun editor_theme_go_code_preview_page(
     preview_palette: editor_theme_preview_palette,
     modifier: Modifier = Modifier
 ) {
@@ -446,7 +446,7 @@ private fun editor_theme_cpp_preview_page(
 }
 
 @Composable
-private fun editor_theme_cmake_preview_page(
+private fun editor_theme_go_mod_preview_page(
     preview_palette: editor_theme_preview_palette,
     modifier: Modifier = Modifier
 ) {

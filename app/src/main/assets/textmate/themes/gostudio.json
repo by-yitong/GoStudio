@@ -188,46 +188,6 @@
     },
 
     {
-      "name": "CMake 注释",
-      "scope": ["comment.line.number-sign.cmake", "comment.line.cmake"],
-      "settings": { "foreground": "#6F8496", "fontStyle": "italic" }
-    },
-    {
-      "name": "CMake 命令",
-      "scope": ["keyword.control.cmake", "entity.name.function.cmake", "support.function.command.cmake"],
-      "settings": { "foreground": "#7AD7C2" }
-    },
-    {
-      "name": "CMake 变量",
-      "scope": ["variable.other.cmake", "variable.other.environment.cmake", "variable.other.readwrite.cmake"],
-      "settings": { "foreground": "#82AAFF" }
-    },
-    {
-      "name": "CMake 内置常量",
-      "scope": ["support.constant.cmake", "constant.language.cmake", "constant.other.cmake"],
-      "settings": { "foreground": "#FFB86C" }
-    },
-    {
-      "name": "CMake 生成器表达式",
-      "scope": ["support.function.generator-expression.cmake", "meta.generator-expression.cmake"],
-      "settings": { "foreground": "#B7A6FF" }
-    },
-    {
-      "name": "CMake 字符串",
-      "scope": ["string.quoted.double.cmake", "string.unquoted.cmake"],
-      "settings": { "foreground": "#A6E3A1" }
-    },
-    {
-      "name": "CMake 数字与转义",
-      "scope": ["constant.numeric.cmake", "constant.numeric.hex.cmake", "constant.character.escape.cmake"],
-      "settings": { "foreground": "#FFD166" }
-    },
-    {
-      "name": "CMake 运算符",
-      "scope": ["keyword.operator.cmake"],
-      "settings": { "foreground": "#89DDFF" }
-    },
-    {
       "name": "无效代码",
       "scope": "invalid",
       "settings": { "foreground": "#FFFFFF", "background": "#D73A49" }
