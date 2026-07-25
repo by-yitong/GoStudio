@@ -25,19 +25,6 @@ fun is_readable_project_file(project_dir: File, file: File): Boolean {
     }.getOrDefault(false)
 }
 
-fun is_c_family_file(file_path: String?): Boolean {
-    if (file_path.isNullOrBlank()) return true
-    val name = File(file_path).name
-    return name.endsWith(".c", ignoreCase = true) ||
-        name.endsWith(".cc", ignoreCase = true) ||
-        name.endsWith(".cpp", ignoreCase = true) ||
-        name.endsWith(".cxx", ignoreCase = true) ||
-        name.endsWith(".h", ignoreCase = true) ||
-        name.endsWith(".hh", ignoreCase = true) ||
-        name.endsWith(".hpp", ignoreCase = true) ||
-        name.endsWith(".hxx", ignoreCase = true)
-}
-
 /** 是否为 Go 源文件（.go / .mod / .sum / .work），用于决定是否启动 gopls。 */
 fun is_go_file(file_path: String?): Boolean {
     if (file_path.isNullOrBlank()) return false

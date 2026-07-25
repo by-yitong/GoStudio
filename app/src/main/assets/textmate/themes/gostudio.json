@@ -43,7 +43,7 @@
     },
     {
       "name": "文档注释",
-      "scope": ["comment.block.documentation", "comment.block.documentation.c", "comment.block.documentation.cpp"],
+      "scope": ["comment.block.documentation"],
       "settings": { "foreground": "#7F98AB", "fontStyle": "italic" }
     },
     {
@@ -78,12 +78,12 @@
     },
     {
       "name": "字符与转义",
-      "scope": ["constant.character", "constant.character.escape", "constant.character.escape.c", "constant.character.escape.cpp"],
+      "scope": ["constant.character", "constant.character.escape"],
       "settings": { "foreground": "#FFD166" }
     },
     {
       "name": "格式化占位符",
-      "scope": ["constant.other.placeholder", "constant.other.placeholder.c", "constant.other.placeholder.cpp"],
+      "scope": ["constant.other.placeholder"],
       "settings": { "foreground": "#F78C6C" }
     },
     {
@@ -93,7 +93,7 @@
     },
     {
       "name": "语言常量",
-      "scope": ["constant.language", "constant.language.boolean", "constant.language.null", "constant.language.cpp", "constant.language.c"],
+      "scope": ["constant.language", "constant.language.boolean", "constant.language.null"],
       "settings": { "foreground": "#FFB86C" }
     },
     {

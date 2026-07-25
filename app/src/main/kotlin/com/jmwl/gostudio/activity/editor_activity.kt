@@ -326,7 +326,7 @@ class editor_activity : ComponentActivity() {
         state.editor_settings = settings
         save_editor_settings(this, settings)
         if (gopls_settings_changed) {
-            reset_clangd_project()
+            reset_gopls_project()
         }
         open_editors().forEach { tab_editor ->
             apply_editor_behavior_settings(
@@ -373,7 +373,7 @@ class editor_activity : ComponentActivity() {
                 on_saved()
                 app_toast.show(this, "项目配置已应用", app_toast.LENGTH_SHORT)
                 // 配置变更后重启 gopls，让其重新加载构建约束等
-                reset_clangd_project()
+                reset_gopls_project()
             }
             .onFailure { error ->
                 app_toast.show(this, "项目配置保存失败: ${error.message}", app_toast.LENGTH_LONG)
@@ -933,7 +933,7 @@ class editor_activity : ComponentActivity() {
             go_build_job?.isActive != true
         ) {
             output_panel_state.append_log("go.mod 已保存，重启 gopls")
-            reset_clangd_project()
+            reset_gopls_project()
         }
     }
 
@@ -1048,15 +1048,15 @@ class editor_activity : ComponentActivity() {
         }
     }
 
-    private fun reset_clangd_project() {
+    private fun reset_gopls_project() {
         gopls_connect_job?.cancel()
-        restore_editor_languages_from_clangd()
+        restore_editor_languages_from_lsp()
         gopls_project?.dispose()
         gopls_project = null
         active_tab()?.let { connect_gopls_if_needed(it) }
     }
 
-    private fun restore_editor_languages_from_clangd() {
+    private fun restore_editor_languages_from_lsp() {
         open_editors().forEach { tab_editor ->
             val language = tab_editor.editorLanguage
             if (language is LspLanguage) {
@@ -1607,7 +1607,7 @@ class editor_activity : ComponentActivity() {
 
     private fun create_configured_textmate_language(file_path: String): TextMateLanguage {
         return (gostudio_application.instance.create_textmate_language(file_path)
-            ?: TextMateLanguage.create("source.cpp", false)).also { language ->
+            ?: TextMateLanguage.create("source.go", false)).also { language ->
             apply_textmate_language_settings(language, state.editor_settings, file_path)
         }
     }

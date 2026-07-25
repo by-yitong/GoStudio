@@ -12,16 +12,6 @@ internal fun load_editor_settings(context: Context): editor_settings_state {
     val prefs = context.getSharedPreferences(editor_settings_prefs_name, Context.MODE_PRIVATE)
     val imported_font_path = prefs.getString("imported_font_path", defaults.imported_font_path).orEmpty()
 
-    // 一次性迁移：旧版本用 clangd_* 键，新版本改 gopls_*。若无 gopls_* 键则回退读旧 clangd_* 值。
-    val migrated = prefs.getBoolean("gopls_migrated", false)
-    fun goplsBool(key: String, legacyKey: String, default: Boolean): Boolean {
-        return if (migrated) {
-            prefs.getBoolean(key, default)
-        } else {
-            if (prefs.contains(legacyKey)) prefs.getBoolean(legacyKey, default) else default
-        }
-    }
-
     return editor_settings_state(
         word_wrap = prefs.getBoolean("word_wrap", defaults.word_wrap),
         line_numbers = prefs.getBoolean("line_numbers", defaults.line_numbers),
@@ -36,12 +26,12 @@ internal fun load_editor_settings(context: Context): editor_settings_state {
         cursor_blink = prefs.getBoolean("cursor_blink", defaults.cursor_blink),
         auto_indent = prefs.getBoolean("auto_indent", defaults.auto_indent),
         auto_completion = prefs.getBoolean("auto_completion", defaults.auto_completion),
-        gopls_enabled = goplsBool("gopls_enabled", "clangd_enabled", defaults.gopls_enabled),
-        gopls_completion = goplsBool("gopls_completion", "clangd_completion", defaults.gopls_completion),
-        gopls_signature_help = goplsBool("gopls_signature_help", "clangd_signature_help", defaults.gopls_signature_help),
-        gopls_document_highlight = goplsBool("gopls_document_highlight", "clangd_document_highlight", defaults.gopls_document_highlight),
-        gopls_formatting = goplsBool("gopls_formatting", "clangd_formatting", defaults.gopls_formatting),
-        gopls_hover = goplsBool("gopls_hover", "clangd_hover", defaults.gopls_hover),
+        gopls_enabled = prefs.getBoolean("gopls_enabled", defaults.gopls_enabled),
+        gopls_completion = prefs.getBoolean("gopls_completion", defaults.gopls_completion),
+        gopls_signature_help = prefs.getBoolean("gopls_signature_help", defaults.gopls_signature_help),
+        gopls_document_highlight = prefs.getBoolean("gopls_document_highlight", defaults.gopls_document_highlight),
+        gopls_formatting = prefs.getBoolean("gopls_formatting", defaults.gopls_formatting),
+        gopls_hover = prefs.getBoolean("gopls_hover", defaults.gopls_hover),
         font_ligatures = prefs.getBoolean("font_ligatures", defaults.font_ligatures),
         font_size = prefs.getFloat("font_size", defaults.font_size).coerceIn(10f, 24f),
         tab_size = prefs.getInt("tab_size", defaults.tab_size).coerceIn(2, 8),
