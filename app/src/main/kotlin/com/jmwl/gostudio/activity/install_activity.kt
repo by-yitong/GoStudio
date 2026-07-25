@@ -154,7 +154,7 @@ class install_activity : ComponentActivity() {
                 if (needs_initialization) {
                     if (!run_required_command("update...", "apt-get update -y")) return@launch
                     
-                    val required_packages = listOf("wget", "tar", "unzip", "xz-utils", "ca-certificates", "git")
+                    val required_packages = listOf("wget", "tar", "unzip", "xz-utils", "ca-certificates", "git", "golang", "gopls")
                     for (package_name in required_packages) {
                         if (!run_required_command(
                                 "安装 $package_name...",
