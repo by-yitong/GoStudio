@@ -12,6 +12,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.lifecycleScope
 import com.jmwl.gostudio.toolchain.proot_manager
+import com.jmwl.gostudio.toolchain.install_go_toolchain
 import com.jmwl.gostudio.toolchain.runtime.format_rootfs_size
 import com.jmwl.gostudio.toolchain.runtime.format_rootfs_speed
 import com.jmwl.gostudio.toolchain.runtime.rootfs_install_event
@@ -152,22 +153,32 @@ class install_activity : ComponentActivity() {
                 }
 
                 if (needs_initialization) {
-                    if (!run_required_command("update...", "apt-get update -y")) return@launch
-                    
-                    val required_packages = listOf("wget", "tar", "unzip", "xz-utils", "ca-certificates", "git", "golang", "gopls")
-                    for (package_name in required_packages) {
-                        if (!run_required_command(
-                                "安装 $package_name...",
-                                "DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $package_name"
-                            )
-                        ) return@launch
+                    // 基础工具（ubuntu-base 可能已自带部分，缺失也无妨）
+                    val base_packages = listOf("wget", "tar", "unzip", "xz-utils", "ca-certificates")
+                    for (package_name in base_packages) {
+                        run_required_command(
+                            "安装 $package_name...",
+                            "DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $package_name"
+                        )
+                    }
+
+                    // Go 工具链（go + gopls + git）：走带镜像测速与回退的安装流程，国内网络更稳
+                    add_log("安装 Go 工具链（go + gopls + git）...")
+                    val go_ok = install_go_toolchain(
+                        onLog = { line -> runOnUiThread { add_proot_log(line) } },
+                        onProgress = { }
+                    )
+                    if (!go_ok) {
+                        add_log("Go 工具链安装失败，可稍后在「开发工具」页重试")
+                    } else {
+                        add_log("Go 工具链安装完成")
                     }
 
                     run_required_command(
                         "安装 command-not-found...",
                         "DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends command-not-found"
                     )
-                    
+
                     if (!run_required_command("刷新命令索引...", "apt-get update -qq -y")) return@launch
 
                     withContext(Dispatchers.IO) {

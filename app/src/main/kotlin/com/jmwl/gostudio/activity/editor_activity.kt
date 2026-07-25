@@ -29,12 +29,13 @@ import com.jmwl.gostudio.toolchain.proot_manager
 import com.jmwl.gostudio.toolchain.toolchain_manager
 import com.jmwl.gostudio.toolchain.toolchain_runtime_provider
 import com.jmwl.gostudio.project.detected_project
+import com.jmwl.gostudio.project.project_build_config
 import com.jmwl.gostudio.project.project_detector
 import com.jmwl.gostudio.project.project_ide_config
 import com.jmwl.gostudio.project.project_kind
 import com.jmwl.gostudio.project.project_manager
-import com.jmwl.gostudio.lsp.clangd.clangd_lsp_config
-import com.jmwl.gostudio.lsp.clangd.clangd_lsp_project
+import com.jmwl.gostudio.lsp.gopls.gopls_lsp_config
+import com.jmwl.gostudio.lsp.gopls.gopls_lsp_project
 import com.jmwl.gostudio.editor.theme.editor_theme_manager
 import com.jmwl.gostudio.ui.dialogs.editor.editor_exit_confirm_dialog
 import com.jmwl.gostudio.ui.dialogs.editor.editor_unsaved_file_dialog
@@ -64,13 +65,13 @@ class editor_activity : ComponentActivity() {
     private var applying_editor_content = false
     private var current_textmate_scope: String? = null
     private var block_hint_job: Job? = null
-    private var cmake_configure_job: Job? = null
-    private var cmake_build_job: Job? = null
+    private var go_build_job: Job? = null
+    private var go_run_job: Job? = null
     private var file_tree_job: Job? = null
     private var textmate_prewarm_started = false
-    private var clangd_project: clangd_lsp_project? = null
-    private var clangd_connect_job: Job? = null
-    private val clangd_skipped_files = mutableSetOf<String>()
+    private var gopls_project: gopls_lsp_project? = null
+    private var gopls_connect_job: Job? = null
+    private val gopls_skipped_files = mutableSetOf<String>()
     private val file_tree_children_cache = mutableMapOf<String, List<editor_file_node>>()
     private lateinit var search_controller: editor_search_controller
     private lateinit var tab_lifecycle: editor_tab_lifecycle
@@ -114,12 +115,12 @@ class editor_activity : ComponentActivity() {
 
     override fun onDestroy() {
         block_hint_job?.cancel()
-        cmake_configure_job?.cancel()
-        cmake_build_job?.cancel()
+        go_build_job?.cancel()
+        go_run_job?.cancel()
         file_tree_job?.cancel()
-        clangd_connect_job?.cancel()
-        clangd_project?.dispose()
-        clangd_project = null
+        gopls_connect_job?.cancel()
+        gopls_project?.dispose()
+        gopls_project = null
         val tab_editors = state.open_tabs.mapNotNull { tab -> tab.editor }.toSet()
         state.open_tabs.toList().forEach { tab -> release_tab_editor(tab) }
         if (::editor.isInitialized && editor !in tab_editors) {
@@ -131,6 +132,14 @@ class editor_activity : ComponentActivity() {
 
     private fun append_detected_project_log() {
         when (detected_project_info.kind) {
+            project_kind.GO -> {
+                detected_project_info.build_file_path?.let { path ->
+                    output_panel_state.append_log("go.mod: $path")
+                }
+                detected_project_info.build_dir?.let { path ->
+                    output_panel_state.append_log("输出目录: $path")
+                }
+            }
             project_kind.CMAKE -> {
                 detected_project_info.build_dir?.let { path ->
                     output_panel_state.append_log("Build dir: $path")
@@ -143,7 +152,7 @@ class editor_activity : ComponentActivity() {
                 }
             }
             project_kind.UNKNOWN -> {
-                output_panel_state.append_log("未识别到 CMake 项目", editor_output_line_level.WARNING)
+                output_panel_state.append_log("未识别到项目（缺少 go.mod）", editor_output_line_level.WARNING)
             }
         }
     }
@@ -221,7 +230,7 @@ class editor_activity : ComponentActivity() {
             on_close_other_tabs = { path -> request_close_other_tabs(path) },
             on_close_all_tabs = { request_close_all_tabs() },
             on_build = { handle_build_button_click() },
-            on_configure_cmake = { configure_cmake_project(clean_build = true, show_toast = true) },
+            on_run = { run_go_project() },
             on_save = { request_save_file() },
             on_format = { format_current_file() },
             on_toggle_read_only = { toggle_read_only() },
@@ -319,15 +328,15 @@ class editor_activity : ComponentActivity() {
     }
 
     private fun apply_editor_settings(settings: editor_settings_state) {
-        val clangd_settings_changed = state.editor_settings.clangd_enabled != settings.clangd_enabled ||
-            state.editor_settings.clangd_completion != settings.clangd_completion ||
-            state.editor_settings.clangd_signature_help != settings.clangd_signature_help ||
-            state.editor_settings.clangd_document_highlight != settings.clangd_document_highlight ||
-            state.editor_settings.clangd_formatting != settings.clangd_formatting ||
-            state.editor_settings.clangd_hover != settings.clangd_hover
+        val gopls_settings_changed = state.editor_settings.gopls_enabled != settings.gopls_enabled ||
+            state.editor_settings.gopls_completion != settings.gopls_completion ||
+            state.editor_settings.gopls_signature_help != settings.gopls_signature_help ||
+            state.editor_settings.gopls_document_highlight != settings.gopls_document_highlight ||
+            state.editor_settings.gopls_formatting != settings.gopls_formatting ||
+            state.editor_settings.gopls_hover != settings.gopls_hover
         state.editor_settings = settings
         save_editor_settings(this, settings)
-        if (clangd_settings_changed) {
+        if (gopls_settings_changed) {
             reset_clangd_project()
         }
         open_editors().forEach { tab_editor ->
@@ -374,7 +383,8 @@ class editor_activity : ComponentActivity() {
             .onSuccess {
                 on_saved()
                 app_toast.show(this, "项目配置已应用", app_toast.LENGTH_SHORT)
-                configure_cmake_project(clean_build = true, show_toast = true)
+                // 配置变更后重启 gopls，让其重新加载构建约束等
+                reset_clangd_project()
             }
             .onFailure { error ->
                 app_toast.show(this, "项目配置保存失败: ${error.message}", app_toast.LENGTH_LONG)
@@ -391,7 +401,6 @@ class editor_activity : ComponentActivity() {
 
                 prewarm_textmate_languages()
                 restore_pinned_tabs()
-                configure_cmake_project_if_needed()
             }
         }
     }
@@ -400,10 +409,10 @@ class editor_activity : ComponentActivity() {
         if (textmate_prewarm_started) return
         textmate_prewarm_started = true
         lifecycleScope.launch(Dispatchers.Default) {
-            listOf("prewarm.c", "prewarm.cpp").forEach { file_name ->
+            listOf("prewarm.go", "prewarm.mod").forEach { file_name ->
                 runCatching {
                     gostudio_application.instance.create_textmate_language(file_name)?.let { language ->
-                        language.setCompleterKeywords(c_cpp_completion_keywords)
+                        language.setCompleterKeywords(go_completion_keywords)
                         language.destroy()
                     }
                 }
@@ -521,8 +530,8 @@ class editor_activity : ComponentActivity() {
     private fun format_current_file() {
         val file_path = state.current_file_path ?: return
         if (state.read_only) return
-        if (is_c_family_file(file_path) && !state.editor_settings.clangd_formatting) {
-            app_toast.show(this, "clangd 格式化已关闭", app_toast.LENGTH_SHORT)
+        if (is_go_file(file_path) && !state.editor_settings.gopls_formatting) {
+            app_toast.show(this, "gopls 格式化已关闭", app_toast.LENGTH_SHORT)
             return
         }
         val cursor = editor.cursor
@@ -541,25 +550,31 @@ class editor_activity : ComponentActivity() {
             if (!output_panel_state.task_stopping) {
                 output_panel_state.task_stopping = true
                 output_panel_state.task_subtitle = "正在停止任务"
-                cmake_configure_job?.cancel()
-                cmake_build_job?.cancel()
+                go_build_job?.cancel()
+                go_run_job?.cancel()
             }
             return
         }
-        build_cmake_project()
+        when (detected_project_info.kind) {
+            project_kind.GO -> build_go_project()
+            else -> app_toast.show(this, "当前项目不是 Go 项目", app_toast.LENGTH_SHORT)
+        }
     }
 
-    private fun build_cmake_project() {
-        if (detected_project_info.kind != project_kind.CMAKE) {
-            app_toast.show(this, "当前项目不是 CMake 项目", app_toast.LENGTH_SHORT)
+    /**
+     * 构建当前 Go 项目：执行 `go build`（按项目配置拼接 -tags/-ldflags/-trimpath/-p），
+     * 输出到项目根的 bin/ 目录。结果流式写入输出面板。
+     */
+    private fun build_go_project() {
+        if (detected_project_info.kind != project_kind.GO) {
+            app_toast.show(this, "当前项目不是 Go 项目", app_toast.LENGTH_SHORT)
             return
         }
-        if (cmake_configure_job?.isActive == true || cmake_build_job?.isActive == true) {
+        if (go_build_job?.isActive == true || go_run_job?.isActive == true) {
             app_toast.show(this, "任务正在运行中", app_toast.LENGTH_SHORT)
             return
         }
 
-        val build_dir = detected_project_info.build_dir ?: File(project_dir, "build").absolutePath
         val project_environment = toolchain_manager.project_environment(project_dir.absolutePath)
         if (project_environment.missing.isNotEmpty()) {
             val message = project_environment.missing.joinToString("；")
@@ -567,15 +582,8 @@ class editor_activity : ComponentActivity() {
             output_panel_state.append_output("错误: $message", editor_output_line_level.ERROR)
             return
         }
-        val ndk = project_environment.ndk
-        val cmake_toolchain_file = ndk?.cmake_toolchain_file
-        if (ndk == null || cmake_toolchain_file.isNullOrBlank()) {
-            app_toast.show(this, "项目未配置可用 NDK", app_toast.LENGTH_LONG)
-            output_panel_state.append_output("错误: 项目未配置可用 NDK", editor_output_line_level.ERROR)
-            return
-        }
 
-        cmake_build_job = lifecycleScope.launch {
+        go_build_job = lifecycleScope.launch {
             output_panel_state.selected_tab = editor_output_tab.Output
             output_panel_state.clear_output()
             output_panel_state.task_title = "构建输出"
@@ -588,40 +596,21 @@ class editor_activity : ComponentActivity() {
                 output_panel_state.task_stopping = false
                 return@launch
             }
-            output_panel_state.task_subtitle = "正在构建项目"
+            output_panel_state.task_subtitle = "正在构建项目 (go build)"
 
             val success = try {
-                if (!reset_cmake_build_dir(build_dir)) {
-                    output_panel_state.append_output("构建失败，无法清理 build 目录", editor_output_line_level.ERROR)
-                    false
-                } else {
-                    val android_config = project_cmake_config(project_dir)
-                    val configure_command = create_cmake_configure_command(
-                        source_dir = project_dir.absolutePath,
-                        build_dir = build_dir,
-                        cmake_toolchain_file = cmake_toolchain_file,
-                        existing_generator = null,
-                        android_config = android_config
-                    )
-                    val configure_success = proot_manager.execute_command_with_environment(
-                        command = configure_command,
-                        working_dir = project_dir.absolutePath,
-                        extra_environment = project_environment.environment,
-                        on_log = { line -> output_panel_state.append_output(line, output_level_for_cmake_line(line)) }
-                    )
-                    if (!configure_success) {
-                        false
-                    } else {
-                        val parallel_arg = android_config.parallel_jobs.takeIf { it > 0 }?.let { " $it" }.orEmpty()
-                        val build_command = "cmake --build ${shell_quote(build_dir)} --parallel$parallel_arg"
-                        proot_manager.execute_command_with_environment(
-                            command = build_command,
-                            working_dir = project_dir.absolutePath,
-                            extra_environment = project_environment.environment,
-                            on_log = { line -> output_panel_state.append_output(line, output_level_for_cmake_line(line)) }
-                        )
-                    }
-                }
+                val build = project_manager.read_project_build_config(project_dir.absolutePath)
+                val bin_dir = File(project_dir, "bin")
+                bin_dir.mkdirs()
+                // working_dir 与 -o 用 host 路径：base_args 会把项目目录 bind 到 guest 同名路径，
+                // 使 go build 进程能 cd 成功，且路径与文件系统一致。
+                val out_flag = " -o ${shell_quote(File(bin_dir, project_dir.name).absolutePath)}"
+                proot_manager.execute_command_with_environment(
+                    command = build_go_build_command(build) + out_flag + " .",
+                    working_dir = project_dir.absolutePath,
+                    extra_environment = project_environment.environment,
+                    on_log = { line -> output_panel_state.append_output(line, output_level_for_line(line)) }
+                )
             } catch (_: CancellationException) {
                 output_panel_state.append_output("构建已停止", editor_output_line_level.WARNING)
                 return@launch
@@ -631,7 +620,6 @@ class editor_activity : ComponentActivity() {
             }
 
             if (success) {
-                detected_project_info = project_detector.detect_project(project_dir.absolutePath)
                 output_panel_state.append_output("构建完成", editor_output_line_level.SUCCESS)
                 app_toast.show(this@editor_activity, "构建完成", app_toast.LENGTH_SHORT)
             } else {
@@ -641,234 +629,94 @@ class editor_activity : ComponentActivity() {
         }
     }
 
-    private fun configure_cmake_project() {
-        configure_cmake_project(clean_build = true, show_toast = true)
-    }
-
-    private fun configure_cmake_project_if_needed() {
-        configure_cmake_project(clean_build = true, show_toast = false)
-    }
-
-    private fun configure_cmake_project(clean_build: Boolean, show_toast: Boolean, on_success: (() -> Unit)? = null) {
-        if (detected_project_info.kind != project_kind.CMAKE) {
-            if (show_toast) app_toast.show(this, "当前项目不是 CMake 项目", app_toast.LENGTH_SHORT)
+    /**
+     * 运行当前 Go 项目：执行 `go run .`（输出实时写入输出面板）。
+     */
+    private fun run_go_project() {
+        if (detected_project_info.kind != project_kind.GO) {
+            app_toast.show(this, "当前项目不是 Go 项目", app_toast.LENGTH_SHORT)
             return
         }
-
-        val build_dir = detected_project_info.build_dir ?: File(project_dir, "build").absolutePath
-        val compile_commands_path = File(build_dir, "compile_commands.json").absolutePath
+        if (output_panel_state.task_running) {
+            app_toast.show(this, "任务正在运行中，请先停止", app_toast.LENGTH_SHORT)
+            return
+        }
 
         val project_environment = toolchain_manager.project_environment(project_dir.absolutePath)
         if (project_environment.missing.isNotEmpty()) {
             val message = project_environment.missing.joinToString("；")
-            if (show_toast) app_toast.show(this, message, app_toast.LENGTH_LONG)
+            app_toast.show(this, message, app_toast.LENGTH_LONG)
             output_panel_state.append_output("错误: $message", editor_output_line_level.ERROR)
             return
         }
-        val ndk = project_environment.ndk
-        val cmake_toolchain_file = ndk?.cmake_toolchain_file
-        if (ndk == null || cmake_toolchain_file.isNullOrBlank()) {
-            if (show_toast) app_toast.show(this, "项目未配置可用 NDK", app_toast.LENGTH_LONG)
-            output_panel_state.append_output("错误: 项目未配置可用 NDK", editor_output_line_level.ERROR)
-            return
-        }
 
-        if (cmake_configure_job?.isActive == true) {
-            if (show_toast) app_toast.show(this, "CMake 正在配置中", app_toast.LENGTH_SHORT)
-            return
-        }
-
-        cmake_configure_job = lifecycleScope.launch {
+        go_run_job = lifecycleScope.launch {
             output_panel_state.selected_tab = editor_output_tab.Output
             output_panel_state.clear_output()
-            output_panel_state.task_title = "构建输出"
+            output_panel_state.task_title = "运行输出"
             output_panel_state.task_subtitle = "正在保存文件"
             output_panel_state.task_running = true
             output_panel_state.task_stopping = false
             if (!save_dirty_open_files(show_toast = false)) {
-                output_panel_state.append_output("CMake 初始化取消，文件保存失败", editor_output_line_level.ERROR)
+                output_panel_state.append_output("运行取消，文件保存失败", editor_output_line_level.ERROR)
                 output_panel_state.task_running = false
                 output_panel_state.task_stopping = false
                 return@launch
             }
-            output_panel_state.task_subtitle = if (show_toast) "正在配置 CMake" else "正在初始化 CMake"
-            val android_config = project_cmake_config(project_dir)
+            output_panel_state.task_subtitle = "正在运行 (go run)"
 
-            if (clean_build && !reset_cmake_build_dir(build_dir)) {
-                output_panel_state.task_running = false
-                output_panel_state.task_stopping = false
-                output_panel_state.append_output("CMake 配置失败，无法清理 build 目录", editor_output_line_level.ERROR)
-                if (show_toast) app_toast.show(this@editor_activity, "无法清理 build 目录", app_toast.LENGTH_LONG)
-                return@launch
-            }
-
-            val command = create_cmake_configure_command(
-                source_dir = project_dir.absolutePath,
-                build_dir = build_dir,
-                cmake_toolchain_file = cmake_toolchain_file,
-                existing_generator = if (clean_build) null else read_existing_cmake_generator(build_dir),
-                android_config = android_config
-            )
             val success = try {
+                val build = project_manager.read_project_build_config(project_dir.absolutePath)
                 proot_manager.execute_command_with_environment(
-                    command = command,
+                    command = build_go_run_command(build) + " .",
                     working_dir = project_dir.absolutePath,
                     extra_environment = project_environment.environment,
-                    on_log = { line -> output_panel_state.append_output(line, output_level_for_cmake_line(line)) }
+                    on_log = { line -> output_panel_state.append_output(line, output_level_for_line(line)) }
                 )
             } catch (_: CancellationException) {
-                output_panel_state.append_output("CMake 初始化已暂停", editor_output_line_level.WARNING)
+                output_panel_state.append_output("运行已停止", editor_output_line_level.WARNING)
                 return@launch
             } finally {
                 output_panel_state.task_running = false
                 output_panel_state.task_stopping = false
             }
 
-            if (success && File(compile_commands_path).isFile) {
-                detected_project_info = project_detector.detect_project(project_dir.absolutePath)
-                output_panel_state.append_output("CMake 配置完成", editor_output_line_level.SUCCESS)
-                if (show_toast) app_toast.show(this@editor_activity, "CMake 配置完成", app_toast.LENGTH_SHORT)
-                on_success?.invoke()
+            if (success) {
+                output_panel_state.append_output("—— 程序运行结束 ——", editor_output_line_level.SUCCESS)
+                app_toast.show(this@editor_activity, "运行结束", app_toast.LENGTH_SHORT)
             } else {
-                output_panel_state.append_output("CMake 配置失败，未生成 compile_commands.json", editor_output_line_level.ERROR)
-                if (show_toast) app_toast.show(this@editor_activity, "CMake 配置失败", app_toast.LENGTH_LONG)
+                output_panel_state.append_output("—— 程序异常退出（非零退出码） ——", editor_output_line_level.WARNING)
             }
         }
     }
 
-    private fun create_cmake_configure_command(
-        source_dir: String,
-        build_dir: String,
-        cmake_toolchain_file: String,
-        existing_generator: String?,
-        android_config: cmake_android_config
-    ): String {
-        val command = mutableListOf(
-            "cmake",
-            "-S", shell_quote(source_dir),
-            "-B", shell_quote(build_dir)
-        )
-        if (existing_generator.isNullOrBlank()) {
-            command += listOf("-G", shell_quote("Ninja"))
-        }
-        command += listOf(
-            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
-            "-DCMAKE_TOOLCHAIN_FILE=${shell_quote(cmake_toolchain_file)}"
-        )
-        android_config.abi?.let { command += "-DANDROID_ABI=${shell_quote(it)}" }
-        android_config.platform?.let { command += "-DANDROID_PLATFORM=${shell_quote(it)}" }
-        android_config.cpp_standard?.let {
-            command += "-DCMAKE_CXX_STANDARD=${shell_quote(it)}"
-            command += "-DCMAKE_CXX_STANDARD_REQUIRED=ON"
-            command += "-DCMAKE_CXX_EXTENSIONS=OFF"
-        }
-        android_config.build_type?.let { command += "-DCMAKE_BUILD_TYPE=${shell_quote(it)}" }
-        val extra_args = enabled_cmake_args(android_config.extra_cmake_args)
-        if (extra_args.isNotBlank()) {
-            command += extra_args
-        }
-        return command.joinToString(" ")
+    /**
+     * 拼接 `go build` 命令：根据项目配置加入 -tags / -ldflags / -trimpath / -p / 调试符号。
+     */
+    private fun build_go_build_command(build: project_build_config): String {
+        val parts = mutableListOf("go build")
+        if (build.build_tags.isNotBlank()) parts.add("-tags ${shell_quote(build.build_tags)}")
+        if (build.ldflags.isNotBlank()) parts.add("-ldflags ${shell_quote(build.ldflags)}")
+        if (build.trimpath) parts.add("-trimpath")
+        if (build.parallel_jobs > 0) parts.add("-p ${build.parallel_jobs}")
+        if (build.build_type == "Debug") parts.add("-gcflags=\"all=-N -l\"")
+        return parts.joinToString(" ")
     }
 
-    private fun project_cmake_config(project_dir: File): cmake_android_config {
-        val inferred = infer_cmake_android_config(project_dir)
-        val build = project_manager.read_project_build_config(project_dir.absolutePath)
-        val abi = build.abi.ifBlank { inferred.abi.orEmpty() }.takeIf { it.isNotBlank() }
-        val platform = build.platform.ifBlank { inferred.platform.orEmpty() }.takeIf { it.isNotBlank() }
-        return cmake_android_config(
-            abi = abi,
-            platform = platform,
-            cpp_standard = build.cpp_standard,
-            build_type = build.build_type,
-            parallel_jobs = build.parallel_jobs,
-            extra_cmake_args = build.extra_cmake_args
-        )
+    /**
+     * 拼接 `go run` 命令：复用 -tags / -ldflags（运行态参数）。
+     */
+    private fun build_go_run_command(build: project_build_config): String {
+        val parts = mutableListOf("go run")
+        if (build.build_tags.isNotBlank()) parts.add("-tags ${shell_quote(build.build_tags)}")
+        if (build.ldflags.isNotBlank()) parts.add("-ldflags ${shell_quote(build.ldflags)}")
+        return parts.joinToString(" ")
     }
 
-    private fun infer_cmake_android_config(project_dir: File): cmake_android_config {
-        val cmake_file = File(project_dir, "CMakeLists.txt")
-        if (!cmake_file.isFile) return cmake_android_config()
-        val content = cmake_file.readText()
-        return cmake_android_config(
-            abi = infer_cmake_android_abi(content),
-            platform = infer_cmake_android_platform(content)
-        )
-    }
-
-    private fun infer_cmake_android_abi(content: String): String? {
-        if ("CMAKE_ANDROID_ARCH_ABI" !in content && "ANDROID_ABI" !in content) return null
-        val explicit_abi = Regex("set\\s*\\(\\s*ANDROID_ABI\\s+([^\\s)]+)", RegexOption.IGNORE_CASE)
-            .find(content)
-            ?.groupValues
-            ?.getOrNull(1)
-            ?.takeIf { it in setOf("arm64-v8a", "armeabi-v7a", "x86_64", "x86") }
-        if (explicit_abi != null) return explicit_abi
-        return Regex("ANDROID_ABI\\s+STREQUAL\\s+\"(arm64-v8a|armeabi-v7a|x86_64|x86)\"", RegexOption.IGNORE_CASE)
-            .find(content)
-            ?.groupValues
-            ?.getOrNull(1)
-    }
-
-    private fun infer_cmake_android_platform(content: String): String? {
-        val explicit_platform = if ("ANDROID_PLATFORM" in content || "CMAKE_SYSTEM_VERSION" in content) {
-            Regex("(?<![A-Za-z0-9_-])(?:android-)?(?:2[1-9]|3[0-9]|4[0-9])(?![A-Za-z0-9_-])")
-                .findAll(content)
-                .map { it.value.let { value -> if (value.startsWith("android-")) value else "android-$value" } }
-                .toSet()
-                .singleOrNull()
-        } else {
-            null
-        }
-        if (explicit_platform != null) return explicit_platform
-        return when {
-            uses_android_vulkan(content) -> "android-24"
-            else -> null
-        }
-    }
-
-    private fun uses_android_vulkan(content: String): Boolean {
-        return Regex("find_library\\s*\\([^)]*\\bvulkan\\b", RegexOption.IGNORE_CASE).containsMatchIn(content) ||
-            Regex("target_link_libraries\\s*\\([^)]*\\bvulkan\\b", RegexOption.IGNORE_CASE).containsMatchIn(content)
-    }
-
-    private fun enabled_cmake_args(value: String): String {
-        return value.split(Regex("\\s+"))
-            .map { it.trim() }
-            .filter { it.isNotBlank() && !it.startsWith("#") }
-            .joinToString(" ")
-    }
-
-    private data class cmake_android_config(
-        val abi: String? = null,
-        val platform: String? = null,
-        val cpp_standard: String? = null,
-        val build_type: String? = null,
-        val parallel_jobs: Int = 0,
-        val extra_cmake_args: String = ""
-    )
-
-    private fun read_existing_cmake_generator(build_dir: String): String? {
-        val cache_file = File(build_dir, "CMakeCache.txt")
-        if (!cache_file.isFile) return null
-        return cache_file.useLines { lines ->
-            lines.firstOrNull { it.startsWith("CMAKE_GENERATOR:INTERNAL=") }
-                ?.substringAfter('=')
-                ?.takeIf { it.isNotBlank() }
-        }
-    }
-
-    private fun reset_cmake_build_dir(build_dir: String): Boolean {
-        val root = project_dir.canonicalFile
-        val target = File(build_dir).canonicalFile
-        if (target == root || target.parentFile?.canonicalFile != root || target.name != "build") return false
-        if (!target.exists()) return true
-        return target.deleteRecursively()
-    }
-
-    private fun output_level_for_cmake_line(line: String): editor_output_line_level {
+    private fun output_level_for_line(line: String): editor_output_line_level {
         val text = line.lowercase()
         return when {
-            "error" in text || "failed" in text -> editor_output_line_level.ERROR
+            "error" in text || "failed" in text || "panic:" in text -> editor_output_line_level.ERROR
             "warning" in text -> editor_output_line_level.WARNING
             else -> editor_output_line_level.NORMAL
         }
@@ -878,6 +726,7 @@ class editor_activity : ComponentActivity() {
         if (value.isEmpty()) return "''"
         return "'" + value.replace("'", "'\\''") + "'"
     }
+
 
     private fun save_pending_action() {
         request_save_file(show_toast = false) {
@@ -1078,7 +927,7 @@ class editor_activity : ComponentActivity() {
             if (show_toast) {
                 app_toast.show(this, "已保存", app_toast.LENGTH_SHORT)
             }
-            configure_cmake_after_cmakelists_save(file_path)
+            on_project_file_saved(file_path)
         }.onFailure { error ->
             app_toast.show(this, "保存失败: ${error.message}", app_toast.LENGTH_LONG)
         }
@@ -1086,15 +935,15 @@ class editor_activity : ComponentActivity() {
         return result.isSuccess
     }
 
-    private fun configure_cmake_after_cmakelists_save(file_path: String) {
+    private fun on_project_file_saved(file_path: String) {
         val saved_file = File(file_path)
-        val root_cmake_file = File(project_dir, "CMakeLists.txt")
-        if (saved_file.absolutePath != root_cmake_file.absolutePath) return
-        if (detected_project_info.kind != project_kind.CMAKE) return
-        if (cmake_configure_job?.isActive == true || cmake_build_job?.isActive == true) return
-
-        output_panel_state.append_log("CMakeLists.txt 已保存，自动初始化 CMake")
-        configure_cmake_project(clean_build = false, show_toast = false) {
+        val go_mod_file = File(project_dir, "go.mod")
+        // 保存 go.mod 后重启 gopls，让其重新加载模块依赖与构建约束
+        if (saved_file.absolutePath == go_mod_file.absolutePath &&
+            detected_project_info.kind == project_kind.GO &&
+            go_build_job?.isActive != true
+        ) {
+            output_panel_state.append_log("go.mod 已保存，重启 gopls")
             reset_clangd_project()
         }
     }
@@ -1197,25 +1046,25 @@ class editor_activity : ComponentActivity() {
         update_history_state()
         editor.requestFocus()
         schedule_block_end_hints_update()
-        connect_clangd_if_needed(tab)
+        connect_gopls_if_needed(tab)
     }
 
-    private fun disabled_clangd_features(settings: editor_settings_state): Set<LspFeature> {
+    private fun disabled_gopls_features(settings: editor_settings_state): Set<LspFeature> {
         return buildSet {
-            if (!settings.clangd_completion) add(LspFeature.Completion)
-            if (!settings.clangd_signature_help) add(LspFeature.SignatureHelp)
-            if (!settings.clangd_document_highlight) add(LspFeature.DocumentHighlight)
-            if (!settings.clangd_formatting) add(LspFeature.Formatting)
-            if (!settings.clangd_hover) add(LspFeature.Hover)
+            if (!settings.gopls_completion) add(LspFeature.Completion)
+            if (!settings.gopls_signature_help) add(LspFeature.SignatureHelp)
+            if (!settings.gopls_document_highlight) add(LspFeature.DocumentHighlight)
+            if (!settings.gopls_formatting) add(LspFeature.Formatting)
+            if (!settings.gopls_hover) add(LspFeature.Hover)
         }
     }
 
     private fun reset_clangd_project() {
-        clangd_connect_job?.cancel()
+        gopls_connect_job?.cancel()
         restore_editor_languages_from_clangd()
-        clangd_project?.dispose()
-        clangd_project = null
-        active_tab()?.let { connect_clangd_if_needed(it) }
+        gopls_project?.dispose()
+        gopls_project = null
+        active_tab()?.let { connect_gopls_if_needed(it) }
     }
 
     private fun restore_editor_languages_from_clangd() {
@@ -1227,86 +1076,75 @@ class editor_activity : ComponentActivity() {
         }
     }
 
-    private fun connect_clangd_if_needed(tab: editor_open_tab) {
-        clangd_connect_job?.cancel()
+    private fun connect_gopls_if_needed(tab: editor_open_tab) {
+        gopls_connect_job?.cancel()
         val file = File(tab.file_path)
-        if (!is_c_family_file(file.absolutePath)) return
-        if (!state.editor_settings.clangd_enabled) return
-        val build_dir = File(detected_project_info.build_dir ?: File(project_dir, "build").absolutePath)
-        val compile_commands = File(build_dir, "compile_commands.json")
-        if (!compile_commands.isFile) {
-            log_clangd_skip_once(file, "缺少 compile_commands.json，请先执行 CMake 初始化")
+        if (!is_go_file(file.absolutePath)) return
+        if (!state.editor_settings.gopls_enabled) return
+        if (!toolchain_manager.is_gopls_installed()) {
+            log_gopls_skip_once(file, "gopls 未安装，请在「开发工具」中安装 Go 工具链")
             return
         }
 
         val project_environment = toolchain_manager.project_environment(project_dir.absolutePath)
-        val ndk = project_environment.ndk ?: run {
-            log_clangd_skip_once(file, "项目未配置可用 NDK")
-            return
-        }
-        val disabled_features = disabled_clangd_features(state.editor_settings)
-        val lsp_project = clangd_project ?: clangd_lsp_project(
+        val disabled_features = disabled_gopls_features(state.editor_settings)
+        // gopls 实际路径由探测结果决定（apt=/usr/bin/gopls，go install=/home/go/bin/gopls，手动=/usr/local/go/bin/gopls）
+        val gopls_command = toolchain_manager.installed_go()?.gopls_proot_path ?: "/usr/bin/gopls"
+        val lsp_project = gopls_project ?: gopls_lsp_project(
             project_dir = project_dir,
             disabled_features = disabled_features,
-            config_factory = {
-                clangd_lsp_config(
+            config_factory = { working_dir ->
+                gopls_lsp_config(
                     runtime_paths = toolchain_runtime_provider.paths(),
                     project_dir = project_dir,
-                    build_dir = build_dir,
                     path = project_environment.environment["PATH"] ?: toolchain_manager.proot_path(),
-                    ndk_llvm_bin_proot_dir = ndk.llvm_bin_proot_dir,
+                    gopls_command = gopls_command,
                     extra_environment = project_environment.environment,
                     disabled_features = disabled_features,
                     on_stderr = on_stderr@{ line ->
-                        val message = clean_clangd_log_line(line) ?: return@on_stderr
-                        lifecycleScope.launch(Dispatchers.Main) { output_panel_state.append_log("clangd: $message") }
+                        val message = clean_gopls_log_line(line) ?: return@on_stderr
+                        lifecycleScope.launch(Dispatchers.Main) { output_panel_state.append_log("gopls: $message") }
                     }
                 )
             }
-        ).also { clangd_project = it }
+        ).also { gopls_project = it }
 
-        clangd_connect_job = lifecycleScope.launch {
+        gopls_connect_job = lifecycleScope.launch {
             val lsp_editor = lsp_project.get_or_create_editor(file, editor)
-            lsp_editor.isEnableHover = state.editor_settings.clangd_hover
-            lsp_editor.isEnableSignatureHelp = state.editor_settings.clangd_signature_help
+            lsp_editor.isEnableHover = state.editor_settings.gopls_hover
+            lsp_editor.isEnableSignatureHelp = state.editor_settings.gopls_signature_help
             lsp_editor.eventListener = { _, new_status, old_status ->
                 if (new_status != old_status) {
-                    log_clangd_status(file, new_status)
+                    log_gopls_status(file, new_status)
                 }
             }
             if (!lsp_editor.isConnected) {
-                output_panel_state.append_log("clangd: 正在连接 ${file.name}")
+                output_panel_state.append_log("gopls: 正在连接 ${file.name}")
                 val connected = lsp_project.connect(file, editor)
                 if (!connected) {
-                    output_panel_state.append_log("clangd: 连接失败 ${file.name}", editor_output_line_level.ERROR)
+                    output_panel_state.append_log("gopls: 连接失败 ${file.name}", editor_output_line_level.ERROR)
                 }
             }
         }
     }
 
-    private fun clean_clangd_log_line(line: String): String? {
-        if (line.matches(Regex("^[I]\\[[^]]+].*"))) return null
-        val trimmed = line.trimStart()
-        if (trimmed.startsWith(configured_ndk_clang_prefix())) return null
-        if (trimmed.startsWith("/home/gostudio/ndk/") && " -- " in trimmed) return null
+    /** gopls stderr 日志清洗：去掉带级别前缀的行，保留有用信息。 */
+    private fun clean_gopls_log_line(line: String): String? {
+        val trimmed = line.trim()
+        if (trimmed.isEmpty()) return null
         return line.replace(Regex("^[A-Z]\\[[^]]+]\\s*"), "")
     }
 
-    private fun configured_ndk_clang_prefix(): String {
-        val ndk = toolchain_manager.project_environment(project_dir.absolutePath).ndk ?: return "/home/gostudio/ndk/"
-        return ndk.llvm_bin_proot_dir.trimEnd('/') + "/clang"
-    }
-
-    private fun log_clangd_skip_once(file: File, reason: String) {
-        if (clangd_skipped_files.add("${file.absolutePath}:$reason")) {
-            output_panel_state.append_log("clangd: 跳过 ${file.name}，$reason", editor_output_line_level.WARNING)
+    private fun log_gopls_skip_once(file: File, reason: String) {
+        if (gopls_skipped_files.add("${file.absolutePath}:$reason")) {
+            output_panel_state.append_log("gopls: 跳过 ${file.name}，$reason", editor_output_line_level.WARNING)
         }
     }
 
-    private fun log_clangd_status(file: File, status: LspEditorStatus) {
+    private fun log_gopls_status(file: File, status: LspEditorStatus) {
         val message = when (status) {
-            LspEditorStatus.CONNECTED -> "clangd: 已连接 ${file.name}"
-            LspEditorStatus.DISCONNECTED -> "clangd: 已断开 ${file.name}"
+            LspEditorStatus.CONNECTED -> "gopls: 已连接 ${file.name}"
+            LspEditorStatus.DISCONNECTED -> "gopls: 已断开 ${file.name}"
             else -> return
         }
         lifecycleScope.launch(Dispatchers.Main) { output_panel_state.append_log(message) }
@@ -1356,7 +1194,7 @@ class editor_activity : ComponentActivity() {
     }
 
     private fun release_tab_editor(tab: editor_open_tab) {
-        clangd_project?.let { project ->
+        gopls_project?.let { project ->
             val file = File(tab.file_path)
             lifecycleScope.launch(Dispatchers.IO) { project.close_file(file) }
         }
@@ -1736,7 +1574,7 @@ class editor_activity : ComponentActivity() {
 
     private fun schedule_block_end_hints_update() {
         block_hint_job?.cancel()
-        if (!::editor.isInitialized || !state.editor_settings.block_end_hints || state.current_file_path == null || !is_c_family_file(state.current_file_path)) {
+        if (!::editor.isInitialized || !state.editor_settings.block_end_hints || state.current_file_path == null || !is_go_file(state.current_file_path)) {
             if (::editor.isInitialized) editor.inlayHints = null
             return
         }

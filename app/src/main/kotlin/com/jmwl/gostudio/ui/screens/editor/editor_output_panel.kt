@@ -230,6 +230,13 @@ internal fun editor_output_bottom_sheet_scaffold(
             }
         }
 
+        // 构建/运行开始时（task_running 变 true）自动展开输出面板到半屏，方便查看日志
+        LaunchedEffect(state.task_running) {
+            if (state.task_running) {
+                sheet_offset.animateTo(half_offset_px, tween(280))
+            }
+        }
+
         val sheet_visible_height_px = full_sheet_height_px - sheet_offset.value
         val sheet_visible_height = with(density) { sheet_visible_height_px.toDp() }
         val sheet_progress = if (full_sheet_height_px <= bottom_safe_padding_px) {

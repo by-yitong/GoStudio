@@ -17,7 +17,9 @@ import io.github.rosemoe.sora.lsp.events.workspace.workSpaceExecuteCommand
 import io.github.rosemoe.sora.lsp.utils.asCharPosition
 import io.github.rosemoe.sora.text.CharPosition
 import io.github.rosemoe.sora.widget.CodeEditor
+import io.github.rosemoe.sora.widget.component.EditorDiagnosticTooltipWindow
 import io.github.rosemoe.sora.widget.base.EditorPopupWindow
+import io.github.rosemoe.sora.widget.getComponent
 import kotlinx.coroutines.launch
 import org.eclipse.lsp4j.ApplyWorkspaceEditParams
 import org.eclipse.lsp4j.CodeAction
@@ -42,6 +44,7 @@ class CodeActionWindow(
     private var layoutImpl: CodeActionLayout = DefaultCodeActionLayout()
     private var anchorPosition: CharPosition? = null
     private var currentActions: List<CodeActionItem> = emptyList()
+    private var currentDiagnosticText: String = ""
 
     var layout: CodeActionLayout
         get() = layoutImpl
@@ -109,9 +112,21 @@ class CodeActionWindow(
             dismiss()
             return
         }
+        // 显示合并面板前，先关掉 hover 提示窗和诊断 tooltip（诊断详情已并入本面板顶部）
+        lspEditor.showHover(null)
+        runCatching {
+            editor.getComponent<EditorDiagnosticTooltipWindow>().dismiss()
+        }
         val anchor = range.start.asCharPosition()
         anchorPosition = anchor
         currentActions = entries.map { CodeActionItem.from(it) }
+        // 查询该位置的诊断详情，作为合并面板顶部展示
+        currentDiagnosticText = lspEditor.diagnosticsContainer
+            .findDiagnostics(lspEditor.uri, range)
+            ?.joinToString("\n") { diag ->
+                if (diag.message.isLeft) diag.message.left else diag.message.right?.value.orEmpty()
+            }
+            .orEmpty()
         renderActions()
         updateWindowSizeAndLocation()
         show()
@@ -157,7 +172,7 @@ class CodeActionWindow(
     }
 
     private fun renderActions() {
-        layout.renderActions(currentActions)
+        layout.renderActions(currentActions, currentDiagnosticText)
     }
 
     private fun applyColorScheme() {

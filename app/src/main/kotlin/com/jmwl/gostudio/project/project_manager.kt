@@ -14,77 +14,54 @@ import java.util.Locale
 
 object project_manager {
     private const val max_recent_projects = 20
-    private const val project_config_dir_name = ".xcode"
-    private const val project_config_file_name = ".xcode-project.json"
+    private const val project_config_dir_name = ".gostudio"
+    private const val project_config_file_name = ".gostudio-project.json"
+    // 旧版（还叫 XCode 时）的项目配置目录名，仅用于一次性迁移（重命名为 .gostudio/），不可删除
+    private const val legacy_project_config_dir_name = ".xcode"
+    private const val legacy_project_config_file_name = ".xcode-project.json"
+    private const val go_mod_file_name = "go.mod"
+    private const val cmake_file_name = "CMakeLists.txt"
     private val json = GsonBuilder().setPrettyPrinting().create()
     private val valid_project_name = Regex("^[a-zA-Z_][a-zA-Z0-9_]*$")
-    private val valid_android_platform = Regex("^android-(2[1-9]|3[0-9]|4[0-9])$")
-    private val supported_cpp_standards = setOf("11", "14", "17", "20", "23", "26")
-    private val supported_build_abis = setOf("x86_64", "arm64-v8a", "x86", "armeabi-v7a")
+    private val supported_goos = setOf("linux", "darwin", "android", "windows", "freebsd")
+    private val supported_goarch = setOf("amd64", "arm64", "386", "arm")
     private val supported_build_types = setOf("Debug", "Release")
-    private val default_clang_format = """
-        ---
-        Language: Cpp
-        BasedOnStyle: LLVM
-        Standard: Latest
-        IndentWidth: 4
-        TabWidth: 4
-        UseTab: Never
-        ColumnLimit: 165
-        AccessModifierOffset: -4
-        ConstructorInitializerIndentWidth: 4
-        ContinuationIndentWidth: 4
-        BreakBeforeBraces: Attach
-        AllowShortBlocksOnASingleLine: Never
-        AllowShortFunctionsOnASingleLine: Empty
-        AllowShortIfStatementsOnASingleLine: WithoutElse
-        AllowShortLoopsOnASingleLine: false
-        BinPackArguments: true
-        BinPackParameters: BinPack
-        PointerAlignment: Right
-        DerivePointerAlignment: false
-        SpaceBeforeParens: ControlStatements
-        SpacesInAngles: Never
-        SpacesInParens: Never
-        SpacesInSquareBrackets: false
-        Cpp11BracedListStyle: true
-        SortIncludes: CaseSensitive
-        IncludeBlocks: Preserve
-        IndentCaseLabels: true
-        IndentCaseBlocks: false
-        IndentPPDirectives: BeforeHash
-        MaxEmptyLinesToKeep: 1
-        KeepEmptyLines:
-          AtStartOfFile: true
-          AtStartOfBlock: true
-          AtEndOfFile: false
-        FixNamespaceComments: true
-        ReflowComments: Always
-        InsertNewlineAtEOF: false
-    """.trimIndent() + "\n"
+
+    /**
+     * 项目统一存放于 app 内部存储（proot 已绑定到 guest 内 /home/gostudio）。
+     * 放内部存储是为了让 proot（native 进程）能稳定访问项目文件——外部存储的
+     * FUSE 路径 proot 无法可靠 bind，会导致 go build / gopls 失败。
+     */
+    fun default_projects_dir(): File {
+        val dir = File(toolchain_runtime_provider.paths().gostudio_dir, "projects")
+        if (!dir.exists()) dir.mkdirs()
+        return dir
+    }
+
+    /**
+     * 列出内部存储项目目录下的所有 Go 项目（含 go.mod 的子目录）。
+     * 用于「打开项目」对话框的列表展示。
+     */
+    fun list_local_projects(): List<File> {
+        val root = default_projects_dir()
+        return root.listFiles()
+            ?.filter { it.isDirectory && File(it, go_mod_file_name).isFile }
+            ?.sortedByDescending { it.lastModified() }
+            ?: emptyList()
+    }
 
     suspend fun create_project(
         name: String,
-        path: String,
-        template_id: String,
-        @Suppress("UNUSED_PARAMETER") ndk_version: String,
-        @Suppress("UNUSED_PARAMETER") cmake_version: String,
-        @Suppress("UNUSED_PARAMETER") android_platform: String,
-        @Suppress("UNUSED_PARAMETER") cpp_standard: String
+        template_id: String
     ): Result<File> = withContext(Dispatchers.IO) {
         try {
             val project_name = name.trim()
-            val parent_dir = File(path.trim())
 
             if (!valid_project_name.matches(project_name)) {
                 return@withContext Result.failure(IllegalArgumentException("项目名称只能包含字母、数字和下划线，且不能以数字开头"))
             }
 
-            if (path.isBlank()) {
-                return@withContext Result.failure(IllegalArgumentException("项目路径不能为空"))
-            }
-
-            val project_dir = File(parent_dir, project_name)
+            val project_dir = File(default_projects_dir(), project_name)
             if (project_dir.exists()) {
                 return@withContext Result.failure(IllegalStateException("项目已存在"))
             }
@@ -96,19 +73,14 @@ object project_manager {
             // Go 项目结构：go.mod + main.go（按模板选不同内容）
             create_go_project(project_dir, project_name, template_id)
 
-            // IDE 配置（保留兼容骨架；Go 项目不依赖 ndk/cmake，字段留空）
+            // IDE 配置：读取 go.mod 中的 go 版本，记录到项目配置
+            val go_version = read_go_version_from_mod(project_dir)
             write_project_config(
                 dir = project_dir,
                 name = project_name,
-                ndk_version = "",
-                cmake_version = "",
+                go_version = go_version,
                 template_id = template_id,
-                build = project_build_config(
-                    abi = "arm64-v8a",
-                    platform = "android-24",
-                    cpp_standard = "",
-                    build_type = "Debug"
-                )
+                build = project_build_config()
             )
             Result.success(project_dir)
         } catch (e: Exception) {
@@ -297,51 +269,71 @@ func main() {
         return File(File(project_dir, project_config_dir_name), project_config_file_name)
     }
 
-    fun ensure_project_clang_format(path: String): Result<Unit> {
-        return runCatching {
-            val project_dir = File(path)
-            if (!project_dir.isDirectory) return@runCatching
-
-            val clang_format_file = File(project_dir, ".clang-format")
-            if (!clang_format_file.exists()) {
-                clang_format_file.writeText(default_clang_format)
-            }
-        }
-    }
+    /**
+     * Go 项目不需要 .clang-format（用 gofmt/goimports）。
+     * 此函数保留为空操作，仅为兼容外部调用点，不再写入任何文件。
+     */
+    fun ensure_project_clang_format(path: String): Result<Unit> = Result.success(Unit)
 
     fun ensure_project_config(path: String): Result<Unit> {
         return runCatching {
             val project_dir = File(path)
             require(project_dir.exists() && project_dir.isDirectory) { "项目目录不存在" }
-            require(File(project_dir, "CMakeLists.txt").isFile) { "不是 CMake 项目" }
+            require(
+                File(project_dir, go_mod_file_name).isFile || File(project_dir, cmake_file_name).isFile
+            ) { "不是 Go 项目（缺少 go.mod）" }
+
+            migrate_legacy_project_config(project_dir)
 
             val config_file = project_config_file(project_dir)
             if (config_file.isFile) return@runCatching
 
             write_project_config(
                 dir = project_dir,
-                name = project_dir.name.ifBlank { "CMakeProject" },
-                ndk_version = "",
-                cmake_version = "",
+                name = project_dir.name.ifBlank { "GoProject" },
+                go_version = read_go_version_from_mod(project_dir),
                 template_id = "imported",
-                build = infer_imported_project_build_config(project_dir)
+                build = project_build_config()
             )
         }
+    }
+
+    /**
+     * 一次性迁移：若存在旧的 .xcode/.xcode-project.json 而新 .gostudio/ 不存在，则重命名旧目录。
+     * 失败不阻断（按默认 Go 配置重建）。
+     */
+    private fun migrate_legacy_project_config(project_dir: File) {
+        val new_dir = File(project_dir, project_config_dir_name)
+        if (new_dir.exists()) return
+        val legacy_dir = File(project_dir, legacy_project_config_dir_name)
+        if (!legacy_dir.exists()) return
+        runCatching { legacy_dir.renameTo(new_dir) }
+    }
+
+    /**
+     * 从 go.mod 读取 Go 版本（如 `go 1.21` → "1.21"）。无法解析时返回空串。
+     */
+    private fun read_go_version_from_mod(project_dir: File): String {
+        val go_mod = File(project_dir, go_mod_file_name)
+        if (!go_mod.isFile) return ""
+        return Regex("^\\s*go\\s+(\\d+\\.\\d+)\\b", RegexOption.MULTILINE)
+            .find(go_mod.readText())
+            ?.groupValues
+            ?.getOrNull(1)
+            .orEmpty()
     }
 
     private fun write_project_config(
         dir: File,
         name: String,
-        ndk_version: String,
-        cmake_version: String,
+        go_version: String,
         template_id: String,
         build: project_build_config = project_build_config()
     ) {
         val normalized_build = normalize_project_build_config(build)
         val config = project_config(
             name = name,
-            ndk_version = ndk_version,
-            cmake_version = cmake_version,
+            go_version = go_version,
             template = template_id,
             created = System.currentTimeMillis(),
             build = normalized_build
@@ -361,8 +353,7 @@ func main() {
             val config_file = project_config_file(File(path))
             val config = json.fromJson(config_file.readText(), project_config::class.java)
             project_ide_config(
-                ndk_version = config?.ndk_version.orEmpty(),
-                cmake_version = config?.cmake_version.orEmpty(),
+                go_version = config?.go_version.orEmpty(),
                 build = normalize_project_build_config(config?.build ?: project_build_config())
             )
         } catch (_: Exception) {
@@ -372,103 +363,37 @@ func main() {
 
     fun save_project_ide_config(path: String, ide_config: project_ide_config): Result<Unit> {
         return runCatching {
-            val selected_ndk = ide_config.ndk_version.trim()
-            val selected_cmake = ide_config.cmake_version.trim()
-            require(selected_ndk.isNotBlank()) { "NDK 不能为空" }
-            require(selected_ndk in toolchain_manager.available_ndk_versions()) { "NDK $selected_ndk 未安装或结构无效" }
-            require(selected_cmake.isNotBlank()) { "CMake 不能为空" }
-            require(selected_cmake in toolchain_manager.available_cmake_versions()) { "CMake $selected_cmake 未安装或结构无效" }
-
             val project_dir = File(path)
+            require(
+                File(project_dir, go_mod_file_name).isFile
+            ) { "不是 Go 项目，无法保存配置（缺少 go.mod）" }
+            require(toolchain_manager.is_go_installed()) { "Go 工具链未安装" }
+
             val config_file = project_config_file(project_dir)
             val config = json.fromJson(config_file.readText(), project_config::class.java)
                 ?: throw IllegalStateException("项目配置文件损坏")
             val normalized_build = normalize_project_build_config(ide_config.build)
-            config_file.writeText(json.toJson(config.copy(ndk_version = selected_ndk, cmake_version = selected_cmake, build = normalized_build)) + "\n")
-        }
-    }
-
-    private fun infer_imported_project_build_config(project_dir: File): project_build_config {
-        val cmake_file = File(project_dir, "CMakeLists.txt")
-        if (!cmake_file.isFile) return project_build_config()
-
-        val content = cmake_file.readText()
-        val abi = infer_cmake_android_abi(content) ?: project_build_config().abi
-        val platform = infer_cmake_android_platform(content) ?: project_build_config().platform
-        val cpp_standard = infer_cmake_cpp_standard(content) ?: project_build_config().cpp_standard
-        val build_type = infer_cmake_build_type(content) ?: project_build_config().build_type
-        return normalize_project_build_config(
-            project_build_config(
-                abi = abi,
-                platform = platform,
-                cpp_standard = cpp_standard,
-                build_type = build_type
+            config_file.writeText(
+                json.toJson(config.copy(go_version = ide_config.go_version, build = normalized_build)) + "\n"
             )
-        )
-    }
-
-    private fun infer_cmake_android_abi(content: String): String? {
-        if ("CMAKE_ANDROID_ARCH_ABI" !in content && "ANDROID_ABI" !in content) return null
-        Regex("set\\s*\\(\\s*ANDROID_ABI\\s+([^\\s)]+)", RegexOption.IGNORE_CASE)
-            .find(content)
-            ?.groupValues
-            ?.getOrNull(1)
-            ?.takeIf { it in supported_build_abis }
-            ?.let { return it }
-        return Regex("ANDROID_ABI\\s+STREQUAL\\s+\"(arm64-v8a|armeabi-v7a|x86_64|x86)\"", RegexOption.IGNORE_CASE)
-            .find(content)
-            ?.groupValues
-            ?.getOrNull(1)
-    }
-
-    private fun infer_cmake_android_platform(content: String): String? {
-        val explicit_platform = if ("ANDROID_PLATFORM" in content || "CMAKE_SYSTEM_VERSION" in content) {
-            Regex("(?<![A-Za-z0-9_-])(?:android-)?(?:2[1-9]|3[0-9]|4[0-9])(?![A-Za-z0-9_-])")
-                .findAll(content)
-                .map { it.value.let { value -> if (value.startsWith("android-")) value else "android-$value" } }
-                .toSet()
-                .singleOrNull()
-        } else {
-            null
         }
-        if (explicit_platform != null) return explicit_platform
-        return if (uses_android_vulkan(content)) "android-24" else null
-    }
-
-    private fun infer_cmake_cpp_standard(content: String): String? {
-        return Regex("set\\s*\\(\\s*CMAKE_CXX_STANDARD\\s+([0-9]+)", RegexOption.IGNORE_CASE)
-            .find(content)
-            ?.groupValues
-            ?.getOrNull(1)
-            ?.takeIf { it in supported_cpp_standards }
-    }
-
-    private fun infer_cmake_build_type(content: String): String? {
-        return Regex("set\\s*\\(\\s*CMAKE_BUILD_TYPE\\s+(Debug|Release)", RegexOption.IGNORE_CASE)
-            .find(content)
-            ?.groupValues
-            ?.getOrNull(1)
-    }
-
-    private fun uses_android_vulkan(content: String): Boolean {
-        return Regex("find_library\\s*\\([^)]*\\bvulkan\\b", RegexOption.IGNORE_CASE).containsMatchIn(content) ||
-            Regex("target_link_libraries\\s*\\([^)]*\\bvulkan\\b", RegexOption.IGNORE_CASE).containsMatchIn(content)
     }
 
     private fun normalize_project_build_config(build: project_build_config): project_build_config {
-        val abi = build.abi.takeIf { it in supported_build_abis } ?: "arm64-v8a"
-        val platform = build.platform.takeIf { valid_android_platform.matches(it) } ?: "android-24"
-        val cpp_standard = build.cpp_standard.takeIf { it in supported_cpp_standards } ?: "20"
+        val goos = build.goos.takeIf { it in supported_goos } ?: "linux"
+        val goarch = build.goarch.takeIf { it in supported_goarch } ?: "arm64"
         val build_type = build.build_type.takeIf { it in supported_build_types } ?: "Debug"
         val parallel_jobs = build.parallel_jobs.coerceIn(0, 8)
-        val extra_cmake_args = build.extra_cmake_args.orEmpty().trim()
+        val build_tags = build.build_tags.orEmpty().trim()
+        val ldflags = build.ldflags.orEmpty().trim()
         return project_build_config(
-            abi = abi,
-            platform = platform,
-            cpp_standard = cpp_standard,
+            goos = goos,
+            goarch = goarch,
             build_type = build_type,
-            parallel_jobs = parallel_jobs,
-            extra_cmake_args = extra_cmake_args
+            build_tags = build_tags,
+            ldflags = ldflags,
+            trimpath = build.trimpath,
+            parallel_jobs = parallel_jobs
         )
     }
 
@@ -493,19 +418,22 @@ func main() {
 
     fun get_project_info(path: String): project_info? {
         return try {
-            require_xcode_project_info(path)
+            require_gostudio_project_info(path)
         } catch (_: Exception) {
             null
         }
     }
 
-    private fun require_xcode_project_info(path: String): project_info {
+    private fun require_gostudio_project_info(path: String): project_info {
         val project_dir = File(path)
         require(project_dir.exists() && project_dir.isDirectory) { "项目目录不存在" }
-        require(File(project_dir, "CMakeLists.txt").isFile) { "不是 CMake 项目" }
+        require(
+            File(project_dir, go_mod_file_name).isFile || File(project_dir, cmake_file_name).isFile
+        ) { "不是 Go 项目（缺少 go.mod）" }
 
+        migrate_legacy_project_config(project_dir)
         val config_file = project_config_file(project_dir)
-        require(config_file.isFile) { "不是 GoStudio 项目，缺少 .xcode/.xcode-project.json" }
+        require(config_file.isFile) { "不是 GoStudio 项目，缺少 $project_config_dir_name/$project_config_file_name" }
 
         val config = try {
             json.fromJson(config_file.readText(), project_config::class.java)
@@ -519,15 +447,14 @@ func main() {
         return project_info(
             name = config.name,
             path = project_dir.absolutePath,
-            ndk_version = config.ndk_version,
-            cmake_version = config.cmake_version,
+            go_version = config.go_version,
             template = config.template
         )
     }
 
     suspend fun get_recent_projects(): List<recent_project_info> = withContext(Dispatchers.IO) {
         val records = load_recent_project_records()
-            .filter { runCatching { require_xcode_project_info(it.path) }.isSuccess }
+            .filter { runCatching { require_gostudio_project_info(it.path) }.isSuccess }
             .sortedByDescending { it.opened_at }
             .take(max_recent_projects)
         write_recent_project_records(records)
@@ -536,7 +463,7 @@ func main() {
 
     suspend fun check_project_toolchain(path: String): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
-            val info = require_xcode_project_info(path)
+            val info = require_gostudio_project_info(path)
             val project_dir = File(info.path)
             val environment = toolchain_manager.project_environment(project_dir.absolutePath)
             require(environment.missing.isEmpty()) { environment.missing.joinToString("；") }
@@ -559,12 +486,11 @@ func main() {
             }
 
             val now = System.currentTimeMillis()
-            val info = require_xcode_project_info(project_path)
+            val info = require_gostudio_project_info(project_path)
             val record = recent_project_record(
                 name = info.name,
                 path = project_path,
-                cmake_version = info.cmake_version,
-                ndk_version = info.ndk_version,
+                go_version = info.go_version,
                 template = info.template,
                 opened_at = now
             )
@@ -635,21 +561,17 @@ func main() {
 
     private fun discover_project_records(): List<recent_project_record> {
         return try {
-            val root_dir = File(toolchain_runtime_provider.paths().external_storage_dir ?: File("/sdcard"), "GoStudioProjects")
-            val projects = root_dir.listFiles()
-                ?.filter { it.isDirectory }
-                ?.sortedByDescending { it.lastModified() }
-                ?.take(max_recent_projects)
-                ?: emptyList()
+            val projects = list_local_projects()
+                .sortedByDescending { it.lastModified() }
+                .take(max_recent_projects)
 
             projects.mapNotNull { project_dir ->
-                val info = runCatching { require_xcode_project_info(project_dir.absolutePath) }.getOrNull()
+                val info = runCatching { require_gostudio_project_info(project_dir.absolutePath) }.getOrNull()
                     ?: return@mapNotNull null
                 recent_project_record(
                     name = info.name,
                     path = normalize_project_path(project_dir.absolutePath),
-                    cmake_version = info.cmake_version,
-                    ndk_version = info.ndk_version,
+                    go_version = info.go_version,
                     template = info.template,
                     opened_at = project_dir.lastModified().takeIf { it > 0L } ?: System.currentTimeMillis()
                 )
@@ -677,9 +599,8 @@ func main() {
         return recent_project_info(
             name = project_info?.name ?: record.name.ifBlank { project_dir.name },
             path = record.path,
-            cmake_version = project_info?.cmake_version ?: record.cmake_version,
-            ndk_version = project_info?.ndk_version ?: record.ndk_version,
-            template = project_info?.template ?: record.template.ifBlank { "executable" },
+            go_version = project_info?.go_version ?: record.go_version,
+            template = project_info?.template ?: record.template.ifBlank { "hello" },
             last_opened = format_last_opened(record.opened_at),
             opened_at = record.opened_at
         )
@@ -706,30 +627,28 @@ func main() {
 data class project_info(
     val name: String,
     val path: String,
-    val ndk_version: String,
-    val cmake_version: String,
+    val go_version: String,
     val template: String
 )
 
 data class project_build_config(
-    val abi: String = "arm64-v8a",
-    val platform: String = "android-24",
-    val cpp_standard: String = "20",
+    val goos: String = "linux",
+    val goarch: String = "arm64",
     val build_type: String = "Debug",
-    val parallel_jobs: Int = 0,
-    val extra_cmake_args: String = ""
+    val build_tags: String = "",
+    val ldflags: String = "",
+    val trimpath: Boolean = false,
+    val parallel_jobs: Int = 0
 )
 
 data class project_ide_config(
-    val ndk_version: String = "",
-    val cmake_version: String = "",
+    val go_version: String = "",
     val build: project_build_config = project_build_config()
 )
 
 private data class project_config(
     val name: String = "",
-    val ndk_version: String = "",
-    val cmake_version: String = "",
+    val go_version: String = "",
     val template: String = "",
     val created: Long = 0L,
     val build: project_build_config = project_build_config()
@@ -738,8 +657,7 @@ private data class project_config(
 data class recent_project_info(
     val name: String,
     val path: String,
-    val cmake_version: String,
-    val ndk_version: String,
+    val go_version: String,
     val template: String,
     val last_opened: String,
     val opened_at: Long
@@ -748,8 +666,7 @@ data class recent_project_info(
 private data class recent_project_record(
     val name: String = "",
     val path: String = "",
-    val cmake_version: String = "",
-    val ndk_version: String = "",
+    val go_version: String = "",
     val template: String = "",
     val opened_at: Long = 0L
 )

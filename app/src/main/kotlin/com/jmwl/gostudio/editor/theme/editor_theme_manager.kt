@@ -57,10 +57,10 @@ data class editor_theme_preview_palette(
 )
 
 object editor_theme_manager {
-    private const val DEFAULT_THEME_ASSET = "textmate/themes/xcode.json"
+    private const val DEFAULT_THEME_ASSET = "textmate/themes/gostudio.json"
     private const val USER_THEME_DIR = "textmate/themes"
-    private const val USER_THEME_FILE = "xcode.json"
-    private const val THEME_NAME = "xcode_user"
+    private const val USER_THEME_FILE = "gostudio.json"
+    private const val THEME_NAME = "gostudio_user"
 
     private val _version = MutableStateFlow(0)
     val version: StateFlow<Int> = _version.asStateFlow()

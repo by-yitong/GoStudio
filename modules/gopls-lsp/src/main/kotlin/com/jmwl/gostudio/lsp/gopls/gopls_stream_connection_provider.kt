@@ -88,8 +88,11 @@ class gopls_stream_connection_provider(
 
     /**
      * 构建 proot+gopls 命令行。
-     * 与 clangd 不同：gopls 不需要 build_dir 绑定（无 compile_commands.json），
-     * 只绑定 project_dir。工作目录 = project_dir，确保 go.mod 定位正确。
+     *
+     * 关键：把项目目录 bind 到 guest 内的【同名 host 路径】（/data/.../projects/bbb），
+     * 而不是映射到 /home/gostudio/...。这样 gopls 进程看到的文件路径与 sora LSP 客户端
+     * 发送的 file URI（host 路径）完全一致，避免「No active builds contain ...」错误。
+     * working_dir 也用 host 路径（已被 bind 进 guest，cd 能成功）。
      */
     private fun build_proot_gopls_command(): List<String> {
         val builder = proot_command_builder(config.runtime_paths)
@@ -103,9 +106,8 @@ class gopls_stream_connection_provider(
         ).apply {
             putAll(config.extra_environment.filterKeys { it.matches(Regex("[A-Za-z_][A-Za-z0-9_]*")) })
         }
-        val project_mounts = listOf(
-            proot_bind_mount(config.project_dir)
-        ).distinctBy { it.source.absolutePath }
+        // 绑定项目目录到 guest 同名路径，保证 gopls 与 sora 的文件路径视图一致
+        val project_mounts = listOf(proot_bind_mount(config.project_dir))
         return listOf(config.runtime_paths.proot_file.absolutePath) +
             builder.base_args(
                 working_dir = config.project_dir.absolutePath,

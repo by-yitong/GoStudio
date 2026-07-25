@@ -307,6 +307,18 @@ open class EditorDiagnosticTooltipWindow(editor: CodeEditor) : EditorPopupWindow
         setSize(dialogWidth, dialogHeight)
     }
 
+    /**
+     * 重新测量并刷新窗口尺寸/位置。
+     *
+     * 用于布局内容异步变化后（例如 LSP 快速修复列表异步加载完成）让窗口
+     * 重新计算大小以容纳新增内容。
+     */
+    fun refreshWindowSize() {
+        if (!isShowing) return
+        updateWindowSize()
+        updateWindowPosition()
+    }
+
     protected open fun updateWindowPosition() {
         val selection = memorizedPosition ?: return
         val charX = editor.getCharOffsetX(selection.line, selection.column)

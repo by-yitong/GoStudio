@@ -248,7 +248,7 @@ fun editor_theme_reset_dialog(
         },
         text = {
             Text(
-                text = "会把编辑器颜色恢复为 assets/textmate/themes/xcode.json 的默认值。",
+                text = "会把编辑器颜色恢复为 assets/textmate/themes/gostudio.json 的默认值。",
                 color = colors.dialog_hint,
                 fontSize = 13.sp
             )

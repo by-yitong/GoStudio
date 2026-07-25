@@ -121,43 +121,43 @@ internal fun editor_settings_switch_groups(settings: editor_settings_state): Lis
             )
         ),
         editor_settings_switch_group(
-            title = "clangd",
+            title = "gopls",
             items = listOf(
                 editor_settings_switch_item(
-                    title = "启用 clangd",
-                    description = "启用 C/C++ 智能功能",
-                    checked = settings.clangd_enabled,
-                    update = { value -> settings.copy(clangd_enabled = value) }
+                    title = "启用 gopls",
+                    description = "启用 Go 智能功能",
+                    checked = settings.gopls_enabled,
+                    update = { value -> settings.copy(gopls_enabled = value) }
                 ),
                 editor_settings_switch_item(
                     title = "补全",
                     description = "提供代码补全",
-                    checked = settings.clangd_completion,
-                    update = { value -> settings.copy(clangd_completion = value) }
+                    checked = settings.gopls_completion,
+                    update = { value -> settings.copy(gopls_completion = value) }
                 ),
                 editor_settings_switch_item(
                     title = "参数提示",
                     description = "显示函数参数",
-                    checked = settings.clangd_signature_help,
-                    update = { value -> settings.copy(clangd_signature_help = value) }
+                    checked = settings.gopls_signature_help,
+                    update = { value -> settings.copy(gopls_signature_help = value) }
                 ),
                 editor_settings_switch_item(
                     title = "符号高亮",
                     description = "标出同一符号",
-                    checked = settings.clangd_document_highlight,
-                    update = { value -> settings.copy(clangd_document_highlight = value) }
+                    checked = settings.gopls_document_highlight,
+                    update = { value -> settings.copy(gopls_document_highlight = value) }
                 ),
                 editor_settings_switch_item(
                     title = "格式化",
                     description = "整理代码格式",
-                    checked = settings.clangd_formatting,
-                    update = { value -> settings.copy(clangd_formatting = value) }
+                    checked = settings.gopls_formatting,
+                    update = { value -> settings.copy(gopls_formatting = value) }
                 ),
                 editor_settings_switch_item(
                     title = "悬浮提示",
                     description = "显示类型和文档",
-                    checked = settings.clangd_hover,
-                    update = { value -> settings.copy(clangd_hover = value) }
+                    checked = settings.gopls_hover,
+                    update = { value -> settings.copy(gopls_hover = value) }
                 )
             )
         )

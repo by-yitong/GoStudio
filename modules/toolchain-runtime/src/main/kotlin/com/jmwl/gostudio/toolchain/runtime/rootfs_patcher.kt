@@ -128,7 +128,7 @@ class rootfs_patcher {
             .distinct()
             .map { id ->
                 val base_name = "android_gid_$id"
-                val name = if (base_name in existing_names) "${base_name}_xcode" else base_name
+                val name = if (base_name in existing_names) "${base_name}_gostudio" else base_name
                 "$name:x:$id:"
             }
         if (additions.isEmpty()) return

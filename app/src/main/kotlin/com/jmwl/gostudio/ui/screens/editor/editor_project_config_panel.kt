@@ -43,21 +43,15 @@ fun editor_project_config_panel(
     modifier: Modifier = Modifier
 ) {
     val colors = app_theme_provider.colors
-    val ndk_options = remember { toolchain_manager.available_ndk_versions() }
-    val cmake_options = remember { toolchain_manager.available_cmake_versions() }
-    val abi_options = listOf("x86_64", "arm64-v8a", "x86", "armeabi-v7a")
-    val common_platform_options = listOf("android-21", "android-23", "android-24", "android-26", "android-28", "android-30", "android-33", "android-35")
-    val cpp_standard_options = listOf("11", "14", "17", "20", "23", "26")
+    val goos_options = listOf("linux", "darwin", "android", "windows", "freebsd")
+    val goarch_options = listOf("arm64", "amd64", "arm", "386")
     val build_type_options = listOf("Debug", "Release")
 
     var saved_config by remember(project_root_path) { mutableStateOf(project_manager.read_project_ide_config(project_root_path)) }
     var config by remember(project_root_path) { mutableStateOf(saved_config) }
     val has_changes = config != saved_config
-    var expanded_ndk by remember { mutableStateOf(false) }
-    var expanded_cmake by remember { mutableStateOf(false) }
-    var expanded_abi by remember { mutableStateOf(false) }
-    var expanded_platform by remember { mutableStateOf(false) }
-    var expanded_cpp by remember { mutableStateOf(false) }
+    var expanded_goos by remember { mutableStateOf(false) }
+    var expanded_goarch by remember { mutableStateOf(false) }
     var expanded_build_type by remember { mutableStateOf(false) }
 
     Column(
@@ -74,67 +68,20 @@ fun editor_project_config_panel(
             modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
         )
 
-        project_config_group_title("工具链")
+        project_config_group_title("Go 工具链")
         Column(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(1.dp)
         ) {
-            project_config_option_card(
-                icon = Icons.Default.Android,
-                title = "NDK",
-                value = config.ndk_version.ifBlank { "未配置" },
-                expanded = expanded_ndk,
-                options = ndk_options,
-                shape = project_config_item_shape(is_top = true, is_bottom = false),
-                on_expanded_change = { expanded_ndk = it },
-                on_select = { config = config.copy(ndk_version = it) }
-            )
-            project_config_option_card(
-                icon = Icons.Default.Build,
-                title = "CMake",
-                value = config.cmake_version.ifBlank { "未配置" },
-                expanded = expanded_cmake,
-                options = cmake_options,
-                shape = project_config_item_shape(is_top = false, is_bottom = true),
-                on_expanded_change = { expanded_cmake = it },
-                on_select = { config = config.copy(cmake_version = it) }
-            )
-        }
-
-        project_config_group_title("构建")
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(1.dp)
-        ) {
-            project_config_option_card(
-                icon = Icons.Default.Android,
-                title = "构建 ABI",
-                value = config.build.abi,
-                expanded = expanded_abi,
-                options = abi_options,
-                shape = project_config_item_shape(is_top = true, is_bottom = false),
-                on_expanded_change = { expanded_abi = it },
-                on_select = { config = config.copy(build = config.build.copy(abi = it)) }
-            )
-            project_config_option_card(
-                icon = Icons.Default.Tune,
-                title = "Platform",
-                value = config.build.platform,
-                expanded = expanded_platform,
-                options = common_platform_options,
-                shape = project_config_item_shape(is_top = false, is_bottom = false),
-                on_expanded_change = { expanded_platform = it },
-                on_select = { config = config.copy(build = config.build.copy(platform = it)) }
-            )
             project_config_option_card(
                 icon = Icons.Default.Code,
-                title = "C++ 标准",
-                value = "C++${config.build.cpp_standard}",
-                expanded = expanded_cpp,
-                options = cpp_standard_options.map { "C++$it" },
-                shape = project_config_item_shape(is_top = false, is_bottom = false),
-                on_expanded_change = { expanded_cpp = it },
-                on_select = { config = config.copy(build = config.build.copy(cpp_standard = it.removePrefix("C++"))) }
+                title = "Go 版本",
+                value = config.go_version.ifBlank { "未指定" },
+                expanded = false,
+                options = emptyList(),
+                shape = project_config_item_shape(is_top = true, is_bottom = false),
+                on_expanded_change = {},
+                on_select = {}
             )
             project_config_option_card(
                 icon = Icons.Default.Build,
@@ -142,21 +89,57 @@ fun editor_project_config_panel(
                 value = config.build.build_type,
                 expanded = expanded_build_type,
                 options = build_type_options,
-                shape = project_config_item_shape(is_top = false, is_bottom = false),
+                shape = project_config_item_shape(is_top = false, is_bottom = true),
                 on_expanded_change = { expanded_build_type = it },
                 on_select = { config = config.copy(build = config.build.copy(build_type = it)) }
+            )
+        }
+
+        project_config_group_title("交叉编译目标")
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(1.dp)
+        ) {
+            project_config_option_card(
+                icon = Icons.Default.Android,
+                title = "GOOS",
+                value = config.build.goos,
+                expanded = expanded_goos,
+                options = goos_options,
+                shape = project_config_item_shape(is_top = true, is_bottom = false),
+                on_expanded_change = { expanded_goos = it },
+                on_select = { config = config.copy(build = config.build.copy(goos = it)) }
+            )
+            project_config_option_card(
+                icon = Icons.Default.Tune,
+                title = "GOARCH",
+                value = config.build.goarch,
+                expanded = expanded_goarch,
+                options = goarch_options,
+                shape = project_config_item_shape(is_top = false, is_bottom = true),
+                on_expanded_change = { expanded_goarch = it },
+                on_select = { config = config.copy(build = config.build.copy(goarch = it)) }
+            )
+        }
+
+        project_config_group_title("构建选项")
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(1.dp)
+        ) {
+            project_config_extra_cmake_args_card(
+                value = config.build.build_tags,
+                on_change = { tags -> config = config.copy(build = config.build.copy(build_tags = tags)) }
+            )
+            project_config_extra_cmake_args_card(
+                value = config.build.ldflags,
+                on_change = { flags -> config = config.copy(build = config.build.copy(ldflags = flags)) }
             )
             project_config_parallel_jobs_card(
                 value = config.build.parallel_jobs,
                 on_change = { jobs -> config = config.copy(build = config.build.copy(parallel_jobs = jobs)) }
             )
         }
-
-        project_config_group_title("CMake 参数")
-        project_config_extra_cmake_args_card(
-            value = config.build.extra_cmake_args,
-            on_change = { args -> config = config.copy(build = config.build.copy(extra_cmake_args = args)) }
-        )
 
         Spacer(modifier = Modifier.height(6.dp))
 

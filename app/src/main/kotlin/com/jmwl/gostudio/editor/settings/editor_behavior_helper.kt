@@ -1,8 +1,8 @@
 package com.jmwl.gostudio.editor.settings
 
 import com.jmwl.gostudio.editor.model.editor_settings_state
-import com.jmwl.gostudio.editor.core.is_c_family_file
-import com.jmwl.gostudio.editor.core.c_cpp_completion_keywords
+import com.jmwl.gostudio.editor.core.is_go_file
+import com.jmwl.gostudio.editor.core.go_completion_keywords
 
 import android.content.Context
 import io.github.rosemoe.sora.langs.textmate.TextMateLanguage
@@ -64,7 +64,7 @@ internal fun apply_editor_behavior_settings(
 
 private fun apply_editor_symbol_pairs(editor: CodeEditor, file_path: String?) {
     editor.props.overrideSymbolPairs.removeAllPairs()
-    if (!is_c_family_file(file_path)) return
+    if (!is_go_file(file_path)) return
 
     editor.props.overrideSymbolPairs.putPair(
         "<",
@@ -147,9 +147,9 @@ internal fun apply_textmate_language_settings(
     settings: editor_settings_state,
     file_path: String?
 ) {
-    val c_family_file = is_c_family_file(file_path)
+    val go_file = is_go_file(file_path)
     language.useTab(true)
     language.setTabSize(settings.tab_size.coerceIn(2, 8))
-    language.setAutoCompleteEnabled(settings.auto_completion && c_family_file)
-    language.setCompleterKeywords(if (c_family_file) c_cpp_completion_keywords else emptyArray())
+    language.setAutoCompleteEnabled(settings.auto_completion && go_file)
+    language.setCompleterKeywords(if (go_file) go_completion_keywords else emptyArray())
 }

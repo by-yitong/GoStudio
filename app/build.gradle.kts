@@ -7,20 +7,19 @@ plugins {
 
 android {
     namespace = "com.jmwl.gostudio"
-    ndkVersion = "29.0.14206865"
     compileSdk = 36
 
     defaultConfig {
         applicationId = "com.jmwl.gostudio"
         minSdk = 26
         targetSdk = 28
-        versionCode = 100
-        versionName = "1.0.0"
-        
+        versionCode = 101
+        versionName = "1.0.1"
+
         ndk {
             abiFilters.add("arm64-v8a")
         }
-        
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     
@@ -93,7 +92,6 @@ dependencies {
     implementation(project(":modules:editor-core"))
     implementation(project(":modules:project-file-tree"))
     implementation(project(":modules:toolchain-runtime"))
-    implementation(project(":modules:clangd-lsp"))
     implementation(project(":modules:gopls-lsp"))
     implementation(project(":modules:sora-editor"))
     implementation(project(":modules:sora-language-textmate"))

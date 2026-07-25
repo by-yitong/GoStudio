@@ -18,23 +18,40 @@ import androidx.annotation.ColorInt
 import io.github.rosemoe.sora.lsp.R
 import io.github.rosemoe.sora.lang.diagnostic.DiagnosticDetail
 import io.github.rosemoe.sora.lang.diagnostic.DiagnosticRegion
+import io.github.rosemoe.sora.lsp.editor.LspEditor
 import io.github.rosemoe.sora.lsp.editor.curvedTextScale
+import io.github.rosemoe.sora.lsp.events.EventType
+import io.github.rosemoe.sora.lsp.utils.asLspPosition
 import io.github.rosemoe.sora.lsp.utils.blendARGB
+import io.github.rosemoe.sora.lsp.utils.createTextDocumentIdentifier
 import io.github.rosemoe.sora.widget.component.DiagnosticTooltipLayout
 import io.github.rosemoe.sora.widget.component.EditorDiagnosticTooltipWindow
 import io.github.rosemoe.sora.widget.schemes.EditorColorScheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.future.await
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import kotlin.math.abs
 
 /**
- * Diagnostic tooltip layout tuned for LSP that only renders the detailed message.
+ * Diagnostic tooltip layout tuned for LSP.
+ *
+ * 在诊断详情下方追加「快速修复」列表：显示诊断时同时请求 gopls 的 code action，
+ * 把可用修复（如 Add import）渲染为可点击条目，点击即应用。
  */
-class LspDiagnosticTooltipLayout : DiagnosticTooltipLayout {
+class LspDiagnosticTooltipLayout(
+    private val lspEditor: LspEditor? = null
+) : DiagnosticTooltipLayout {
 
     private lateinit var window: EditorDiagnosticTooltipWindow
     private lateinit var root: View
     private lateinit var detailMessageText: TextView
     private lateinit var messagePanel: ViewGroup
     private lateinit var copyButton: ImageButton
+    private lateinit var quickfixTitle: TextView
+    private lateinit var quickfixContainer: ViewGroup
+    private var quickfixTextColor: Int = 0
 
     private val backgroundDrawable = GradientDrawable()
     private val severityColors = mutableMapOf<Short, Int>()
@@ -59,9 +76,11 @@ class LspDiagnosticTooltipLayout : DiagnosticTooltipLayout {
     }
 
     override fun createView(inflater: LayoutInflater): View {
+        val context = inflater.context
         val view = inflater.inflate(R.layout.lsp_diagnostic_tooltip_window, null)
         root = view
         root.clipToOutline = true
+
         root.setOnGenericMotionListener { _, event ->
             when (event.actionMasked) {
                 MotionEvent.ACTION_HOVER_ENTER -> pointerOverPopup = true
@@ -70,9 +89,9 @@ class LspDiagnosticTooltipLayout : DiagnosticTooltipLayout {
             false
         }
 
-        detailMessageText = root.findViewById(R.id.diagnostic_tooltip_detailed_message)
-        messagePanel = root.findViewById(R.id.diagnostic_container_message)
-        copyButton = root.findViewById(R.id.diagnostic_copy_button)
+        detailMessageText = view.findViewById(R.id.diagnostic_tooltip_detailed_message)
+        messagePanel = view.findViewById(R.id.diagnostic_container_message)
+        copyButton = view.findViewById(R.id.diagnostic_copy_button)
         copyButton.setOnClickListener { copyDetailedMessageToClipboard() }
         copyButton.setOnHoverListener { _, event ->
             when (event.actionMasked) {
@@ -88,6 +107,23 @@ class LspDiagnosticTooltipLayout : DiagnosticTooltipLayout {
         val initialEditorSize = pendingEditorTextSizePx ?: window.editor.textSizePx
         applyDetailMessageTextSize(initialEditorSize)
         pendingEditorTextSizePx = null
+
+        // 快速修复区：标题 + 列表容器，加进 messagePanel（ScrollView 内，自动可滚动）
+        quickfixTitle = TextView(context).apply {
+            visibility = View.GONE
+            setPadding(0, (window.editor.dpUnit * 6).toInt(), 0, (window.editor.dpUnit * 4).toInt())
+            text = "快速修复"
+            textSize = detailMessageText.textSize / context.resources.displayMetrics.density
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+        }
+        messagePanel.addView(quickfixTitle)
+
+        quickfixContainer = android.widget.LinearLayout(context).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            visibility = View.GONE
+        }
+        messagePanel.addView(quickfixContainer)
+
         return view
     }
 
@@ -100,6 +136,9 @@ class LspDiagnosticTooltipLayout : DiagnosticTooltipLayout {
         backgroundDrawable.setStroke(borderWidthPx, resolveBorderColor(appliedRegion))
         backgroundDrawable.setColor(resolveFillColor(appliedRegion))
         root.background = backgroundDrawable
+        // 快速修复区文字色复用诊断详情文字色
+        quickfixTextColor = colorScheme.getColor(EditorColorScheme.DIAGNOSTIC_TOOLTIP_DETAILED_MSG)
+        if (::quickfixTitle.isInitialized) quickfixTitle.setTextColor(quickfixTextColor)
         updateCopyButtonTint(appliedRegion)
     }
 
@@ -120,6 +159,8 @@ class LspDiagnosticTooltipLayout : DiagnosticTooltipLayout {
 
     override fun renderDiagnostic(diagnostic: DiagnosticDetail?, region: DiagnosticRegion?) {
         appliedRegion = region
+        quickfixContainer.removeAllViews()
+        quickfixContainer.visibility = View.GONE
         if (diagnostic == null) {
             detailMessageText.text = ""
             detailMessageText.visibility = View.GONE
@@ -146,6 +187,106 @@ class LspDiagnosticTooltipLayout : DiagnosticTooltipLayout {
         }
         backgroundDrawable.setStroke(borderWidthPx, resolveBorderColor(region))
         backgroundDrawable.setColor(resolveFillColor(region))
+
+        // 请求该诊断的 code action，填充快速修复列表
+        requestQuickfix(region)
+    }
+
+    /**
+     * 用诊断的 range 请求 gopls code action，把可用修复渲染为可点击条目。
+     */
+    private fun requestQuickfix(region: DiagnosticRegion?) {
+        val editor = lspEditor ?: return
+        val start = region?.startIndex
+        val end = region?.endIndex
+        if (start == null || end == null) return
+        val originEditor = editor.editor ?: return
+        val startPos = originEditor.text.getIndexer().getCharPosition(start)
+        val endPos = originEditor.text.getIndexer().getCharPosition(end)
+        val range = org.eclipse.lsp4j.Range(
+            startPos.asLspPosition(),
+            endPos.asLspPosition()
+        )
+        editor.coroutineScope.launch(Dispatchers.IO) {
+            val diagnostics = editor.diagnosticsContainer.findDiagnostics(editor.uri, range) ?: emptyList()
+            val params = org.eclipse.lsp4j.CodeActionParams(
+                editor.uri.createTextDocumentIdentifier(),
+                range,
+                org.eclipse.lsp4j.CodeActionContext(diagnostics)
+            )
+            val future = editor.requestManager.codeAction(params)
+            val list = try {
+                withTimeout(2000) { future?.await().orEmpty() }
+            } catch (_: Exception) {
+                emptyList()
+            }
+            withContext(Dispatchers.Main) {
+                renderQuickfixList(list.orEmpty())
+            }
+        }
+    }
+
+    private fun renderQuickfixList(actions: List<org.eclipse.lsp4j.jsonrpc.messages.Either<org.eclipse.lsp4j.Command, org.eclipse.lsp4j.CodeAction>>) {
+        if (!::quickfixContainer.isInitialized) return
+        quickfixContainer.removeAllViews()
+        if (actions.isEmpty()) {
+            quickfixContainer.visibility = View.GONE
+            if (::quickfixTitle.isInitialized) quickfixTitle.visibility = View.GONE
+            return
+        }
+        val context = root.context
+        val editor = window.editor
+        val hPad = (editor.dpUnit * 12).toInt()
+        val vPad = (editor.dpUnit * 8).toInt()
+        actions.forEach { either ->
+            val title = when {
+                either.isLeft -> either.left?.title?.ifBlank { either.left?.command } ?: either.left?.command ?: "<action>"
+                else -> either.right?.title?.ifBlank { "action" } ?: "action"
+            }
+            val item = TextView(context).apply {
+                text = title
+                if (quickfixTextColor != 0) setTextColor(quickfixTextColor)
+                setPadding(hPad, vPad, hPad, vPad)
+                textAlignment = View.TEXT_ALIGNMENT_VIEW_START
+                val outValue = android.util.TypedValue()
+                context.theme.resolveAttribute(android.R.attr.selectableItemBackground, outValue, true)
+                setBackgroundResource(outValue.resourceId)
+                setOnClickListener { applyCodeAction(either) }
+            }
+            quickfixContainer.addView(item)
+        }
+        if (::quickfixTitle.isInitialized) {
+            if (quickfixTextColor != 0) quickfixTitle.setTextColor(quickfixTextColor)
+            quickfixTitle.visibility = View.VISIBLE
+        }
+        quickfixContainer.visibility = View.VISIBLE
+        // 修复列表异步加载完成，刷新窗口尺寸以容纳新增内容
+        window.refreshWindowSize()
+    }
+
+    private fun applyCodeAction(either: org.eclipse.lsp4j.jsonrpc.messages.Either<org.eclipse.lsp4j.Command, org.eclipse.lsp4j.CodeAction>) {
+        val editor = lspEditor ?: return
+        val action = if (either.isRight) either.right else null
+        val command = if (either.isLeft) either.left else action?.command
+        val edit = action?.edit
+        if (edit != null) {
+            val params = org.eclipse.lsp4j.ApplyWorkspaceEditParams().apply {
+                label = action.title
+                this.edit = edit
+            }
+            // 文档修改（Content.replace）必须在主线程，否则光标动画崩溃
+            editor.coroutineScope.launch(Dispatchers.Main) {
+                editor.eventManager.emit("workspace/applyEdit", params)
+            }
+        } else if (command != null) {
+            editor.coroutineScope.launch(Dispatchers.Main) {
+                editor.eventManager.emit("workspace/executeCommand") {
+                    put("command", command.command)
+                    put("args", command.arguments ?: emptyList<Any>())
+                }
+            }
+        }
+        window.dismiss()
     }
 
     override fun measureContent(maxWidth: Int, maxHeight: Int): Pair<Int, Int> {

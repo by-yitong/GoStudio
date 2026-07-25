@@ -180,7 +180,12 @@ fun editor_symbol_bar(
         animationSpec = tween(180)
     )
     val symbols = remember {
-        listOf("TAB", "()", "{}", "[]", "\"\"", "''", "<>", ";", ":", "=", "+", "-", "*", "/", "|", "&", "!", "?", ",", ".")
+        listOf(
+            "TAB", ":=", "func", "if", "for", "range", "return",
+            "import", "package", "type", "struct", "interface",
+            "chan", "<-", "go", "defer", "...", "make", "nil",
+            "()", "{}", "[]", "\"\"", "''", ";", ":", "=", ",", "."
+        )
     }
     val first_row_symbols = remember(symbols) { symbols.take(10) }
     val second_row_symbols = remember(symbols) { symbols.drop(10) }
@@ -326,14 +331,25 @@ private fun editor_symbol_button(
     on_insert: (String) -> Unit
 ) {
     val colors = app_theme_provider.colors
-    Surface(
-        modifier = Modifier.size(width = if (symbol == "TAB") 44.dp else 38.dp, height = 34.dp),
-        shape = editor_symbol_button_shape(position),
-        color = colors.editor_button_bg,
-        onClick = { on_insert(symbol) }
+    // 不使用卡片背景，符号直接显示为可点击文字
+    // 宽度自适应：短符号用固定宽度，长关键词（import/package 等）按内容宽度
+    val width = when {
+        symbol == "TAB" -> 44.dp
+        symbol.length <= 2 -> 38.dp
+        else -> (symbol.length * 11 + 16).dp
+    }
+    Box(
+        modifier = Modifier
+            .size(width = width, height = 34.dp)
+            .clickable { on_insert(symbol) },
+        contentAlignment = Alignment.Center
     ) {
-        Box(contentAlignment = Alignment.Center) {
-            Text(symbol, color = colors.editor_text, fontSize = 12.5.sp)
-        }
+        Text(
+            symbol,
+            color = colors.editor_text,
+            fontSize = 12.5.sp,
+            maxLines = 1,
+            softWrap = false
+        )
     }
 }

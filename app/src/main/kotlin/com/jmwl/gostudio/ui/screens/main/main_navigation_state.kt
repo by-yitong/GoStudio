@@ -1,12 +1,10 @@
 package com.jmwl.gostudio.ui.screens.main
 
 enum class toolchain_action {
-    INSTALL_CMAKE,
-    INSTALL_CMAKE_ARCHIVE,
-    UNINSTALL_CMAKE,
-    INSTALL_NDK_URL,
-    INSTALL_NDK_ARCHIVE,
-    UNINSTALL_NDK
+    INSTALL_GO,
+    INSTALL_GOPLS,
+    INSTALL_GIT,
+    INSTALL_GARBLE
 }
 
 data class toolchain_trigger(

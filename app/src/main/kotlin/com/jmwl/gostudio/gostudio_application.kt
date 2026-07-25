@@ -70,7 +70,7 @@ class gostudio_application : Application() {
 
             editor_theme_manager.init(this)
 
-            ThemeRegistry.getInstance().setTheme("xcode_user")
+            ThemeRegistry.getInstance().setTheme("gostudio_user")
             GrammarRegistry.getInstance().loadGrammars("textmate/languages.json")
 
             textmate_initialized = true

@@ -29,9 +29,9 @@ fun splash_content(
     var load_finished by remember { mutableStateOf(false) }
 
     val tips = listOf(
-        "随时随地写代码",
-        "轻量级代码编辑器",
-        "支持 C/C++ 编译",
+        "随时随地写 Go",
+        "Go 语言集成开发环境",
+        "gopls 智能补全",
         "内置 Linux 终端"
     )
 
@@ -97,10 +97,10 @@ fun splash_content(
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "X",
+                text = "Go",
                 fontSize = 48.sp,
                 fontWeight = FontWeight.Black,
-                color = Color.Black,
+                color = Color(0xFF45C8FF),
                 letterSpacing = 4.sp,
                 modifier = Modifier.graphicsLayer(scaleX = scale, scaleY = scale)
             )
@@ -108,7 +108,7 @@ fun splash_content(
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                text = "Code",
+                text = "Studio",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Medium,
                 color = Color.Gray,

@@ -18,45 +18,32 @@ data class go_toolchain_info(
 )
 
 /**
- * 旧 NDK 工具链信息（兼容字段，GoStudio 永远返回 null）。
- * editor_activity 的 cmake/clangd 死代码引用此类型，阶段5清理时一并删除。
- */
-data class ndk_toolchain_info(
-    val version: String,
-    val aliases: Set<String>,
-    val host_dir: File,
-    val proot_dir: String,
-    val llvm_bin_host_dir: File,
-    val llvm_bin_proot_dir: String,
-    val cmake_toolchain_file: String?
-)
-
-/**
  * 项目构建环境（Go 版本）。
  *
  * @param environment proot 内的环境变量（PATH/GOROOT/GOPATH/GOPROXY 等）
  * @param go 已装的 Go 工具链；null 表示未装
  * @param missing 缺失项的人类可读描述
- * @param ndk 兼容字段（永远 null；editor_activity 的 cmake 死代码引用，阶段5清理）
  */
 data class project_toolchain_environment(
     val environment: Map<String, String>,
     val go: go_toolchain_info?,
-    val missing: List<String>,
-    val ndk: ndk_toolchain_info? = null
+    val missing: List<String>
 )
 
 /**
- * Go 工具链管理器（替代 XCode 的 cmake/ndk 探测）。
+ * Go 工具链管理器。
  *
- * Go/gopls 由 apt 装到 proot rootfs 内（/usr/local/go），不需要像 NDK 那样扫描多版本目录。
- * 探测逻辑：检查 rootfs 内 /usr/local/go/bin/go 是否存在，读 `go version` 输出取版本号。
+ * Go/gopls 装到 proot rootfs 内。兼容两种安装方式：
+ * - apt 安装（golang/golang-go）：GOROOT=/usr/lib/go（软链到 /usr/lib/go-<version>），/usr/bin/go 软链
+ * - 手动安装（官方 tarball）：GOROOT=/usr/local/go
+ * 探测逻辑见 [installed_go]。
  */
 object toolchain_manager {
 
     private const val PROOT_GOSTUDIO_HOME = "/home/gostudio"
     private const val PROOT_GO_ROOT = "/usr/local/go"
     private const val PROOT_GO_BIN = "$PROOT_GO_ROOT/bin"
+    private const val PROOT_APT_GO_ROOT = "/usr/lib/go"
     private const val PROOT_GOPLS = "$PROOT_GO_BIN/gopls"
     private const val PROOT_GOPATH_BIN = "/home/go/bin"
 
@@ -84,31 +71,81 @@ object toolchain_manager {
     }
 
     /**
-     * 探测已安装的 Go 工具链（检查 rootfs 内 /usr/local/go/bin/go）。
-     * 注意：版本号需 proot 执行 `go version` 才能拿到，这里只判断存在性，版本延迟到运行时。
+     * 探测已安装的 Go 工具链，兼容两种安装方式：
+     * - 手动安装（官方 tarball）：GOROOT=/usr/local/go，二进制在 /usr/local/go/bin/go
+     * - apt 安装（golang / golang-go）：GOROOT=/usr/lib/go 或 /usr/lib/go-<version>，
+     *   二进制在 /usr/lib/go/bin/go，/usr/bin/go 为软链。
+     *
+     * 版本号需 proot 执行 `go version` 才能拿到，这里只判断存在性，版本延迟到运行时。
      */
     fun installed_go(): go_toolchain_info? {
-        val go_bin_host = File(toolchain_runtime_provider.paths().ubuntu_base_dir, "usr/local/go/bin/go")
-        if (!go_bin_host.isFile) return null
-        // gopls 可能在 /usr/local/go/bin/gopls（apt 装的 golang 联动）或 /home/go/bin/gopls（go install）
-        val gopls_host_bin = File(toolchain_runtime_provider.paths().ubuntu_base_dir, "usr/local/go/bin/gopls")
-        val gopls_proot = if (gopls_host_bin.isFile) PROOT_GOPLS else "$PROOT_GOPATH_BIN/gopls"
-        return go_toolchain_info(
-            version = "", // 版本由 go version 运行时取，这里留空
-            go_proot_dir = PROOT_GO_ROOT,
-            go_bin_proot_dir = PROOT_GO_BIN,
-            gopls_proot_path = gopls_proot
-        )
+        val rootfs = toolchain_runtime_provider.paths().ubuntu_base_dir
+
+        // 1) 手动安装：/usr/local/go/bin/go
+        val manual_go_bin = File(rootfs, "usr/local/go/bin/go")
+        if (manual_go_bin.isFile) {
+            return go_toolchain_info(
+                version = "",
+                go_proot_dir = PROOT_GO_ROOT,
+                go_bin_proot_dir = PROOT_GO_BIN,
+                gopls_proot_path = resolve_gopls_proot_path(rootfs)
+            )
+        }
+
+        // 2) apt 安装：/usr/lib/go（软链到 /usr/lib/go-<version>）
+        val apt_go_root_dir = File(rootfs, "usr/lib/go")
+        val apt_go_bin = File(apt_go_root_dir, "bin/go")
+        if (apt_go_bin.isFile) {
+            return go_toolchain_info(
+                version = "",
+                go_proot_dir = "$PROOT_APT_GO_ROOT",
+                go_bin_proot_dir = "$PROOT_APT_GO_ROOT/bin",
+                gopls_proot_path = resolve_gopls_proot_path(rootfs)
+            )
+        }
+
+        // 3) apt 安装版本化目录：扫描 /usr/lib/go-*/bin/go（兜底，软链未建立时）
+        val usr_lib = File(rootfs, "usr/lib")
+        if (usr_lib.isDirectory) {
+            val versioned = usr_lib.listFiles()
+                ?.filter { it.isDirectory && it.name.startsWith("go-") }
+                ?.firstOrNull { File(it, "bin/go").isFile }
+            if (versioned != null) {
+                val proot_root = "/usr/lib/${versioned.name}"
+                return go_toolchain_info(
+                    version = "",
+                    go_proot_dir = proot_root,
+                    go_bin_proot_dir = "$proot_root/bin",
+                    gopls_proot_path = resolve_gopls_proot_path(rootfs)
+                )
+            }
+        }
+
+        return null
+    }
+
+    /**
+     * 解析 gopls 路径，兼容多种安装位置（优先 go install 的最新版，避免 apt 旧版崩溃）：
+     * - go install gopls@latest：/home/go/bin/gopls（优先，版本最新最稳）
+     * - apt gopls 包：/usr/bin/gopls
+     * - 手动放 GOROOT：/usr/local/go/bin/gopls
+     */
+    private fun resolve_gopls_proot_path(rootfs: File): String {
+        if (File(toolchain_runtime_provider.paths().home_dir, "go/bin/gopls").isFile) return "$PROOT_GOPATH_BIN/gopls"
+        if (File(rootfs, "usr/bin/gopls").isFile) return "/usr/bin/gopls"
+        if (File(rootfs, "usr/local/go/bin/gopls").isFile) return PROOT_GOPLS
+        return "$PROOT_GOPATH_BIN/gopls"
     }
 
     /** Go 是否已安装。 */
     fun is_go_installed(): Boolean = installed_go() != null
 
-    /** gopls 是否已安装（/usr/local/go/bin/gopls 或 /home/go/bin/gopls）。 */
+    /** gopls 是否已安装（/home/go/bin/gopls 或 /usr/bin/gopls 或 /usr/local/go/bin/gopls）。 */
     fun is_gopls_installed(): Boolean {
         val rootfs = toolchain_runtime_provider.paths().ubuntu_base_dir
-        return File(rootfs, "usr/local/go/bin/gopls").isFile ||
-            File(toolchain_runtime_provider.paths().home_dir, "go/bin/gopls").isFile
+        return File(toolchain_runtime_provider.paths().home_dir, "go/bin/gopls").isFile ||
+            File(rootfs, "usr/bin/gopls").isFile ||
+            File(rootfs, "usr/local/go/bin/gopls").isFile
     }
 
     /** git 是否已安装（rootfs 内 /usr/bin/git）。 */
@@ -125,15 +162,19 @@ object toolchain_manager {
         val missing = mutableListOf<String>()
         if (go == null) missing += "Go 未安装，请在工具页安装 golang"
 
+        // GOROOT 动态匹配实际安装方式（apt=/usr/lib/go，手动=/usr/local/go）
+        val goroot = go?.go_proot_dir ?: PROOT_GO_ROOT
         val environment = linkedMapOf(
             "GOSTUDIO_HOME" to PROOT_GOSTUDIO_HOME,
-            "GOROOT" to PROOT_GO_ROOT,
+            "GOROOT" to goroot,
             "GOPATH" to "/home/go",
             "GOBIN" to PROOT_GOPATH_BIN,
             "GOPROXY" to "https://goproxy.cn,direct",
             "GOSUMDB" to "sum.golang.google.cn",
+            // 禁止 go 自动下载新工具链：proot 跑 toolchain 切换会段错误，强制用本地 go。
+            "GOTOOLCHAIN" to "local",
             "CGO_ENABLED" to "0",
-            "PATH" to proot_path()
+            "PATH" to proot_path(go?.go_bin_proot_dir?.let { listOf(it) } ?: emptyList())
         )
         return project_toolchain_environment(
             environment = environment,
@@ -142,14 +183,10 @@ object toolchain_manager {
         )
     }
 
-    /** 兼容旧调用（main_activity / main_tools_screen 引用）；GoStudio 不分版本，返回空列表。 */
-    fun available_cmake_versions(): List<String> = emptyList()
-    fun available_ndk_versions(): List<String> = emptyList()
-    fun installed_ndk_version_keys(): Set<String> = emptySet()
-    fun is_cmake_installed(): Boolean = false
-    fun is_ndk_installed(): Boolean = false
-
-    /** 清理旧 .bashrc/.profile 里的 XCode 工具链环境块（迁移期兼容）。 */
+    /**
+     * 清理 .bashrc/.profile 里的工具链环境块（迁移期兼容）。
+     * 注：前两组 XCode/xcode marker 必须保留，用于清理旧版（还叫 XCode 时）写入用户 shell 配置的残留块。
+     */
     fun cleanup_removed_toolchain_environment() {
         val markers_list = listOf(
             "# >>> XCode toolchain environment >>>" to "# <<< XCode toolchain environment <<<",

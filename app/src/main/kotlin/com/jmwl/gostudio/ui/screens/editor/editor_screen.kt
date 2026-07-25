@@ -74,7 +74,7 @@ internal fun editor_screen(
     on_close_other_tabs: (String) -> Unit,
     on_close_all_tabs: () -> Unit,
     on_build: () -> Unit,
-    on_configure_cmake: () -> Unit,
+    on_run: () -> Unit,
     on_save: () -> Unit,
     on_format: () -> Unit,
     on_toggle_read_only: () -> Unit,
@@ -221,7 +221,7 @@ internal fun editor_screen(
                                 on_toggle_drawer = { drawer_open = !drawer_open },
                                 on_toggle_search = { search_visible = !search_visible },
                                 on_build = on_build,
-                                on_configure_cmake = on_configure_cmake,
+                                on_run = on_run,
                                 build_running = output_panel_state.task_running,
                                 build_stopping = output_panel_state.task_stopping,
                                 on_toggle_read_only = on_toggle_read_only
