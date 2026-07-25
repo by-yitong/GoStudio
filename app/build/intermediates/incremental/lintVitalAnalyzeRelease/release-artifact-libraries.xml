@@ -704,10 +704,10 @@
       resolved="org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2"/>
   <library
       name=":@@:modules:toolchain-runtime::release"
-      jars="/home/admins/.gradle/caches/9.0.0/transforms/218809dd6b49288894ccb840ea567b07/transformed/out/jars/classes.jar:/home/admins/.gradle/caches/9.0.0/transforms/218809dd6b49288894ccb840ea567b07/transformed/out/jars/libs/R.jar"
+      jars="/home/admins/.gradle/caches/9.0.0/transforms/133a53bc31ebd2c3d014b3d90c8c90f5/transformed/out/jars/classes.jar:/home/admins/.gradle/caches/9.0.0/transforms/133a53bc31ebd2c3d014b3d90c8c90f5/transformed/out/jars/libs/R.jar"
       resolved="GoStudio.modules:toolchain-runtime:unspecified"
       partialResultsDir="/run/media/admins/DATA/myitem/project/GoStudio2/modules/toolchain-runtime/build/intermediates/lint_vital_partial_results/release/lintVitalAnalyzeRelease/out"
-      folder="/home/admins/.gradle/caches/9.0.0/transforms/218809dd6b49288894ccb840ea567b07/transformed/out"
+      folder="/home/admins/.gradle/caches/9.0.0/transforms/133a53bc31ebd2c3d014b3d90c8c90f5/transformed/out"
       manifest="AndroidManifest.xml"
       resFolder="res"
       assetsFolder="assets"
