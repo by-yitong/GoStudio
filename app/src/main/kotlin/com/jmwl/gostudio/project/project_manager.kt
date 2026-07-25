@@ -20,7 +20,6 @@ object project_manager {
     private const val legacy_project_config_dir_name = ".xcode"
     private const val legacy_project_config_file_name = ".xcode-project.json"
     private const val go_mod_file_name = "go.mod"
-    private const val cmake_file_name = "CMakeLists.txt"
     private val json = GsonBuilder().setPrettyPrinting().create()
     private val valid_project_name = Regex("^[a-zA-Z_][a-zA-Z0-9_]*$")
     private val supported_goos = setOf("linux", "darwin", "android", "windows", "freebsd")
@@ -181,7 +180,7 @@ object project_manager {
      * 创建 Go 项目文件（go.mod + main.go）。
      *
      * @param template_id 模板：hello(默认)/http/cli/webapi
-     * Go 项目不需要 CMakeLists/ndk/cmake，仅 go.mod + main.go 即可 go run。
+     * Go 项目仅 go.mod + main.go 即可 go run。
      */
     private fun create_go_project(dir: File, name: String, template_id: String) {
         File(dir, "go.mod").writeText("module $name\n\ngo 1.21\n")
@@ -280,7 +279,7 @@ func main() {
             val project_dir = File(path)
             require(project_dir.exists() && project_dir.isDirectory) { "项目目录不存在" }
             require(
-                File(project_dir, go_mod_file_name).isFile || File(project_dir, cmake_file_name).isFile
+                File(project_dir, go_mod_file_name).isFile
             ) { "不是 Go 项目（缺少 go.mod）" }
 
             migrate_legacy_project_config(project_dir)
@@ -428,7 +427,7 @@ func main() {
         val project_dir = File(path)
         require(project_dir.exists() && project_dir.isDirectory) { "项目目录不存在" }
         require(
-            File(project_dir, go_mod_file_name).isFile || File(project_dir, cmake_file_name).isFile
+            File(project_dir, go_mod_file_name).isFile
         ) { "不是 Go 项目（缺少 go.mod）" }
 
         migrate_legacy_project_config(project_dir)

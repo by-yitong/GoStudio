@@ -1,6 +1,6 @@
 <lint-module
     format="1"
-    dir="/run/media/admins/DATA/myitem/project/GoStudio2/modules/toolchain-runtime"
+    dir="/run/media/admins/DATA/myitem/project/GoStudio/modules/toolchain-runtime"
     name=":modules:toolchain-runtime"
     type="LIBRARY"
     maven="GoStudio.modules:toolchain-runtime:unspecified"

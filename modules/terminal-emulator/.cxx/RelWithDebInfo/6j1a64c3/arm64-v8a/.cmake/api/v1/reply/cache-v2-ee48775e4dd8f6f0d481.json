@@ -151,7 +151,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/run/media/admins/DATA/myitem/project/GoStudio2/modules/terminal-emulator/.cxx/RelWithDebInfo/6j1a64c3/arm64-v8a"
+			"value" : "/run/media/admins/DATA/myitem/project/GoStudio/modules/terminal-emulator/.cxx/RelWithDebInfo/6j1a64c3/arm64-v8a"
 		},
 		{
 			"name" : "CMAKE_CACHE_MAJOR_VERSION",
@@ -683,7 +683,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/run/media/admins/DATA/myitem/project/GoStudio2/modules/terminal-emulator/.cxx/RelWithDebInfo/6j1a64c3/arm64-v8a/CMakeFiles/pkgRedirects"
+			"value" : "/run/media/admins/DATA/myitem/project/GoStudio/modules/terminal-emulator/.cxx/RelWithDebInfo/6j1a64c3/arm64-v8a/CMakeFiles/pkgRedirects"
 		},
 		{
 			"name" : "CMAKE_GENERATOR",
@@ -743,7 +743,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/run/media/admins/DATA/myitem/project/GoStudio2/modules/terminal-emulator/src/main/cpp"
+			"value" : "/run/media/admins/DATA/myitem/project/GoStudio/modules/terminal-emulator/src/main/cpp"
 		},
 		{
 			"name" : "CMAKE_INSTALL_PREFIX",
@@ -779,7 +779,7 @@
 				}
 			],
 			"type" : "UNINITIALIZED",
-			"value" : "/run/media/admins/DATA/myitem/project/GoStudio2/modules/terminal-emulator/build/intermediates/cxx/RelWithDebInfo/6j1a64c3/obj/arm64-v8a"
+			"value" : "/run/media/admins/DATA/myitem/project/GoStudio/modules/terminal-emulator/build/intermediates/cxx/RelWithDebInfo/6j1a64c3/obj/arm64-v8a"
 		},
 		{
 			"name" : "CMAKE_LINKER",
@@ -1087,7 +1087,7 @@
 				}
 			],
 			"type" : "UNINITIALIZED",
-			"value" : "/run/media/admins/DATA/myitem/project/GoStudio2/modules/terminal-emulator/build/intermediates/cxx/RelWithDebInfo/6j1a64c3/obj/arm64-v8a"
+			"value" : "/run/media/admins/DATA/myitem/project/GoStudio/modules/terminal-emulator/build/intermediates/cxx/RelWithDebInfo/6j1a64c3/obj/arm64-v8a"
 		},
 		{
 			"name" : "CMAKE_SHARED_LINKER_FLAGS",
@@ -1399,7 +1399,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/run/media/admins/DATA/myitem/project/GoStudio2/modules/terminal-emulator/.cxx/RelWithDebInfo/6j1a64c3/arm64-v8a"
+			"value" : "/run/media/admins/DATA/myitem/project/GoStudio/modules/terminal-emulator/.cxx/RelWithDebInfo/6j1a64c3/arm64-v8a"
 		},
 		{
 			"name" : "terminal-emulator_IS_TOP_LEVEL",
@@ -1423,7 +1423,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/run/media/admins/DATA/myitem/project/GoStudio2/modules/terminal-emulator/src/main/cpp"
+			"value" : "/run/media/admins/DATA/myitem/project/GoStudio/modules/terminal-emulator/src/main/cpp"
 		}
 	],
 	"kind" : "cache",

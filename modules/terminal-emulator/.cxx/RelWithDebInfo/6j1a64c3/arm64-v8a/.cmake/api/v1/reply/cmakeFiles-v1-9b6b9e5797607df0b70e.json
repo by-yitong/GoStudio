@@ -41,7 +41,7 @@
 		},
 		{
 			"isGenerated" : true,
-			"path" : "/run/media/admins/DATA/myitem/project/GoStudio2/modules/terminal-emulator/.cxx/RelWithDebInfo/6j1a64c3/arm64-v8a/CMakeFiles/4.3.0/CMakeSystem.cmake"
+			"path" : "/run/media/admins/DATA/myitem/project/GoStudio/modules/terminal-emulator/.cxx/RelWithDebInfo/6j1a64c3/arm64-v8a/CMakeFiles/4.3.0/CMakeSystem.cmake"
 		},
 		{
 			"isExternal" : true,
@@ -343,7 +343,7 @@
 		},
 		{
 			"isGenerated" : true,
-			"path" : "/run/media/admins/DATA/myitem/project/GoStudio2/modules/terminal-emulator/.cxx/RelWithDebInfo/6j1a64c3/arm64-v8a/CMakeFiles/4.3.0/CMakeCCompiler.cmake"
+			"path" : "/run/media/admins/DATA/myitem/project/GoStudio/modules/terminal-emulator/.cxx/RelWithDebInfo/6j1a64c3/arm64-v8a/CMakeFiles/4.3.0/CMakeCCompiler.cmake"
 		},
 		{
 			"isCMake" : true,
@@ -607,7 +607,7 @@
 		},
 		{
 			"isGenerated" : true,
-			"path" : "/run/media/admins/DATA/myitem/project/GoStudio2/modules/terminal-emulator/.cxx/RelWithDebInfo/6j1a64c3/arm64-v8a/CMakeFiles/4.3.0/CMakeCXXCompiler.cmake"
+			"path" : "/run/media/admins/DATA/myitem/project/GoStudio/modules/terminal-emulator/.cxx/RelWithDebInfo/6j1a64c3/arm64-v8a/CMakeFiles/4.3.0/CMakeCXXCompiler.cmake"
 		},
 		{
 			"isCMake" : true,
@@ -763,7 +763,7 @@
 		},
 		{
 			"isGenerated" : true,
-			"path" : "/run/media/admins/DATA/myitem/project/GoStudio2/modules/terminal-emulator/.cxx/RelWithDebInfo/6j1a64c3/arm64-v8a/CMakeFiles/4.3.0/CMakeCCompiler.cmake"
+			"path" : "/run/media/admins/DATA/myitem/project/GoStudio/modules/terminal-emulator/.cxx/RelWithDebInfo/6j1a64c3/arm64-v8a/CMakeFiles/4.3.0/CMakeCCompiler.cmake"
 		},
 		{
 			"isCMake" : true,
@@ -927,7 +927,7 @@
 		},
 		{
 			"isGenerated" : true,
-			"path" : "/run/media/admins/DATA/myitem/project/GoStudio2/modules/terminal-emulator/.cxx/RelWithDebInfo/6j1a64c3/arm64-v8a/CMakeFiles/4.3.0/CMakeCXXCompiler.cmake"
+			"path" : "/run/media/admins/DATA/myitem/project/GoStudio/modules/terminal-emulator/.cxx/RelWithDebInfo/6j1a64c3/arm64-v8a/CMakeFiles/4.3.0/CMakeCXXCompiler.cmake"
 		},
 		{
 			"isCMake" : true,
@@ -983,8 +983,8 @@
 	"kind" : "cmakeFiles",
 	"paths" : 
 	{
-		"build" : "/run/media/admins/DATA/myitem/project/GoStudio2/modules/terminal-emulator/.cxx/RelWithDebInfo/6j1a64c3/arm64-v8a",
-		"source" : "/run/media/admins/DATA/myitem/project/GoStudio2/modules/terminal-emulator/src/main/cpp"
+		"build" : "/run/media/admins/DATA/myitem/project/GoStudio/modules/terminal-emulator/.cxx/RelWithDebInfo/6j1a64c3/arm64-v8a",
+		"source" : "/run/media/admins/DATA/myitem/project/GoStudio/modules/terminal-emulator/src/main/cpp"
 	},
 	"version" : 
 	{

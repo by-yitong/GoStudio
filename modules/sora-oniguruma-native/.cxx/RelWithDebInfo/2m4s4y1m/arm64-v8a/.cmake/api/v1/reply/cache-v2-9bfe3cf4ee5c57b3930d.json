@@ -175,7 +175,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a"
+			"value" : "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a"
 		},
 		{
 			"name" : "CMAKE_CACHE_MAJOR_VERSION",
@@ -707,7 +707,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/pkgRedirects"
+			"value" : "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/pkgRedirects"
 		},
 		{
 			"name" : "CMAKE_GENERATOR",
@@ -767,7 +767,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/src/main/cpp"
+			"value" : "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/src/main/cpp"
 		},
 		{
 			"name" : "CMAKE_INSTALL_BINDIR",
@@ -1059,7 +1059,7 @@
 				}
 			],
 			"type" : "UNINITIALIZED",
-			"value" : "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/build/intermediates/cxx/RelWithDebInfo/2m4s4y1m/obj/arm64-v8a"
+			"value" : "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/build/intermediates/cxx/RelWithDebInfo/2m4s4y1m/obj/arm64-v8a"
 		},
 		{
 			"name" : "CMAKE_LINKER",
@@ -1427,7 +1427,7 @@
 				}
 			],
 			"type" : "UNINITIALIZED",
-			"value" : "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/build/intermediates/cxx/RelWithDebInfo/2m4s4y1m/obj/arm64-v8a"
+			"value" : "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/build/intermediates/cxx/RelWithDebInfo/2m4s4y1m/obj/arm64-v8a"
 		},
 		{
 			"name" : "CMAKE_SHARED_LINKER_FLAGS",
@@ -2075,7 +2075,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a"
+			"value" : "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a"
 		},
 		{
 			"name" : "oniguruma-binding_IS_TOP_LEVEL",
@@ -2099,7 +2099,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/src/main/cpp"
+			"value" : "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/src/main/cpp"
 		},
 		{
 			"name" : "oniguruma_BINARY_DIR",
@@ -2111,7 +2111,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/oniguruma"
+			"value" : "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/oniguruma"
 		},
 		{
 			"name" : "oniguruma_IS_TOP_LEVEL",
@@ -2135,7 +2135,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/src/main/cpp/oniguruma"
+			"value" : "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/src/main/cpp/oniguruma"
 		}
 	],
 	"kind" : "cache",

@@ -1,6 +1,6 @@
 <lint-module
     format="1"
-    dir="/run/media/admins/DATA/myitem/project/GoStudio2/modules/terminal-view"
+    dir="/run/media/admins/DATA/myitem/project/GoStudio/modules/terminal-view"
     name=":modules:terminal-view"
     type="LIBRARY"
     maven="GoStudio.modules:terminal-view:unspecified"

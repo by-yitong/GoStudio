@@ -1,6 +1,6 @@
 <lint-module
     format="1"
-    dir="/run/media/admins/DATA/myitem/project/GoStudio2/modules/editor-core"
+    dir="/run/media/admins/DATA/myitem/project/GoStudio/modules/editor-core"
     name=":modules:editor-core"
     type="LIBRARY"
     maven="GoStudio.modules:editor-core:unspecified"

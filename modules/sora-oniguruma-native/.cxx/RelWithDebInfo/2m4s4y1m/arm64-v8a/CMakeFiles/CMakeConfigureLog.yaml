@@ -20,8 +20,7 @@ events:
     names:
       - "uname"
     candidate_directories:
-      - "/home/admins/jdk/jdk-17.0.19+10/bin/"
-      - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep/"
+      - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep/"
       - "/home/admins/development/go/bin/"
       - "/home/admins/go/bin/"
       - "/home/admins/Android/Sdk/platform-tools/"
@@ -33,12 +32,12 @@ events:
       - "/usr/bin/"
       - "/sbin/"
       - "/bin/"
-      - "/tmp/.mount_ZCode-xOYskt/"
-      - "/tmp/.mount_ZCode-xOYskt/usr/sbin/"
+      - "/tmp/.mount_ZCode-gSENWC/"
+      - "/tmp/.mount_ZCode-gSENWC/usr/sbin/"
+      - "/home/admins/.cargo/bin/"
       - "/home/admins/.hermes/node/bin/"
     searched_directories:
-      - "/home/admins/jdk/jdk-17.0.19+10/bin/uname"
-      - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep/uname"
+      - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep/uname"
       - "/home/admins/development/go/bin/uname"
       - "/home/admins/go/bin/uname"
       - "/home/admins/Android/Sdk/platform-tools/uname"
@@ -49,8 +48,7 @@ events:
     found: "/usr/sbin/uname"
     search_context:
       ENV{PATH}:
-        - "/home/admins/jdk/jdk-17.0.19+10/bin"
-        - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep"
+        - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep"
         - "/home/admins/development/go/bin"
         - "/home/admins/go/bin"
         - "/home/admins/Android/Sdk/platform-tools"
@@ -62,8 +60,9 @@ events:
         - "/usr/bin"
         - "/sbin"
         - "/bin"
-        - "/tmp/.mount_ZCode-xOYskt"
-        - "/tmp/.mount_ZCode-xOYskt/usr/sbin"
+        - "/tmp/.mount_ZCode-gSENWC"
+        - "/tmp/.mount_ZCode-gSENWC/usr/sbin"
+        - "/home/admins/.cargo/bin"
         - "/home/admins/.hermes/node/bin"
   -
     kind: "message-v1"
@@ -72,7 +71,7 @@ events:
       - "CMakeLists.txt:3 (project)"
     message: |
       The target system is: Android - 1 - aarch64
-      The host system is: Linux - 7.0.14-201.fc44.x86_64 - x86_64
+      The host system is: Linux - 7.1.4-204.fc44.x86_64 - x86_64
   -
     kind: "find-v1"
     backtrace:
@@ -102,8 +101,7 @@ events:
       CMAKE_PREFIX_PATH:
         - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64"
       ENV{PATH}:
-        - "/home/admins/jdk/jdk-17.0.19+10/bin"
-        - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep"
+        - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep"
         - "/home/admins/development/go/bin"
         - "/home/admins/go/bin"
         - "/home/admins/Android/Sdk/platform-tools"
@@ -115,8 +113,9 @@ events:
         - "/usr/bin"
         - "/sbin"
         - "/bin"
-        - "/tmp/.mount_ZCode-xOYskt"
-        - "/tmp/.mount_ZCode-xOYskt/usr/sbin"
+        - "/tmp/.mount_ZCode-gSENWC"
+        - "/tmp/.mount_ZCode-gSENWC/usr/sbin"
+        - "/home/admins/.cargo/bin"
         - "/home/admins/.hermes/node/bin"
       CMAKE_SYSTEM_PREFIX_PATH:
         - "/usr/lib/aarch64-linux-android/26"
@@ -142,7 +141,7 @@ events:
       Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CMakeCCompilerId.o"
       
       The C compiler identification is Clang, found in:
-        /run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/4.3.0/CompilerIdC/CMakeCCompilerId.o
+        /run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/4.3.0/CompilerIdC/CMakeCCompilerId.o
       
   -
     kind: "find-v1"
@@ -166,8 +165,7 @@ events:
       - "ld"
     candidate_directories:
       - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/"
-      - "/home/admins/jdk/jdk-17.0.19+10/bin/"
-      - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep/"
+      - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep/"
       - "/home/admins/development/go/bin/"
       - "/home/admins/go/bin/"
       - "/home/admins/Android/Sdk/platform-tools/"
@@ -179,8 +177,9 @@ events:
       - "/usr/bin/"
       - "/sbin/"
       - "/bin/"
-      - "/tmp/.mount_ZCode-xOYskt/"
-      - "/tmp/.mount_ZCode-xOYskt/usr/sbin/"
+      - "/tmp/.mount_ZCode-gSENWC/"
+      - "/tmp/.mount_ZCode-gSENWC/usr/sbin/"
+      - "/home/admins/.cargo/bin/"
       - "/home/admins/.hermes/node/bin/"
       - "/usr/lib/aarch64-linux-android/26/bin/"
       - "/usr/lib/aarch64-linux-android/26/sbin/"
@@ -190,8 +189,7 @@ events:
       CMAKE_PREFIX_PATH:
         - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64"
       ENV{PATH}:
-        - "/home/admins/jdk/jdk-17.0.19+10/bin"
-        - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep"
+        - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep"
         - "/home/admins/development/go/bin"
         - "/home/admins/go/bin"
         - "/home/admins/Android/Sdk/platform-tools"
@@ -203,8 +201,9 @@ events:
         - "/usr/bin"
         - "/sbin"
         - "/bin"
-        - "/tmp/.mount_ZCode-xOYskt"
-        - "/tmp/.mount_ZCode-xOYskt/usr/sbin"
+        - "/tmp/.mount_ZCode-gSENWC"
+        - "/tmp/.mount_ZCode-gSENWC/usr/sbin"
+        - "/home/admins/.cargo/bin"
         - "/home/admins/.hermes/node/bin"
       CMAKE_SYSTEM_PREFIX_PATH:
         - "/usr/lib/aarch64-linux-android/26"
@@ -232,8 +231,7 @@ events:
       - "nm"
     candidate_directories:
       - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/"
-      - "/home/admins/jdk/jdk-17.0.19+10/bin/"
-      - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep/"
+      - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep/"
       - "/home/admins/development/go/bin/"
       - "/home/admins/go/bin/"
       - "/home/admins/Android/Sdk/platform-tools/"
@@ -245,8 +243,9 @@ events:
       - "/usr/bin/"
       - "/sbin/"
       - "/bin/"
-      - "/tmp/.mount_ZCode-xOYskt/"
-      - "/tmp/.mount_ZCode-xOYskt/usr/sbin/"
+      - "/tmp/.mount_ZCode-gSENWC/"
+      - "/tmp/.mount_ZCode-gSENWC/usr/sbin/"
+      - "/home/admins/.cargo/bin/"
       - "/home/admins/.hermes/node/bin/"
       - "/usr/lib/aarch64-linux-android/26/bin/"
       - "/usr/lib/aarch64-linux-android/26/sbin/"
@@ -256,8 +255,7 @@ events:
       CMAKE_PREFIX_PATH:
         - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64"
       ENV{PATH}:
-        - "/home/admins/jdk/jdk-17.0.19+10/bin"
-        - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep"
+        - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep"
         - "/home/admins/development/go/bin"
         - "/home/admins/go/bin"
         - "/home/admins/Android/Sdk/platform-tools"
@@ -269,8 +267,9 @@ events:
         - "/usr/bin"
         - "/sbin"
         - "/bin"
-        - "/tmp/.mount_ZCode-xOYskt"
-        - "/tmp/.mount_ZCode-xOYskt/usr/sbin"
+        - "/tmp/.mount_ZCode-gSENWC"
+        - "/tmp/.mount_ZCode-gSENWC/usr/sbin"
+        - "/home/admins/.cargo/bin"
         - "/home/admins/.hermes/node/bin"
       CMAKE_SYSTEM_PREFIX_PATH:
         - "/usr/lib/aarch64-linux-android/26"
@@ -298,8 +297,7 @@ events:
       - "objdump"
     candidate_directories:
       - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/"
-      - "/home/admins/jdk/jdk-17.0.19+10/bin/"
-      - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep/"
+      - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep/"
       - "/home/admins/development/go/bin/"
       - "/home/admins/go/bin/"
       - "/home/admins/Android/Sdk/platform-tools/"
@@ -311,8 +309,9 @@ events:
       - "/usr/bin/"
       - "/sbin/"
       - "/bin/"
-      - "/tmp/.mount_ZCode-xOYskt/"
-      - "/tmp/.mount_ZCode-xOYskt/usr/sbin/"
+      - "/tmp/.mount_ZCode-gSENWC/"
+      - "/tmp/.mount_ZCode-gSENWC/usr/sbin/"
+      - "/home/admins/.cargo/bin/"
       - "/home/admins/.hermes/node/bin/"
       - "/usr/lib/aarch64-linux-android/26/bin/"
       - "/usr/lib/aarch64-linux-android/26/sbin/"
@@ -322,8 +321,7 @@ events:
       CMAKE_PREFIX_PATH:
         - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64"
       ENV{PATH}:
-        - "/home/admins/jdk/jdk-17.0.19+10/bin"
-        - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep"
+        - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep"
         - "/home/admins/development/go/bin"
         - "/home/admins/go/bin"
         - "/home/admins/Android/Sdk/platform-tools"
@@ -335,8 +333,9 @@ events:
         - "/usr/bin"
         - "/sbin"
         - "/bin"
-        - "/tmp/.mount_ZCode-xOYskt"
-        - "/tmp/.mount_ZCode-xOYskt/usr/sbin"
+        - "/tmp/.mount_ZCode-gSENWC"
+        - "/tmp/.mount_ZCode-gSENWC/usr/sbin"
+        - "/home/admins/.cargo/bin"
         - "/home/admins/.hermes/node/bin"
       CMAKE_SYSTEM_PREFIX_PATH:
         - "/usr/lib/aarch64-linux-android/26"
@@ -364,8 +363,7 @@ events:
       - "objcopy"
     candidate_directories:
       - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/"
-      - "/home/admins/jdk/jdk-17.0.19+10/bin/"
-      - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep/"
+      - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep/"
       - "/home/admins/development/go/bin/"
       - "/home/admins/go/bin/"
       - "/home/admins/Android/Sdk/platform-tools/"
@@ -377,8 +375,9 @@ events:
       - "/usr/bin/"
       - "/sbin/"
       - "/bin/"
-      - "/tmp/.mount_ZCode-xOYskt/"
-      - "/tmp/.mount_ZCode-xOYskt/usr/sbin/"
+      - "/tmp/.mount_ZCode-gSENWC/"
+      - "/tmp/.mount_ZCode-gSENWC/usr/sbin/"
+      - "/home/admins/.cargo/bin/"
       - "/home/admins/.hermes/node/bin/"
       - "/usr/lib/aarch64-linux-android/26/bin/"
       - "/usr/lib/aarch64-linux-android/26/sbin/"
@@ -388,8 +387,7 @@ events:
       CMAKE_PREFIX_PATH:
         - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64"
       ENV{PATH}:
-        - "/home/admins/jdk/jdk-17.0.19+10/bin"
-        - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep"
+        - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep"
         - "/home/admins/development/go/bin"
         - "/home/admins/go/bin"
         - "/home/admins/Android/Sdk/platform-tools"
@@ -401,8 +399,9 @@ events:
         - "/usr/bin"
         - "/sbin"
         - "/bin"
-        - "/tmp/.mount_ZCode-xOYskt"
-        - "/tmp/.mount_ZCode-xOYskt/usr/sbin"
+        - "/tmp/.mount_ZCode-gSENWC"
+        - "/tmp/.mount_ZCode-gSENWC/usr/sbin"
+        - "/home/admins/.cargo/bin"
         - "/home/admins/.hermes/node/bin"
       CMAKE_SYSTEM_PREFIX_PATH:
         - "/usr/lib/aarch64-linux-android/26"
@@ -430,8 +429,7 @@ events:
       - "readelf"
     candidate_directories:
       - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/"
-      - "/home/admins/jdk/jdk-17.0.19+10/bin/"
-      - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep/"
+      - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep/"
       - "/home/admins/development/go/bin/"
       - "/home/admins/go/bin/"
       - "/home/admins/Android/Sdk/platform-tools/"
@@ -443,8 +441,9 @@ events:
       - "/usr/bin/"
       - "/sbin/"
       - "/bin/"
-      - "/tmp/.mount_ZCode-xOYskt/"
-      - "/tmp/.mount_ZCode-xOYskt/usr/sbin/"
+      - "/tmp/.mount_ZCode-gSENWC/"
+      - "/tmp/.mount_ZCode-gSENWC/usr/sbin/"
+      - "/home/admins/.cargo/bin/"
       - "/home/admins/.hermes/node/bin/"
       - "/usr/lib/aarch64-linux-android/26/bin/"
       - "/usr/lib/aarch64-linux-android/26/sbin/"
@@ -454,8 +453,7 @@ events:
       CMAKE_PREFIX_PATH:
         - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64"
       ENV{PATH}:
-        - "/home/admins/jdk/jdk-17.0.19+10/bin"
-        - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep"
+        - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep"
         - "/home/admins/development/go/bin"
         - "/home/admins/go/bin"
         - "/home/admins/Android/Sdk/platform-tools"
@@ -467,8 +465,9 @@ events:
         - "/usr/bin"
         - "/sbin"
         - "/bin"
-        - "/tmp/.mount_ZCode-xOYskt"
-        - "/tmp/.mount_ZCode-xOYskt/usr/sbin"
+        - "/tmp/.mount_ZCode-gSENWC"
+        - "/tmp/.mount_ZCode-gSENWC/usr/sbin"
+        - "/home/admins/.cargo/bin"
         - "/home/admins/.hermes/node/bin"
       CMAKE_SYSTEM_PREFIX_PATH:
         - "/usr/lib/aarch64-linux-android/26"
@@ -496,8 +495,7 @@ events:
       - "dlltool"
     candidate_directories:
       - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/"
-      - "/home/admins/jdk/jdk-17.0.19+10/bin/"
-      - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep/"
+      - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep/"
       - "/home/admins/development/go/bin/"
       - "/home/admins/go/bin/"
       - "/home/admins/Android/Sdk/platform-tools/"
@@ -509,8 +507,9 @@ events:
       - "/usr/bin/"
       - "/sbin/"
       - "/bin/"
-      - "/tmp/.mount_ZCode-xOYskt/"
-      - "/tmp/.mount_ZCode-xOYskt/usr/sbin/"
+      - "/tmp/.mount_ZCode-gSENWC/"
+      - "/tmp/.mount_ZCode-gSENWC/usr/sbin/"
+      - "/home/admins/.cargo/bin/"
       - "/home/admins/.hermes/node/bin/"
       - "/usr/lib/aarch64-linux-android/26/bin/"
       - "/usr/lib/aarch64-linux-android/26/sbin/"
@@ -520,8 +519,7 @@ events:
       CMAKE_PREFIX_PATH:
         - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64"
       ENV{PATH}:
-        - "/home/admins/jdk/jdk-17.0.19+10/bin"
-        - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep"
+        - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep"
         - "/home/admins/development/go/bin"
         - "/home/admins/go/bin"
         - "/home/admins/Android/Sdk/platform-tools"
@@ -533,8 +531,9 @@ events:
         - "/usr/bin"
         - "/sbin"
         - "/bin"
-        - "/tmp/.mount_ZCode-xOYskt"
-        - "/tmp/.mount_ZCode-xOYskt/usr/sbin"
+        - "/tmp/.mount_ZCode-gSENWC"
+        - "/tmp/.mount_ZCode-gSENWC/usr/sbin"
+        - "/home/admins/.cargo/bin"
         - "/home/admins/.hermes/node/bin"
       CMAKE_SYSTEM_PREFIX_PATH:
         - "/usr/lib/aarch64-linux-android/26"
@@ -562,8 +561,7 @@ events:
       - "addr2line"
     candidate_directories:
       - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/"
-      - "/home/admins/jdk/jdk-17.0.19+10/bin/"
-      - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep/"
+      - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep/"
       - "/home/admins/development/go/bin/"
       - "/home/admins/go/bin/"
       - "/home/admins/Android/Sdk/platform-tools/"
@@ -575,8 +573,9 @@ events:
       - "/usr/bin/"
       - "/sbin/"
       - "/bin/"
-      - "/tmp/.mount_ZCode-xOYskt/"
-      - "/tmp/.mount_ZCode-xOYskt/usr/sbin/"
+      - "/tmp/.mount_ZCode-gSENWC/"
+      - "/tmp/.mount_ZCode-gSENWC/usr/sbin/"
+      - "/home/admins/.cargo/bin/"
       - "/home/admins/.hermes/node/bin/"
       - "/usr/lib/aarch64-linux-android/26/bin/"
       - "/usr/lib/aarch64-linux-android/26/sbin/"
@@ -586,8 +585,7 @@ events:
       CMAKE_PREFIX_PATH:
         - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64"
       ENV{PATH}:
-        - "/home/admins/jdk/jdk-17.0.19+10/bin"
-        - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep"
+        - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep"
         - "/home/admins/development/go/bin"
         - "/home/admins/go/bin"
         - "/home/admins/Android/Sdk/platform-tools"
@@ -599,8 +597,9 @@ events:
         - "/usr/bin"
         - "/sbin"
         - "/bin"
-        - "/tmp/.mount_ZCode-xOYskt"
-        - "/tmp/.mount_ZCode-xOYskt/usr/sbin"
+        - "/tmp/.mount_ZCode-gSENWC"
+        - "/tmp/.mount_ZCode-gSENWC/usr/sbin"
+        - "/home/admins/.cargo/bin"
         - "/home/admins/.hermes/node/bin"
       CMAKE_SYSTEM_PREFIX_PATH:
         - "/usr/lib/aarch64-linux-android/26"
@@ -627,8 +626,7 @@ events:
       - "tapi"
     candidate_directories:
       - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/"
-      - "/home/admins/jdk/jdk-17.0.19+10/bin/"
-      - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep/"
+      - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep/"
       - "/home/admins/development/go/bin/"
       - "/home/admins/go/bin/"
       - "/home/admins/Android/Sdk/platform-tools/"
@@ -640,16 +638,16 @@ events:
       - "/usr/bin/"
       - "/sbin/"
       - "/bin/"
-      - "/tmp/.mount_ZCode-xOYskt/"
-      - "/tmp/.mount_ZCode-xOYskt/usr/sbin/"
+      - "/tmp/.mount_ZCode-gSENWC/"
+      - "/tmp/.mount_ZCode-gSENWC/usr/sbin/"
+      - "/home/admins/.cargo/bin/"
       - "/home/admins/.hermes/node/bin/"
       - "/usr/lib/aarch64-linux-android/26/bin/"
       - "/usr/lib/aarch64-linux-android/26/sbin/"
       - "/usr/lib/aarch64-linux-android/26/"
     searched_directories:
       - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/tapi"
-      - "/home/admins/jdk/jdk-17.0.19+10/bin/tapi"
-      - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep/tapi"
+      - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep/tapi"
       - "/home/admins/development/go/bin/tapi"
       - "/home/admins/go/bin/tapi"
       - "/home/admins/Android/Sdk/platform-tools/tapi"
@@ -661,8 +659,9 @@ events:
       - "/usr/bin/tapi"
       - "/sbin/tapi"
       - "/bin/tapi"
-      - "/tmp/.mount_ZCode-xOYskt/tapi"
-      - "/tmp/.mount_ZCode-xOYskt/usr/sbin/tapi"
+      - "/tmp/.mount_ZCode-gSENWC/tapi"
+      - "/tmp/.mount_ZCode-gSENWC/usr/sbin/tapi"
+      - "/home/admins/.cargo/bin/tapi"
       - "/home/admins/.hermes/node/bin/tapi"
       - "/usr/lib/aarch64-linux-android/26/bin/tapi"
       - "/usr/lib/aarch64-linux-android/26/sbin/tapi"
@@ -672,8 +671,7 @@ events:
       CMAKE_PREFIX_PATH:
         - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64"
       ENV{PATH}:
-        - "/home/admins/jdk/jdk-17.0.19+10/bin"
-        - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep"
+        - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep"
         - "/home/admins/development/go/bin"
         - "/home/admins/go/bin"
         - "/home/admins/Android/Sdk/platform-tools"
@@ -685,8 +683,9 @@ events:
         - "/usr/bin"
         - "/sbin"
         - "/bin"
-        - "/tmp/.mount_ZCode-xOYskt"
-        - "/tmp/.mount_ZCode-xOYskt/usr/sbin"
+        - "/tmp/.mount_ZCode-gSENWC"
+        - "/tmp/.mount_ZCode-gSENWC/usr/sbin"
+        - "/home/admins/.cargo/bin"
         - "/home/admins/.hermes/node/bin"
       CMAKE_SYSTEM_PREFIX_PATH:
         - "/usr/lib/aarch64-linux-android/26"
@@ -716,8 +715,7 @@ events:
       - "llvm-ar"
     candidate_directories:
       - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/"
-      - "/home/admins/jdk/jdk-17.0.19+10/bin/"
-      - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep/"
+      - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep/"
       - "/home/admins/development/go/bin/"
       - "/home/admins/go/bin/"
       - "/home/admins/Android/Sdk/platform-tools/"
@@ -729,16 +727,16 @@ events:
       - "/usr/bin/"
       - "/sbin/"
       - "/bin/"
-      - "/tmp/.mount_ZCode-xOYskt/"
-      - "/tmp/.mount_ZCode-xOYskt/usr/sbin/"
+      - "/tmp/.mount_ZCode-gSENWC/"
+      - "/tmp/.mount_ZCode-gSENWC/usr/sbin/"
+      - "/home/admins/.cargo/bin/"
       - "/home/admins/.hermes/node/bin/"
       - "/usr/lib/aarch64-linux-android/26/bin/"
       - "/usr/lib/aarch64-linux-android/26/sbin/"
       - "/usr/lib/aarch64-linux-android/26/"
     searched_directories:
       - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar-18.0"
-      - "/home/admins/jdk/jdk-17.0.19+10/bin/llvm-ar-18.0"
-      - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep/llvm-ar-18.0"
+      - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep/llvm-ar-18.0"
       - "/home/admins/development/go/bin/llvm-ar-18.0"
       - "/home/admins/go/bin/llvm-ar-18.0"
       - "/home/admins/Android/Sdk/platform-tools/llvm-ar-18.0"
@@ -750,15 +748,15 @@ events:
       - "/usr/bin/llvm-ar-18.0"
       - "/sbin/llvm-ar-18.0"
       - "/bin/llvm-ar-18.0"
-      - "/tmp/.mount_ZCode-xOYskt/llvm-ar-18.0"
-      - "/tmp/.mount_ZCode-xOYskt/usr/sbin/llvm-ar-18.0"
+      - "/tmp/.mount_ZCode-gSENWC/llvm-ar-18.0"
+      - "/tmp/.mount_ZCode-gSENWC/usr/sbin/llvm-ar-18.0"
+      - "/home/admins/.cargo/bin/llvm-ar-18.0"
       - "/home/admins/.hermes/node/bin/llvm-ar-18.0"
       - "/usr/lib/aarch64-linux-android/26/bin/llvm-ar-18.0"
       - "/usr/lib/aarch64-linux-android/26/sbin/llvm-ar-18.0"
       - "/usr/lib/aarch64-linux-android/26/llvm-ar-18.0"
       - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar-18"
-      - "/home/admins/jdk/jdk-17.0.19+10/bin/llvm-ar-18"
-      - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep/llvm-ar-18"
+      - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep/llvm-ar-18"
       - "/home/admins/development/go/bin/llvm-ar-18"
       - "/home/admins/go/bin/llvm-ar-18"
       - "/home/admins/Android/Sdk/platform-tools/llvm-ar-18"
@@ -770,15 +768,15 @@ events:
       - "/usr/bin/llvm-ar-18"
       - "/sbin/llvm-ar-18"
       - "/bin/llvm-ar-18"
-      - "/tmp/.mount_ZCode-xOYskt/llvm-ar-18"
-      - "/tmp/.mount_ZCode-xOYskt/usr/sbin/llvm-ar-18"
+      - "/tmp/.mount_ZCode-gSENWC/llvm-ar-18"
+      - "/tmp/.mount_ZCode-gSENWC/usr/sbin/llvm-ar-18"
+      - "/home/admins/.cargo/bin/llvm-ar-18"
       - "/home/admins/.hermes/node/bin/llvm-ar-18"
       - "/usr/lib/aarch64-linux-android/26/bin/llvm-ar-18"
       - "/usr/lib/aarch64-linux-android/26/sbin/llvm-ar-18"
       - "/usr/lib/aarch64-linux-android/26/llvm-ar-18"
       - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar18"
-      - "/home/admins/jdk/jdk-17.0.19+10/bin/llvm-ar18"
-      - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep/llvm-ar18"
+      - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep/llvm-ar18"
       - "/home/admins/development/go/bin/llvm-ar18"
       - "/home/admins/go/bin/llvm-ar18"
       - "/home/admins/Android/Sdk/platform-tools/llvm-ar18"
@@ -790,8 +788,9 @@ events:
       - "/usr/bin/llvm-ar18"
       - "/sbin/llvm-ar18"
       - "/bin/llvm-ar18"
-      - "/tmp/.mount_ZCode-xOYskt/llvm-ar18"
-      - "/tmp/.mount_ZCode-xOYskt/usr/sbin/llvm-ar18"
+      - "/tmp/.mount_ZCode-gSENWC/llvm-ar18"
+      - "/tmp/.mount_ZCode-gSENWC/usr/sbin/llvm-ar18"
+      - "/home/admins/.cargo/bin/llvm-ar18"
       - "/home/admins/.hermes/node/bin/llvm-ar18"
       - "/usr/lib/aarch64-linux-android/26/bin/llvm-ar18"
       - "/usr/lib/aarch64-linux-android/26/sbin/llvm-ar18"
@@ -801,8 +800,7 @@ events:
       CMAKE_PREFIX_PATH:
         - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64"
       ENV{PATH}:
-        - "/home/admins/jdk/jdk-17.0.19+10/bin"
-        - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep"
+        - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep"
         - "/home/admins/development/go/bin"
         - "/home/admins/go/bin"
         - "/home/admins/Android/Sdk/platform-tools"
@@ -814,8 +812,9 @@ events:
         - "/usr/bin"
         - "/sbin"
         - "/bin"
-        - "/tmp/.mount_ZCode-xOYskt"
-        - "/tmp/.mount_ZCode-xOYskt/usr/sbin"
+        - "/tmp/.mount_ZCode-gSENWC"
+        - "/tmp/.mount_ZCode-gSENWC/usr/sbin"
+        - "/home/admins/.cargo/bin"
         - "/home/admins/.hermes/node/bin"
       CMAKE_SYSTEM_PREFIX_PATH:
         - "/usr/lib/aarch64-linux-android/26"
@@ -845,8 +844,7 @@ events:
       - "llvm-ranlib"
     candidate_directories:
       - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/"
-      - "/home/admins/jdk/jdk-17.0.19+10/bin/"
-      - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep/"
+      - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep/"
       - "/home/admins/development/go/bin/"
       - "/home/admins/go/bin/"
       - "/home/admins/Android/Sdk/platform-tools/"
@@ -858,16 +856,16 @@ events:
       - "/usr/bin/"
       - "/sbin/"
       - "/bin/"
-      - "/tmp/.mount_ZCode-xOYskt/"
-      - "/tmp/.mount_ZCode-xOYskt/usr/sbin/"
+      - "/tmp/.mount_ZCode-gSENWC/"
+      - "/tmp/.mount_ZCode-gSENWC/usr/sbin/"
+      - "/home/admins/.cargo/bin/"
       - "/home/admins/.hermes/node/bin/"
       - "/usr/lib/aarch64-linux-android/26/bin/"
       - "/usr/lib/aarch64-linux-android/26/sbin/"
       - "/usr/lib/aarch64-linux-android/26/"
     searched_directories:
       - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ranlib-18.0"
-      - "/home/admins/jdk/jdk-17.0.19+10/bin/llvm-ranlib-18.0"
-      - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep/llvm-ranlib-18.0"
+      - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep/llvm-ranlib-18.0"
       - "/home/admins/development/go/bin/llvm-ranlib-18.0"
       - "/home/admins/go/bin/llvm-ranlib-18.0"
       - "/home/admins/Android/Sdk/platform-tools/llvm-ranlib-18.0"
@@ -879,15 +877,15 @@ events:
       - "/usr/bin/llvm-ranlib-18.0"
       - "/sbin/llvm-ranlib-18.0"
       - "/bin/llvm-ranlib-18.0"
-      - "/tmp/.mount_ZCode-xOYskt/llvm-ranlib-18.0"
-      - "/tmp/.mount_ZCode-xOYskt/usr/sbin/llvm-ranlib-18.0"
+      - "/tmp/.mount_ZCode-gSENWC/llvm-ranlib-18.0"
+      - "/tmp/.mount_ZCode-gSENWC/usr/sbin/llvm-ranlib-18.0"
+      - "/home/admins/.cargo/bin/llvm-ranlib-18.0"
       - "/home/admins/.hermes/node/bin/llvm-ranlib-18.0"
       - "/usr/lib/aarch64-linux-android/26/bin/llvm-ranlib-18.0"
       - "/usr/lib/aarch64-linux-android/26/sbin/llvm-ranlib-18.0"
       - "/usr/lib/aarch64-linux-android/26/llvm-ranlib-18.0"
       - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ranlib-18"
-      - "/home/admins/jdk/jdk-17.0.19+10/bin/llvm-ranlib-18"
-      - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep/llvm-ranlib-18"
+      - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep/llvm-ranlib-18"
       - "/home/admins/development/go/bin/llvm-ranlib-18"
       - "/home/admins/go/bin/llvm-ranlib-18"
       - "/home/admins/Android/Sdk/platform-tools/llvm-ranlib-18"
@@ -899,15 +897,15 @@ events:
       - "/usr/bin/llvm-ranlib-18"
       - "/sbin/llvm-ranlib-18"
       - "/bin/llvm-ranlib-18"
-      - "/tmp/.mount_ZCode-xOYskt/llvm-ranlib-18"
-      - "/tmp/.mount_ZCode-xOYskt/usr/sbin/llvm-ranlib-18"
+      - "/tmp/.mount_ZCode-gSENWC/llvm-ranlib-18"
+      - "/tmp/.mount_ZCode-gSENWC/usr/sbin/llvm-ranlib-18"
+      - "/home/admins/.cargo/bin/llvm-ranlib-18"
       - "/home/admins/.hermes/node/bin/llvm-ranlib-18"
       - "/usr/lib/aarch64-linux-android/26/bin/llvm-ranlib-18"
       - "/usr/lib/aarch64-linux-android/26/sbin/llvm-ranlib-18"
       - "/usr/lib/aarch64-linux-android/26/llvm-ranlib-18"
       - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ranlib18"
-      - "/home/admins/jdk/jdk-17.0.19+10/bin/llvm-ranlib18"
-      - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep/llvm-ranlib18"
+      - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep/llvm-ranlib18"
       - "/home/admins/development/go/bin/llvm-ranlib18"
       - "/home/admins/go/bin/llvm-ranlib18"
       - "/home/admins/Android/Sdk/platform-tools/llvm-ranlib18"
@@ -919,8 +917,9 @@ events:
       - "/usr/bin/llvm-ranlib18"
       - "/sbin/llvm-ranlib18"
       - "/bin/llvm-ranlib18"
-      - "/tmp/.mount_ZCode-xOYskt/llvm-ranlib18"
-      - "/tmp/.mount_ZCode-xOYskt/usr/sbin/llvm-ranlib18"
+      - "/tmp/.mount_ZCode-gSENWC/llvm-ranlib18"
+      - "/tmp/.mount_ZCode-gSENWC/usr/sbin/llvm-ranlib18"
+      - "/home/admins/.cargo/bin/llvm-ranlib18"
       - "/home/admins/.hermes/node/bin/llvm-ranlib18"
       - "/usr/lib/aarch64-linux-android/26/bin/llvm-ranlib18"
       - "/usr/lib/aarch64-linux-android/26/sbin/llvm-ranlib18"
@@ -930,8 +929,7 @@ events:
       CMAKE_PREFIX_PATH:
         - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64"
       ENV{PATH}:
-        - "/home/admins/jdk/jdk-17.0.19+10/bin"
-        - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep"
+        - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep"
         - "/home/admins/development/go/bin"
         - "/home/admins/go/bin"
         - "/home/admins/Android/Sdk/platform-tools"
@@ -943,8 +941,9 @@ events:
         - "/usr/bin"
         - "/sbin"
         - "/bin"
-        - "/tmp/.mount_ZCode-xOYskt"
-        - "/tmp/.mount_ZCode-xOYskt/usr/sbin"
+        - "/tmp/.mount_ZCode-gSENWC"
+        - "/tmp/.mount_ZCode-gSENWC/usr/sbin"
+        - "/home/admins/.cargo/bin"
         - "/home/admins/.hermes/node/bin"
       CMAKE_SYSTEM_PREFIX_PATH:
         - "/usr/lib/aarch64-linux-android/26"
@@ -974,8 +973,7 @@ events:
       - "clang-scan-deps"
     candidate_directories:
       - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/"
-      - "/home/admins/jdk/jdk-17.0.19+10/bin/"
-      - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep/"
+      - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep/"
       - "/home/admins/development/go/bin/"
       - "/home/admins/go/bin/"
       - "/home/admins/Android/Sdk/platform-tools/"
@@ -987,16 +985,16 @@ events:
       - "/usr/bin/"
       - "/sbin/"
       - "/bin/"
-      - "/tmp/.mount_ZCode-xOYskt/"
-      - "/tmp/.mount_ZCode-xOYskt/usr/sbin/"
+      - "/tmp/.mount_ZCode-gSENWC/"
+      - "/tmp/.mount_ZCode-gSENWC/usr/sbin/"
+      - "/home/admins/.cargo/bin/"
       - "/home/admins/.hermes/node/bin/"
       - "/usr/lib/aarch64-linux-android/26/bin/"
       - "/usr/lib/aarch64-linux-android/26/sbin/"
       - "/usr/lib/aarch64-linux-android/26/"
     searched_directories:
       - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang-scan-deps-18.0"
-      - "/home/admins/jdk/jdk-17.0.19+10/bin/clang-scan-deps-18.0"
-      - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep/clang-scan-deps-18.0"
+      - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep/clang-scan-deps-18.0"
       - "/home/admins/development/go/bin/clang-scan-deps-18.0"
       - "/home/admins/go/bin/clang-scan-deps-18.0"
       - "/home/admins/Android/Sdk/platform-tools/clang-scan-deps-18.0"
@@ -1008,15 +1006,15 @@ events:
       - "/usr/bin/clang-scan-deps-18.0"
       - "/sbin/clang-scan-deps-18.0"
       - "/bin/clang-scan-deps-18.0"
-      - "/tmp/.mount_ZCode-xOYskt/clang-scan-deps-18.0"
-      - "/tmp/.mount_ZCode-xOYskt/usr/sbin/clang-scan-deps-18.0"
+      - "/tmp/.mount_ZCode-gSENWC/clang-scan-deps-18.0"
+      - "/tmp/.mount_ZCode-gSENWC/usr/sbin/clang-scan-deps-18.0"
+      - "/home/admins/.cargo/bin/clang-scan-deps-18.0"
       - "/home/admins/.hermes/node/bin/clang-scan-deps-18.0"
       - "/usr/lib/aarch64-linux-android/26/bin/clang-scan-deps-18.0"
       - "/usr/lib/aarch64-linux-android/26/sbin/clang-scan-deps-18.0"
       - "/usr/lib/aarch64-linux-android/26/clang-scan-deps-18.0"
       - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang-scan-deps-18"
-      - "/home/admins/jdk/jdk-17.0.19+10/bin/clang-scan-deps-18"
-      - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep/clang-scan-deps-18"
+      - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep/clang-scan-deps-18"
       - "/home/admins/development/go/bin/clang-scan-deps-18"
       - "/home/admins/go/bin/clang-scan-deps-18"
       - "/home/admins/Android/Sdk/platform-tools/clang-scan-deps-18"
@@ -1028,15 +1026,15 @@ events:
       - "/usr/bin/clang-scan-deps-18"
       - "/sbin/clang-scan-deps-18"
       - "/bin/clang-scan-deps-18"
-      - "/tmp/.mount_ZCode-xOYskt/clang-scan-deps-18"
-      - "/tmp/.mount_ZCode-xOYskt/usr/sbin/clang-scan-deps-18"
+      - "/tmp/.mount_ZCode-gSENWC/clang-scan-deps-18"
+      - "/tmp/.mount_ZCode-gSENWC/usr/sbin/clang-scan-deps-18"
+      - "/home/admins/.cargo/bin/clang-scan-deps-18"
       - "/home/admins/.hermes/node/bin/clang-scan-deps-18"
       - "/usr/lib/aarch64-linux-android/26/bin/clang-scan-deps-18"
       - "/usr/lib/aarch64-linux-android/26/sbin/clang-scan-deps-18"
       - "/usr/lib/aarch64-linux-android/26/clang-scan-deps-18"
       - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang-scan-deps18"
-      - "/home/admins/jdk/jdk-17.0.19+10/bin/clang-scan-deps18"
-      - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep/clang-scan-deps18"
+      - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep/clang-scan-deps18"
       - "/home/admins/development/go/bin/clang-scan-deps18"
       - "/home/admins/go/bin/clang-scan-deps18"
       - "/home/admins/Android/Sdk/platform-tools/clang-scan-deps18"
@@ -1048,8 +1046,9 @@ events:
       - "/usr/bin/clang-scan-deps18"
       - "/sbin/clang-scan-deps18"
       - "/bin/clang-scan-deps18"
-      - "/tmp/.mount_ZCode-xOYskt/clang-scan-deps18"
-      - "/tmp/.mount_ZCode-xOYskt/usr/sbin/clang-scan-deps18"
+      - "/tmp/.mount_ZCode-gSENWC/clang-scan-deps18"
+      - "/tmp/.mount_ZCode-gSENWC/usr/sbin/clang-scan-deps18"
+      - "/home/admins/.cargo/bin/clang-scan-deps18"
       - "/home/admins/.hermes/node/bin/clang-scan-deps18"
       - "/usr/lib/aarch64-linux-android/26/bin/clang-scan-deps18"
       - "/usr/lib/aarch64-linux-android/26/sbin/clang-scan-deps18"
@@ -1059,8 +1058,7 @@ events:
       CMAKE_PREFIX_PATH:
         - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64"
       ENV{PATH}:
-        - "/home/admins/jdk/jdk-17.0.19+10/bin"
-        - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep"
+        - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep"
         - "/home/admins/development/go/bin"
         - "/home/admins/go/bin"
         - "/home/admins/Android/Sdk/platform-tools"
@@ -1072,8 +1070,9 @@ events:
         - "/usr/bin"
         - "/sbin"
         - "/bin"
-        - "/tmp/.mount_ZCode-xOYskt"
-        - "/tmp/.mount_ZCode-xOYskt/usr/sbin"
+        - "/tmp/.mount_ZCode-gSENWC"
+        - "/tmp/.mount_ZCode-gSENWC/usr/sbin"
+        - "/home/admins/.cargo/bin"
         - "/home/admins/.hermes/node/bin"
       CMAKE_SYSTEM_PREFIX_PATH:
         - "/usr/lib/aarch64-linux-android/26"
@@ -1108,8 +1107,7 @@ events:
       CMAKE_PREFIX_PATH:
         - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64"
       ENV{PATH}:
-        - "/home/admins/jdk/jdk-17.0.19+10/bin"
-        - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep"
+        - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep"
         - "/home/admins/development/go/bin"
         - "/home/admins/go/bin"
         - "/home/admins/Android/Sdk/platform-tools"
@@ -1121,8 +1119,9 @@ events:
         - "/usr/bin"
         - "/sbin"
         - "/bin"
-        - "/tmp/.mount_ZCode-xOYskt"
-        - "/tmp/.mount_ZCode-xOYskt/usr/sbin"
+        - "/tmp/.mount_ZCode-gSENWC"
+        - "/tmp/.mount_ZCode-gSENWC/usr/sbin"
+        - "/home/admins/.cargo/bin"
         - "/home/admins/.hermes/node/bin"
       CMAKE_SYSTEM_PREFIX_PATH:
         - "/usr/lib/aarch64-linux-android/26"
@@ -1148,7 +1147,7 @@ events:
       Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CMakeCXXCompilerId.o"
       
       The CXX compiler identification is Clang, found in:
-        /run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/4.3.0/CompilerIdCXX/CMakeCXXCompilerId.o
+        /run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/4.3.0/CompilerIdCXX/CMakeCXXCompilerId.o
       
   -
     kind: "find-v1"
@@ -1174,8 +1173,7 @@ events:
       - "llvm-ar"
     candidate_directories:
       - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/"
-      - "/home/admins/jdk/jdk-17.0.19+10/bin/"
-      - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep/"
+      - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep/"
       - "/home/admins/development/go/bin/"
       - "/home/admins/go/bin/"
       - "/home/admins/Android/Sdk/platform-tools/"
@@ -1187,16 +1185,16 @@ events:
       - "/usr/bin/"
       - "/sbin/"
       - "/bin/"
-      - "/tmp/.mount_ZCode-xOYskt/"
-      - "/tmp/.mount_ZCode-xOYskt/usr/sbin/"
+      - "/tmp/.mount_ZCode-gSENWC/"
+      - "/tmp/.mount_ZCode-gSENWC/usr/sbin/"
+      - "/home/admins/.cargo/bin/"
       - "/home/admins/.hermes/node/bin/"
       - "/usr/lib/aarch64-linux-android/26/bin/"
       - "/usr/lib/aarch64-linux-android/26/sbin/"
       - "/usr/lib/aarch64-linux-android/26/"
     searched_directories:
       - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar-18.0"
-      - "/home/admins/jdk/jdk-17.0.19+10/bin/llvm-ar-18.0"
-      - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep/llvm-ar-18.0"
+      - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep/llvm-ar-18.0"
       - "/home/admins/development/go/bin/llvm-ar-18.0"
       - "/home/admins/go/bin/llvm-ar-18.0"
       - "/home/admins/Android/Sdk/platform-tools/llvm-ar-18.0"
@@ -1208,15 +1206,15 @@ events:
       - "/usr/bin/llvm-ar-18.0"
       - "/sbin/llvm-ar-18.0"
       - "/bin/llvm-ar-18.0"
-      - "/tmp/.mount_ZCode-xOYskt/llvm-ar-18.0"
-      - "/tmp/.mount_ZCode-xOYskt/usr/sbin/llvm-ar-18.0"
+      - "/tmp/.mount_ZCode-gSENWC/llvm-ar-18.0"
+      - "/tmp/.mount_ZCode-gSENWC/usr/sbin/llvm-ar-18.0"
+      - "/home/admins/.cargo/bin/llvm-ar-18.0"
       - "/home/admins/.hermes/node/bin/llvm-ar-18.0"
       - "/usr/lib/aarch64-linux-android/26/bin/llvm-ar-18.0"
       - "/usr/lib/aarch64-linux-android/26/sbin/llvm-ar-18.0"
       - "/usr/lib/aarch64-linux-android/26/llvm-ar-18.0"
       - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar-18"
-      - "/home/admins/jdk/jdk-17.0.19+10/bin/llvm-ar-18"
-      - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep/llvm-ar-18"
+      - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep/llvm-ar-18"
       - "/home/admins/development/go/bin/llvm-ar-18"
       - "/home/admins/go/bin/llvm-ar-18"
       - "/home/admins/Android/Sdk/platform-tools/llvm-ar-18"
@@ -1228,15 +1226,15 @@ events:
       - "/usr/bin/llvm-ar-18"
       - "/sbin/llvm-ar-18"
       - "/bin/llvm-ar-18"
-      - "/tmp/.mount_ZCode-xOYskt/llvm-ar-18"
-      - "/tmp/.mount_ZCode-xOYskt/usr/sbin/llvm-ar-18"
+      - "/tmp/.mount_ZCode-gSENWC/llvm-ar-18"
+      - "/tmp/.mount_ZCode-gSENWC/usr/sbin/llvm-ar-18"
+      - "/home/admins/.cargo/bin/llvm-ar-18"
       - "/home/admins/.hermes/node/bin/llvm-ar-18"
       - "/usr/lib/aarch64-linux-android/26/bin/llvm-ar-18"
       - "/usr/lib/aarch64-linux-android/26/sbin/llvm-ar-18"
       - "/usr/lib/aarch64-linux-android/26/llvm-ar-18"
       - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar18"
-      - "/home/admins/jdk/jdk-17.0.19+10/bin/llvm-ar18"
-      - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep/llvm-ar18"
+      - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep/llvm-ar18"
       - "/home/admins/development/go/bin/llvm-ar18"
       - "/home/admins/go/bin/llvm-ar18"
       - "/home/admins/Android/Sdk/platform-tools/llvm-ar18"
@@ -1248,8 +1246,9 @@ events:
       - "/usr/bin/llvm-ar18"
       - "/sbin/llvm-ar18"
       - "/bin/llvm-ar18"
-      - "/tmp/.mount_ZCode-xOYskt/llvm-ar18"
-      - "/tmp/.mount_ZCode-xOYskt/usr/sbin/llvm-ar18"
+      - "/tmp/.mount_ZCode-gSENWC/llvm-ar18"
+      - "/tmp/.mount_ZCode-gSENWC/usr/sbin/llvm-ar18"
+      - "/home/admins/.cargo/bin/llvm-ar18"
       - "/home/admins/.hermes/node/bin/llvm-ar18"
       - "/usr/lib/aarch64-linux-android/26/bin/llvm-ar18"
       - "/usr/lib/aarch64-linux-android/26/sbin/llvm-ar18"
@@ -1259,8 +1258,7 @@ events:
       CMAKE_PREFIX_PATH:
         - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64"
       ENV{PATH}:
-        - "/home/admins/jdk/jdk-17.0.19+10/bin"
-        - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep"
+        - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep"
         - "/home/admins/development/go/bin"
         - "/home/admins/go/bin"
         - "/home/admins/Android/Sdk/platform-tools"
@@ -1272,8 +1270,9 @@ events:
         - "/usr/bin"
         - "/sbin"
         - "/bin"
-        - "/tmp/.mount_ZCode-xOYskt"
-        - "/tmp/.mount_ZCode-xOYskt/usr/sbin"
+        - "/tmp/.mount_ZCode-gSENWC"
+        - "/tmp/.mount_ZCode-gSENWC/usr/sbin"
+        - "/home/admins/.cargo/bin"
         - "/home/admins/.hermes/node/bin"
       CMAKE_SYSTEM_PREFIX_PATH:
         - "/usr/lib/aarch64-linux-android/26"
@@ -1303,8 +1302,7 @@ events:
       - "llvm-ranlib"
     candidate_directories:
       - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/"
-      - "/home/admins/jdk/jdk-17.0.19+10/bin/"
-      - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep/"
+      - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep/"
       - "/home/admins/development/go/bin/"
       - "/home/admins/go/bin/"
       - "/home/admins/Android/Sdk/platform-tools/"
@@ -1316,16 +1314,16 @@ events:
       - "/usr/bin/"
       - "/sbin/"
       - "/bin/"
-      - "/tmp/.mount_ZCode-xOYskt/"
-      - "/tmp/.mount_ZCode-xOYskt/usr/sbin/"
+      - "/tmp/.mount_ZCode-gSENWC/"
+      - "/tmp/.mount_ZCode-gSENWC/usr/sbin/"
+      - "/home/admins/.cargo/bin/"
       - "/home/admins/.hermes/node/bin/"
       - "/usr/lib/aarch64-linux-android/26/bin/"
       - "/usr/lib/aarch64-linux-android/26/sbin/"
       - "/usr/lib/aarch64-linux-android/26/"
     searched_directories:
       - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ranlib-18.0"
-      - "/home/admins/jdk/jdk-17.0.19+10/bin/llvm-ranlib-18.0"
-      - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep/llvm-ranlib-18.0"
+      - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep/llvm-ranlib-18.0"
       - "/home/admins/development/go/bin/llvm-ranlib-18.0"
       - "/home/admins/go/bin/llvm-ranlib-18.0"
       - "/home/admins/Android/Sdk/platform-tools/llvm-ranlib-18.0"
@@ -1337,15 +1335,15 @@ events:
       - "/usr/bin/llvm-ranlib-18.0"
       - "/sbin/llvm-ranlib-18.0"
       - "/bin/llvm-ranlib-18.0"
-      - "/tmp/.mount_ZCode-xOYskt/llvm-ranlib-18.0"
-      - "/tmp/.mount_ZCode-xOYskt/usr/sbin/llvm-ranlib-18.0"
+      - "/tmp/.mount_ZCode-gSENWC/llvm-ranlib-18.0"
+      - "/tmp/.mount_ZCode-gSENWC/usr/sbin/llvm-ranlib-18.0"
+      - "/home/admins/.cargo/bin/llvm-ranlib-18.0"
       - "/home/admins/.hermes/node/bin/llvm-ranlib-18.0"
       - "/usr/lib/aarch64-linux-android/26/bin/llvm-ranlib-18.0"
       - "/usr/lib/aarch64-linux-android/26/sbin/llvm-ranlib-18.0"
       - "/usr/lib/aarch64-linux-android/26/llvm-ranlib-18.0"
       - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ranlib-18"
-      - "/home/admins/jdk/jdk-17.0.19+10/bin/llvm-ranlib-18"
-      - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep/llvm-ranlib-18"
+      - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep/llvm-ranlib-18"
       - "/home/admins/development/go/bin/llvm-ranlib-18"
       - "/home/admins/go/bin/llvm-ranlib-18"
       - "/home/admins/Android/Sdk/platform-tools/llvm-ranlib-18"
@@ -1357,15 +1355,15 @@ events:
       - "/usr/bin/llvm-ranlib-18"
       - "/sbin/llvm-ranlib-18"
       - "/bin/llvm-ranlib-18"
-      - "/tmp/.mount_ZCode-xOYskt/llvm-ranlib-18"
-      - "/tmp/.mount_ZCode-xOYskt/usr/sbin/llvm-ranlib-18"
+      - "/tmp/.mount_ZCode-gSENWC/llvm-ranlib-18"
+      - "/tmp/.mount_ZCode-gSENWC/usr/sbin/llvm-ranlib-18"
+      - "/home/admins/.cargo/bin/llvm-ranlib-18"
       - "/home/admins/.hermes/node/bin/llvm-ranlib-18"
       - "/usr/lib/aarch64-linux-android/26/bin/llvm-ranlib-18"
       - "/usr/lib/aarch64-linux-android/26/sbin/llvm-ranlib-18"
       - "/usr/lib/aarch64-linux-android/26/llvm-ranlib-18"
       - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ranlib18"
-      - "/home/admins/jdk/jdk-17.0.19+10/bin/llvm-ranlib18"
-      - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep/llvm-ranlib18"
+      - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep/llvm-ranlib18"
       - "/home/admins/development/go/bin/llvm-ranlib18"
       - "/home/admins/go/bin/llvm-ranlib18"
       - "/home/admins/Android/Sdk/platform-tools/llvm-ranlib18"
@@ -1377,8 +1375,9 @@ events:
       - "/usr/bin/llvm-ranlib18"
       - "/sbin/llvm-ranlib18"
       - "/bin/llvm-ranlib18"
-      - "/tmp/.mount_ZCode-xOYskt/llvm-ranlib18"
-      - "/tmp/.mount_ZCode-xOYskt/usr/sbin/llvm-ranlib18"
+      - "/tmp/.mount_ZCode-gSENWC/llvm-ranlib18"
+      - "/tmp/.mount_ZCode-gSENWC/usr/sbin/llvm-ranlib18"
+      - "/home/admins/.cargo/bin/llvm-ranlib18"
       - "/home/admins/.hermes/node/bin/llvm-ranlib18"
       - "/usr/lib/aarch64-linux-android/26/bin/llvm-ranlib18"
       - "/usr/lib/aarch64-linux-android/26/sbin/llvm-ranlib18"
@@ -1388,8 +1387,7 @@ events:
       CMAKE_PREFIX_PATH:
         - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64"
       ENV{PATH}:
-        - "/home/admins/jdk/jdk-17.0.19+10/bin"
-        - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep"
+        - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep"
         - "/home/admins/development/go/bin"
         - "/home/admins/go/bin"
         - "/home/admins/Android/Sdk/platform-tools"
@@ -1401,8 +1399,9 @@ events:
         - "/usr/bin"
         - "/sbin"
         - "/bin"
-        - "/tmp/.mount_ZCode-xOYskt"
-        - "/tmp/.mount_ZCode-xOYskt/usr/sbin"
+        - "/tmp/.mount_ZCode-gSENWC"
+        - "/tmp/.mount_ZCode-gSENWC/usr/sbin"
+        - "/home/admins/.cargo/bin"
         - "/home/admins/.hermes/node/bin"
       CMAKE_SYSTEM_PREFIX_PATH:
         - "/usr/lib/aarch64-linux-android/26"
@@ -1432,8 +1431,7 @@ events:
       - "clang-scan-deps"
     candidate_directories:
       - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/"
-      - "/home/admins/jdk/jdk-17.0.19+10/bin/"
-      - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep/"
+      - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep/"
       - "/home/admins/development/go/bin/"
       - "/home/admins/go/bin/"
       - "/home/admins/Android/Sdk/platform-tools/"
@@ -1445,16 +1443,16 @@ events:
       - "/usr/bin/"
       - "/sbin/"
       - "/bin/"
-      - "/tmp/.mount_ZCode-xOYskt/"
-      - "/tmp/.mount_ZCode-xOYskt/usr/sbin/"
+      - "/tmp/.mount_ZCode-gSENWC/"
+      - "/tmp/.mount_ZCode-gSENWC/usr/sbin/"
+      - "/home/admins/.cargo/bin/"
       - "/home/admins/.hermes/node/bin/"
       - "/usr/lib/aarch64-linux-android/26/bin/"
       - "/usr/lib/aarch64-linux-android/26/sbin/"
       - "/usr/lib/aarch64-linux-android/26/"
     searched_directories:
       - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang-scan-deps-18.0"
-      - "/home/admins/jdk/jdk-17.0.19+10/bin/clang-scan-deps-18.0"
-      - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep/clang-scan-deps-18.0"
+      - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep/clang-scan-deps-18.0"
       - "/home/admins/development/go/bin/clang-scan-deps-18.0"
       - "/home/admins/go/bin/clang-scan-deps-18.0"
       - "/home/admins/Android/Sdk/platform-tools/clang-scan-deps-18.0"
@@ -1466,15 +1464,15 @@ events:
       - "/usr/bin/clang-scan-deps-18.0"
       - "/sbin/clang-scan-deps-18.0"
       - "/bin/clang-scan-deps-18.0"
-      - "/tmp/.mount_ZCode-xOYskt/clang-scan-deps-18.0"
-      - "/tmp/.mount_ZCode-xOYskt/usr/sbin/clang-scan-deps-18.0"
+      - "/tmp/.mount_ZCode-gSENWC/clang-scan-deps-18.0"
+      - "/tmp/.mount_ZCode-gSENWC/usr/sbin/clang-scan-deps-18.0"
+      - "/home/admins/.cargo/bin/clang-scan-deps-18.0"
       - "/home/admins/.hermes/node/bin/clang-scan-deps-18.0"
       - "/usr/lib/aarch64-linux-android/26/bin/clang-scan-deps-18.0"
       - "/usr/lib/aarch64-linux-android/26/sbin/clang-scan-deps-18.0"
       - "/usr/lib/aarch64-linux-android/26/clang-scan-deps-18.0"
       - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang-scan-deps-18"
-      - "/home/admins/jdk/jdk-17.0.19+10/bin/clang-scan-deps-18"
-      - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep/clang-scan-deps-18"
+      - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep/clang-scan-deps-18"
       - "/home/admins/development/go/bin/clang-scan-deps-18"
       - "/home/admins/go/bin/clang-scan-deps-18"
       - "/home/admins/Android/Sdk/platform-tools/clang-scan-deps-18"
@@ -1486,15 +1484,15 @@ events:
       - "/usr/bin/clang-scan-deps-18"
       - "/sbin/clang-scan-deps-18"
       - "/bin/clang-scan-deps-18"
-      - "/tmp/.mount_ZCode-xOYskt/clang-scan-deps-18"
-      - "/tmp/.mount_ZCode-xOYskt/usr/sbin/clang-scan-deps-18"
+      - "/tmp/.mount_ZCode-gSENWC/clang-scan-deps-18"
+      - "/tmp/.mount_ZCode-gSENWC/usr/sbin/clang-scan-deps-18"
+      - "/home/admins/.cargo/bin/clang-scan-deps-18"
       - "/home/admins/.hermes/node/bin/clang-scan-deps-18"
       - "/usr/lib/aarch64-linux-android/26/bin/clang-scan-deps-18"
       - "/usr/lib/aarch64-linux-android/26/sbin/clang-scan-deps-18"
       - "/usr/lib/aarch64-linux-android/26/clang-scan-deps-18"
       - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang-scan-deps18"
-      - "/home/admins/jdk/jdk-17.0.19+10/bin/clang-scan-deps18"
-      - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep/clang-scan-deps18"
+      - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep/clang-scan-deps18"
       - "/home/admins/development/go/bin/clang-scan-deps18"
       - "/home/admins/go/bin/clang-scan-deps18"
       - "/home/admins/Android/Sdk/platform-tools/clang-scan-deps18"
@@ -1506,8 +1504,9 @@ events:
       - "/usr/bin/clang-scan-deps18"
       - "/sbin/clang-scan-deps18"
       - "/bin/clang-scan-deps18"
-      - "/tmp/.mount_ZCode-xOYskt/clang-scan-deps18"
-      - "/tmp/.mount_ZCode-xOYskt/usr/sbin/clang-scan-deps18"
+      - "/tmp/.mount_ZCode-gSENWC/clang-scan-deps18"
+      - "/tmp/.mount_ZCode-gSENWC/usr/sbin/clang-scan-deps18"
+      - "/home/admins/.cargo/bin/clang-scan-deps18"
       - "/home/admins/.hermes/node/bin/clang-scan-deps18"
       - "/usr/lib/aarch64-linux-android/26/bin/clang-scan-deps18"
       - "/usr/lib/aarch64-linux-android/26/sbin/clang-scan-deps18"
@@ -1517,8 +1516,7 @@ events:
       CMAKE_PREFIX_PATH:
         - "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64"
       ENV{PATH}:
-        - "/home/admins/jdk/jdk-17.0.19+10/bin"
-        - "/tmp/.mount_ZCode-xOYskt/resources/tools/ripgrep"
+        - "/tmp/.mount_ZCode-gSENWC/resources/tools/ripgrep"
         - "/home/admins/development/go/bin"
         - "/home/admins/go/bin"
         - "/home/admins/Android/Sdk/platform-tools"
@@ -1530,8 +1528,9 @@ events:
         - "/usr/bin"
         - "/sbin"
         - "/bin"
-        - "/tmp/.mount_ZCode-xOYskt"
-        - "/tmp/.mount_ZCode-xOYskt/usr/sbin"
+        - "/tmp/.mount_ZCode-gSENWC"
+        - "/tmp/.mount_ZCode-gSENWC/usr/sbin"
+        - "/home/admins/.cargo/bin"
         - "/home/admins/.hermes/node/bin"
       CMAKE_SYSTEM_PREFIX_PATH:
         - "/usr/lib/aarch64-linux-android/26"
@@ -1546,8 +1545,8 @@ events:
     checks:
       - "Detecting C compiler ABI info"
     directories:
-      source: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-u6CAVI"
-      binary: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-u6CAVI"
+      source: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-Pik1q1"
+      binary: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-Pik1q1"
     cmakeVariables:
       ANDROID_ABI: "arm64-v8a"
       ANDROID_ARM_MODE: "thumb"
@@ -1568,16 +1567,16 @@ events:
       variable: "CMAKE_C_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-u6CAVI'
+        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-Pik1q1'
         
-        Run Build Command(s): /usr/bin/ninja -v cmTC_d96ba
-        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat   -fPIE   -v -MD -MT CMakeFiles/cmTC_d96ba.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_d96ba.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_d96ba.dir/CMakeCCompilerABI.c.o -c /usr/share/cmake/Modules/CMakeCCompilerABI.c
+        Run Build Command(s): /usr/bin/ninja -v cmTC_28966
+        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat   -fPIE   -v -MD -MT CMakeFiles/cmTC_28966.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_28966.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_28966.dir/CMakeCCompilerABI.c.o -c /usr/share/cmake/Modules/CMakeCCompilerABI.c
         Android (12027248, +pgo, +bolt, +lto, +mlgo, based on r522817) clang version 18.0.1 (https://android.googlesource.com/toolchain/llvm-project d8003a456d14a3deb8054cdaa529ffbf02d9b262)
         Target: aarch64-none-linux-android26
         Thread model: posix
         InstalledDir: /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin
          (in-process)
-         "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang" -cc1 -triple aarch64-none-linux-android26 -emit-obj -mrelax-all -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=non-leaf -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu generic -target-feature +neon -target-feature +v8a -target-feature +fix-cortex-a53-835769 -target-abi aapcs -debug-info-kind=constructor -dwarf-version=4 -debugger-tuning=gdb -fdebug-compilation-dir=/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-u6CAVI -v -ffunction-sections -fdata-sections -fcoverage-compilation-dir=/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-u6CAVI -resource-dir /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18 -dependency-file CMakeFiles/cmTC_d96ba.dir/CMakeCCompilerABI.c.o.d -MT CMakeFiles/cmTC_d96ba.dir/CMakeCCompilerABI.c.o -sys-header-deps -D ANDROID -D _FORTIFY_SOURCE=2 -isysroot /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -internal-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/include -internal-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/local/include -internal-externc-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/aarch64-linux-android -internal-externc-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/include -internal-externc-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include -Wformat -ferror-limit 19 -femulated-tls -stack-protector 2 -fno-signed-char -fgnuc-version=4.2.1 -target-feature +outline-atomics -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_d96ba.dir/CMakeCCompilerABI.c.o -x c /usr/share/cmake/Modules/CMakeCCompilerABI.c
+         "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang" -cc1 -triple aarch64-none-linux-android26 -emit-obj -mrelax-all -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=non-leaf -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu generic -target-feature +neon -target-feature +v8a -target-feature +fix-cortex-a53-835769 -target-abi aapcs -debug-info-kind=constructor -dwarf-version=4 -debugger-tuning=gdb -fdebug-compilation-dir=/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-Pik1q1 -v -ffunction-sections -fdata-sections -fcoverage-compilation-dir=/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-Pik1q1 -resource-dir /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18 -dependency-file CMakeFiles/cmTC_28966.dir/CMakeCCompilerABI.c.o.d -MT CMakeFiles/cmTC_28966.dir/CMakeCCompilerABI.c.o -sys-header-deps -D ANDROID -D _FORTIFY_SOURCE=2 -isysroot /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -internal-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/include -internal-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/local/include -internal-externc-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/aarch64-linux-android -internal-externc-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/include -internal-externc-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include -Wformat -ferror-limit 19 -femulated-tls -stack-protector 2 -fno-signed-char -fgnuc-version=4.2.1 -target-feature +outline-atomics -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_28966.dir/CMakeCCompilerABI.c.o -x c /usr/share/cmake/Modules/CMakeCCompilerABI.c
         clang -cc1 version 18.0.1 based upon LLVM 18.0.1 default target x86_64-unknown-linux-gnu
         ignoring nonexistent directory "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/local/include"
         ignoring nonexistent directory "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/include"
@@ -1587,12 +1586,12 @@ events:
          /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/aarch64-linux-android
          /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include
         End of search list.
-        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments   -v CMakeFiles/cmTC_d96ba.dir/CMakeCCompilerABI.c.o -o cmTC_d96ba   && :
+        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments   -v CMakeFiles/cmTC_28966.dir/CMakeCCompilerABI.c.o -o cmTC_28966   && :
         Android (12027248, +pgo, +bolt, +lto, +mlgo, based on r522817) clang version 18.0.1 (https://android.googlesource.com/toolchain/llvm-project d8003a456d14a3deb8054cdaa529ffbf02d9b262)
         Target: aarch64-none-linux-android26
         Thread model: posix
         InstalledDir: /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin
-         "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/ld.lld" --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -EL --fix-cortex-a53-843419 -z now -z relro -z max-page-size=4096 --hash-style=gnu --eh-frame-hdr -m aarch64linux -pie -dynamic-linker /system/bin/linker64 -o cmTC_d96ba /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/26/crtbegin_dynamic.o -L/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/lib/linux/aarch64 -L/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/26 -L/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android -L/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib --build-id=sha1 --no-rosegment --no-undefined-version --fatal-warnings --no-undefined CMakeFiles/cmTC_d96ba.dir/CMakeCCompilerABI.c.o /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/lib/linux/libclang_rt.builtins-aarch64-android.a -l:libunwind.a -ldl -lc /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/lib/linux/libclang_rt.builtins-aarch64-android.a -l:libunwind.a -ldl /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/26/crtend_android.o
+         "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/ld.lld" --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -EL --fix-cortex-a53-843419 -z now -z relro -z max-page-size=4096 --hash-style=gnu --eh-frame-hdr -m aarch64linux -pie -dynamic-linker /system/bin/linker64 -o cmTC_28966 /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/26/crtbegin_dynamic.o -L/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/lib/linux/aarch64 -L/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/26 -L/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android -L/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib --build-id=sha1 --no-rosegment --no-undefined-version --fatal-warnings --no-undefined CMakeFiles/cmTC_28966.dir/CMakeCCompilerABI.c.o /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/lib/linux/libclang_rt.builtins-aarch64-android.a -l:libunwind.a -ldl -lc /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/lib/linux/libclang_rt.builtins-aarch64-android.a -l:libunwind.a -ldl /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/26/crtend_android.o
         
       exitCode: 0
   -
@@ -1625,16 +1624,16 @@ events:
       Parsed C implicit link information:
         link line regex: [^( *|.*[/\\])(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
         linker tool regex: [^[ 	]*(->|"|[0-9]+>[ 	-]*Build:[ 	0-9]+ ms[ 	]*)?[ 	]*(([^"]*[/\\])?(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)))("|,| |$)]
-        ignore line: [Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-u6CAVI']
+        ignore line: [Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-Pik1q1']
         ignore line: []
-        ignore line: [Run Build Command(s): /usr/bin/ninja -v cmTC_d96ba]
-        ignore line: [[1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat   -fPIE   -v -MD -MT CMakeFiles/cmTC_d96ba.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_d96ba.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_d96ba.dir/CMakeCCompilerABI.c.o -c /usr/share/cmake/Modules/CMakeCCompilerABI.c]
+        ignore line: [Run Build Command(s): /usr/bin/ninja -v cmTC_28966]
+        ignore line: [[1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat   -fPIE   -v -MD -MT CMakeFiles/cmTC_28966.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_28966.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_28966.dir/CMakeCCompilerABI.c.o -c /usr/share/cmake/Modules/CMakeCCompilerABI.c]
         ignore line: [Android (12027248  +pgo  +bolt  +lto  +mlgo  based on r522817) clang version 18.0.1 (https://android.googlesource.com/toolchain/llvm-project d8003a456d14a3deb8054cdaa529ffbf02d9b262)]
         ignore line: [Target: aarch64-none-linux-android26]
         ignore line: [Thread model: posix]
         ignore line: [InstalledDir: /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin]
         ignore line: [ (in-process)]
-        ignore line: [ "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang" -cc1 -triple aarch64-none-linux-android26 -emit-obj -mrelax-all -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=non-leaf -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu generic -target-feature +neon -target-feature +v8a -target-feature +fix-cortex-a53-835769 -target-abi aapcs -debug-info-kind=constructor -dwarf-version=4 -debugger-tuning=gdb -fdebug-compilation-dir=/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-u6CAVI -v -ffunction-sections -fdata-sections -fcoverage-compilation-dir=/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-u6CAVI -resource-dir /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18 -dependency-file CMakeFiles/cmTC_d96ba.dir/CMakeCCompilerABI.c.o.d -MT CMakeFiles/cmTC_d96ba.dir/CMakeCCompilerABI.c.o -sys-header-deps -D ANDROID -D _FORTIFY_SOURCE=2 -isysroot /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -internal-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/include -internal-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/local/include -internal-externc-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/aarch64-linux-android -internal-externc-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/include -internal-externc-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include -Wformat -ferror-limit 19 -femulated-tls -stack-protector 2 -fno-signed-char -fgnuc-version=4.2.1 -target-feature +outline-atomics -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_d96ba.dir/CMakeCCompilerABI.c.o -x c /usr/share/cmake/Modules/CMakeCCompilerABI.c]
+        ignore line: [ "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang" -cc1 -triple aarch64-none-linux-android26 -emit-obj -mrelax-all -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=non-leaf -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu generic -target-feature +neon -target-feature +v8a -target-feature +fix-cortex-a53-835769 -target-abi aapcs -debug-info-kind=constructor -dwarf-version=4 -debugger-tuning=gdb -fdebug-compilation-dir=/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-Pik1q1 -v -ffunction-sections -fdata-sections -fcoverage-compilation-dir=/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-Pik1q1 -resource-dir /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18 -dependency-file CMakeFiles/cmTC_28966.dir/CMakeCCompilerABI.c.o.d -MT CMakeFiles/cmTC_28966.dir/CMakeCCompilerABI.c.o -sys-header-deps -D ANDROID -D _FORTIFY_SOURCE=2 -isysroot /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -internal-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/include -internal-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/local/include -internal-externc-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/aarch64-linux-android -internal-externc-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/include -internal-externc-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include -Wformat -ferror-limit 19 -femulated-tls -stack-protector 2 -fno-signed-char -fgnuc-version=4.2.1 -target-feature +outline-atomics -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_28966.dir/CMakeCCompilerABI.c.o -x c /usr/share/cmake/Modules/CMakeCCompilerABI.c]
         ignore line: [clang -cc1 version 18.0.1 based upon LLVM 18.0.1 default target x86_64-unknown-linux-gnu]
         ignore line: [ignoring nonexistent directory "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/local/include"]
         ignore line: [ignoring nonexistent directory "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/include"]
@@ -1644,12 +1643,12 @@ events:
         ignore line: [ /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/aarch64-linux-android]
         ignore line: [ /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include]
         ignore line: [End of search list.]
-        ignore line: [[2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -static-libstdc++ -Wl --build-id=sha1 -Wl --no-rosegment -Wl --no-undefined-version -Wl --fatal-warnings -Wl --no-undefined -Qunused-arguments   -v CMakeFiles/cmTC_d96ba.dir/CMakeCCompilerABI.c.o -o cmTC_d96ba   && :]
+        ignore line: [[2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -static-libstdc++ -Wl --build-id=sha1 -Wl --no-rosegment -Wl --no-undefined-version -Wl --fatal-warnings -Wl --no-undefined -Qunused-arguments   -v CMakeFiles/cmTC_28966.dir/CMakeCCompilerABI.c.o -o cmTC_28966   && :]
         ignore line: [Android (12027248  +pgo  +bolt  +lto  +mlgo  based on r522817) clang version 18.0.1 (https://android.googlesource.com/toolchain/llvm-project d8003a456d14a3deb8054cdaa529ffbf02d9b262)]
         ignore line: [Target: aarch64-none-linux-android26]
         ignore line: [Thread model: posix]
         ignore line: [InstalledDir: /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin]
-        link line: [ "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/ld.lld" --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -EL --fix-cortex-a53-843419 -z now -z relro -z max-page-size=4096 --hash-style=gnu --eh-frame-hdr -m aarch64linux -pie -dynamic-linker /system/bin/linker64 -o cmTC_d96ba /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/26/crtbegin_dynamic.o -L/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/lib/linux/aarch64 -L/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/26 -L/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android -L/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib --build-id=sha1 --no-rosegment --no-undefined-version --fatal-warnings --no-undefined CMakeFiles/cmTC_d96ba.dir/CMakeCCompilerABI.c.o /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/lib/linux/libclang_rt.builtins-aarch64-android.a -l:libunwind.a -ldl -lc /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/lib/linux/libclang_rt.builtins-aarch64-android.a -l:libunwind.a -ldl /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/26/crtend_android.o]
+        link line: [ "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/ld.lld" --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -EL --fix-cortex-a53-843419 -z now -z relro -z max-page-size=4096 --hash-style=gnu --eh-frame-hdr -m aarch64linux -pie -dynamic-linker /system/bin/linker64 -o cmTC_28966 /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/26/crtbegin_dynamic.o -L/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/lib/linux/aarch64 -L/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/26 -L/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android -L/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib --build-id=sha1 --no-rosegment --no-undefined-version --fatal-warnings --no-undefined CMakeFiles/cmTC_28966.dir/CMakeCCompilerABI.c.o /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/lib/linux/libclang_rt.builtins-aarch64-android.a -l:libunwind.a -ldl -lc /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/lib/linux/libclang_rt.builtins-aarch64-android.a -l:libunwind.a -ldl /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/26/crtend_android.o]
           arg [/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/ld.lld] ==> ignore
           arg [--sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot] ==> ignore
           arg [-EL] ==> ignore
@@ -1665,7 +1664,7 @@ events:
           arg [-dynamic-linker] ==> ignore
           arg [/system/bin/linker64] ==> ignore
           arg [-o] ==> ignore
-          arg [cmTC_d96ba] ==> ignore
+          arg [cmTC_28966] ==> ignore
           arg [/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/26/crtbegin_dynamic.o] ==> obj [/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/26/crtbegin_dynamic.o]
           arg [-L/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/lib/linux/aarch64] ==> dir [/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/lib/linux/aarch64]
           arg [-L/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/26] ==> dir [/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/26]
@@ -1676,7 +1675,7 @@ events:
           arg [--no-undefined-version] ==> ignore
           arg [--fatal-warnings] ==> ignore
           arg [--no-undefined] ==> ignore
-          arg [CMakeFiles/cmTC_d96ba.dir/CMakeCCompilerABI.c.o] ==> ignore
+          arg [CMakeFiles/cmTC_28966.dir/CMakeCCompilerABI.c.o] ==> ignore
           arg [/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/lib/linux/libclang_rt.builtins-aarch64-android.a] ==> lib [/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/lib/linux/libclang_rt.builtins-aarch64-android.a]
           arg [-l:libunwind.a] ==> lib [-l:libunwind.a]
           arg [-ldl] ==> lib [dl]
@@ -1717,8 +1716,8 @@ events:
     checks:
       - "Detecting CXX compiler ABI info"
     directories:
-      source: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-OIcOKL"
-      binary: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-OIcOKL"
+      source: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-4morAb"
+      binary: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-4morAb"
     cmakeVariables:
       ANDROID_ABI: "arm64-v8a"
       ANDROID_ARM_MODE: "thumb"
@@ -1740,16 +1739,16 @@ events:
       variable: "CMAKE_CXX_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-OIcOKL'
+        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-4morAb'
         
-        Run Build Command(s): /usr/bin/ninja -v cmTC_cf212
-        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat    -fPIE   -v -MD -MT CMakeFiles/cmTC_cf212.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_cf212.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_cf212.dir/CMakeCXXCompilerABI.cpp.o -c /usr/share/cmake/Modules/CMakeCXXCompilerABI.cpp
+        Run Build Command(s): /usr/bin/ninja -v cmTC_2b407
+        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat    -fPIE   -v -MD -MT CMakeFiles/cmTC_2b407.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_2b407.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_2b407.dir/CMakeCXXCompilerABI.cpp.o -c /usr/share/cmake/Modules/CMakeCXXCompilerABI.cpp
         Android (12027248, +pgo, +bolt, +lto, +mlgo, based on r522817) clang version 18.0.1 (https://android.googlesource.com/toolchain/llvm-project d8003a456d14a3deb8054cdaa529ffbf02d9b262)
         Target: aarch64-none-linux-android26
         Thread model: posix
         InstalledDir: /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin
          (in-process)
-         "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++" -cc1 -triple aarch64-none-linux-android26 -emit-obj -mrelax-all -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=non-leaf -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu generic -target-feature +neon -target-feature +v8a -target-feature +fix-cortex-a53-835769 -target-abi aapcs -debug-info-kind=constructor -dwarf-version=4 -debugger-tuning=gdb -fdebug-compilation-dir=/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-OIcOKL -v -ffunction-sections -fdata-sections -fcoverage-compilation-dir=/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-OIcOKL -resource-dir /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18 -dependency-file CMakeFiles/cmTC_cf212.dir/CMakeCXXCompilerABI.cpp.o.d -MT CMakeFiles/cmTC_cf212.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -D ANDROID -D _FORTIFY_SOURCE=2 -isysroot /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -internal-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1 -internal-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/include -internal-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/local/include -internal-externc-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/aarch64-linux-android -internal-externc-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/include -internal-externc-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include -Wformat -fdeprecated-macro -ferror-limit 19 -femulated-tls -stack-protector 2 -fno-signed-char -fgnuc-version=4.2.1 -fcxx-exceptions -fexceptions -target-feature +outline-atomics -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_cf212.dir/CMakeCXXCompilerABI.cpp.o -x c++ /usr/share/cmake/Modules/CMakeCXXCompilerABI.cpp
+         "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++" -cc1 -triple aarch64-none-linux-android26 -emit-obj -mrelax-all -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=non-leaf -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu generic -target-feature +neon -target-feature +v8a -target-feature +fix-cortex-a53-835769 -target-abi aapcs -debug-info-kind=constructor -dwarf-version=4 -debugger-tuning=gdb -fdebug-compilation-dir=/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-4morAb -v -ffunction-sections -fdata-sections -fcoverage-compilation-dir=/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-4morAb -resource-dir /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18 -dependency-file CMakeFiles/cmTC_2b407.dir/CMakeCXXCompilerABI.cpp.o.d -MT CMakeFiles/cmTC_2b407.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -D ANDROID -D _FORTIFY_SOURCE=2 -isysroot /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -internal-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1 -internal-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/include -internal-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/local/include -internal-externc-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/aarch64-linux-android -internal-externc-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/include -internal-externc-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include -Wformat -fdeprecated-macro -ferror-limit 19 -femulated-tls -stack-protector 2 -fno-signed-char -fgnuc-version=4.2.1 -fcxx-exceptions -fexceptions -target-feature +outline-atomics -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_2b407.dir/CMakeCXXCompilerABI.cpp.o -x c++ /usr/share/cmake/Modules/CMakeCXXCompilerABI.cpp
         clang -cc1 version 18.0.1 based upon LLVM 18.0.1 default target x86_64-unknown-linux-gnu
         ignoring nonexistent directory "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/local/include"
         ignoring nonexistent directory "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/include"
@@ -1760,12 +1759,12 @@ events:
          /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/aarch64-linux-android
          /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include
         End of search list.
-        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments   -v CMakeFiles/cmTC_cf212.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_cf212   && :
+        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments   -v CMakeFiles/cmTC_2b407.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_2b407   && :
         Android (12027248, +pgo, +bolt, +lto, +mlgo, based on r522817) clang version 18.0.1 (https://android.googlesource.com/toolchain/llvm-project d8003a456d14a3deb8054cdaa529ffbf02d9b262)
         Target: aarch64-none-linux-android26
         Thread model: posix
         InstalledDir: /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin
-         "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/ld.lld" --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -EL --fix-cortex-a53-843419 -z now -z relro -z max-page-size=4096 --hash-style=gnu --eh-frame-hdr -m aarch64linux -pie -dynamic-linker /system/bin/linker64 -o cmTC_cf212 /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/26/crtbegin_dynamic.o -L/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/lib/linux/aarch64 -L/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/26 -L/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android -L/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib --build-id=sha1 --no-rosegment --no-undefined-version --fatal-warnings --no-undefined CMakeFiles/cmTC_cf212.dir/CMakeCXXCompilerABI.cpp.o -Bstatic -lc++ -Bdynamic -lm /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/lib/linux/libclang_rt.builtins-aarch64-android.a -l:libunwind.a -ldl -lc /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/lib/linux/libclang_rt.builtins-aarch64-android.a -l:libunwind.a -ldl /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/26/crtend_android.o
+         "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/ld.lld" --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -EL --fix-cortex-a53-843419 -z now -z relro -z max-page-size=4096 --hash-style=gnu --eh-frame-hdr -m aarch64linux -pie -dynamic-linker /system/bin/linker64 -o cmTC_2b407 /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/26/crtbegin_dynamic.o -L/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/lib/linux/aarch64 -L/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/26 -L/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android -L/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib --build-id=sha1 --no-rosegment --no-undefined-version --fatal-warnings --no-undefined CMakeFiles/cmTC_2b407.dir/CMakeCXXCompilerABI.cpp.o -Bstatic -lc++ -Bdynamic -lm /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/lib/linux/libclang_rt.builtins-aarch64-android.a -l:libunwind.a -ldl -lc /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/lib/linux/libclang_rt.builtins-aarch64-android.a -l:libunwind.a -ldl /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/26/crtend_android.o
         
       exitCode: 0
   -
@@ -1800,16 +1799,16 @@ events:
       Parsed CXX implicit link information:
         link line regex: [^( *|.*[/\\])(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
         linker tool regex: [^[ 	]*(->|"|[0-9]+>[ 	-]*Build:[ 	0-9]+ ms[ 	]*)?[ 	]*(([^"]*[/\\])?(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)))("|,| |$)]
-        ignore line: [Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-OIcOKL']
+        ignore line: [Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-4morAb']
         ignore line: []
-        ignore line: [Run Build Command(s): /usr/bin/ninja -v cmTC_cf212]
-        ignore line: [[1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat    -fPIE   -v -MD -MT CMakeFiles/cmTC_cf212.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_cf212.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_cf212.dir/CMakeCXXCompilerABI.cpp.o -c /usr/share/cmake/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [Run Build Command(s): /usr/bin/ninja -v cmTC_2b407]
+        ignore line: [[1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat    -fPIE   -v -MD -MT CMakeFiles/cmTC_2b407.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_2b407.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_2b407.dir/CMakeCXXCompilerABI.cpp.o -c /usr/share/cmake/Modules/CMakeCXXCompilerABI.cpp]
         ignore line: [Android (12027248  +pgo  +bolt  +lto  +mlgo  based on r522817) clang version 18.0.1 (https://android.googlesource.com/toolchain/llvm-project d8003a456d14a3deb8054cdaa529ffbf02d9b262)]
         ignore line: [Target: aarch64-none-linux-android26]
         ignore line: [Thread model: posix]
         ignore line: [InstalledDir: /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin]
         ignore line: [ (in-process)]
-        ignore line: [ "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++" -cc1 -triple aarch64-none-linux-android26 -emit-obj -mrelax-all -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=non-leaf -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu generic -target-feature +neon -target-feature +v8a -target-feature +fix-cortex-a53-835769 -target-abi aapcs -debug-info-kind=constructor -dwarf-version=4 -debugger-tuning=gdb -fdebug-compilation-dir=/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-OIcOKL -v -ffunction-sections -fdata-sections -fcoverage-compilation-dir=/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-OIcOKL -resource-dir /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18 -dependency-file CMakeFiles/cmTC_cf212.dir/CMakeCXXCompilerABI.cpp.o.d -MT CMakeFiles/cmTC_cf212.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -D ANDROID -D _FORTIFY_SOURCE=2 -isysroot /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -internal-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1 -internal-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/include -internal-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/local/include -internal-externc-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/aarch64-linux-android -internal-externc-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/include -internal-externc-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include -Wformat -fdeprecated-macro -ferror-limit 19 -femulated-tls -stack-protector 2 -fno-signed-char -fgnuc-version=4.2.1 -fcxx-exceptions -fexceptions -target-feature +outline-atomics -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_cf212.dir/CMakeCXXCompilerABI.cpp.o -x c++ /usr/share/cmake/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [ "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++" -cc1 -triple aarch64-none-linux-android26 -emit-obj -mrelax-all -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=non-leaf -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu generic -target-feature +neon -target-feature +v8a -target-feature +fix-cortex-a53-835769 -target-abi aapcs -debug-info-kind=constructor -dwarf-version=4 -debugger-tuning=gdb -fdebug-compilation-dir=/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-4morAb -v -ffunction-sections -fdata-sections -fcoverage-compilation-dir=/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-4morAb -resource-dir /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18 -dependency-file CMakeFiles/cmTC_2b407.dir/CMakeCXXCompilerABI.cpp.o.d -MT CMakeFiles/cmTC_2b407.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -D ANDROID -D _FORTIFY_SOURCE=2 -isysroot /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -internal-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1 -internal-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/include -internal-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/local/include -internal-externc-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/aarch64-linux-android -internal-externc-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/include -internal-externc-isystem /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include -Wformat -fdeprecated-macro -ferror-limit 19 -femulated-tls -stack-protector 2 -fno-signed-char -fgnuc-version=4.2.1 -fcxx-exceptions -fexceptions -target-feature +outline-atomics -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_2b407.dir/CMakeCXXCompilerABI.cpp.o -x c++ /usr/share/cmake/Modules/CMakeCXXCompilerABI.cpp]
         ignore line: [clang -cc1 version 18.0.1 based upon LLVM 18.0.1 default target x86_64-unknown-linux-gnu]
         ignore line: [ignoring nonexistent directory "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/local/include"]
         ignore line: [ignoring nonexistent directory "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/include"]
@@ -1820,12 +1819,12 @@ events:
         ignore line: [ /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/aarch64-linux-android]
         ignore line: [ /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include]
         ignore line: [End of search list.]
-        ignore line: [[2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -static-libstdc++ -Wl --build-id=sha1 -Wl --no-rosegment -Wl --no-undefined-version -Wl --fatal-warnings -Wl --no-undefined -Qunused-arguments   -v CMakeFiles/cmTC_cf212.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_cf212   && :]
+        ignore line: [[2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -static-libstdc++ -Wl --build-id=sha1 -Wl --no-rosegment -Wl --no-undefined-version -Wl --fatal-warnings -Wl --no-undefined -Qunused-arguments   -v CMakeFiles/cmTC_2b407.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_2b407   && :]
         ignore line: [Android (12027248  +pgo  +bolt  +lto  +mlgo  based on r522817) clang version 18.0.1 (https://android.googlesource.com/toolchain/llvm-project d8003a456d14a3deb8054cdaa529ffbf02d9b262)]
         ignore line: [Target: aarch64-none-linux-android26]
         ignore line: [Thread model: posix]
         ignore line: [InstalledDir: /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin]
-        link line: [ "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/ld.lld" --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -EL --fix-cortex-a53-843419 -z now -z relro -z max-page-size=4096 --hash-style=gnu --eh-frame-hdr -m aarch64linux -pie -dynamic-linker /system/bin/linker64 -o cmTC_cf212 /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/26/crtbegin_dynamic.o -L/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/lib/linux/aarch64 -L/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/26 -L/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android -L/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib --build-id=sha1 --no-rosegment --no-undefined-version --fatal-warnings --no-undefined CMakeFiles/cmTC_cf212.dir/CMakeCXXCompilerABI.cpp.o -Bstatic -lc++ -Bdynamic -lm /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/lib/linux/libclang_rt.builtins-aarch64-android.a -l:libunwind.a -ldl -lc /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/lib/linux/libclang_rt.builtins-aarch64-android.a -l:libunwind.a -ldl /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/26/crtend_android.o]
+        link line: [ "/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/ld.lld" --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -EL --fix-cortex-a53-843419 -z now -z relro -z max-page-size=4096 --hash-style=gnu --eh-frame-hdr -m aarch64linux -pie -dynamic-linker /system/bin/linker64 -o cmTC_2b407 /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/26/crtbegin_dynamic.o -L/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/lib/linux/aarch64 -L/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/26 -L/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android -L/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib --build-id=sha1 --no-rosegment --no-undefined-version --fatal-warnings --no-undefined CMakeFiles/cmTC_2b407.dir/CMakeCXXCompilerABI.cpp.o -Bstatic -lc++ -Bdynamic -lm /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/lib/linux/libclang_rt.builtins-aarch64-android.a -l:libunwind.a -ldl -lc /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/lib/linux/libclang_rt.builtins-aarch64-android.a -l:libunwind.a -ldl /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/26/crtend_android.o]
           arg [/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/ld.lld] ==> ignore
           arg [--sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot] ==> ignore
           arg [-EL] ==> ignore
@@ -1841,7 +1840,7 @@ events:
           arg [-dynamic-linker] ==> ignore
           arg [/system/bin/linker64] ==> ignore
           arg [-o] ==> ignore
-          arg [cmTC_cf212] ==> ignore
+          arg [cmTC_2b407] ==> ignore
           arg [/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/26/crtbegin_dynamic.o] ==> obj [/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/26/crtbegin_dynamic.o]
           arg [-L/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/lib/linux/aarch64] ==> dir [/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/18/lib/linux/aarch64]
           arg [-L/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/26] ==> dir [/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/26]
@@ -1852,7 +1851,7 @@ events:
           arg [--no-undefined-version] ==> ignore
           arg [--fatal-warnings] ==> ignore
           arg [--no-undefined] ==> ignore
-          arg [CMakeFiles/cmTC_cf212.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
+          arg [CMakeFiles/cmTC_2b407.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
           arg [-Bstatic] ==> search static
           arg [-lc++] ==> lib [c++]
           arg [-Bdynamic] ==> search dynamic
@@ -1896,8 +1895,8 @@ events:
     checks:
       - "Looking for include file alloca.h"
     directories:
-      source: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-DaXYHH"
-      binary: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-DaXYHH"
+      source: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-ka2V1h"
+      binary: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-ka2V1h"
     cmakeVariables:
       ANDROID_ABI: "arm64-v8a"
       ANDROID_ARM_MODE: "thumb"
@@ -1918,11 +1917,11 @@ events:
       variable: "HAVE_ALLOCA_H"
       cached: true
       stdout: |
-        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-DaXYHH'
+        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-ka2V1h'
         
-        Run Build Command(s): /usr/bin/ninja -v cmTC_9aa2d
-        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fPIE -MD -MT CMakeFiles/cmTC_9aa2d.dir/HAVE_ALLOCA_H.c.o -MF CMakeFiles/cmTC_9aa2d.dir/HAVE_ALLOCA_H.c.o.d -o CMakeFiles/cmTC_9aa2d.dir/HAVE_ALLOCA_H.c.o -c /run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-DaXYHH/HAVE_ALLOCA_H.c
-        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments CMakeFiles/cmTC_9aa2d.dir/HAVE_ALLOCA_H.c.o -o cmTC_9aa2d  -latomic -lm && :
+        Run Build Command(s): /usr/bin/ninja -v cmTC_395cf
+        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fPIE -MD -MT CMakeFiles/cmTC_395cf.dir/HAVE_ALLOCA_H.c.o -MF CMakeFiles/cmTC_395cf.dir/HAVE_ALLOCA_H.c.o.d -o CMakeFiles/cmTC_395cf.dir/HAVE_ALLOCA_H.c.o -c /run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-ka2V1h/HAVE_ALLOCA_H.c
+        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments CMakeFiles/cmTC_395cf.dir/HAVE_ALLOCA_H.c.o -o cmTC_395cf  -latomic -lm && :
         
       exitCode: 0
   -
@@ -1933,8 +1932,8 @@ events:
     checks:
       - "Looking for include file stdint.h"
     directories:
-      source: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-QNzf6f"
-      binary: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-QNzf6f"
+      source: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-UWF2DV"
+      binary: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-UWF2DV"
     cmakeVariables:
       ANDROID_ABI: "arm64-v8a"
       ANDROID_ARM_MODE: "thumb"
@@ -1955,11 +1954,11 @@ events:
       variable: "HAVE_STDINT_H"
       cached: true
       stdout: |
-        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-QNzf6f'
+        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-UWF2DV'
         
-        Run Build Command(s): /usr/bin/ninja -v cmTC_cdbc5
-        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fPIE -MD -MT CMakeFiles/cmTC_cdbc5.dir/HAVE_STDINT_H.c.o -MF CMakeFiles/cmTC_cdbc5.dir/HAVE_STDINT_H.c.o.d -o CMakeFiles/cmTC_cdbc5.dir/HAVE_STDINT_H.c.o -c /run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-QNzf6f/HAVE_STDINT_H.c
-        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments CMakeFiles/cmTC_cdbc5.dir/HAVE_STDINT_H.c.o -o cmTC_cdbc5  -latomic -lm && :
+        Run Build Command(s): /usr/bin/ninja -v cmTC_12cb2
+        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fPIE -MD -MT CMakeFiles/cmTC_12cb2.dir/HAVE_STDINT_H.c.o -MF CMakeFiles/cmTC_12cb2.dir/HAVE_STDINT_H.c.o.d -o CMakeFiles/cmTC_12cb2.dir/HAVE_STDINT_H.c.o -c /run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-UWF2DV/HAVE_STDINT_H.c
+        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments CMakeFiles/cmTC_12cb2.dir/HAVE_STDINT_H.c.o -o cmTC_12cb2  -latomic -lm && :
         
       exitCode: 0
   -
@@ -1970,8 +1969,8 @@ events:
     checks:
       - "Looking for include file sys/times.h"
     directories:
-      source: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-Vxbhhb"
-      binary: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-Vxbhhb"
+      source: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-72mT99"
+      binary: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-72mT99"
     cmakeVariables:
       ANDROID_ABI: "arm64-v8a"
       ANDROID_ARM_MODE: "thumb"
@@ -1992,11 +1991,11 @@ events:
       variable: "HAVE_SYS_TIMES_H"
       cached: true
       stdout: |
-        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-Vxbhhb'
+        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-72mT99'
         
-        Run Build Command(s): /usr/bin/ninja -v cmTC_71962
-        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fPIE -MD -MT CMakeFiles/cmTC_71962.dir/HAVE_SYS_TIMES_H.c.o -MF CMakeFiles/cmTC_71962.dir/HAVE_SYS_TIMES_H.c.o.d -o CMakeFiles/cmTC_71962.dir/HAVE_SYS_TIMES_H.c.o -c /run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-Vxbhhb/HAVE_SYS_TIMES_H.c
-        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments CMakeFiles/cmTC_71962.dir/HAVE_SYS_TIMES_H.c.o -o cmTC_71962  -latomic -lm && :
+        Run Build Command(s): /usr/bin/ninja -v cmTC_4e030
+        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fPIE -MD -MT CMakeFiles/cmTC_4e030.dir/HAVE_SYS_TIMES_H.c.o -MF CMakeFiles/cmTC_4e030.dir/HAVE_SYS_TIMES_H.c.o.d -o CMakeFiles/cmTC_4e030.dir/HAVE_SYS_TIMES_H.c.o -c /run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-72mT99/HAVE_SYS_TIMES_H.c
+        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments CMakeFiles/cmTC_4e030.dir/HAVE_SYS_TIMES_H.c.o -o cmTC_4e030  -latomic -lm && :
         
       exitCode: 0
   -
@@ -2007,8 +2006,8 @@ events:
     checks:
       - "Looking for include file sys/time.h"
     directories:
-      source: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-NuiENL"
-      binary: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-NuiENL"
+      source: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-BeVXHA"
+      binary: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-BeVXHA"
     cmakeVariables:
       ANDROID_ABI: "arm64-v8a"
       ANDROID_ARM_MODE: "thumb"
@@ -2029,11 +2028,11 @@ events:
       variable: "HAVE_SYS_TIME_H"
       cached: true
       stdout: |
-        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-NuiENL'
+        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-BeVXHA'
         
-        Run Build Command(s): /usr/bin/ninja -v cmTC_0037f
-        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fPIE -MD -MT CMakeFiles/cmTC_0037f.dir/HAVE_SYS_TIME_H.c.o -MF CMakeFiles/cmTC_0037f.dir/HAVE_SYS_TIME_H.c.o.d -o CMakeFiles/cmTC_0037f.dir/HAVE_SYS_TIME_H.c.o -c /run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-NuiENL/HAVE_SYS_TIME_H.c
-        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments CMakeFiles/cmTC_0037f.dir/HAVE_SYS_TIME_H.c.o -o cmTC_0037f  -latomic -lm && :
+        Run Build Command(s): /usr/bin/ninja -v cmTC_25c6f
+        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fPIE -MD -MT CMakeFiles/cmTC_25c6f.dir/HAVE_SYS_TIME_H.c.o -MF CMakeFiles/cmTC_25c6f.dir/HAVE_SYS_TIME_H.c.o.d -o CMakeFiles/cmTC_25c6f.dir/HAVE_SYS_TIME_H.c.o -c /run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-BeVXHA/HAVE_SYS_TIME_H.c
+        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments CMakeFiles/cmTC_25c6f.dir/HAVE_SYS_TIME_H.c.o -o cmTC_25c6f  -latomic -lm && :
         
       exitCode: 0
   -
@@ -2044,8 +2043,8 @@ events:
     checks:
       - "Looking for include file time.h"
     directories:
-      source: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-okA3JO"
-      binary: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-okA3JO"
+      source: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-WvqZGn"
+      binary: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-WvqZGn"
     cmakeVariables:
       ANDROID_ABI: "arm64-v8a"
       ANDROID_ARM_MODE: "thumb"
@@ -2066,11 +2065,11 @@ events:
       variable: "HAVE_TIME_H"
       cached: true
       stdout: |
-        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-okA3JO'
+        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-WvqZGn'
         
-        Run Build Command(s): /usr/bin/ninja -v cmTC_b9a83
-        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fPIE -MD -MT CMakeFiles/cmTC_b9a83.dir/HAVE_TIME_H.c.o -MF CMakeFiles/cmTC_b9a83.dir/HAVE_TIME_H.c.o.d -o CMakeFiles/cmTC_b9a83.dir/HAVE_TIME_H.c.o -c /run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-okA3JO/HAVE_TIME_H.c
-        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments CMakeFiles/cmTC_b9a83.dir/HAVE_TIME_H.c.o -o cmTC_b9a83  -latomic -lm && :
+        Run Build Command(s): /usr/bin/ninja -v cmTC_9df94
+        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fPIE -MD -MT CMakeFiles/cmTC_9df94.dir/HAVE_TIME_H.c.o -MF CMakeFiles/cmTC_9df94.dir/HAVE_TIME_H.c.o.d -o CMakeFiles/cmTC_9df94.dir/HAVE_TIME_H.c.o -c /run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-WvqZGn/HAVE_TIME_H.c
+        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments CMakeFiles/cmTC_9df94.dir/HAVE_TIME_H.c.o -o cmTC_9df94  -latomic -lm && :
         
       exitCode: 0
   -
@@ -2081,8 +2080,8 @@ events:
     checks:
       - "Looking for include file sys/types.h"
     directories:
-      source: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-e0B2np"
-      binary: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-e0B2np"
+      source: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-TsEapm"
+      binary: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-TsEapm"
     cmakeVariables:
       ANDROID_ABI: "arm64-v8a"
       ANDROID_ARM_MODE: "thumb"
@@ -2103,11 +2102,11 @@ events:
       variable: "HAVE_SYS_TYPES_H"
       cached: true
       stdout: |
-        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-e0B2np'
+        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-TsEapm'
         
-        Run Build Command(s): /usr/bin/ninja -v cmTC_c98d3
-        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fPIE -MD -MT CMakeFiles/cmTC_c98d3.dir/HAVE_SYS_TYPES_H.c.o -MF CMakeFiles/cmTC_c98d3.dir/HAVE_SYS_TYPES_H.c.o.d -o CMakeFiles/cmTC_c98d3.dir/HAVE_SYS_TYPES_H.c.o -c /run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-e0B2np/HAVE_SYS_TYPES_H.c
-        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments CMakeFiles/cmTC_c98d3.dir/HAVE_SYS_TYPES_H.c.o -o cmTC_c98d3  -latomic -lm && :
+        Run Build Command(s): /usr/bin/ninja -v cmTC_84fd3
+        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fPIE -MD -MT CMakeFiles/cmTC_84fd3.dir/HAVE_SYS_TYPES_H.c.o -MF CMakeFiles/cmTC_84fd3.dir/HAVE_SYS_TYPES_H.c.o.d -o CMakeFiles/cmTC_84fd3.dir/HAVE_SYS_TYPES_H.c.o -c /run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-TsEapm/HAVE_SYS_TYPES_H.c
+        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments CMakeFiles/cmTC_84fd3.dir/HAVE_SYS_TYPES_H.c.o -o cmTC_84fd3  -latomic -lm && :
         
       exitCode: 0
   -
@@ -2118,8 +2117,8 @@ events:
     checks:
       - "Looking for include file unistd.h"
     directories:
-      source: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-gVcsQU"
-      binary: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-gVcsQU"
+      source: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-3C60kf"
+      binary: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-3C60kf"
     cmakeVariables:
       ANDROID_ABI: "arm64-v8a"
       ANDROID_ARM_MODE: "thumb"
@@ -2140,11 +2139,11 @@ events:
       variable: "HAVE_UNISTD_H"
       cached: true
       stdout: |
-        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-gVcsQU'
+        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-3C60kf'
         
-        Run Build Command(s): /usr/bin/ninja -v cmTC_1b468
-        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fPIE -MD -MT CMakeFiles/cmTC_1b468.dir/HAVE_UNISTD_H.c.o -MF CMakeFiles/cmTC_1b468.dir/HAVE_UNISTD_H.c.o.d -o CMakeFiles/cmTC_1b468.dir/HAVE_UNISTD_H.c.o -c /run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-gVcsQU/HAVE_UNISTD_H.c
-        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments CMakeFiles/cmTC_1b468.dir/HAVE_UNISTD_H.c.o -o cmTC_1b468  -latomic -lm && :
+        Run Build Command(s): /usr/bin/ninja -v cmTC_c5e8c
+        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fPIE -MD -MT CMakeFiles/cmTC_c5e8c.dir/HAVE_UNISTD_H.c.o -MF CMakeFiles/cmTC_c5e8c.dir/HAVE_UNISTD_H.c.o.d -o CMakeFiles/cmTC_c5e8c.dir/HAVE_UNISTD_H.c.o -c /run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-3C60kf/HAVE_UNISTD_H.c
+        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments CMakeFiles/cmTC_c5e8c.dir/HAVE_UNISTD_H.c.o -o cmTC_c5e8c  -latomic -lm && :
         
       exitCode: 0
   -
@@ -2155,8 +2154,8 @@ events:
     checks:
       - "Looking for include file inttypes.h"
     directories:
-      source: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-UNGowB"
-      binary: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-UNGowB"
+      source: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-GZuZZ8"
+      binary: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-GZuZZ8"
     cmakeVariables:
       ANDROID_ABI: "arm64-v8a"
       ANDROID_ARM_MODE: "thumb"
@@ -2177,11 +2176,11 @@ events:
       variable: "HAVE_INTTYPES_H"
       cached: true
       stdout: |
-        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-UNGowB'
+        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-GZuZZ8'
         
-        Run Build Command(s): /usr/bin/ninja -v cmTC_a3df1
-        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fPIE -MD -MT CMakeFiles/cmTC_a3df1.dir/HAVE_INTTYPES_H.c.o -MF CMakeFiles/cmTC_a3df1.dir/HAVE_INTTYPES_H.c.o.d -o CMakeFiles/cmTC_a3df1.dir/HAVE_INTTYPES_H.c.o -c /run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-UNGowB/HAVE_INTTYPES_H.c
-        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments CMakeFiles/cmTC_a3df1.dir/HAVE_INTTYPES_H.c.o -o cmTC_a3df1  -latomic -lm && :
+        Run Build Command(s): /usr/bin/ninja -v cmTC_45119
+        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fPIE -MD -MT CMakeFiles/cmTC_45119.dir/HAVE_INTTYPES_H.c.o -MF CMakeFiles/cmTC_45119.dir/HAVE_INTTYPES_H.c.o.d -o CMakeFiles/cmTC_45119.dir/HAVE_INTTYPES_H.c.o -c /run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-GZuZZ8/HAVE_INTTYPES_H.c
+        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments CMakeFiles/cmTC_45119.dir/HAVE_INTTYPES_H.c.o -o cmTC_45119  -latomic -lm && :
         
       exitCode: 0
   -
@@ -2193,8 +2192,8 @@ events:
     checks:
       - "Looking for stddef.h"
     directories:
-      source: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-2lDqmi"
-      binary: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-2lDqmi"
+      source: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-b7CHCF"
+      binary: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-b7CHCF"
     cmakeVariables:
       ANDROID_ABI: "arm64-v8a"
       ANDROID_ARM_MODE: "thumb"
@@ -2215,11 +2214,11 @@ events:
       variable: "HAVE_STDDEF_H"
       cached: true
       stdout: |
-        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-2lDqmi'
+        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-b7CHCF'
         
-        Run Build Command(s): /usr/bin/ninja -v cmTC_a0608
-        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fPIE -MD -MT CMakeFiles/cmTC_a0608.dir/CheckIncludeFile.c.o -MF CMakeFiles/cmTC_a0608.dir/CheckIncludeFile.c.o.d -o CMakeFiles/cmTC_a0608.dir/CheckIncludeFile.c.o -c /run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-2lDqmi/CheckIncludeFile.c
-        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments CMakeFiles/cmTC_a0608.dir/CheckIncludeFile.c.o -o cmTC_a0608  -latomic -lm && :
+        Run Build Command(s): /usr/bin/ninja -v cmTC_17353
+        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fPIE -MD -MT CMakeFiles/cmTC_17353.dir/CheckIncludeFile.c.o -MF CMakeFiles/cmTC_17353.dir/CheckIncludeFile.c.o.d -o CMakeFiles/cmTC_17353.dir/CheckIncludeFile.c.o -c /run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-b7CHCF/CheckIncludeFile.c
+        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments CMakeFiles/cmTC_17353.dir/CheckIncludeFile.c.o -o cmTC_17353  -latomic -lm && :
         
       exitCode: 0
   -
@@ -2231,8 +2230,8 @@ events:
     checks:
       - "Check size of int"
     directories:
-      source: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-XrX8ZA"
-      binary: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-XrX8ZA"
+      source: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-DGlVSl"
+      binary: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-DGlVSl"
     cmakeVariables:
       ANDROID_ABI: "arm64-v8a"
       ANDROID_ARM_MODE: "thumb"
@@ -2253,11 +2252,11 @@ events:
       variable: "HAVE_SIZEOF_INT"
       cached: true
       stdout: |
-        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-XrX8ZA'
+        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-DGlVSl'
         
-        Run Build Command(s): /usr/bin/ninja -v cmTC_5a394
-        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fPIE -MD -MT CMakeFiles/cmTC_5a394.dir/SIZEOF_INT.c.o -MF CMakeFiles/cmTC_5a394.dir/SIZEOF_INT.c.o.d -o CMakeFiles/cmTC_5a394.dir/SIZEOF_INT.c.o -c /run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-XrX8ZA/SIZEOF_INT.c
-        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments CMakeFiles/cmTC_5a394.dir/SIZEOF_INT.c.o -o cmTC_5a394  -latomic -lm && :
+        Run Build Command(s): /usr/bin/ninja -v cmTC_238aa
+        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fPIE -MD -MT CMakeFiles/cmTC_238aa.dir/SIZEOF_INT.c.o -MF CMakeFiles/cmTC_238aa.dir/SIZEOF_INT.c.o.d -o CMakeFiles/cmTC_238aa.dir/SIZEOF_INT.c.o -c /run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-DGlVSl/SIZEOF_INT.c
+        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments CMakeFiles/cmTC_238aa.dir/SIZEOF_INT.c.o -o cmTC_238aa  -latomic -lm && :
         
       exitCode: 0
   -
@@ -2269,8 +2268,8 @@ events:
     checks:
       - "Check size of intptr_t"
     directories:
-      source: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-H7vrmA"
-      binary: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-H7vrmA"
+      source: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-IAqZ9M"
+      binary: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-IAqZ9M"
     cmakeVariables:
       ANDROID_ABI: "arm64-v8a"
       ANDROID_ARM_MODE: "thumb"
@@ -2291,11 +2290,11 @@ events:
       variable: "HAVE_SIZEOF_INTPTR_T"
       cached: true
       stdout: |
-        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-H7vrmA'
+        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-IAqZ9M'
         
-        Run Build Command(s): /usr/bin/ninja -v cmTC_82cc4
-        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fPIE -MD -MT CMakeFiles/cmTC_82cc4.dir/SIZEOF_INTPTR_T.c.o -MF CMakeFiles/cmTC_82cc4.dir/SIZEOF_INTPTR_T.c.o.d -o CMakeFiles/cmTC_82cc4.dir/SIZEOF_INTPTR_T.c.o -c /run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-H7vrmA/SIZEOF_INTPTR_T.c
-        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments CMakeFiles/cmTC_82cc4.dir/SIZEOF_INTPTR_T.c.o -o cmTC_82cc4  -latomic -lm && :
+        Run Build Command(s): /usr/bin/ninja -v cmTC_a96a3
+        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fPIE -MD -MT CMakeFiles/cmTC_a96a3.dir/SIZEOF_INTPTR_T.c.o -MF CMakeFiles/cmTC_a96a3.dir/SIZEOF_INTPTR_T.c.o.d -o CMakeFiles/cmTC_a96a3.dir/SIZEOF_INTPTR_T.c.o -c /run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-IAqZ9M/SIZEOF_INTPTR_T.c
+        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments CMakeFiles/cmTC_a96a3.dir/SIZEOF_INTPTR_T.c.o -o cmTC_a96a3  -latomic -lm && :
         
       exitCode: 0
   -
@@ -2307,8 +2306,8 @@ events:
     checks:
       - "Check size of long"
     directories:
-      source: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-ivJXSd"
-      binary: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-ivJXSd"
+      source: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-mtc2A8"
+      binary: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-mtc2A8"
     cmakeVariables:
       ANDROID_ABI: "arm64-v8a"
       ANDROID_ARM_MODE: "thumb"
@@ -2329,11 +2328,11 @@ events:
       variable: "HAVE_SIZEOF_LONG"
       cached: true
       stdout: |
-        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-ivJXSd'
+        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-mtc2A8'
         
-        Run Build Command(s): /usr/bin/ninja -v cmTC_06d2b
-        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fPIE -MD -MT CMakeFiles/cmTC_06d2b.dir/SIZEOF_LONG.c.o -MF CMakeFiles/cmTC_06d2b.dir/SIZEOF_LONG.c.o.d -o CMakeFiles/cmTC_06d2b.dir/SIZEOF_LONG.c.o -c /run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-ivJXSd/SIZEOF_LONG.c
-        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments CMakeFiles/cmTC_06d2b.dir/SIZEOF_LONG.c.o -o cmTC_06d2b  -latomic -lm && :
+        Run Build Command(s): /usr/bin/ninja -v cmTC_8236f
+        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fPIE -MD -MT CMakeFiles/cmTC_8236f.dir/SIZEOF_LONG.c.o -MF CMakeFiles/cmTC_8236f.dir/SIZEOF_LONG.c.o.d -o CMakeFiles/cmTC_8236f.dir/SIZEOF_LONG.c.o -c /run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-mtc2A8/SIZEOF_LONG.c
+        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments CMakeFiles/cmTC_8236f.dir/SIZEOF_LONG.c.o -o cmTC_8236f  -latomic -lm && :
         
       exitCode: 0
   -
@@ -2345,8 +2344,8 @@ events:
     checks:
       - "Check size of long long"
     directories:
-      source: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-I1nGDj"
-      binary: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-I1nGDj"
+      source: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-ztrVJd"
+      binary: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-ztrVJd"
     cmakeVariables:
       ANDROID_ABI: "arm64-v8a"
       ANDROID_ARM_MODE: "thumb"
@@ -2367,11 +2366,11 @@ events:
       variable: "HAVE_SIZEOF_LONG_LONG"
       cached: true
       stdout: |
-        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-I1nGDj'
+        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-ztrVJd'
         
-        Run Build Command(s): /usr/bin/ninja -v cmTC_8f98a
-        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fPIE -MD -MT CMakeFiles/cmTC_8f98a.dir/SIZEOF_LONG_LONG.c.o -MF CMakeFiles/cmTC_8f98a.dir/SIZEOF_LONG_LONG.c.o.d -o CMakeFiles/cmTC_8f98a.dir/SIZEOF_LONG_LONG.c.o -c /run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-I1nGDj/SIZEOF_LONG_LONG.c
-        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments CMakeFiles/cmTC_8f98a.dir/SIZEOF_LONG_LONG.c.o -o cmTC_8f98a  -latomic -lm && :
+        Run Build Command(s): /usr/bin/ninja -v cmTC_38140
+        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fPIE -MD -MT CMakeFiles/cmTC_38140.dir/SIZEOF_LONG_LONG.c.o -MF CMakeFiles/cmTC_38140.dir/SIZEOF_LONG_LONG.c.o.d -o CMakeFiles/cmTC_38140.dir/SIZEOF_LONG_LONG.c.o -c /run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-ztrVJd/SIZEOF_LONG_LONG.c
+        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments CMakeFiles/cmTC_38140.dir/SIZEOF_LONG_LONG.c.o -o cmTC_38140  -latomic -lm && :
         
       exitCode: 0
   -
@@ -2383,8 +2382,8 @@ events:
     checks:
       - "Check size of void*"
     directories:
-      source: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-zQXbnn"
-      binary: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-zQXbnn"
+      source: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-k33hBk"
+      binary: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-k33hBk"
     cmakeVariables:
       ANDROID_ABI: "arm64-v8a"
       ANDROID_ARM_MODE: "thumb"
@@ -2405,11 +2404,11 @@ events:
       variable: "HAVE_SIZEOF_VOIDP"
       cached: true
       stdout: |
-        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-zQXbnn'
+        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-k33hBk'
         
-        Run Build Command(s): /usr/bin/ninja -v cmTC_fe8ea
-        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fPIE -MD -MT CMakeFiles/cmTC_fe8ea.dir/SIZEOF_VOIDP.c.o -MF CMakeFiles/cmTC_fe8ea.dir/SIZEOF_VOIDP.c.o.d -o CMakeFiles/cmTC_fe8ea.dir/SIZEOF_VOIDP.c.o -c /run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-zQXbnn/SIZEOF_VOIDP.c
-        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments CMakeFiles/cmTC_fe8ea.dir/SIZEOF_VOIDP.c.o -o cmTC_fe8ea  -latomic -lm && :
+        Run Build Command(s): /usr/bin/ninja -v cmTC_a7359
+        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fPIE -MD -MT CMakeFiles/cmTC_a7359.dir/SIZEOF_VOIDP.c.o -MF CMakeFiles/cmTC_a7359.dir/SIZEOF_VOIDP.c.o.d -o CMakeFiles/cmTC_a7359.dir/SIZEOF_VOIDP.c.o -c /run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-k33hBk/SIZEOF_VOIDP.c
+        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments CMakeFiles/cmTC_a7359.dir/SIZEOF_VOIDP.c.o -o cmTC_a7359  -latomic -lm && :
         
       exitCode: 0
   -
@@ -2421,8 +2420,8 @@ events:
     checks:
       - "Check size of time_t"
     directories:
-      source: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-afcE5e"
-      binary: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-afcE5e"
+      source: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-qeneqF"
+      binary: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-qeneqF"
     cmakeVariables:
       ANDROID_ABI: "arm64-v8a"
       ANDROID_ARM_MODE: "thumb"
@@ -2443,11 +2442,11 @@ events:
       variable: "HAVE_SIZEOF_TIME_T"
       cached: true
       stdout: |
-        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-afcE5e'
+        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-qeneqF'
         
-        Run Build Command(s): /usr/bin/ninja -v cmTC_71928
-        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fPIE -MD -MT CMakeFiles/cmTC_71928.dir/SIZEOF_TIME_T.c.o -MF CMakeFiles/cmTC_71928.dir/SIZEOF_TIME_T.c.o.d -o CMakeFiles/cmTC_71928.dir/SIZEOF_TIME_T.c.o -c /run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-afcE5e/SIZEOF_TIME_T.c
-        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments CMakeFiles/cmTC_71928.dir/SIZEOF_TIME_T.c.o -o cmTC_71928  -latomic -lm && :
+        Run Build Command(s): /usr/bin/ninja -v cmTC_0f5ec
+        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fPIE -MD -MT CMakeFiles/cmTC_0f5ec.dir/SIZEOF_TIME_T.c.o -MF CMakeFiles/cmTC_0f5ec.dir/SIZEOF_TIME_T.c.o.d -o CMakeFiles/cmTC_0f5ec.dir/SIZEOF_TIME_T.c.o -c /run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-qeneqF/SIZEOF_TIME_T.c
+        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments CMakeFiles/cmTC_0f5ec.dir/SIZEOF_TIME_T.c.o -o cmTC_0f5ec  -latomic -lm && :
         
       exitCode: 0
   -
@@ -2459,8 +2458,8 @@ events:
     checks:
       - "Looking for alloca"
     directories:
-      source: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-vb5A6y"
-      binary: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-vb5A6y"
+      source: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-ySwWFm"
+      binary: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-ySwWFm"
     cmakeVariables:
       ANDROID_ABI: "arm64-v8a"
       ANDROID_ARM_MODE: "thumb"
@@ -2481,11 +2480,11 @@ events:
       variable: "HAVE_ALLOCA"
       cached: true
       stdout: |
-        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-vb5A6y'
+        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-ySwWFm'
         
-        Run Build Command(s): /usr/bin/ninja -v cmTC_228f2
-        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat   -fPIE -MD -MT CMakeFiles/cmTC_228f2.dir/CheckSymbolExists.c.o -MF CMakeFiles/cmTC_228f2.dir/CheckSymbolExists.c.o.d -o CMakeFiles/cmTC_228f2.dir/CheckSymbolExists.c.o -c /run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-vb5A6y/CheckSymbolExists.c
-        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments CMakeFiles/cmTC_228f2.dir/CheckSymbolExists.c.o -o cmTC_228f2  -latomic -lm && :
+        Run Build Command(s): /usr/bin/ninja -v cmTC_7c46a
+        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat   -fPIE -MD -MT CMakeFiles/cmTC_7c46a.dir/CheckSymbolExists.c.o -MF CMakeFiles/cmTC_7c46a.dir/CheckSymbolExists.c.o.d -o CMakeFiles/cmTC_7c46a.dir/CheckSymbolExists.c.o -c /run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-ySwWFm/CheckSymbolExists.c
+        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments CMakeFiles/cmTC_7c46a.dir/CheckSymbolExists.c.o -o cmTC_7c46a  -latomic -lm && :
         
       exitCode: 0
   -
@@ -2497,8 +2496,8 @@ events:
     checks:
       - "Looking for clock_gettime"
     directories:
-      source: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-2ohcI2"
-      binary: "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-2ohcI2"
+      source: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-BNbRjH"
+      binary: "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-BNbRjH"
     cmakeVariables:
       ANDROID_ABI: "arm64-v8a"
       ANDROID_ARM_MODE: "thumb"
@@ -2519,11 +2518,11 @@ events:
       variable: "HAVE_CLOCK_GETTIME"
       cached: true
       stdout: |
-        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-2ohcI2'
+        Change Dir: '/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-BNbRjH'
         
-        Run Build Command(s): /usr/bin/ninja -v cmTC_827c9
-        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat   -fPIE -MD -MT CMakeFiles/cmTC_827c9.dir/CheckSymbolExists.c.o -MF CMakeFiles/cmTC_827c9.dir/CheckSymbolExists.c.o.d -o CMakeFiles/cmTC_827c9.dir/CheckSymbolExists.c.o -c /run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-2ohcI2/CheckSymbolExists.c
-        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments CMakeFiles/cmTC_827c9.dir/CheckSymbolExists.c.o -o cmTC_827c9  -latomic -lm && :
+        Run Build Command(s): /usr/bin/ninja -v cmTC_d81ff
+        [1/2] /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat   -fPIE -MD -MT CMakeFiles/cmTC_d81ff.dir/CheckSymbolExists.c.o -MF CMakeFiles/cmTC_d81ff.dir/CheckSymbolExists.c.o.d -o CMakeFiles/cmTC_d81ff.dir/CheckSymbolExists.c.o -c /run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/CMakeScratch/TryCompile-BNbRjH/CheckSymbolExists.c
+        [2/2] : && /home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/bin/clang --target=aarch64-none-linux-android26 --sysroot=/home/admins/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/sysroot -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-rosegment -Wl,--no-undefined-version -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments CMakeFiles/cmTC_d81ff.dir/CheckSymbolExists.c.o -o cmTC_d81ff  -latomic -lm && :
         
       exitCode: 0
 ...

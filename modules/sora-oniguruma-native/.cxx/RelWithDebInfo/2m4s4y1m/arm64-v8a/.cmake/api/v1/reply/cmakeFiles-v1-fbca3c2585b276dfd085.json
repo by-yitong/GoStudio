@@ -41,7 +41,7 @@
 		},
 		{
 			"isGenerated" : true,
-			"path" : "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/4.3.0/CMakeSystem.cmake"
+			"path" : "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/4.3.0/CMakeSystem.cmake"
 		},
 		{
 			"isExternal" : true,
@@ -343,7 +343,7 @@
 		},
 		{
 			"isGenerated" : true,
-			"path" : "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/4.3.0/CMakeCCompiler.cmake"
+			"path" : "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/4.3.0/CMakeCCompiler.cmake"
 		},
 		{
 			"isCMake" : true,
@@ -607,7 +607,7 @@
 		},
 		{
 			"isGenerated" : true,
-			"path" : "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/4.3.0/CMakeCXXCompiler.cmake"
+			"path" : "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/4.3.0/CMakeCXXCompiler.cmake"
 		},
 		{
 			"isCMake" : true,
@@ -763,7 +763,7 @@
 		},
 		{
 			"isGenerated" : true,
-			"path" : "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/4.3.0/CMakeCCompiler.cmake"
+			"path" : "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/4.3.0/CMakeCCompiler.cmake"
 		},
 		{
 			"isCMake" : true,
@@ -927,7 +927,7 @@
 		},
 		{
 			"isGenerated" : true,
-			"path" : "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/4.3.0/CMakeCXXCompiler.cmake"
+			"path" : "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a/CMakeFiles/4.3.0/CMakeCXXCompiler.cmake"
 		},
 		{
 			"isCMake" : true,
@@ -1078,8 +1078,8 @@
 	"kind" : "cmakeFiles",
 	"paths" : 
 	{
-		"build" : "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a",
-		"source" : "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/src/main/cpp"
+		"build" : "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a",
+		"source" : "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/src/main/cpp"
 	},
 	"version" : 
 	{

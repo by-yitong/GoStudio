@@ -1,6 +1,6 @@
 <lint-module
     format="1"
-    dir="/run/media/admins/DATA/myitem/project/GoStudio2/modules/terminal-emulator"
+    dir="/run/media/admins/DATA/myitem/project/GoStudio/modules/terminal-emulator"
     name=":modules:terminal-emulator"
     type="LIBRARY"
     maven="GoStudio.modules:terminal-emulator:unspecified"

@@ -27,7 +27,7 @@
 				{
 					"build" : "oniguruma",
 					"hasInstallRule" : true,
-					"jsonFile" : "directory-oniguruma-RelWithDebInfo-70e5532134b127c12ea8.json",
+					"jsonFile" : "directory-oniguruma-RelWithDebInfo-cda0c07ce56346510666.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.22.1"
@@ -77,14 +77,14 @@
 				{
 					"directoryIndex" : 1,
 					"id" : "onig::@5acf2c6e2fc8dcda7e4c",
-					"jsonFile" : "target-onig-RelWithDebInfo-63d319d175d41e0ef88b.json",
+					"jsonFile" : "target-onig-RelWithDebInfo-db41dbe68450c0cb2be4.json",
 					"name" : "onig",
 					"projectIndex" : 1
 				},
 				{
 					"directoryIndex" : 0,
 					"id" : "oniguruma-binding::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-oniguruma-binding-RelWithDebInfo-d09cc63f13070031d896.json",
+					"jsonFile" : "target-oniguruma-binding-RelWithDebInfo-8f4a5f6172a45be94326.json",
 					"name" : "oniguruma-binding",
 					"projectIndex" : 0
 				}
@@ -94,8 +94,8 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a",
-		"source" : "/run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-oniguruma-native/src/main/cpp"
+		"build" : "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/.cxx/RelWithDebInfo/2m4s4y1m/arm64-v8a",
+		"source" : "/run/media/admins/DATA/myitem/project/GoStudio/modules/sora-oniguruma-native/src/main/cpp"
 	},
 	"version" : 
 	{

@@ -6,7 +6,7 @@ GoStudio 是一款运行在 Android 上的 Go 语言集成开发环境，目标�
 
 ### 功能特性
 
-- 创建 Go 项目，支持 application 和 library 模板
+- 创建 Go 项目，内置多种项目模板（Hello World、HTTP 服务器、CLI 工具、Web API，以及 Gin/GORM/Cobra/Echo 等常用框架模板）
 - 基于 go.mod 的模块化项目结构与依赖管理
 - 基于 proot + Ubuntu rootfs 的 Go 工具链运行环境（内置 golang/gopls）
 - gopls 语言服务，支持补全、参数提示、符号高亮、诊断、悬浮提示、跳转定义和格式化
@@ -73,10 +73,6 @@ gopls 通过 proot + Ubuntu rootfs 工具链运行环境启动，用于提供 Go
 - 工具链命令会通过应用内的 proot + Ubuntu rootfs 运行环境在设备上执行（golang、gopls 等均运行在该 rootfs 内）。
 - 停止构建时会停止 Android 进程，并对活动的 go build / gopls 进程做兜底清理。
 
-### 联系方式
-
-- 邮箱：xiaochenzaine@qq.com
-
 ### 致谢
 
 本项目参考了 [XCode](https://github.com/xiaochenzaine/XCode)（一款 Android 上的 C/C++ IDE），在其编辑器、proot 运行时与项目结构的基础上进行了 Go 语言方向的改造与重构。
@@ -91,7 +87,7 @@ GoStudio is an Android IDE focused on local Go language development on mobile de
 
 ### Features
 
-- Go project creation with application and library templates
+- Go project creation with multiple built-in templates (Hello World, HTTP server, CLI tool, Web API, plus Gin/GORM/Cobra/Echo framework templates)
 - go.mod-based modular project structure and dependency management
 - proot + Ubuntu rootfs based Go toolchain runtime (golang/gopls bundled)
 - gopls language server support for completion, signature help, symbol highlight, diagnostics, hover, go-to-definition, and formatting
@@ -157,10 +153,6 @@ gopls is started through the proot + Ubuntu rootfs toolchain runtime and is used
 - Existing projects keep their own `go.mod`; template changes only affect newly created projects.
 - Toolchain commands run through the app's proot + Ubuntu rootfs runtime on device (golang, gopls, etc. all run inside this rootfs).
 - Build cancellation stops the Android process and uses fallback cleanup for active go build / gopls processes.
-
-### Contact
-
-- Email: xiaochenzaine@qq.com
 
 ### Acknowledgements
 

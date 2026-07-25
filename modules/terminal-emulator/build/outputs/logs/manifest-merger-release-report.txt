@@ -1,14 +1,14 @@
 -- Merging decision tree log ---
 manifest
-ADDED from /run/media/admins/DATA/myitem/project/GoStudio2/modules/terminal-emulator/src/main/AndroidManifest.xml:1:1-2:12
-INJECTED from /run/media/admins/DATA/myitem/project/GoStudio2/modules/terminal-emulator/src/main/AndroidManifest.xml:1:1-2:12
+ADDED from /run/media/admins/DATA/myitem/project/GoStudio/modules/terminal-emulator/src/main/AndroidManifest.xml:1:1-2:12
+INJECTED from /run/media/admins/DATA/myitem/project/GoStudio/modules/terminal-emulator/src/main/AndroidManifest.xml:1:1-2:12
 	package
-		INJECTED from /run/media/admins/DATA/myitem/project/GoStudio2/modules/terminal-emulator/src/main/AndroidManifest.xml
+		INJECTED from /run/media/admins/DATA/myitem/project/GoStudio/modules/terminal-emulator/src/main/AndroidManifest.xml
 uses-sdk
-INJECTED from /run/media/admins/DATA/myitem/project/GoStudio2/modules/terminal-emulator/src/main/AndroidManifest.xml reason: use-sdk injection requested
-INJECTED from /run/media/admins/DATA/myitem/project/GoStudio2/modules/terminal-emulator/src/main/AndroidManifest.xml
-INJECTED from /run/media/admins/DATA/myitem/project/GoStudio2/modules/terminal-emulator/src/main/AndroidManifest.xml
+INJECTED from /run/media/admins/DATA/myitem/project/GoStudio/modules/terminal-emulator/src/main/AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from /run/media/admins/DATA/myitem/project/GoStudio/modules/terminal-emulator/src/main/AndroidManifest.xml
+INJECTED from /run/media/admins/DATA/myitem/project/GoStudio/modules/terminal-emulator/src/main/AndroidManifest.xml
 	android:targetSdkVersion
-		INJECTED from /run/media/admins/DATA/myitem/project/GoStudio2/modules/terminal-emulator/src/main/AndroidManifest.xml
+		INJECTED from /run/media/admins/DATA/myitem/project/GoStudio/modules/terminal-emulator/src/main/AndroidManifest.xml
 	android:minSdkVersion
-		INJECTED from /run/media/admins/DATA/myitem/project/GoStudio2/modules/terminal-emulator/src/main/AndroidManifest.xml
+		INJECTED from /run/media/admins/DATA/myitem/project/GoStudio/modules/terminal-emulator/src/main/AndroidManifest.xml
