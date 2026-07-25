@@ -65,12 +65,13 @@ fun new_project_dialog(
         skipPartiallyExpanded = true
     )
     var current_step by remember { mutableIntStateOf(0) }
-    var selected_template by remember { mutableStateOf("executable") }
-    
+    var selected_template by remember { mutableStateOf("hello") }
+
     val templates = listOf(
-        template_item("executable", "可执行", Icons.Default.PlayArrow, "生成独立的可执行程序"),
-        template_item("dynamic_lib", "动态库", Icons.Default.DynamicForm, "生成 .so 动态链接库"),
-        template_item("static_lib", "静态库", Icons.AutoMirrored.Filled.LibraryBooks, "生成 .a 静态库文件")
+        template_item("hello", "Hello World", Icons.Default.PlayArrow, "最简 main.go，打印 Hello"),
+        template_item("http", "HTTP 服务器", Icons.Default.Http, "net/http 服务器，监听 8080"),
+        template_item("cli", "CLI 工具", Icons.Default.Terminal, "os.Args 命令行工具"),
+        template_item("webapi", "Web API", Icons.Default.Api, "标准库 JSON API 服务")
     )
     
     var project_name by remember { mutableStateOf("") }

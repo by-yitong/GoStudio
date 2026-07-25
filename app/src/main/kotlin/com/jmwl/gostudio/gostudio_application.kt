@@ -40,8 +40,8 @@ class gostudio_application : Application() {
         val create_dirs = listOf(
             File(android.os.Environment.getExternalStorageDirectory(), "GoStudioProjects"),
             File(filesDir, "home"),
-            File(filesDir, "home/xcode/proot-tmps"),
-            File(filesDir, "home/xcode/ubuntu-base")
+            File(filesDir, "home/gostudio/proot-tmps"),
+            File(filesDir, "home/gostudio/ubuntu-base")
         )
         for (dir in create_dirs) {
             if (!dir.exists()) dir.mkdirs()
@@ -49,10 +49,10 @@ class gostudio_application : Application() {
 
         toolchain_runtime_provider.init(
             context = this,
-            gostudio_dir = File(filesDir, "home/xcode"),
+            gostudio_dir = File(filesDir, "home/gostudio"),
             home_dir = File(filesDir, "home"),
-            ubuntu_base_dir = File(filesDir, "home/xcode/ubuntu-base"),
-            proot_tmp_dir = File(filesDir, "home/xcode/proot-tmps")
+            ubuntu_base_dir = File(filesDir, "home/gostudio/ubuntu-base"),
+            proot_tmp_dir = File(filesDir, "home/gostudio/proot-tmps")
         )
 
         init_textmate()
