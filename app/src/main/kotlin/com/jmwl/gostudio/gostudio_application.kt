@@ -99,16 +99,11 @@ class gostudio_application : Application() {
 
     fun get_language_scope_name(file_name: String): String {
         return when {
-            file_name.endsWith(".c", ignoreCase = true) -> "source.c"
-            file_name.endsWith(".cpp", ignoreCase = true) -> "source.cpp"
-            file_name.endsWith(".cc", ignoreCase = true) -> "source.cpp"
-            file_name.endsWith(".cxx", ignoreCase = true) -> "source.cpp"
-            file_name.endsWith(".h", ignoreCase = true) -> "source.cpp"
-            file_name.endsWith(".hpp", ignoreCase = true) -> "source.cpp"
+            file_name.endsWith(".go", ignoreCase = true) -> "source.go"
+            file_name.equals("go.mod", ignoreCase = true) -> "source.go"
+            file_name.equals("go.sum", ignoreCase = true) -> "source.go"
             file_name.endsWith(".json", ignoreCase = true) -> "source.json"
-            file_name.endsWith(".cmake", ignoreCase = true) -> "source.cmake"
-            file_name.equals("CMakeLists.txt", ignoreCase = true) -> "source.cmake"
-            else -> "source.cpp"
+            else -> "source.go" // GoStudio 默认按 Go 处理
         }
     }
 
