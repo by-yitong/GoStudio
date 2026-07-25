@@ -1,4 +1,0 @@
-int drawable ic_editor_comment 0x0
-int drawable ic_editor_format 0x0
-int drawable ic_editor_format_selection 0x0
-int drawable ic_editor_uncomment 0x0

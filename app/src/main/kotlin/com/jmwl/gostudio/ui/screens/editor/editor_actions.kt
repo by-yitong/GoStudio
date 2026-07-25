@@ -21,6 +21,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
@@ -353,3 +354,37 @@ private fun editor_symbol_button(
         )
     }
 }
+
+/**
+ * 跳转到定义的浮动图标。光标停在标识符上时显示在编辑器右上角，
+ * 点击请求 gopls 的 textDocument/definition 并跳转。请求中显示「…」。
+ */
+@Composable
+fun goto_definition_chip(
+    running: Boolean,
+    on_click: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val colors = app_theme_provider.colors
+    Surface(
+        modifier = modifier
+            .size(30.dp)
+            .clickable(enabled = !running) { on_click() },
+        shape = RoundedCornerShape(8.dp),
+        color = colors.editor_panel_overlay
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = if (running) "…" else "⇲",
+                color = colors.title_highlight,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1
+            )
+        }
+    }
+}
+

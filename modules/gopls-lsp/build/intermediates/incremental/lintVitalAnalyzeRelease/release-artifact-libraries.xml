@@ -1,9 +1,9 @@
 <libraries>
   <library
       name=":@@:modules:sora-editor-lsp::release"
-      jars="/home/admins/.gradle/caches/9.0.0/transforms/65bbd7a3accc7f6e253721789705a581/transformed/out/jars/classes.jar:/home/admins/.gradle/caches/9.0.0/transforms/65bbd7a3accc7f6e253721789705a581/transformed/out/jars/libs/R.jar"
+      jars="/home/admins/.gradle/caches/9.0.0/transforms/b06c36a5afe3f0170ae7b87d194e9009/transformed/out/jars/classes.jar:/home/admins/.gradle/caches/9.0.0/transforms/b06c36a5afe3f0170ae7b87d194e9009/transformed/out/jars/libs/R.jar"
       resolved="GoStudio.modules:sora-editor-lsp:unspecified"
-      folder="/home/admins/.gradle/caches/9.0.0/transforms/65bbd7a3accc7f6e253721789705a581/transformed/out"
+      folder="/home/admins/.gradle/caches/9.0.0/transforms/b06c36a5afe3f0170ae7b87d194e9009/transformed/out"
       manifest="AndroidManifest.xml"
       resFolder="res"
       assetsFolder="assets"

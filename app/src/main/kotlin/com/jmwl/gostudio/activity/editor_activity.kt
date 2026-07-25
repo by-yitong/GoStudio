@@ -23,6 +23,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.lifecycle.lifecycleScope
 import com.jmwl.gostudio.core.logging.logger_manager
 import com.jmwl.gostudio.toolchain.proot_manager
@@ -36,6 +38,7 @@ import com.jmwl.gostudio.project.project_kind
 import com.jmwl.gostudio.project.project_manager
 import com.jmwl.gostudio.lsp.gopls.gopls_lsp_config
 import com.jmwl.gostudio.lsp.gopls.gopls_lsp_project
+import com.jmwl.gostudio.lsp.gopls.request_definition
 import com.jmwl.gostudio.editor.theme.editor_theme_manager
 import com.jmwl.gostudio.ui.dialogs.editor.editor_exit_confirm_dialog
 import com.jmwl.gostudio.ui.dialogs.editor.editor_unsaved_file_dialog
@@ -45,6 +48,7 @@ import com.jmwl.gostudio.gostudio_application
 import io.github.rosemoe.sora.text.Content
 import io.github.rosemoe.sora.langs.textmate.TextMateLanguage
 import io.github.rosemoe.sora.lsp.client.languageserver.LspFeature
+import io.github.rosemoe.sora.lsp.editor.LspEditor
 import io.github.rosemoe.sora.lsp.editor.LspLanguage
 import io.github.rosemoe.sora.lsp.editor.LspEditorStatus
 import io.github.rosemoe.sora.widget.CodeEditor
@@ -52,6 +56,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -72,6 +77,13 @@ class editor_activity : ComponentActivity() {
     private var gopls_project: gopls_lsp_project? = null
     private var gopls_connect_job: Job? = null
     private val gopls_skipped_files = mutableSetOf<String>()
+
+    /** 光标是否在可跳转定义的标识符上，true 时编辑器右上角显示跳转图标 */
+    private val _can_goto_definition = MutableStateFlow(false)
+    val can_goto_definition: kotlinx.coroutines.flow.StateFlow<Boolean> = _can_goto_definition
+    /** 跳转定义进行中（请求 gopls 时短暂置 true，避免重复点击） */
+    private val _goto_in_progress = MutableStateFlow(false)
+    val goto_in_progress: kotlinx.coroutines.flow.StateFlow<Boolean> = _goto_in_progress
     private val file_tree_children_cache = mutableMapOf<String, List<editor_file_node>>()
     private lateinit var search_controller: editor_search_controller
     private lateinit var tab_lifecycle: editor_tab_lifecycle
@@ -149,6 +161,8 @@ class editor_activity : ComponentActivity() {
     @Composable
     private fun editor_activity_content() {
         val colors = app_theme_provider.colors
+        val can_goto by can_goto_definition.collectAsState()
+        val goto_running by goto_in_progress.collectAsState()
 
         BackHandler(enabled = true) {
             when {
@@ -241,7 +255,10 @@ class editor_activity : ComponentActivity() {
             on_delete_file_tree_node = { path -> delete_project_entry(path) },
             on_directory_click = { path -> toggle_directory(path) },
             on_file_click = { path -> request_open_file(path) },
-            on_file_position_click = { path, line, column -> open_file_at(path, line, column) }
+            on_file_position_click = { path, line, column -> open_file_at(path, line, column) },
+            can_goto_definition = can_goto,
+            goto_definition_running = goto_running,
+            on_goto_definition = { goto_definition() }
         )
 
         if (state.show_exit_dialog) {
@@ -306,10 +323,34 @@ class editor_activity : ComponentActivity() {
         state.cursor_line = line + 1
         state.cursor_column = column + 1
         state.cursor_selected = changed_editor.cursor.isSelected
+
+        // 判断光标是否在可跳转的标识符上（非选区状态，且光标紧邻字母/下划线）
+        val on_identifier = if (!changed_editor.cursor.isSelected) {
+            is_cursor_on_identifier(changed_editor, line, column)
+        } else {
+            false
+        }
+        _can_goto_definition.value = on_identifier
+
         active_tab()?.let { tab ->
             tab.cursor_line = line
             tab.cursor_column = column
         }
+    }
+
+    /** 判断光标是否位于标识符上（字母/数字/下划线），用于决定是否显示跳转定义图标 */
+    private fun is_cursor_on_identifier(editor: CodeEditor, line: Int, column: Int): Boolean {
+        val text = editor.text ?: return false
+        // 优先看光标左侧字符，再看右侧
+        if (column > 0) {
+            val ch = text.charAt(line, column - 1)
+            if (ch.isLetterOrDigit() || ch == '_') return true
+        }
+        if (column < text.getColumnCount(line)) {
+            val ch = text.charAt(line, column)
+            if (ch.isLetterOrDigit() || ch == '_') return true
+        }
+        return false
     }
 
     private fun update_editor_settings(settings: editor_settings_state) {
@@ -760,6 +801,43 @@ class editor_activity : ComponentActivity() {
                 open_loaded_file_tab(loaded_file)
             }.onFailure { error ->
                 app_toast.show(this@editor_activity, "打开失败: ${error.message}", app_toast.LENGTH_LONG)
+            }
+        }
+    }
+
+    /**
+     * 跳转到光标所在标识符的定义。请求 gopls 的 textDocument/definition，
+     * 拿到第一个 Location 后打开对应文件并定位。标准库等只读路径跳转失败时提示。
+     */
+    fun goto_definition() {
+        if (_goto_in_progress.value) return
+        val tab = active_tab() ?: return
+        val file = File(tab.file_path)
+        val project = gopls_project ?: run {
+            app_toast.show(this, "gopls 未就绪", app_toast.LENGTH_SHORT)
+            return
+        }
+        if (!is_go_file(file.absolutePath)) return
+        val cursor_line = editor.cursor.leftLine
+        val cursor_column = editor.cursor.leftColumn
+
+        _goto_in_progress.value = true
+        lifecycleScope.launch {
+            try {
+                val location = withContext(Dispatchers.IO) {
+                    project.request_definition(file, editor, cursor_line, cursor_column)
+                }
+                if (location == null) {
+                    app_toast.show(this@editor_activity, "未找到定义", app_toast.LENGTH_SHORT)
+                } else {
+                    open_file_at(location.file_path, location.line, location.column)
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                app_toast.show(this@editor_activity, "跳转失败: ${e.message}", app_toast.LENGTH_SHORT)
+            } finally {
+                _goto_in_progress.value = false
             }
         }
     }
