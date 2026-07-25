@@ -1,11 +1,26 @@
 package com.jmwl.gostudio.toolchain
 
-import com.jmwl.gostudio.project.project_manager
 import com.jmwl.gostudio.core.logging.logger_manager
-
 import java.io.File
-import java.util.Properties
 
+/**
+ * Go 工具链探测结果。
+ *
+ * @param go_proot_dir guest 内 GOROOT（apt 装到 /usr/local/go）
+ * @param go_bin_proot_dir guest 内 go 可执行目录（/usr/local/go/bin）
+ * @param gopls_proot_path guest 内 gopls 路径（/usr/local/go/bin/gopls 或 $GOPATH/bin/gopls）
+ */
+data class go_toolchain_info(
+    val version: String,
+    val go_proot_dir: String,
+    val go_bin_proot_dir: String,
+    val gopls_proot_path: String
+)
+
+/**
+ * 旧 NDK 工具链信息（兼容字段，GoStudio 永远返回 null）。
+ * editor_activity 的 cmake/clangd 死代码引用此类型，阶段5清理时一并删除。
+ */
 data class ndk_toolchain_info(
     val version: String,
     val aliases: Set<String>,
@@ -16,61 +31,50 @@ data class ndk_toolchain_info(
     val cmake_toolchain_file: String?
 )
 
+/**
+ * 项目构建环境（Go 版本）。
+ *
+ * @param environment proot 内的环境变量（PATH/GOROOT/GOPATH/GOPROXY 等）
+ * @param go 已装的 Go 工具链；null 表示未装
+ * @param missing 缺失项的人类可读描述
+ * @param ndk 兼容字段（永远 null；editor_activity 的 cmake 死代码引用，阶段5清理）
+ */
 data class project_toolchain_environment(
     val environment: Map<String, String>,
-    val ndk: ndk_toolchain_info?,
-    val missing: List<String>
+    val go: go_toolchain_info?,
+    val missing: List<String>,
+    val ndk: ndk_toolchain_info? = null
 )
 
+/**
+ * Go 工具链管理器（替代 XCode 的 cmake/ndk 探测）。
+ *
+ * Go/gopls 由 apt 装到 proot rootfs 内（/usr/local/go），不需要像 NDK 那样扫描多版本目录。
+ * 探测逻辑：检查 rootfs 内 /usr/local/go/bin/go 是否存在，读 `go version` 输出取版本号。
+ */
 object toolchain_manager {
 
     private const val PROOT_GOSTUDIO_HOME = "/home/gostudio"
+    private const val PROOT_GO_ROOT = "/usr/local/go"
+    private const val PROOT_GO_BIN = "$PROOT_GO_ROOT/bin"
+    private const val PROOT_GOPLS = "$PROOT_GO_BIN/gopls"
+    private const val PROOT_GOPATH_BIN = "/home/go/bin"
 
+    /**
+     * guest 内的基础 PATH（标准 Linux 目录 + Go bin + GOPATH/bin）。
+     * apt 装的 go 在 /usr/local/go/bin，gopls 经 `go install` 落到 $GOPATH/bin。
+     */
     private val base_proot_path = listOf(
+        PROOT_GOPATH_BIN,
+        PROOT_GO_BIN,
         "/home/.local/bin",
         "/usr/local/sbin",
         "/usr/local/bin",
         "/bin",
         "/usr/bin",
         "/sbin",
-        "/usr/sbin",
-        "/usr/games",
-        "/usr/local/games"
+        "/usr/sbin"
     )
-
-    private val removed_toolchain_env_blocks = listOf(
-        "# >>> XCode toolchain environment >>>" to "# <<< XCode toolchain environment <<<",
-        "# >>> xcode toolchain environment >>>" to "# <<< xcode toolchain environment <<<"
-    )
-
-    fun cleanup_removed_toolchain_environment() {
-        listOf(".bashrc", ".profile").forEach { file_name ->
-            val file = File(toolchain_runtime_provider.paths().home_dir, file_name)
-            if (!file.exists()) return@forEach
-
-            val current_content = file.readText()
-            val cleaned_content = removed_toolchain_env_blocks.fold(current_content) { content, markers ->
-                remove_removed_toolchain_environment_block(content, markers.first, markers.second)
-            }
-            if (cleaned_content != current_content) {
-                file.writeText(cleaned_content.trimEnd() + "\n")
-            }
-        }
-    }
-
-    private fun remove_removed_toolchain_environment_block(
-        content: String,
-        start_marker: String,
-        end_marker: String
-    ): String {
-        val start = content.indexOf(start_marker)
-        val end = content.indexOf(end_marker)
-        if (start < 0 || end < start) return content
-
-        val after_end = end + end_marker.length
-        val cleaned = (content.substring(0, start).trimEnd() + "\n" + content.substring(after_end).trimStart()).trimEnd()
-        return remove_removed_toolchain_environment_block(cleaned, start_marker, end_marker)
-    }
 
     fun proot_path(extra_paths: List<String> = emptyList()): String {
         return (extra_paths + base_proot_path)
@@ -79,221 +83,96 @@ object toolchain_manager {
             .joinToString(":")
     }
 
-    fun available_cmake_versions(): List<String> {
-        return installed_cmake_dirs().map { it.name }.distinct()
+    /**
+     * 探测已安装的 Go 工具链（检查 rootfs 内 /usr/local/go/bin/go）。
+     * 注意：版本号需 proot 执行 `go version` 才能拿到，这里只判断存在性，版本延迟到运行时。
+     */
+    fun installed_go(): go_toolchain_info? {
+        val go_bin_host = File(toolchain_runtime_provider.paths().ubuntu_base_dir, "usr/local/go/bin/go")
+        if (!go_bin_host.isFile) return null
+        // gopls 可能在 /usr/local/go/bin/gopls（apt 装的 golang 联动）或 /home/go/bin/gopls（go install）
+        val gopls_host_bin = File(toolchain_runtime_provider.paths().ubuntu_base_dir, "usr/local/go/bin/gopls")
+        val gopls_proot = if (gopls_host_bin.isFile) PROOT_GOPLS else "$PROOT_GOPATH_BIN/gopls"
+        return go_toolchain_info(
+            version = "", // 版本由 go version 运行时取，这里留空
+            go_proot_dir = PROOT_GO_ROOT,
+            go_bin_proot_dir = PROOT_GO_BIN,
+            gopls_proot_path = gopls_proot
+        )
     }
 
-    private fun installed_cmake_dirs(): List<File> {
-        val cmake_root = File(toolchain_runtime_provider.paths().gostudio_dir, "cmake")
-        return cmake_root.listFiles()
-            ?.filter { candidate -> File(candidate, "bin/cmake").isFile && File(candidate, "bin/ninja").isFile }
-            ?.sortedWith { left, right -> compare_versions(right.name, left.name) }
-            ?: emptyList()
+    /** Go 是否已安装。 */
+    fun is_go_installed(): Boolean = installed_go() != null
+
+    /** gopls 是否已安装（/usr/local/go/bin/gopls 或 /home/go/bin/gopls）。 */
+    fun is_gopls_installed(): Boolean {
+        val rootfs = toolchain_runtime_provider.paths().ubuntu_base_dir
+        return File(rootfs, "usr/local/go/bin/gopls").isFile ||
+            File(toolchain_runtime_provider.paths().home_dir, "go/bin/gopls").isFile
     }
 
-    private fun installed_cmake_bin_paths(requested_version: String = ""): List<String> {
-        val cmakes = installed_cmake_dirs()
-        val selected = if (requested_version.isBlank()) cmakes.firstOrNull() else select_cmake(cmakes, requested_version)
-        return selected?.let { listOf(to_proot_xcode_path(File(it, "bin"))) }.orEmpty()
-    }
+    /** git 是否已安装（rootfs 内 /usr/bin/git）。 */
+    fun is_git_installed(): Boolean =
+        File(toolchain_runtime_provider.paths().ubuntu_base_dir, "usr/bin/git").isFile
 
-    fun installed_ndks(): List<ndk_toolchain_info> {
-        val ndk_root = File(toolchain_runtime_provider.paths().gostudio_dir, "ndk")
-        return ndk_root.listFiles()
-            ?.filter { it.isDirectory }
-            ?.mapNotNull { candidate -> create_ndk_info(candidate) }
-            ?.sortedWith { left, right -> compare_versions(right.version, left.version) }
-            ?: emptyList()
-    }
-
-    fun available_ndk_versions(): List<String> {
-        return installed_ndks().map { it.version }.distinct()
-    }
-
-    fun installed_ndk_version_keys(): Set<String> {
-        return installed_ndks().flatMap { info -> info.aliases + info.version + info.host_dir.name }.toSet()
-    }
-
-    fun is_ndk_installed(): Boolean {
-        return installed_ndks().isNotEmpty()
-    }
-
+    /**
+     * 组装项目构建环境。
+     *
+     * @param project_path 项目 host 路径（用于日志，Go 不像 cmake 需要工具链文件）
+     */
     fun project_environment(project_path: String): project_toolchain_environment {
-        val project_info = project_manager.get_project_info(project_path)
-        val ndks = installed_ndks()
-        val requested_ndk = project_info?.ndk_version.orEmpty()
-        val requested_cmake = project_info?.cmake_version.orEmpty()
-        val ndk = select_ndk(ndks, requested_ndk)
-        val cmake = select_cmake(installed_cmake_dirs(), requested_cmake)
+        val go = installed_go()
         val missing = mutableListOf<String>()
-
-        if (requested_ndk.isBlank()) {
-            missing += "项目未配置 NDK"
-        } else if (ndk == null) {
-            missing += "NDK $requested_ndk 未安装或结构无效"
-        }
-        if (requested_cmake.isBlank()) {
-            missing += "项目未配置 CMake"
-        } else if (cmake == null) {
-            missing += "CMake $requested_cmake 未安装或结构无效"
-        }
-        val path_entries = mutableListOf<String>()
-        cmake?.let { path_entries += to_proot_xcode_path(File(it, "bin")) }
-        ndk?.let { path_entries += it.llvm_bin_proot_dir }
+        if (go == null) missing += "Go 未安装，请在工具页安装 golang"
 
         val environment = linkedMapOf(
             "GOSTUDIO_HOME" to PROOT_GOSTUDIO_HOME,
-            "PATH" to proot_path(path_entries)
+            "GOROOT" to PROOT_GO_ROOT,
+            "GOPATH" to "/home/go",
+            "GOBIN" to PROOT_GOPATH_BIN,
+            "GOPROXY" to "https://goproxy.cn,direct",
+            "GOSUMDB" to "sum.golang.google.cn",
+            "CGO_ENABLED" to "0",
+            "PATH" to proot_path()
         )
-
-        ndk?.let { info ->
-            environment["ANDROID_NDK_HOME"] = info.proot_dir
-            environment["ANDROID_NDK_ROOT"] = info.proot_dir
-        }
         return project_toolchain_environment(
             environment = environment,
-            ndk = ndk,
+            go = go,
             missing = missing
         )
     }
 
-    fun is_cmake_installed(): Boolean {
-        return installed_cmake_bin_paths().isNotEmpty()
-    }
+    /** 兼容旧调用（main_activity / main_tools_screen 引用）；GoStudio 不分版本，返回空列表。 */
+    fun available_cmake_versions(): List<String> = emptyList()
+    fun available_ndk_versions(): List<String> = emptyList()
+    fun installed_ndk_version_keys(): Set<String> = emptySet()
+    fun is_cmake_installed(): Boolean = false
+    fun is_ndk_installed(): Boolean = false
 
-    private fun shell_quote(value: String): String {
-        if (value.isEmpty()) return "''"
-        return "'" + value.replace("'", "'\\''") + "'"
-    }
-
-    private fun create_ndk_info(candidate: File): ndk_toolchain_info? {
-        val ndk_dir = find_ndk_dir(candidate) ?: return null
-        val llvm_bin = find_ndk_llvm_bin(ndk_dir) ?: return null
-        val version = read_ndk_revision(ndk_dir).ifBlank {
-            extract_version(candidate.name) ?: candidate.name
-        }
-        val aliases = build_version_aliases(version, candidate.name, ndk_dir.name)
-        val cmake_toolchain = File(ndk_dir, "build/cmake/android.toolchain.cmake")
-            .takeIf { it.isFile }
-            ?.let { to_proot_xcode_path(it) }
-
-        return ndk_toolchain_info(
-            version = version,
-            aliases = aliases,
-            host_dir = ndk_dir,
-            proot_dir = to_proot_xcode_path(ndk_dir),
-            llvm_bin_host_dir = llvm_bin,
-            llvm_bin_proot_dir = to_proot_xcode_path(llvm_bin),
-            cmake_toolchain_file = cmake_toolchain
+    /** 清理旧 .bashrc/.profile 里的 XCode 工具链环境块（迁移期兼容）。 */
+    fun cleanup_removed_toolchain_environment() {
+        val markers_list = listOf(
+            "# >>> XCode toolchain environment >>>" to "# <<< XCode toolchain environment <<<",
+            "# >>> xcode toolchain environment >>>" to "# <<< xcode toolchain environment <<<",
+            "# >>> GoStudio toolchain environment >>>" to "# <<< GoStudio toolchain environment <<<"
         )
-    }
-
-    private fun find_ndk_dir(candidate: File): File? {
-        if (is_valid_ndk_dir(candidate)) return candidate
-        return candidate.listFiles()
-            ?.filter { it.isDirectory }
-            ?.firstOrNull { is_valid_ndk_dir(it) }
-    }
-
-    private fun is_valid_ndk_dir(dir: File): Boolean {
-        return find_ndk_llvm_bin(dir) != null && File(dir, "build/cmake/android.toolchain.cmake").isFile
-    }
-
-    private fun find_ndk_llvm_bin(ndk_dir: File): File? {
-        val prebuilt_dir = File(ndk_dir, "toolchains/llvm/prebuilt")
-        return prebuilt_dir.listFiles()
-            ?.filter { it.isDirectory }
-            ?.map { File(it, "bin") }
-            ?.firstOrNull { bin ->
-                bin.isDirectory && (File(bin, "clang").isFile || File(bin, "clang++").isFile)
+        listOf(".bashrc", ".profile").forEach { file_name ->
+            val file = File(toolchain_runtime_provider.paths().home_dir, file_name)
+            if (!file.exists()) return@forEach
+            val current = file.readText()
+            val cleaned = markers_list.fold(current) { content, (start, end) ->
+                remove_block(content, start, end)
             }
-    }
-
-    private fun read_ndk_revision(ndk_dir: File): String {
-        val source_properties = File(ndk_dir, "source.properties")
-        if (!source_properties.isFile) return ""
-
-        return runCatching {
-            val properties = Properties()
-            source_properties.inputStream().use { stream -> properties.load(stream) }
-            properties.getProperty("Pkg.Revision").orEmpty().trim()
-        }.getOrDefault("")
-    }
-
-    private fun select_cmake(cmakes: List<File>, requested_version: String): File? {
-        if (requested_version.isBlank()) return null
-        val requested_key = normalize_version_key(requested_version)
-        return cmakes.firstOrNull { cmake -> normalize_version_key(cmake.name) == requested_key }
-    }
-
-    private fun select_ndk(ndks: List<ndk_toolchain_info>, requested_version: String): ndk_toolchain_info? {
-        if (requested_version.isBlank()) return null
-        val requested_key = normalize_version_key(requested_version)
-        return ndks.firstOrNull { info ->
-            info.aliases.any { alias -> normalize_version_key(alias) == requested_key }
+            if (cleaned != current) file.writeText(cleaned.trimEnd() + "\n")
         }
     }
 
-    private fun build_version_aliases(vararg values: String): Set<String> {
-        val aliases = values
-            .map { it.trim() }
-            .filter { it.isNotBlank() }
-            .toMutableSet()
-
-        values.forEach { value ->
-            val major = Regex("\\d+").find(value)?.value
-            if (!major.isNullOrBlank()) {
-                aliases += major
-                aliases += "r$major"
-            }
-            extract_version(value)?.let { aliases += it }
-        }
-
-        val revision_aliases = mapOf(
-            "29.0.14206865" to "r29"
-        )
-        aliases.toList().forEach { alias ->
-            revision_aliases[alias]?.let { ndk_release ->
-                aliases += ndk_release
-                aliases += "android-ndk-$ndk_release"
-            }
-        }
-
-        return aliases
-    }
-
-    private fun extract_version(value: String): String? {
-        return Regex("\\d+(?:\\.\\d+)+(?:[a-zA-Z]?)").find(value)?.value
-            ?: Regex("r\\d+[a-zA-Z]?").find(value)?.value
-    }
-
-    private fun normalize_version_key(value: String): String {
-        return value.trim()
-            .lowercase()
-            .removePrefix("android-ndk-")
-            .removePrefix("cmake-")
-            .removePrefix("cmake ")
-            .removePrefix("cmake_")
-    }
-
-    private fun to_proot_xcode_path(file: File): String {
-        val base_path = toolchain_runtime_provider.paths().gostudio_dir.absolutePath.trimEnd('/')
-        val target_path = file.absolutePath.trimEnd('/')
-        val relative_path = target_path.removePrefix(base_path).trimStart('/')
-        return if (relative_path.isBlank()) PROOT_GOSTUDIO_HOME else "$PROOT_GOSTUDIO_HOME/$relative_path"
-    }
-
-    private fun compare_versions(left: String, right: String): Int {
-        val left_numbers = Regex("\\d+").findAll(left).mapNotNull { it.value.toIntOrNull() }.toList()
-        val right_numbers = Regex("\\d+").findAll(right).mapNotNull { it.value.toIntOrNull() }.toList()
-        val max_size = maxOf(left_numbers.size, right_numbers.size)
-
-        for (index in 0 until max_size) {
-            val left_value = left_numbers.getOrElse(index) { 0 }
-            val right_value = right_numbers.getOrElse(index) { 0 }
-            if (left_value != right_value) return left_value.compareTo(right_value)
-        }
-
-        return left.compareTo(right)
+    private fun remove_block(content: String, start_marker: String, end_marker: String): String {
+        val start = content.indexOf(start_marker)
+        val end = content.indexOf(end_marker)
+        if (start < 0 || end < start) return content
+        val after_end = end + end_marker.length
+        val cleaned = (content.substring(0, start).trimEnd() + "\n" + content.substring(after_end).trimStart()).trimEnd()
+        return remove_block(cleaned, start_marker, end_marker)
     }
 }
