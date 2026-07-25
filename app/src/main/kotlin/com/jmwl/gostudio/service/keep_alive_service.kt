@@ -57,7 +57,7 @@ class keep_alive_service : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "XCode",
+                "GoStudio",
                 NotificationManager.IMPORTANCE_LOW
             )
             getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
@@ -75,7 +75,7 @@ class keep_alive_service : Service() {
         )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("XCode")
+            .setContentTitle("GoStudio")
             .setContentText("点按通知以打开编辑器")
             .setSmallIcon(android.R.drawable.sym_def_app_icon)
             .setPriority(NotificationCompat.PRIORITY_LOW)
@@ -85,7 +85,7 @@ class keep_alive_service : Service() {
 
     private fun acquire_wake_lock() {
         val power_manager = getSystemService(POWER_SERVICE) as PowerManager
-        wake_lock = power_manager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "XCode")
+        wake_lock = power_manager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "GoStudio")
         wake_lock?.acquire(10 * 60 * 1000L)
     }
 }

@@ -66,7 +66,7 @@ class crash_activity : ComponentActivity() {
 
     private fun copy_to_clipboard(log: String, stack: String) {
         val text = buildString {
-            append("XCode Crash Report\n")
+            append("GoStudio Crash Report\n")
             append("Time: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())}\n")
             append("Device: ${Build.MANUFACTURER} ${Build.MODEL}\n")
             append("Android: ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})\n")
@@ -92,7 +92,7 @@ class crash_activity : ComponentActivity() {
             val crash_file = File(crash_dir, "crash_$timestamp.txt")
             
             FileWriter(crash_file).use { writer ->
-                writer.write("XCode Crash Report\n")
+                writer.write("GoStudio Crash Report\n")
                 writer.write("Time: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())}\n")
                 writer.write("Device: ${Build.MANUFACTURER} ${Build.MODEL}\n")
                 writer.write("Android: ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})\n")
@@ -158,7 +158,7 @@ fun crash_screen(
         Spacer(modifier = Modifier.height(6.dp))
         
         Text(
-            text = "很抱歉，XCode 遇到了一个意外错误",
+            text = "很抱歉，GoStudio 遇到了一个意外错误",
             fontSize = 13.sp,
             color = Color.Gray,
             textAlign = TextAlign.Center

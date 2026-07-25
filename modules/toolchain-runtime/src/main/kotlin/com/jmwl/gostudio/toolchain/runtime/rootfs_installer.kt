@@ -102,7 +102,7 @@ class rootfs_installer(
             connection.readTimeout = read_timeout_ms
             connection.instanceFollowRedirects = true
             connection.requestMethod = "GET"
-            connection.setRequestProperty("User-Agent", "XCode/1.0")
+            connection.setRequestProperty("User-Agent", "GoStudio/1.0")
             connection.connect()
             if (connection.responseCode !in 200..299) return false
 

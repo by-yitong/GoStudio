@@ -116,7 +116,7 @@ fun main_screen(
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 Text(
-                    text = "XCode",
+                    text = "GoStudio",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Light,
                     color = colors.subtitle
@@ -166,7 +166,7 @@ fun main_screen(
                 action_card_item(
                     icon = Icons.Default.Extension,
                     title = "插件管理",
-                    subtitle = "管理 XCode 插件",
+                    subtitle = "管理 GoStudio 插件",
                     colors = colors,
                     on_click = on_plugins,
                     is_top = false,
