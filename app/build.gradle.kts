@@ -94,6 +94,7 @@ dependencies {
     implementation(project(":modules:project-file-tree"))
     implementation(project(":modules:toolchain-runtime"))
     implementation(project(":modules:clangd-lsp"))
+    implementation(project(":modules:gopls-lsp"))
     implementation(project(":modules:sora-editor"))
     implementation(project(":modules:sora-language-textmate"))
     implementation(project(":modules:sora-oniguruma-native"))

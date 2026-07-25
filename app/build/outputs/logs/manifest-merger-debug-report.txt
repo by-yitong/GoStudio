@@ -109,6 +109,7 @@ MERGED from [androidx.activity:activity-compose:1.11.0] /home/admins/.gradle/cac
 MERGED from [androidx.customview:customview-poolingcontainer:1.0.0] /home/admins/.gradle/caches/9.0.0/transforms/7dcd9c607407bb2ff2d0ff2d4ae89806/transformed/customview-poolingcontainer-1.0.0/AndroidManifest.xml:17:1-23:12
 MERGED from [androidx.core:core-ktx:1.17.0] /home/admins/.gradle/caches/9.0.0/transforms/32cca76655364e38f4002b1847e47272/transformed/core-ktx-1.17.0/AndroidManifest.xml:2:1-7:12
 MERGED from [:modules:clangd-lsp] /run/media/admins/DATA/myitem/project/GoStudio2/modules/clangd-lsp/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:2:1-7:12
+MERGED from [:modules:gopls-lsp] /run/media/admins/DATA/myitem/project/GoStudio2/modules/gopls-lsp/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:2:1-7:12
 MERGED from [:modules:toolchain-runtime] /run/media/admins/DATA/myitem/project/GoStudio2/modules/toolchain-runtime/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:2:1-7:12
 MERGED from [:modules:sora-editor] /run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-editor/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:27:1-32:12
 MERGED from [:modules:sora-language-textmate] /run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-language-textmate/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:27:1-32:12
@@ -590,6 +591,8 @@ MERGED from [androidx.core:core-ktx:1.17.0] /home/admins/.gradle/caches/9.0.0/tr
 MERGED from [androidx.core:core-ktx:1.17.0] /home/admins/.gradle/caches/9.0.0/transforms/32cca76655364e38f4002b1847e47272/transformed/core-ktx-1.17.0/AndroidManifest.xml:5:5-44
 MERGED from [:modules:clangd-lsp] /run/media/admins/DATA/myitem/project/GoStudio2/modules/clangd-lsp/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:5:5-44
 MERGED from [:modules:clangd-lsp] /run/media/admins/DATA/myitem/project/GoStudio2/modules/clangd-lsp/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:5:5-44
+MERGED from [:modules:gopls-lsp] /run/media/admins/DATA/myitem/project/GoStudio2/modules/gopls-lsp/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:5:5-44
+MERGED from [:modules:gopls-lsp] /run/media/admins/DATA/myitem/project/GoStudio2/modules/gopls-lsp/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:5:5-44
 MERGED from [:modules:toolchain-runtime] /run/media/admins/DATA/myitem/project/GoStudio2/modules/toolchain-runtime/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:5:5-44
 MERGED from [:modules:toolchain-runtime] /run/media/admins/DATA/myitem/project/GoStudio2/modules/toolchain-runtime/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:5:5-44
 MERGED from [:modules:sora-editor] /run/media/admins/DATA/myitem/project/GoStudio2/modules/sora-editor/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:30:5-44

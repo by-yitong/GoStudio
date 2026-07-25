@@ -26,6 +26,7 @@ include(
     ":modules:sora-language-textmate",
     ":modules:sora-oniguruma-native",
     ":modules:clangd-lsp",
+    ":modules:gopls-lsp",
     ":modules:toolchain-runtime",
     ":modules:terminal-view",
     ":modules:terminal-emulator"
