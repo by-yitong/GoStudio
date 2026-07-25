@@ -1,25 +1,16 @@
 package com.jmwl.gostudio.editor.core
 
-val c_cpp_completion_keywords = arrayOf(
-    "alignas", "alignof", "and", "and_eq", "asm", "auto",
-    "bitand", "bitor", "bool", "break", "case", "catch", "char",
-    "char8_t", "char16_t", "char32_t", "class", "compl", "concept",
-    "const", "consteval", "constexpr", "constinit", "const_cast", "continue",
-    "co_await", "co_return", "co_yield", "decltype", "default", "delete",
-    "do", "double", "dynamic_cast", "else", "enum", "explicit", "export",
-    "extern", "false", "final", "float", "for", "friend", "goto", "if",
-    "import", "inline", "int", "long", "module", "mutable", "namespace",
-    "new", "noexcept", "not", "not_eq", "nullptr", "operator", "or",
-    "or_eq", "override", "private", "protected", "public", "register",
-    "reinterpret_cast", "requires", "restrict", "return", "short", "signed",
-    "sizeof", "static", "static_assert", "static_cast", "struct", "switch",
-    "template", "this", "thread_local", "throw", "true", "try", "typedef",
-    "typename", "union", "unsigned", "using", "virtual", "void", "volatile",
-    "wchar_t", "while", "xor", "xor_eq",
-    "int8_t", "int16_t", "int32_t", "int64_t", "uint8_t", "uint16_t",
-    "uint32_t", "uint64_t", "size_t", "ssize_t", "intptr_t", "uintptr_t",
-    "printf", "scanf", "std", "string", "vector", "map", "set", "unordered_map",
-    "unordered_set", "array", "list", "deque", "queue", "stack", "pair",
-    "tuple", "optional", "variant", "shared_ptr", "unique_ptr", "make_shared",
-    "make_unique", "move", "forward", "cout", "cin", "cerr", "endl"
+/** Go 语言补全关键字（用于 sora 编辑器基础词法补全；语义补全由 gopls 提供）。 */
+val go_completion_keywords = arrayOf(
+    "break", "case", "chan", "const", "continue", "default", "defer", "else",
+    "fallthrough", "for", "func", "go", "goto", "if", "import", "interface",
+    "map", "package", "range", "return", "select", "struct", "switch", "type",
+    "var",
+    "true", "false", "iota", "nil",
+    "append", "cap", "close", "complex", "copy", "delete", "imag", "len",
+    "make", "new", "panic", "print", "println", "real", "recover",
+    "bool", "byte", "complex64", "complex128", "error", "float32", "float64",
+    "int", "int8", "int16", "int32", "int64", "rune", "string",
+    "uint", "uint8", "uint16", "uint32", "uint64", "uintptr",
+    "any", "comparable"
 )

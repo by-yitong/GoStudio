@@ -12,13 +12,12 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.lifecycleScope
 import com.jmwl.gostudio.project.project_manager
 import com.jmwl.gostudio.project.recent_project_info
-import com.jmwl.gostudio.toolchain.install_cmake_from_archive
-import com.jmwl.gostudio.toolchain.install_cmake_from_url
-import com.jmwl.gostudio.toolchain.install_ndk_from_archive
-import com.jmwl.gostudio.toolchain.install_ndk_from_url
+import com.jmwl.gostudio.toolchain.install_garble
+import com.jmwl.gostudio.toolchain.install_git
+import com.jmwl.gostudio.toolchain.install_go
+import com.jmwl.gostudio.toolchain.install_gopls
+import com.jmwl.gostudio.toolchain.install_go_toolchain
 import com.jmwl.gostudio.toolchain.toolchain_manager
-import com.jmwl.gostudio.toolchain.uninstall_cmake_tool
-import com.jmwl.gostudio.toolchain.uninstall_ndk_tool
 import com.jmwl.gostudio.ui.screens.main.main_navigation
 import com.jmwl.gostudio.ui.screens.main.main_tools_install_status
 import com.jmwl.gostudio.ui.screens.main.recent_project
@@ -36,8 +35,6 @@ import java.io.File
 class main_activity : ComponentActivity() {
     private var recent_projects by mutableStateOf<List<recent_project>>(emptyList())
     private var toolchain_status by mutableStateOf(main_tools_install_status())
-    private var ndk_versions by mutableStateOf(emptyList<String>())
-    private var cmake_versions by mutableStateOf(emptyList<String>())
     private var current_theme by mutableStateOf(app_theme_type.SYSTEM)
     private var scale_value by mutableStateOf(1f)
     private var toolchain_tasks by mutableStateOf<List<toolchain_trigger>>(emptyList())
@@ -51,8 +48,6 @@ class main_activity : ComponentActivity() {
             app_theme_provider {
                 main_navigation(
                     recent_projects = recent_projects,
-                    ndk_versions = ndk_versions,
-                    cmake_versions = cmake_versions,
                     toolchain_status = toolchain_status,
                     current_theme = current_theme,
                     scale_value = scale_value,
@@ -100,20 +95,15 @@ class main_activity : ComponentActivity() {
     }
 
     private suspend fun refresh_toolchain_status() {
-        val snapshot = withContext(Dispatchers.IO) {
-            val installed_ndks = toolchain_manager.available_ndk_versions()
-            val installed_cmakes = toolchain_manager.available_cmake_versions()
-            val status = main_tools_install_status(
-                cmake_installed = toolchain_manager.is_cmake_installed(),
-                ndk_installed = toolchain_manager.is_ndk_installed(),
-                installed_cmake_versions = installed_cmakes.toSet(),
-                installed_ndk_versions = toolchain_manager.installed_ndk_version_keys()
+        toolchain_status = withContext(Dispatchers.IO) {
+            val go = toolchain_manager.installed_go()
+            main_tools_install_status(
+                go_installed = go != null,
+                gopls_installed = toolchain_manager.is_gopls_installed(),
+                git_installed = toolchain_manager.is_git_installed(),
+                installed_go_version = go?.version.orEmpty()
             )
-            Triple(installed_ndks, installed_cmakes, status)
         }
-        ndk_versions = snapshot.first
-        cmake_versions = snapshot.second
-        toolchain_status = snapshot.third
     }
 
     private fun open_terminal() {
@@ -161,22 +151,12 @@ class main_activity : ComponentActivity() {
 
     private fun create_project(
         project_name: String,
-        project_path: String,
-        template_id: String,
-        ndk_version: String,
-        cmake_version: String,
-        android_platform: String,
-        cpp_standard: String
+        template_id: String
     ) {
         lifecycleScope.launch {
             val result = project_manager.create_project(
                 name = project_name,
-                path = project_path,
-                template_id = template_id,
-                ndk_version = ndk_version,
-                cmake_version = cmake_version,
-                android_platform = android_platform,
-                cpp_standard = cpp_standard
+                template_id = template_id
             )
             result.onSuccess { project_dir ->
                 project_manager.add_recent_project(project_dir.absolutePath)
@@ -217,12 +197,10 @@ class main_activity : ComponentActivity() {
         on_progress: (Int) -> Unit
     ): Boolean {
         return when (trigger.action) {
-            toolchain_action.INSTALL_CMAKE -> install_cmake_from_url(trigger.version, trigger.source, trigger.sha256, on_log, on_progress)
-            toolchain_action.INSTALL_CMAKE_ARCHIVE -> install_cmake_from_archive(trigger.source, on_log, on_progress)
-            toolchain_action.UNINSTALL_CMAKE -> uninstall_cmake_tool(trigger.version, on_log, on_progress)
-            toolchain_action.INSTALL_NDK_URL -> install_ndk_from_url(trigger.version, trigger.source, trigger.sha256, on_log, on_progress)
-            toolchain_action.INSTALL_NDK_ARCHIVE -> install_ndk_from_archive(trigger.source, on_log, on_progress)
-            toolchain_action.UNINSTALL_NDK -> uninstall_ndk_tool(trigger.version, on_log, on_progress)
+            toolchain_action.INSTALL_GO -> install_go_toolchain(on_log, on_progress)
+            toolchain_action.INSTALL_GOPLS -> install_gopls(on_log, on_progress)
+            toolchain_action.INSTALL_GIT -> install_git(on_log, on_progress)
+            toolchain_action.INSTALL_GARBLE -> install_garble(on_log, on_progress)
         }
     }
 
@@ -236,8 +214,7 @@ class main_activity : ComponentActivity() {
         return recent_project(
             name = name,
             path = path,
-            cmake_version = cmake_version,
-            ndk_version = ndk_version,
+            go_version = go_version,
             last_opened = last_opened
         )
     }

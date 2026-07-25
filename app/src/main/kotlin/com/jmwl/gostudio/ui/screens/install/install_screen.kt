@@ -106,7 +106,7 @@ fun install_screen(
                         Icon(Icons.Default.Circle, null, tint = Color(0xFF27C93F), modifier = Modifier.size(12.dp))
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
-                            text = "usr@xcode:~",
+                            text = "usr@gostudio:~",
                             fontSize = 11.sp,
                             color = Color.White.copy(alpha = 0.7f),
                             fontFamily = FontFamily.Monospace

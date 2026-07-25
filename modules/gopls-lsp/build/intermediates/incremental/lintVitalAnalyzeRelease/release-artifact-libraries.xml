@@ -1,9 +1,9 @@
 <libraries>
   <library
       name=":@@:modules:sora-editor-lsp::release"
-      jars="/home/admins/.gradle/caches/9.0.0/transforms/46b2a27f43e43b3dcfbcb9a9b818e5d5/transformed/out/jars/classes.jar:/home/admins/.gradle/caches/9.0.0/transforms/46b2a27f43e43b3dcfbcb9a9b818e5d5/transformed/out/jars/libs/R.jar"
+      jars="/home/admins/.gradle/caches/9.0.0/transforms/65bbd7a3accc7f6e253721789705a581/transformed/out/jars/classes.jar:/home/admins/.gradle/caches/9.0.0/transforms/65bbd7a3accc7f6e253721789705a581/transformed/out/jars/libs/R.jar"
       resolved="GoStudio.modules:sora-editor-lsp:unspecified"
-      folder="/home/admins/.gradle/caches/9.0.0/transforms/46b2a27f43e43b3dcfbcb9a9b818e5d5/transformed/out"
+      folder="/home/admins/.gradle/caches/9.0.0/transforms/65bbd7a3accc7f6e253721789705a581/transformed/out"
       manifest="AndroidManifest.xml"
       resFolder="res"
       assetsFolder="assets"
@@ -14,9 +14,9 @@
       proguardRules="proguard.txt"/>
   <library
       name=":@@:modules:toolchain-runtime::release"
-      jars="/home/admins/.gradle/caches/9.0.0/transforms/aab1aef9c21cccbdaf41dff02dbf446c/transformed/out/jars/classes.jar:/home/admins/.gradle/caches/9.0.0/transforms/aab1aef9c21cccbdaf41dff02dbf446c/transformed/out/jars/libs/R.jar"
+      jars="/home/admins/.gradle/caches/9.0.0/transforms/b39a2ac9e0883445b9918aa6963fc8e4/transformed/out/jars/classes.jar:/home/admins/.gradle/caches/9.0.0/transforms/b39a2ac9e0883445b9918aa6963fc8e4/transformed/out/jars/libs/R.jar"
       resolved="GoStudio.modules:toolchain-runtime:unspecified"
-      folder="/home/admins/.gradle/caches/9.0.0/transforms/aab1aef9c21cccbdaf41dff02dbf446c/transformed/out"
+      folder="/home/admins/.gradle/caches/9.0.0/transforms/b39a2ac9e0883445b9918aa6963fc8e4/transformed/out"
       manifest="AndroidManifest.xml"
       resFolder="res"
       assetsFolder="assets"
@@ -35,9 +35,9 @@
       resolved="org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2"/>
   <library
       name=":@@:modules:sora-editor::release"
-      jars="/home/admins/.gradle/caches/9.0.0/transforms/f191a9e1836876bb46f450131ba342c7/transformed/out/jars/classes.jar:/home/admins/.gradle/caches/9.0.0/transforms/f191a9e1836876bb46f450131ba342c7/transformed/out/jars/libs/R.jar"
+      jars="/home/admins/.gradle/caches/9.0.0/transforms/2d251cdf076284af9edd4785bf5a6eaa/transformed/out/jars/classes.jar:/home/admins/.gradle/caches/9.0.0/transforms/2d251cdf076284af9edd4785bf5a6eaa/transformed/out/jars/libs/R.jar"
       resolved="GoStudio.modules:sora-editor:unspecified"
-      folder="/home/admins/.gradle/caches/9.0.0/transforms/f191a9e1836876bb46f450131ba342c7/transformed/out"
+      folder="/home/admins/.gradle/caches/9.0.0/transforms/2d251cdf076284af9edd4785bf5a6eaa/transformed/out"
       manifest="AndroidManifest.xml"
       resFolder="res"
       assetsFolder="assets"

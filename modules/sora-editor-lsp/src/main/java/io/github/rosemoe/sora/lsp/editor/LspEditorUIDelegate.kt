@@ -159,7 +159,7 @@ internal class LspEditorUIDelegate(private val editor: LspEditor) {
 
         val diagnosticWindow = codeEditor.getComponent<EditorDiagnosticTooltipWindow>()
         if (diagnosticWindow.layout is DefaultDiagnosticTooltipLayout) {
-            diagnosticWindow.layout = LspDiagnosticTooltipLayout()
+            diagnosticWindow.layout = LspDiagnosticTooltipLayout(editor)
         }
 
         subscriptionReceipts = mutableListOf(

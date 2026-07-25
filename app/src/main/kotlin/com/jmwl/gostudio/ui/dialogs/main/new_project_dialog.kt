@@ -45,20 +45,12 @@ data class template_item(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun new_project_dialog(
-    ndk_versions: List<String>,
-    cmake_versions: List<String>,
     on_dismiss: () -> Unit,
     on_create: (
         project_name: String,
-        project_path: String,
-        template_id: String,
-        ndk_version: String,
-        cmake_version: String,
-        android_platform: String,
-        cpp_standard: String
+        template_id: String
     ) -> Unit
 ) {
-    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val colors = app_theme_provider.colors
     val sheet_state = rememberModalBottomSheetState(
@@ -73,21 +65,10 @@ fun new_project_dialog(
         template_item("cli", "CLI 工具", Icons.Default.Terminal, "os.Args 命令行工具"),
         template_item("webapi", "Web API", Icons.Default.Api, "标准库 JSON API 服务")
     )
-    
+
     var project_name by remember { mutableStateOf("") }
-    var project_path by remember { mutableStateOf("") }
     var name_error by remember { mutableStateOf(false) }
-    var expanded_ndk by remember { mutableStateOf(false) }
-    var expanded_cmake by remember { mutableStateOf(false) }
-    var expanded_platform by remember { mutableStateOf(false) }
-    var expanded_cpp_standard by remember { mutableStateOf(false) }
-    var selected_ndk by remember(ndk_versions) { mutableStateOf(ndk_versions.firstOrNull().orEmpty()) }
-    var selected_cmake by remember(cmake_versions) { mutableStateOf(cmake_versions.firstOrNull().orEmpty()) }
-    var android_platform by remember { mutableStateOf("android-24") }
-    var cpp_standard by remember { mutableStateOf("20") }
-    val android_platform_options = listOf("android-21", "android-23", "android-24", "android-26", "android-28", "android-30", "android-33", "android-35")
-    val cpp_standard_options = listOf("11", "14", "17", "20", "23", "26")
-    
+
     fun check_project_name(name: String): Boolean {
         project_name = name
         if (name.isBlank()) {
@@ -99,34 +80,10 @@ fun new_project_dialog(
         name_error = name.isNotBlank() && !is_valid
         return is_valid
     }
-    
+
     val is_name_valid = project_name.isNotBlank() && !name_error
-    val is_path_valid = project_path.isNotBlank()
-    val is_platform_valid = android_platform in android_platform_options
-    val is_cpp_standard_valid = cpp_standard in cpp_standard_options
-    val has_toolchains = selected_ndk.isNotBlank() && selected_cmake.isNotBlank()
-    val is_create_enabled = is_name_valid && is_path_valid && has_toolchains && is_platform_valid && is_cpp_standard_valid
-    
-    val folder_launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val uri = result.data?.data
-            uri?.let {
-                try {
-                    context.contentResolver.takePersistableUriPermission(
-                        it,
-                        Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                    )
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-                val path = uri_utils.get_path_from_uri(context, it)
-                project_path = path
-            }
-        }
-    }
-    
+    val is_create_enabled = is_name_valid
+
     val text_field_colors = OutlinedTextFieldDefaults.colors(
         focusedBorderColor = colors.dialog_input_border,
         unfocusedBorderColor = colors.dialog_input_hint.copy(alpha = 0.5f),
@@ -342,259 +299,23 @@ fun new_project_dialog(
                                 shape = RoundedCornerShape(14.dp),
                                 colors = text_field_colors
                             )
-                            
-                            Spacer(modifier = Modifier.height(14.dp))
-                            
-                            OutlinedTextField(
-                                value = project_path,
-                                onValueChange = { project_path = it },
-                                readOnly = true,
-                                leadingIcon = {
-                                    Icon(
-                                        Icons.Default.Folder,
-                                        contentDescription = null,
-                                        tint = if (project_path.isNotBlank()) colors.dialog_input_icon else colors.dialog_input_icon_hint,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                },
-                                label = { Text("项目位置", color = colors.dialog_input_hint) },
-                                placeholder = { Text("点击文件夹图标以选择", color = colors.dialog_input_hint) },
-                                trailingIcon = {
-                                    IconButton(onClick = {
-                                        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
-                                        folder_launcher.launch(intent)
-                                    }) {
-                                        Icon(
-                                            Icons.Default.FolderOpen,
-                                            contentDescription = "选择文件夹",
-                                            tint = colors.dialog_input_icon_hint,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                    }
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                                shape = RoundedCornerShape(14.dp),
-                                colors = text_field_colors
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            Text(
+                                text = "项目保存在应用内部存储（proot 可直接访问，构建/补全更稳定）",
+                                fontSize = 11.sp,
+                                color = colors.dialog_hint,
+                                modifier = Modifier.padding(start = 4.dp)
                             )
-                            
-                            Spacer(modifier = Modifier.height(14.dp))
-                            
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                ExposedDropdownMenuBox(
-                                    expanded = expanded_ndk,
-                                    onExpandedChange = { expanded_ndk = it },
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                OutlinedTextField(
-                                    value = selected_ndk,
-                                    onValueChange = {},
-                                    readOnly = true,
-                                    label = { Text("NDK 版本", color = colors.dialog_input_hint) },
-                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded_ndk) },
-                                    modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
-                                    shape = RoundedCornerShape(14.dp),
-                                    colors = text_field_colors
-                                )
-                                ExposedDropdownMenu(
-                                    expanded = expanded_ndk,
-                                    onDismissRequest = { expanded_ndk = false },
-                                    containerColor = colors.dialog_bg
-                                ) {
-                                    ndk_versions.forEach { option ->
-                                        DropdownMenuItem(
-                                            text = {
-                                                Text(
-                                                    option,
-                                                    color = if (option == selected_ndk) colors.dialog_icon else colors.dialog_text
-                                                )
-                                            },
-                                            onClick = {
-                                                selected_ndk = option
-                                                expanded_ndk = false
-                                            },
-                                            leadingIcon = {
-                                                if (option == selected_ndk) {
-                                                    Icon(Icons.Default.Check, null, tint = colors.dialog_icon, modifier = Modifier.size(18.dp))
-                                                }
-                                            }
-                                        )
-                                    }
-                                }
-                            }
 
-                                ExposedDropdownMenuBox(
-                                    expanded = expanded_cmake,
-                                    onExpandedChange = { expanded_cmake = it },
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                OutlinedTextField(
-                                    value = selected_cmake,
-                                    onValueChange = {},
-                                    readOnly = true,
-                                    label = { Text("CMake 版本", color = colors.dialog_input_hint) },
-                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded_cmake) },
-                                    modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
-                                    shape = RoundedCornerShape(14.dp),
-                                    colors = text_field_colors
-                                )
-                                ExposedDropdownMenu(
-                                    expanded = expanded_cmake,
-                                    onDismissRequest = { expanded_cmake = false },
-                                    containerColor = colors.dialog_bg
-                                ) {
-                                    cmake_versions.forEach { option ->
-                                        DropdownMenuItem(
-                                            text = {
-                                                Text(
-                                                    option,
-                                                    color = if (option == selected_cmake) colors.dialog_icon else colors.dialog_text
-                                                )
-                                            },
-                                            onClick = {
-                                                selected_cmake = option
-                                                expanded_cmake = false
-                                            },
-                                            leadingIcon = {
-                                                if (option == selected_cmake) {
-                                                    Icon(Icons.Default.Check, null, tint = colors.dialog_icon, modifier = Modifier.size(18.dp))
-                                                }
-                                            }
-                                        )
-                                    }
-                                }
-                            }
-                            }
+                            Spacer(modifier = Modifier.height(20.dp))
 
-                            Spacer(modifier = Modifier.height(14.dp))
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                ExposedDropdownMenuBox(
-                                    expanded = expanded_cpp_standard,
-                                    onExpandedChange = { expanded_cpp_standard = it },
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    OutlinedTextField(
-                                        value = "C++$cpp_standard",
-                                        onValueChange = {},
-                                        readOnly = true,
-                                        label = { Text("C++标准", color = colors.dialog_input_hint) },
-                                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded_cpp_standard) },
-                                        modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
-                                        shape = RoundedCornerShape(14.dp),
-                                        colors = text_field_colors
-                                    )
-                                    ExposedDropdownMenu(
-                                        expanded = expanded_cpp_standard,
-                                        onDismissRequest = { expanded_cpp_standard = false },
-                                        containerColor = colors.dialog_bg
-                                    ) {
-                                        Column(
-                                            modifier = Modifier
-                                                .heightIn(max = 240.dp)
-                                                .verticalScroll(rememberScrollState())
-                                        ) {
-                                            cpp_standard_options.forEach { option ->
-                                                DropdownMenuItem(
-                                                    text = {
-                                                        Text(
-                                                            "C++$option",
-                                                            color = if (option == cpp_standard) colors.dialog_icon else colors.dialog_text
-                                                        )
-                                                    },
-                                                    onClick = {
-                                                        cpp_standard = option
-                                                        expanded_cpp_standard = false
-                                                    },
-                                                    leadingIcon = {
-                                                        if (option == cpp_standard) {
-                                                            Icon(Icons.Default.Check, null, tint = colors.dialog_icon, modifier = Modifier.size(18.dp))
-                                                        }
-                                                    }
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-
-                                ExposedDropdownMenuBox(
-                                    expanded = expanded_platform,
-                                    onExpandedChange = { expanded_platform = it },
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    OutlinedTextField(
-                                        value = android_platform,
-                                        onValueChange = {},
-                                        readOnly = true,
-                                        label = { Text("Android Platform", color = colors.dialog_input_hint) },
-                                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded_platform) },
-                                        modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
-                                        shape = RoundedCornerShape(14.dp),
-                                        colors = text_field_colors
-                                    )
-                                    ExposedDropdownMenu(
-                                        expanded = expanded_platform,
-                                        onDismissRequest = { expanded_platform = false },
-                                        containerColor = colors.dialog_bg
-                                    ) {
-                                        Column(
-                                            modifier = Modifier
-                                                .heightIn(max = 240.dp)
-                                                .verticalScroll(rememberScrollState())
-                                        ) {
-                                            android_platform_options.forEach { option ->
-                                                DropdownMenuItem(
-                                                    text = {
-                                                        Text(
-                                                            option,
-                                                            color = if (option == android_platform) colors.dialog_icon else colors.dialog_text
-                                                        )
-                                                    },
-                                                    onClick = {
-                                                        android_platform = option
-                                                        expanded_platform = false
-                                                    },
-                                                    leadingIcon = {
-                                                        if (option == android_platform) {
-                                                            Icon(Icons.Default.Check, null, tint = colors.dialog_icon, modifier = Modifier.size(18.dp))
-                                                        }
-                                                    }
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(14.dp))
-                            
-                            if (!has_toolchains) {
-                                Text(
-                                    text = "需要先安装 NDK 和 CMake 才能创建项目",
-                                    fontSize = 12.sp,
-                                    color = colors.dialog_hint
-                                )
-                                Spacer(modifier = Modifier.height(12.dp))
-                            } else {
-                                Spacer(modifier = Modifier.height(28.dp))
-                            }
-                            
                             Button(
                                 onClick = {
                                     on_create(
                                         project_name,
-                                        project_path,
-                                        selected_template,
-                                        selected_ndk,
-                                        selected_cmake,
-                                        android_platform.trim(),
-                                        cpp_standard
+                                        selected_template
                                     )
                                     on_dismiss()
                                 },

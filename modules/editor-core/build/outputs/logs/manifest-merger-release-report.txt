@@ -1,16 +1,16 @@
 -- Merging decision tree log ---
 manifest
-ADDED from /run/media/admins/DATA/myitem/project/GoStudio2/modules/editor-core/build/intermediates/tmp/ProcessLibraryManifest/release/tempAndroidManifest4994606087103154152.xml:2:13-83
-INJECTED from /run/media/admins/DATA/myitem/project/GoStudio2/modules/editor-core/build/intermediates/tmp/ProcessLibraryManifest/release/tempAndroidManifest4994606087103154152.xml:2:13-83
+ADDED from /run/media/admins/DATA/myitem/project/GoStudio2/modules/editor-core/build/intermediates/tmp/ProcessLibraryManifest/release/tempAndroidManifest2482762501842851035.xml:2:13-83
+INJECTED from /run/media/admins/DATA/myitem/project/GoStudio2/modules/editor-core/build/intermediates/tmp/ProcessLibraryManifest/release/tempAndroidManifest2482762501842851035.xml:2:13-83
 	package
-		INJECTED from /run/media/admins/DATA/myitem/project/GoStudio2/modules/editor-core/build/intermediates/tmp/ProcessLibraryManifest/release/tempAndroidManifest4994606087103154152.xml
+		INJECTED from /run/media/admins/DATA/myitem/project/GoStudio2/modules/editor-core/build/intermediates/tmp/ProcessLibraryManifest/release/tempAndroidManifest2482762501842851035.xml
 	xmlns:android
-		ADDED from /run/media/admins/DATA/myitem/project/GoStudio2/modules/editor-core/build/intermediates/tmp/ProcessLibraryManifest/release/tempAndroidManifest4994606087103154152.xml:2:23-81
+		ADDED from /run/media/admins/DATA/myitem/project/GoStudio2/modules/editor-core/build/intermediates/tmp/ProcessLibraryManifest/release/tempAndroidManifest2482762501842851035.xml:2:23-81
 uses-sdk
-INJECTED from /run/media/admins/DATA/myitem/project/GoStudio2/modules/editor-core/build/intermediates/tmp/ProcessLibraryManifest/release/tempAndroidManifest4994606087103154152.xml reason: use-sdk injection requested
-INJECTED from /run/media/admins/DATA/myitem/project/GoStudio2/modules/editor-core/build/intermediates/tmp/ProcessLibraryManifest/release/tempAndroidManifest4994606087103154152.xml
-INJECTED from /run/media/admins/DATA/myitem/project/GoStudio2/modules/editor-core/build/intermediates/tmp/ProcessLibraryManifest/release/tempAndroidManifest4994606087103154152.xml
+INJECTED from /run/media/admins/DATA/myitem/project/GoStudio2/modules/editor-core/build/intermediates/tmp/ProcessLibraryManifest/release/tempAndroidManifest2482762501842851035.xml reason: use-sdk injection requested
+INJECTED from /run/media/admins/DATA/myitem/project/GoStudio2/modules/editor-core/build/intermediates/tmp/ProcessLibraryManifest/release/tempAndroidManifest2482762501842851035.xml
+INJECTED from /run/media/admins/DATA/myitem/project/GoStudio2/modules/editor-core/build/intermediates/tmp/ProcessLibraryManifest/release/tempAndroidManifest2482762501842851035.xml
 	android:targetSdkVersion
-		INJECTED from /run/media/admins/DATA/myitem/project/GoStudio2/modules/editor-core/build/intermediates/tmp/ProcessLibraryManifest/release/tempAndroidManifest4994606087103154152.xml
+		INJECTED from /run/media/admins/DATA/myitem/project/GoStudio2/modules/editor-core/build/intermediates/tmp/ProcessLibraryManifest/release/tempAndroidManifest2482762501842851035.xml
 	android:minSdkVersion
-		INJECTED from /run/media/admins/DATA/myitem/project/GoStudio2/modules/editor-core/build/intermediates/tmp/ProcessLibraryManifest/release/tempAndroidManifest4994606087103154152.xml
+		INJECTED from /run/media/admins/DATA/myitem/project/GoStudio2/modules/editor-core/build/intermediates/tmp/ProcessLibraryManifest/release/tempAndroidManifest2482762501842851035.xml

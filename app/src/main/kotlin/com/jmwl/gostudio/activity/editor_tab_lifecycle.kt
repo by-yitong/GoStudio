@@ -38,7 +38,7 @@ internal class editor_tab_lifecycle(
             )
             setUndoEnabled(true)
             setBlockLineWidth(1.2f)
-            setEditorLanguage(create_textmate_language(file_path ?: "prewarm.cpp"))
+            setEditorLanguage(create_textmate_language(file_path ?: "prewarm.go"))
             apply_editor_colors(context, this)
             apply_editor_behavior_settings(
                 context = context,

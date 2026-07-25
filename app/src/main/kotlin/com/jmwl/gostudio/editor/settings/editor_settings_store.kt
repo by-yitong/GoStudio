@@ -12,6 +12,16 @@ internal fun load_editor_settings(context: Context): editor_settings_state {
     val prefs = context.getSharedPreferences(editor_settings_prefs_name, Context.MODE_PRIVATE)
     val imported_font_path = prefs.getString("imported_font_path", defaults.imported_font_path).orEmpty()
 
+    // 一次性迁移：旧版本用 clangd_* 键，新版本改 gopls_*。若无 gopls_* 键则回退读旧 clangd_* 值。
+    val migrated = prefs.getBoolean("gopls_migrated", false)
+    fun goplsBool(key: String, legacyKey: String, default: Boolean): Boolean {
+        return if (migrated) {
+            prefs.getBoolean(key, default)
+        } else {
+            if (prefs.contains(legacyKey)) prefs.getBoolean(legacyKey, default) else default
+        }
+    }
+
     return editor_settings_state(
         word_wrap = prefs.getBoolean("word_wrap", defaults.word_wrap),
         line_numbers = prefs.getBoolean("line_numbers", defaults.line_numbers),
@@ -26,12 +36,12 @@ internal fun load_editor_settings(context: Context): editor_settings_state {
         cursor_blink = prefs.getBoolean("cursor_blink", defaults.cursor_blink),
         auto_indent = prefs.getBoolean("auto_indent", defaults.auto_indent),
         auto_completion = prefs.getBoolean("auto_completion", defaults.auto_completion),
-        clangd_enabled = prefs.getBoolean("clangd_enabled", defaults.clangd_enabled),
-        clangd_completion = prefs.getBoolean("clangd_completion", defaults.clangd_completion),
-        clangd_signature_help = prefs.getBoolean("clangd_signature_help", defaults.clangd_signature_help),
-        clangd_document_highlight = prefs.getBoolean("clangd_document_highlight", defaults.clangd_document_highlight),
-        clangd_formatting = prefs.getBoolean("clangd_formatting", defaults.clangd_formatting),
-        clangd_hover = prefs.getBoolean("clangd_hover", defaults.clangd_hover),
+        gopls_enabled = goplsBool("gopls_enabled", "clangd_enabled", defaults.gopls_enabled),
+        gopls_completion = goplsBool("gopls_completion", "clangd_completion", defaults.gopls_completion),
+        gopls_signature_help = goplsBool("gopls_signature_help", "clangd_signature_help", defaults.gopls_signature_help),
+        gopls_document_highlight = goplsBool("gopls_document_highlight", "clangd_document_highlight", defaults.gopls_document_highlight),
+        gopls_formatting = goplsBool("gopls_formatting", "clangd_formatting", defaults.gopls_formatting),
+        gopls_hover = goplsBool("gopls_hover", "clangd_hover", defaults.gopls_hover),
         font_ligatures = prefs.getBoolean("font_ligatures", defaults.font_ligatures),
         font_size = prefs.getFloat("font_size", defaults.font_size).coerceIn(10f, 24f),
         tab_size = prefs.getInt("tab_size", defaults.tab_size).coerceIn(2, 8),
@@ -59,12 +69,13 @@ internal fun save_editor_settings(context: Context, settings: editor_settings_st
         .putBoolean("cursor_blink", settings.cursor_blink)
         .putBoolean("auto_indent", settings.auto_indent)
         .putBoolean("auto_completion", settings.auto_completion)
-        .putBoolean("clangd_enabled", settings.clangd_enabled)
-        .putBoolean("clangd_completion", settings.clangd_completion)
-        .putBoolean("clangd_signature_help", settings.clangd_signature_help)
-        .putBoolean("clangd_document_highlight", settings.clangd_document_highlight)
-        .putBoolean("clangd_formatting", settings.clangd_formatting)
-        .putBoolean("clangd_hover", settings.clangd_hover)
+        .putBoolean("gopls_enabled", settings.gopls_enabled)
+        .putBoolean("gopls_completion", settings.gopls_completion)
+        .putBoolean("gopls_signature_help", settings.gopls_signature_help)
+        .putBoolean("gopls_document_highlight", settings.gopls_document_highlight)
+        .putBoolean("gopls_formatting", settings.gopls_formatting)
+        .putBoolean("gopls_hover", settings.gopls_hover)
+        .putBoolean("gopls_migrated", true)
         .putBoolean("font_ligatures", settings.font_ligatures)
         .putFloat("font_size", settings.font_size)
         .putInt("tab_size", settings.tab_size)

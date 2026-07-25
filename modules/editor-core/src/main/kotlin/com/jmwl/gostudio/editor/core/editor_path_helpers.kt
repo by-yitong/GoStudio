@@ -37,3 +37,13 @@ fun is_c_family_file(file_path: String?): Boolean {
         name.endsWith(".hpp", ignoreCase = true) ||
         name.endsWith(".hxx", ignoreCase = true)
 }
+
+/** 是否为 Go 源文件（.go / .mod / .sum / .work），用于决定是否启动 gopls。 */
+fun is_go_file(file_path: String?): Boolean {
+    if (file_path.isNullOrBlank()) return false
+    val name = File(file_path).name
+    return name.endsWith(".go", ignoreCase = true) ||
+        name == "go.mod" ||
+        name == "go.sum" ||
+        name == "go.work"
+}

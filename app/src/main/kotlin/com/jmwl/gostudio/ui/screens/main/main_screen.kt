@@ -34,8 +34,7 @@ import com.jmwl.gostudio.ui.theme.*
 data class recent_project(
     val name: String,
     val path: String,
-    val cmake_version: String,
-    val ndk_version: String,
+    val go_version: String,
     val last_opened: String
 )
 
@@ -178,7 +177,7 @@ fun main_screen(
                 action_card_item(
                     icon = Icons.Default.Build,
                     title = "开发工具",
-                    subtitle = "管理 NDK Cmake 组件",
+                    subtitle = "管理 Go 工具链",
                     colors = colors,
                     on_click = on_tools,
                     is_top = false,
@@ -518,30 +517,14 @@ fun recent_project_card(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            Icons.Default.Build,
+                            Icons.Default.Code,
                             contentDescription = null,
                             tint = colors.card_text_subtitle,
                             modifier = Modifier.size(10.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "CMake ${project.cmake_version}",
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Light,
-                            color = colors.card_text_subtitle
-                        )
-                    }
-                    
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.Android,
-                            contentDescription = null,
-                            tint = colors.card_text_subtitle,
-                            modifier = Modifier.size(10.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "NDK ${project.ndk_version}",
+                            text = if (project.go_version.isNotBlank()) "Go ${project.go_version}" else "Go 项目",
                             fontSize = 9.sp,
                             fontWeight = FontWeight.Light,
                             color = colors.card_text_subtitle

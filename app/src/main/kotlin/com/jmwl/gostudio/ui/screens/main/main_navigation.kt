@@ -52,8 +52,6 @@ import com.jmwl.gostudio.ui.theme.app_theme_type
 @Composable
 fun main_navigation(
     recent_projects: List<recent_project>,
-    ndk_versions: List<String>,
-    cmake_versions: List<String>,
     toolchain_status: main_tools_install_status,
     current_theme: app_theme_type,
     scale_value: Float,
@@ -63,7 +61,7 @@ fun main_navigation(
     on_terminal: () -> Unit,
     on_project_click: (recent_project) -> Unit,
     on_project_remove: (recent_project) -> Unit,
-    on_create_project: (String, String, String, String, String, String, String) -> Unit,
+    on_create_project: (String, String) -> Unit,
     on_open_project: (String) -> Unit,
     on_toolchain_trigger_change: (toolchain_trigger?) -> Unit,
     on_custom_toolchain_dialog_change: (toolchain_custom_install_request?) -> Unit,
@@ -127,69 +125,35 @@ fun main_navigation(
             composable("tools") {
                 main_tools_screen(
                     on_back = { nav_controller.popBackStack() },
-                    on_install_cmake = { version, source, sha256 ->
+                    on_install_go = {
                         on_toolchain_trigger_change(
                             toolchain_trigger(
-                                title = "安装 CMake $version",
-                                action = toolchain_action.INSTALL_CMAKE,
-                                source = source,
-                                version = version,
-                                sha256 = sha256
+                                title = "安装 Go 工具链",
+                                action = toolchain_action.INSTALL_GO
                             )
                         )
                     },
-                    on_custom_install_cmake = {
-                        on_custom_toolchain_dialog_change(
-                            toolchain_custom_install_request("自定义安装 CMake") { path ->
-                                on_toolchain_trigger_change(
-                                    toolchain_trigger(
-                                        title = "自定义安装 CMake",
-                                        action = toolchain_action.INSTALL_CMAKE_ARCHIVE,
-                                        source = path
-                                    )
-                                )
-                            }
-                        )
-                    },
-                    on_uninstall_cmake = { version ->
+                    on_install_gopls = {
                         on_toolchain_trigger_change(
                             toolchain_trigger(
-                                title = "卸载 CMake $version",
-                                action = toolchain_action.UNINSTALL_CMAKE,
-                                version = version
+                                title = "安装 gopls",
+                                action = toolchain_action.INSTALL_GOPLS
                             )
                         )
                     },
-                    on_install_ndk = { version, source, sha256 ->
+                    on_install_git = {
                         on_toolchain_trigger_change(
                             toolchain_trigger(
-                                title = "安装 NDK $version",
-                                action = toolchain_action.INSTALL_NDK_URL,
-                                source = source,
-                                version = version,
-                                sha256 = sha256
+                                title = "安装 git",
+                                action = toolchain_action.INSTALL_GIT
                             )
                         )
                     },
-                    on_custom_install_ndk = {
-                        on_custom_toolchain_dialog_change(
-                            toolchain_custom_install_request("自定义安装 NDK") { path ->
-                                on_toolchain_trigger_change(
-                                    toolchain_trigger(
-                                        title = "自定义安装 NDK",
-                                        action = toolchain_action.INSTALL_NDK_ARCHIVE,
-                                        source = path
-                                    )
-                                )
-                            }
-                        )
-                    },
-                    on_uninstall_ndk = { version ->
+                    on_install_garble = {
                         on_toolchain_trigger_change(
                             toolchain_trigger(
-                                title = "卸载 NDK $version",
-                                action = toolchain_action.UNINSTALL_NDK,
-                                version = version
+                                title = "安装 garble",
+                                action = toolchain_action.INSTALL_GARBLE
                             )
                         )
                     },
@@ -249,12 +213,10 @@ fun main_navigation(
 
     if (show_new_project_dialog) {
         new_project_dialog(
-            ndk_versions = ndk_versions,
-            cmake_versions = cmake_versions,
             on_dismiss = { show_new_project_dialog = false },
-            on_create = { project_name, project_path, template_id, ndk_version, cmake_version, android_platform, cpp_standard ->
+            on_create = { project_name, template_id ->
                 show_new_project_dialog = false
-                on_create_project(project_name, project_path, template_id, ndk_version, cmake_version, android_platform, cpp_standard)
+                on_create_project(project_name, template_id)
             }
         )
     }

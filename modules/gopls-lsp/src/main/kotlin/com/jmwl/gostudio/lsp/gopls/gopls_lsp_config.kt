@@ -23,7 +23,7 @@ data class gopls_lsp_config(
     val runtime_paths: toolchain_runtime_paths,
     val project_dir: File,
     val path: String,
-    val gopls_command: String = "/usr/local/go/bin/gopls",
+    val gopls_command: String = "/usr/bin/gopls",
     val extra_environment: Map<String, String> = emptyMap(),
     val disabled_features: Set<LspFeature> = emptySet(),
     val extra_arguments: List<String> = emptyList(),

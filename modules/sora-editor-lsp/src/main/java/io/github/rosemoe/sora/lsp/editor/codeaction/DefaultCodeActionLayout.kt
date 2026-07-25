@@ -20,6 +20,7 @@ class DefaultCodeActionLayout : CodeActionLayout {
     private lateinit var window: CodeActionWindow
     private lateinit var root: LinearLayout
     private lateinit var listView: ListView
+    private lateinit var diagnosticHeader: TextView
     private val adapter = CodeActionAdapter()
 
     private var textColor: Int = 0
@@ -43,6 +44,20 @@ class DefaultCodeActionLayout : CodeActionLayout {
             orientation = LinearLayout.VERTICAL
             clipToOutline = true
         }
+
+        // 合并面板顶部：诊断详情（为什么错）
+        diagnosticHeader = TextView(context).apply {
+            visibility = View.GONE
+            setPadding(horizontalPaddingPx, verticalPaddingPx, horizontalPaddingPx, verticalPaddingPx)
+            textAlignment = View.TEXT_ALIGNMENT_VIEW_START
+        }
+        root.addView(
+            diagnosticHeader,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        )
 
         listView = ListView(context).apply {
             dividerHeight = 0
@@ -96,6 +111,14 @@ class DefaultCodeActionLayout : CodeActionLayout {
         listView.setBackgroundColor(0)
         adapter.updateTypeface(typeface)
         adapter.updateTextColor(textColor)
+
+        // 诊断详情区文字色（稍弱于列表文字）+ 底部分隔线
+        if (::diagnosticHeader.isInitialized) {
+            diagnosticHeader.setTextColor(textColor)
+            typeface.let { diagnosticHeader.typeface = it }
+            val divider = GradientDrawable().apply { setColor(textColor); alpha = 40 }
+            diagnosticHeader.background = divider
+        }
     }
 
     private fun setRootViewOutlineProvider(rootView: View, cornerRadius: Float) {
@@ -107,7 +130,14 @@ class DefaultCodeActionLayout : CodeActionLayout {
         rootView.clipToOutline = true
     }
 
-    override fun renderActions(actions: List<CodeActionItem>) {
+    override fun renderActions(actions: List<CodeActionItem>, diagnosticText: String) {
+        // 合并面板顶部：诊断详情（有多条时换行拼接）
+        if (diagnosticText.isNotBlank() && ::diagnosticHeader.isInitialized) {
+            diagnosticHeader.text = diagnosticText.trim()
+            diagnosticHeader.visibility = View.VISIBLE
+        } else if (::diagnosticHeader.isInitialized) {
+            diagnosticHeader.visibility = View.GONE
+        }
         adapter.submit(actions)
     }
 

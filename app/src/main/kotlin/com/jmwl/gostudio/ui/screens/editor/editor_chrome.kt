@@ -240,7 +240,7 @@ fun editor_top_bar(
     on_toggle_drawer: () -> Unit,
     on_toggle_search: () -> Unit,
     on_build: () -> Unit,
-    on_configure_cmake: () -> Unit,
+    on_run: () -> Unit,
     build_running: Boolean,
     build_stopping: Boolean,
     on_toggle_read_only: () -> Unit
@@ -270,16 +270,16 @@ fun editor_top_bar(
             } else {
                 IconButton(onClick = on_build) {
                     Icon(
-                        imageVector = Icons.Default.PlayArrow,
-                        contentDescription = "编译",
-                        tint = colors.success
+                        imageVector = Icons.Default.Build,
+                        contentDescription = "构建 (go build)",
+                        tint = colors.editor_toolbar_icon
                     )
                 }
-                IconButton(onClick = on_configure_cmake) {
+                IconButton(onClick = on_run) {
                     Icon(
-                        imageVector = Icons.Default.Autorenew,
-                        contentDescription = "初始化 CMake",
-                        tint = colors.editor_toolbar_icon
+                        imageVector = Icons.Default.PlayArrow,
+                        contentDescription = "运行 (go run)",
+                        tint = colors.success
                     )
                 }
             }
