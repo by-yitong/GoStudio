@@ -84,7 +84,7 @@ class splash_activity : ComponentActivity() {
     }
 
     private fun check_and_navigate() {
-        val ubuntu_path = File(filesDir, "home/xcode/ubuntu-base")
+        val ubuntu_path = File(filesDir, "home/gostudio/ubuntu-base")
         if (ubuntu_path.is_ubuntu_rootfs()) {
             navigate_to_main()
         } else {

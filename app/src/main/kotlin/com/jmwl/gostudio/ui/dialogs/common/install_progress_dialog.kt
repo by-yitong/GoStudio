@@ -85,7 +85,7 @@ fun install_progress_dialog(
     fun export_logs() {
         try {
             val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-            val file = java.io.File(java.io.File(context.filesDir, "home/xcode"), "cache/log_$timestamp.txt")
+            val file = java.io.File(java.io.File(context.filesDir, "home/gostudio"), "cache/log_$timestamp.txt")
             file.writeText(logs.joinToString("\n"))
             app_toast.show(context, "已导出到: ${file.absolutePath}", app_toast.LENGTH_LONG)
         } catch (e: Exception) {

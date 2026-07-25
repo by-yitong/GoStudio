@@ -67,16 +67,14 @@ object project_manager {
         name: String,
         path: String,
         template_id: String,
-        ndk_version: String,
-        cmake_version: String,
-        android_platform: String,
-        cpp_standard: String
+        @Suppress("UNUSED_PARAMETER") ndk_version: String,
+        @Suppress("UNUSED_PARAMETER") cmake_version: String,
+        @Suppress("UNUSED_PARAMETER") android_platform: String,
+        @Suppress("UNUSED_PARAMETER") cpp_standard: String
     ): Result<File> = withContext(Dispatchers.IO) {
         try {
             val project_name = name.trim()
             val parent_dir = File(path.trim())
-            val selected_platform = android_platform.trim()
-            val selected_cpp_standard = cpp_standard.trim()
 
             if (!valid_project_name.matches(project_name)) {
                 return@withContext Result.failure(IllegalArgumentException("项目名称只能包含字母、数字和下划线，且不能以数字开头"))
@@ -84,30 +82,6 @@ object project_manager {
 
             if (path.isBlank()) {
                 return@withContext Result.failure(IllegalArgumentException("项目路径不能为空"))
-            }
-
-            if (ndk_version.isBlank()) {
-                return@withContext Result.failure(IllegalStateException("未检测到可用 NDK，无法创建项目"))
-            }
-
-            if (cmake_version.isBlank()) {
-                return@withContext Result.failure(IllegalStateException("未检测到可用 CMake/Ninja，无法创建项目"))
-            }
-
-            if (!valid_android_platform.matches(selected_platform)) {
-                return@withContext Result.failure(IllegalArgumentException("Android Platform 必须为 android-21 到 android-49"))
-            }
-
-            if (selected_cpp_standard !in supported_cpp_standards) {
-                return@withContext Result.failure(IllegalArgumentException("不支持的 C++ 标准: C++$selected_cpp_standard"))
-            }
-
-            if (ndk_version !in toolchain_manager.available_ndk_versions()) {
-                return@withContext Result.failure(IllegalStateException("NDK " + ndk_version + " 未安装或项目结构无效"))
-            }
-
-            if (cmake_version !in toolchain_manager.available_cmake_versions()) {
-                return@withContext Result.failure(IllegalStateException("CMake " + cmake_version + " 未安装或结构无效"))
             }
 
             val project_dir = File(parent_dir, project_name)
@@ -119,27 +93,20 @@ object project_manager {
                 return@withContext Result.failure(IllegalStateException("无法创建项目目录"))
             }
 
-            File(project_dir, "src").mkdirs()
-            File(project_dir, "include").mkdirs()
+            // Go 项目结构：go.mod + main.go（按模板选不同内容）
+            create_go_project(project_dir, project_name, template_id)
 
-            when (template_id) {
-                "executable" -> create_executable_project(project_dir, project_name)
-                "static_lib" -> create_static_library_project(project_dir, project_name)
-                "dynamic_lib" -> create_dynamic_library_project(project_dir, project_name)
-                else -> return@withContext Result.failure(IllegalArgumentException("未知项目模板"))
-            }
-
-            create_cmake_lists(project_dir, project_name, template_id)
+            // IDE 配置（保留兼容骨架；Go 项目不依赖 ndk/cmake，字段留空）
             write_project_config(
                 dir = project_dir,
                 name = project_name,
-                ndk_version = ndk_version,
-                cmake_version = cmake_version,
+                ndk_version = "",
+                cmake_version = "",
                 template_id = template_id,
                 build = project_build_config(
                     abi = "arm64-v8a",
-                    platform = selected_platform,
-                    cpp_standard = selected_cpp_standard,
+                    platform = "android-24",
+                    cpp_standard = "",
                     build_type = "Debug"
                 )
             )
@@ -238,189 +205,93 @@ object project_manager {
         return name.trim().trim('/', '\\')
     }
 
-    private fun create_executable_project(dir: File, name: String) {
-        File(dir, "src/main.cpp").writeText("""
-        #include <iostream>
-
-        int main(int argc, char* argv[]) {
-            std::cout << "Hello from $name!" << std::endl;
-            std::cout << "GoStudio Project Created Successfully!" << std::endl;
-            return 0;
+    /**
+     * 创建 Go 项目文件（go.mod + main.go）。
+     *
+     * @param template_id 模板：hello(默认)/http/cli/webapi
+     * Go 项目不需要 CMakeLists/ndk/cmake，仅 go.mod + main.go 即可 go run。
+     */
+    private fun create_go_project(dir: File, name: String, template_id: String) {
+        File(dir, "go.mod").writeText("module $name\n\ngo 1.21\n")
+        val mainGo = when (template_id) {
+            "http" -> go_http_template(name)
+            "cli" -> go_cli_template(name)
+            "webapi" -> go_webapi_template(name)
+            else -> go_hello_template(name)
         }
-        """.trimIndent())
+        File(dir, "main.go").writeText(mainGo)
     }
 
-    private fun create_static_library_project(dir: File, name: String) {
-        File(dir, "include/${name}.hpp").writeText(library_header(name, export_macro = false))
-        File(dir, "src/${name}.cpp").writeText("""
-        #include <iostream>
-        #include "${name}.hpp"
+    /** Hello World 模板 */
+    private fun go_hello_template(name: String): String = """
+package main
 
-        int ${name}_add(int a, int b) {
-            return a + b;
-        }
+import "fmt"
 
-        void ${name}_init(void) {
-            std::cout << "$name static library initialized" << std::endl;
-        }
+func main() {
+	fmt.Println("Hello from $name!")
+}
+""".trimIndent() + "\n"
 
-        void ${name}_cleanup(void) {
-            std::cout << "$name static library cleaned up" << std::endl;
-        }
-        """.trimIndent())
-    }
+    /** HTTP 服务器模板（net/http） */
+    private fun go_http_template(name: String): String = """
+package main
 
-    private fun create_dynamic_library_project(dir: File, name: String) {
-        val macro = "${name.uppercase()}_API"
-        File(dir, "include/${name}.hpp").writeText(library_header(name, export_macro = true))
-        File(dir, "src/${name}.cpp").writeText("""
-        #include <iostream>
-        #include "${name}.hpp"
+import (
+	"fmt"
+	"net/http"
+)
 
-        $macro int ${name}_add(int a, int b) {
-            return a + b;
-        }
+func main() {
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "Hello from $name!")
+	})
+	fmt.Println("Server starting on :8080...")
+	http.ListenAndServe(":8080", nil)
+}
+""".trimIndent() + "\n"
 
-        $macro void ${name}_init(void) {
-            std::cout << "$name dynamic library initialized" << std::endl;
-        }
+    /** CLI 工具模板（os.Args） */
+    private fun go_cli_template(name: String): String = """
+package main
 
-        $macro void ${name}_cleanup(void) {
-            std::cout << "$name dynamic library cleaned up" << std::endl;
-        }
-        """.trimIndent())
-    }
+import (
+	"fmt"
+	"os"
+)
 
-    private fun library_header(name: String, export_macro: Boolean): String {
-        val guard = "${name.uppercase()}_HPP"
-        val macro = "${name.uppercase()}_API"
-        val export_block = if (export_macro) {
-            """
-            #if defined(_WIN32)
-                #ifdef ${name.uppercase()}_EXPORTS
-                    #define $macro __declspec(dllexport)
-                #else
-                    #define $macro __declspec(dllimport)
-                #endif
-            #else
-                #define $macro __attribute__((visibility("default")))
-            #endif
+func main() {
+	if len(os.Args) < 2 {
+		fmt.Println("Usage: $name <name>")
+		return
+	}
+	fmt.Printf("Hello, %s! from $name\n", os.Args[1])
+}
+""".trimIndent() + "\n"
 
-            """.trimIndent() + "\n"
-        } else {
-            ""
-        }
-        val prefix = if (export_macro) "$macro " else ""
+    /** Web API 模板（标准库 JSON API） */
+    private fun go_webapi_template(name: String): String = """
+package main
 
-        return """
-        #ifndef $guard
-        #define $guard
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+)
 
-        #ifdef __cplusplus
-        extern "C" {
-        #endif
+type Response struct {
+	Message string `json:"message"`
+}
 
-        $export_block${prefix}int ${name}_add(int a, int b);
-        ${prefix}void ${name}_init(void);
-        ${prefix}void ${name}_cleanup(void);
-
-        #ifdef __cplusplus
-        }
-        #endif
-
-        #endif
-        """.trimIndent()
-    }
-
-    private fun create_cmake_lists(
-        dir: File,
-        name: String,
-        template_id: String
-    ) {
-        val cmake_ver = "3.28.3"
-        val content = when (template_id) {
-            "executable" -> """
-            cmake_minimum_required(VERSION $cmake_ver)
-
-            set(XCODE_SUPPORTED_ABIS x86_64 arm64-v8a x86 armeabi-v7a CACHE STRING "Supported Android ABIs")
-
-            if(ANDROID_ABI AND NOT ANDROID_ABI IN_LIST XCODE_SUPPORTED_ABIS)
-                message(FATAL_ERROR "Unsupported Android ABI: ${'$'}{ANDROID_ABI}")
-            endif()
-
-            project($name CXX)
-
-            add_executable($name src/main.cpp)
-            target_include_directories($name PRIVATE include)
-
-            set_target_properties($name PROPERTIES
-                RUNTIME_OUTPUT_DIRECTORY "${'$'}{CMAKE_BINARY_DIR}/bin"
-            )
-
-            if(CMAKE_BUILD_TYPE STREQUAL "Release")
-                add_custom_command(TARGET $name POST_BUILD
-                    COMMAND ${'$'}{CMAKE_STRIP} --strip-all "${'$'}<TARGET_FILE:$name>"
-                )
-            endif()
-            """.trimIndent()
-
-            "static_lib" -> """
-            cmake_minimum_required(VERSION $cmake_ver)
-
-            set(XCODE_SUPPORTED_ABIS x86_64 arm64-v8a x86 armeabi-v7a CACHE STRING "Supported Android ABIs")
-
-            if(ANDROID_ABI AND NOT ANDROID_ABI IN_LIST XCODE_SUPPORTED_ABIS)
-                message(FATAL_ERROR "Unsupported Android ABI: ${'$'}{ANDROID_ABI}")
-            endif()
-
-            project($name CXX)
-
-            add_library($name STATIC src/${name}.cpp)
-            target_include_directories($name PUBLIC include)
-
-            set_target_properties($name PROPERTIES
-                ARCHIVE_OUTPUT_DIRECTORY "${'$'}{CMAKE_BINARY_DIR}/lib"
-            )
-
-            if(CMAKE_BUILD_TYPE STREQUAL "Release")
-                add_custom_command(TARGET $name POST_BUILD
-                    COMMAND ${'$'}{CMAKE_STRIP} --strip-all "${'$'}<TARGET_FILE:$name>"
-                )
-            endif()
-            """.trimIndent()
-
-            "dynamic_lib" -> """
-            cmake_minimum_required(VERSION $cmake_ver)
-
-            set(XCODE_SUPPORTED_ABIS x86_64 arm64-v8a x86 armeabi-v7a CACHE STRING "Supported Android ABIs")
-
-            if(ANDROID_ABI AND NOT ANDROID_ABI IN_LIST XCODE_SUPPORTED_ABIS)
-                message(FATAL_ERROR "Unsupported Android ABI: ${'$'}{ANDROID_ABI}")
-            endif()
-
-            project($name CXX)
-            set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
-            add_library($name SHARED src/${name}.cpp)
-            target_include_directories($name PUBLIC include)
-            target_compile_definitions($name PRIVATE ${name.uppercase()}_EXPORTS)
-
-            set_target_properties($name PROPERTIES
-                LIBRARY_OUTPUT_DIRECTORY "${'$'}{CMAKE_BINARY_DIR}/lib"
-                RUNTIME_OUTPUT_DIRECTORY "${'$'}{CMAKE_BINARY_DIR}/bin"
-            )
-
-            if(CMAKE_BUILD_TYPE STREQUAL "Release")
-                add_custom_command(TARGET $name POST_BUILD
-                    COMMAND ${'$'}{CMAKE_STRIP} --strip-all "${'$'}<TARGET_FILE:$name>"
-                )
-            endif()
-            """.trimIndent()
-
-            else -> ""
-        }
-        File(dir, "CMakeLists.txt").writeText(content)
-    }
+func main() {
+	http.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(Response{Message: "Hello from $name API"})
+	})
+	fmt.Println("API server on :8080, try /api")
+	http.ListenAndServe(":8080", nil)
+}
+""".trimIndent() + "\n"
 
     private fun project_config_file(project_dir: File): File {
         return File(File(project_dir, project_config_dir_name), project_config_file_name)

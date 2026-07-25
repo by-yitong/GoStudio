@@ -36,7 +36,7 @@ class install_activity : ComponentActivity() {
     private var current_progress by mutableFloatStateOf(0f)
 
     private val home_dir_path: File get() = File(filesDir, "home")
-    private val gostudio_dir_path: File get() = File(home_dir_path, "xcode")
+    private val gostudio_dir_path: File get() = File(home_dir_path, "gostudio")
     private val ubuntu_base_dir_path: File get() = File(gostudio_dir_path, "ubuntu-base")
 
     private val ubuntu_version = "24.04.4"
