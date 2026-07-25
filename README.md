@@ -77,6 +77,10 @@ gopls 通过 proot + Ubuntu rootfs 工具链运行环境启动，用于提供 Go
 
 - 邮箱：xiaochenzaine@qq.com
 
+### 致谢
+
+本项目参考了 [XCode](https://github.com/xiaochenzaine/XCode)（一款 Android 上的 C/C++ IDE），在其编辑器、proot 运行时与项目结构的基础上进行了 Go 语言方向的改造与重构。
+
 ### 许可证
 
 本项目基于 MIT License 开源，详见 [LICENSE](LICENSE)。
@@ -157,6 +161,10 @@ gopls is started through the proot + Ubuntu rootfs toolchain runtime and is used
 ### Contact
 
 - Email: xiaochenzaine@qq.com
+
+### Acknowledgements
+
+This project references [XCode](https://github.com/xiaochenzaine/XCode) (an Android C/C++ IDE). GoStudio builds on its editor, proot runtime, and project structure, refactored for Go language development.
 
 ### License
 
