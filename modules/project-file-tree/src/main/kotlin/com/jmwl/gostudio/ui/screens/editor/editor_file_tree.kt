@@ -556,10 +556,8 @@ private fun collect_file_tree_search_files(root: File): List<File> {
 private fun can_search_file_content(file: File): Boolean {
     if (!file.isFile || file.length() > FILE_TREE_CONTENT_MAX_BYTES) return false
     val name = file.name.lowercase()
-    return name == "cmakelists.txt" || name.endsWith(".c") || name.endsWith(".cc") ||
-        name.endsWith(".cpp") || name.endsWith(".cxx") || name.endsWith(".h") ||
-        name.endsWith(".hh") || name.endsWith(".hpp") || name.endsWith(".hxx") ||
-        name.endsWith(".cmake") || name.endsWith(".txt") || name.endsWith(".md") ||
+    return name.endsWith(".go") || name == "go.mod" || name == "go.sum" || name == "go.work" ||
+        name.endsWith(".txt") || name.endsWith(".md") ||
         name.endsWith(".json") || name.endsWith(".xml") || name.endsWith(".gradle") ||
         name.endsWith(".kt") || name.endsWith(".java") || name.endsWith(".sh") ||
         name.endsWith(".mk")

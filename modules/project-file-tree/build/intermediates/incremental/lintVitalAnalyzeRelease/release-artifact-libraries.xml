@@ -1,9 +1,9 @@
 <libraries>
   <library
       name=":@@:modules:editor-core::release"
-      jars="/home/admins/.gradle/caches/9.0.0/transforms/aabea1262b918a6483df090143aefe37/transformed/out/jars/classes.jar:/home/admins/.gradle/caches/9.0.0/transforms/aabea1262b918a6483df090143aefe37/transformed/out/jars/libs/R.jar"
+      jars="/home/admins/.gradle/caches/9.0.0/transforms/64d23673c6cc546bb2336d2152fbf358/transformed/out/jars/classes.jar:/home/admins/.gradle/caches/9.0.0/transforms/64d23673c6cc546bb2336d2152fbf358/transformed/out/jars/libs/R.jar"
       resolved="GoStudio.modules:editor-core:unspecified"
-      folder="/home/admins/.gradle/caches/9.0.0/transforms/aabea1262b918a6483df090143aefe37/transformed/out"
+      folder="/home/admins/.gradle/caches/9.0.0/transforms/64d23673c6cc546bb2336d2152fbf358/transformed/out"
       manifest="AndroidManifest.xml"
       resFolder="res"
       assetsFolder="assets"

@@ -1,7 +1,4 @@
-int drawable ic_file_cmake 0x0
-int drawable ic_file_cpp 0x0
 int drawable ic_file_generic 0x0
-int drawable ic_file_h 0x0
 int drawable ic_file_json 0x0
 int drawable ic_folder 0x0
 int drawable ic_folder_opened 0x0
