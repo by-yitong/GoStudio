@@ -63,7 +63,7 @@ fun install_screen(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "XCode",
+            text = "GoStudio",
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary

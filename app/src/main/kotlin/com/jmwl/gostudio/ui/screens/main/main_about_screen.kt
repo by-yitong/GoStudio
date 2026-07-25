@@ -108,7 +108,7 @@ fun main_about_screen(
                 Box(contentAlignment = Alignment.Center) {
                     Image(
                         painter = painterResource(id = R.drawable.ic_gostudio_logo),
-                        contentDescription = "XCode",
+                        contentDescription = "GoStudio",
                         modifier = Modifier.size(60.dp)
                     )
                 }
@@ -117,7 +117,7 @@ fun main_about_screen(
             Spacer(modifier = Modifier.height(20.dp))
 
             Text(
-                text = "XCode",
+                text = "GoStudio",
                 fontSize = 28.sp,
                 lineHeight = 32.sp,
                 fontWeight = FontWeight.Bold,

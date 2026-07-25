@@ -244,7 +244,7 @@ object project_manager {
 
         int main(int argc, char* argv[]) {
             std::cout << "Hello from $name!" << std::endl;
-            std::cout << "XCode Project Created Successfully!" << std::endl;
+            std::cout << "GoStudio Project Created Successfully!" << std::endl;
             return 0;
         }
         """.trimIndent())
@@ -634,7 +634,7 @@ object project_manager {
         require(File(project_dir, "CMakeLists.txt").isFile) { "不是 CMake 项目" }
 
         val config_file = project_config_file(project_dir)
-        require(config_file.isFile) { "不是 XCode 项目，缺少 .xcode/.xcode-project.json" }
+        require(config_file.isFile) { "不是 GoStudio 项目，缺少 .xcode/.xcode-project.json" }
 
         val config = try {
             json.fromJson(config_file.readText(), project_config::class.java)
@@ -764,7 +764,7 @@ object project_manager {
 
     private fun discover_project_records(): List<recent_project_record> {
         return try {
-            val root_dir = File(toolchain_runtime_provider.paths().external_storage_dir ?: File("/sdcard"), "XCodeProjects")
+            val root_dir = File(toolchain_runtime_provider.paths().external_storage_dir ?: File("/sdcard"), "GoStudioProjects")
             val projects = root_dir.listFiles()
                 ?.filter { it.isDirectory }
                 ?.sortedByDescending { it.lastModified() }

@@ -10,7 +10,7 @@ import java.util.concurrent.Executors
 
 object logger_manager {
 
-    private const val TAG = "XCode"
+    private const val TAG = "GoStudio"
     private var log_dir: File? = null
     private val executor = Executors.newSingleThreadExecutor()
     private val file_date_format = SimpleDateFormat("yyyy-MM-dd_HH", Locale.US)

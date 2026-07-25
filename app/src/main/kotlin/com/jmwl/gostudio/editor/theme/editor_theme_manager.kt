@@ -345,7 +345,7 @@ object editor_theme_manager {
         var changed = false
 
         if (!current.has("name")) {
-            current.put("name", defaults.optString("name", "XCode"))
+            current.put("name", defaults.optString("name", "GoStudio"))
             changed = true
         }
 

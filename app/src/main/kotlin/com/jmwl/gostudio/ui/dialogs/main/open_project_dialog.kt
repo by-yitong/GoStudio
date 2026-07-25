@@ -95,7 +95,7 @@ fun open_project_dialog(
                     value = project_path,
                     onValueChange = { project_path = it },
                     label = { Text("项目路径", color = colors.dialog_input_hint) },
-                    placeholder = { Text("/storage/emulated/0/XCodeProjects", color = colors.dialog_input_hint) },
+                    placeholder = { Text("/storage/emulated/0/GoStudioProjects", color = colors.dialog_input_hint) },
                     trailingIcon = {
                         IconButton(
                             onClick = {

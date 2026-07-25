@@ -53,7 +53,7 @@ enum class app_theme_type {
 }
 
 object theme_manager {
-    private val _theme = MutableStateFlow(app_theme_type.SYSTEM)
+    private val _theme = MutableStateFlow(app_theme_type.DARK)
     val theme: StateFlow<app_theme_type> = _theme.asStateFlow()
     
     private val _scale = MutableStateFlow(1f)
