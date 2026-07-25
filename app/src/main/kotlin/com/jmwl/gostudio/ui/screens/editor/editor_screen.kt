@@ -94,7 +94,10 @@ internal fun editor_screen(
     on_delete_file_tree_node: (String) -> Unit,
     on_directory_click: (String) -> Unit,
     on_file_click: (String) -> Unit,
-    on_file_position_click: (String, Int, Int) -> Unit
+    on_file_position_click: (String, Int, Int) -> Unit,
+    can_goto_definition: Boolean,
+    goto_definition_running: Boolean,
+    on_goto_definition: () -> Unit
 ) {
     val colors = app_theme_provider.colors
     var drawer_open by remember { mutableStateOf(false) }
@@ -269,6 +272,13 @@ internal fun editor_screen(
                                 line = cursor_line,
                                 column = cursor_column
                             )
+
+                            AnimatedVisibility(visible = can_goto_definition) {
+                                goto_definition_chip(
+                                    running = goto_definition_running,
+                                    on_click = on_goto_definition
+                                )
+                            }
 
                             editor_floating_actions(
                                 can_undo = can_undo,

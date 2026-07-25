@@ -1,3 +1,6 @@
 # ninja log v7
 3	138	1784996805810968100	CMakeFiles/termux.dir/termux.c.o	7d4df05f2a828f20
 148	190	1784996805957167400	/run/media/admins/DATA/myitem/project/GoStudio/modules/terminal-emulator/build/intermediates/cxx/RelWithDebInfo/6j1a64c3/obj/arm64-v8a/libtermux.so	d9cb6e72eeaa4ec9
+15	35	1784999906173824100	clean	7adf74806070bde8
+13	266	1784999914342315100	CMakeFiles/termux.dir/termux.c.o	7d4df05f2a828f20
+271	408	1784999914603430800	/run/media/admins/DATA/myitem/project/GoStudio/modules/terminal-emulator/build/intermediates/cxx/RelWithDebInfo/6j1a64c3/obj/arm64-v8a/libtermux.so	d9cb6e72eeaa4ec9
