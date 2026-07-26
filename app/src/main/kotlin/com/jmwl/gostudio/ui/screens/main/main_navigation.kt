@@ -39,14 +39,24 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
+import com.jmwl.gostudio.ai.ai_environment_context
+import com.jmwl.gostudio.ai.ai_agent_loop
+import com.jmwl.gostudio.ai.tools.ai_tool_registry
+import com.jmwl.gostudio.ai.load_ai_settings
+import com.jmwl.gostudio.ai.save_ai_settings
 import com.jmwl.gostudio.ui.dialogs.common.install_progress_dialog
 import com.jmwl.gostudio.ui.dialogs.main.new_project_dialog
 import com.jmwl.gostudio.ui.dialogs.main.open_project_dialog
 import com.jmwl.gostudio.ui.dialogs.main.toolchain_custom_install_dialog
+import com.jmwl.gostudio.ui.screens.ai.ai_chat_screen
+import com.jmwl.gostudio.ui.screens.ai.ai_settings_screen
 import com.jmwl.gostudio.ui.screens.editor.editor_settings_screen
 import com.jmwl.gostudio.ui.screens.editor.editor_theme_settings_screen
 import com.jmwl.gostudio.ui.theme.app_theme_provider
 import com.jmwl.gostudio.ui.theme.app_theme_type
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -73,6 +83,20 @@ fun main_navigation(
     val colors = app_theme_provider.colors
     val nav_controller = rememberNavController()
     val current_back_stack by nav_controller.currentBackStackEntryAsState()
+    val context = LocalContext.current
+    val coroutine_scope = rememberCoroutineScope()
+
+    // AI agent：主界面用通用问答（无项目上下文，不带文件工具）
+    val ai_agent = remember {
+        ai_agent_loop(
+            settings_provider = { load_ai_settings(context) },
+            env_provider = { ai_environment_context() },
+            tool_registry = ai_tool_registry(), // 主界面空工具表（纯问答）
+            scope_launcher = { block -> coroutine_scope.launch { block() } }
+        )
+    }
+    var ai_settings_state by remember { mutableStateOf(load_ai_settings(context)) }
+
     var show_new_project_dialog by remember { mutableStateOf(false) }
     var show_open_project_dialog by remember { mutableStateOf(false) }
     val active_toolchain_trigger = toolchain_tasks.firstOrNull()
@@ -191,7 +215,24 @@ fun main_navigation(
                 )
             }
             composable("editor_theme_settings") { editor_theme_settings_screen(on_back = { nav_controller.popBackStack() }) }
-            composable("agent") { placeholder_screen("智能") { nav_controller.popBackStack() } }
+            composable("agent") {
+                ai_chat_screen(
+                    agent = ai_agent,
+                    on_back = { nav_controller.popBackStack() },
+                    on_open_settings = { nav_controller.navigate("ai_settings") }
+                )
+            }
+            composable("ai_settings") {
+                ai_settings_screen(
+                    initial = ai_settings_state,
+                    on_back = { nav_controller.popBackStack() },
+                    on_save = { new_settings ->
+                        save_ai_settings(context, new_settings)
+                        ai_settings_state = new_settings
+                        nav_controller.popBackStack()
+                    }
+                )
+            }
         }
 
         if (active_toolchain_trigger != null && !toolchain_dialog_visible) {

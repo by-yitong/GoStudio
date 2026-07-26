@@ -3,6 +3,8 @@ package com.jmwl.gostudio.ui.screens.editor
 import com.jmwl.gostudio.editor.model.editor_settings_state
 import com.jmwl.gostudio.editor.model.editor_file_node
 import com.jmwl.gostudio.project.project_ide_config
+import com.jmwl.gostudio.ai.ai_agent_loop
+import com.jmwl.gostudio.ui.screens.ai.ai_chat_panel
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -60,7 +62,9 @@ fun editor_sidebar(
     on_directory_click: (String) -> Unit,
     on_file_click: (String) -> Unit,
     on_file_position_click: (String, Int, Int) -> Unit,
-    on_drag: (Offset) -> Unit
+    on_drag: (Offset) -> Unit,
+    ai_agent: ai_agent_loop? = null,
+    on_open_ai_settings: () -> Unit = {}
 ) {
 
     val colors = app_theme_provider.colors
@@ -160,7 +164,18 @@ fun editor_sidebar(
                         on_apply = on_project_config_apply,
                         modifier = Modifier.fillMaxSize()
                     )
-                    2 -> sidebar_placeholder("助手")
+                    2 -> {
+                        val agent = ai_agent
+                        if (agent != null) {
+                            ai_chat_panel(
+                                agent = agent,
+                                on_open_settings = on_open_ai_settings,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            sidebar_placeholder("AI 助手初始化中…")
+                        }
+                    }
                     3 -> editor_settings_panel(
                         settings = editor_settings,
                         on_settings_change = on_editor_settings_change,

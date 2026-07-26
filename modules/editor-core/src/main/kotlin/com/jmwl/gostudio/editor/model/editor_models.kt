@@ -26,7 +26,7 @@ data class editor_settings_state(
     val gopls_signature_help: Boolean = true,
     val gopls_document_highlight: Boolean = true,
     val gopls_formatting: Boolean = true,
-    val gopls_hover: Boolean = false,
+    val gopls_hover: Boolean = true,
     val font_ligatures: Boolean = true,
     val font_size: Float = 14f,
     val tab_size: Int = 4,

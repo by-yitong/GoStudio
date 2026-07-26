@@ -102,6 +102,9 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("io.getstream:stream-chat-android-compose:7.3.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
+    // AI 助手:加密存储 API key
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
     
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
