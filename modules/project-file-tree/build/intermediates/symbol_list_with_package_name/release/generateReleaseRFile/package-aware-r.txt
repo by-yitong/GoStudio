@@ -1,8 +1,0 @@
-com.jmwl.gostudio.project_file_tree
-drawable ic_file_generic
-drawable ic_file_json
-drawable ic_folder
-drawable ic_folder_opened
-drawable ic_new_file
-drawable ic_new_folder
-drawable ic_refresh
