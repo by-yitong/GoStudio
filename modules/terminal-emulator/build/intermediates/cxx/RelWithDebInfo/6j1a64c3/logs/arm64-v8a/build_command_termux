@@ -1,4 +1,0 @@
-/usr/bin/ninja \
-  -C \
-  /run/media/admins/DATA/myitem/project/GoStudio/modules/terminal-emulator/.cxx/RelWithDebInfo/6j1a64c3/arm64-v8a \
-  termux

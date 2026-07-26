@@ -1,2 +1,0 @@
-ninja: Entering directory `/run/media/admins/DATA/myitem/project/GoStudio/modules/terminal-emulator/.cxx/RelWithDebInfo/6j1a64c3/arm64-v8a'
-ninja: no work to do.

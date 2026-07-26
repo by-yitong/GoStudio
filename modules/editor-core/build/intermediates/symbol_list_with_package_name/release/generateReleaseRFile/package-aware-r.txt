@@ -1,5 +1,0 @@
-com.jmwl.gostudio.editor.core
-drawable ic_editor_comment
-drawable ic_editor_format
-drawable ic_editor_format_selection
-drawable ic_editor_uncomment
