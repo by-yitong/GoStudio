@@ -5,47 +5,87 @@ import android.os.Looper
 import androidx.compose.runtime.mutableStateListOf
 import com.jmwl.gostudio.ai.tools.ai_tool_registry
 import com.jmwl.gostudio.ai.tools.execute_safely
+import com.jmwl.gostudio.ai.tools.string_or
 import com.google.gson.JsonParser
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
 
 /**
- * AI Agent 会话状态 + 调度循环。
+ * AI Agent 会话状态 + 调度循环（接入 skill/@引用/AGENTS.md/MCP/持久化/压缩/steering 全部能力）。
  *
- * 由 editor_activity / main_activity 持有。UI 通过 [messages] 和 [is_running] 重组。
- *
- * 线程模型：agent 循环跑在 IO 协程；所有对 [messages] 的修改都通过主线程 Handler 转发，
- * 保证 Compose 的 mutableStateListOf 在主线程被访问。
- *
- * @param scope_launcher 把协程块挂到持有者的 CoroutineScope（通常是 lifecycleScope）
+ * 新增能力（均通过构造函数可选注入，不传则降级为第一阶段行为）：
+ * - [input_processor]：@文件引用、/命令模板、/skill 激活
+ * - [session_store] + [session_id]：会话持久化（JSONL）
+ * - [skill_manager]：skill 索引注入 system prompt
+ * - [mcp_manager]：MCP 工具服务器（start/stop 生命周期）
+ * - [file_change_notifier]：write/edit 改文件后通知编辑器刷新
+ * - [steering_queue]：运行中排队新消息
  */
 class ai_agent_loop(
     private val settings_provider: () -> ai_settings_state,
     private val env_provider: () -> ai_environment_context,
     private val tool_registry: ai_tool_registry,
-    private val scope_launcher: (suspend () -> Unit) -> Job
+    private val scope_launcher: (suspend () -> Unit) -> Job,
+    private val input_processor: ai_input_processor? = null,
+    private val session_store: ai_session_store? = null,
+    private val session_id: String = "default",
+    private val skill_manager: com.jmwl.gostudio.ai.skills.ai_skill_manager? = null,
+    private val mcp_manager: com.jmwl.gostudio.ai.mcp.ai_mcp_manager? = null,
+    private val file_change_notifier: ai_file_change_notifier? = null,
+    private val steering_queue: ai_steering_queue? = null
 ) {
     val messages = mutableStateListOf<ai_message>()
 
     private val _is_running = MutableStateFlow(false)
     val is_running: StateFlow<Boolean> = _is_running
 
+    /** MCP server 连接数（UI 可展示） */
+    private val _mcp_server_count = MutableStateFlow(0)
+    val mcp_server_count: StateFlow<Int> = _mcp_server_count
+
     private var current_job: Job? = null
     private var cancelled = false
     private val main_handler = Handler(Looper.getMainLooper())
 
-    /** 主线程上操作 messages */
+    /** 是否已初始化（启动时拉起 MCP、加载 skill、恢复会话） */
+    private var initialized = false
+
     private fun on_main(action: () -> Unit) {
         if (Looper.myLooper() == Looper.getMainLooper()) action()
         else main_handler.post { action() }
     }
 
+    /** 初始化：启动 MCP、发现 skill、恢复历史会话。在 IO 线程跑一次。 */
+    suspend fun initialize() {
+        if (initialized) return
+        initialized = true
+        withContext(Dispatchers.IO) {
+            // 恢复历史会话
+            session_store?.let {
+                val history = it.load_session(session_id)
+                if (history.isNotEmpty()) on_main { messages.addAll(history) }
+            }
+            // 发现 skill
+            skill_manager?.discover()
+            // 启动 MCP server
+            mcp_manager?.let {
+                val count = it.start(tool_registry)
+                _mcp_server_count.value = count
+            }
+        }
+    }
+
     fun send_user_message(text: String) {
-        if (_is_running.value) return
+        if (_is_running.value) {
+            // 运行中：排队为 steering 消息
+            steering_queue?.enqueue(text)
+            return
+        }
         val settings = settings_provider()
         if (!settings.is_configured()) {
             on_main {
@@ -57,7 +97,9 @@ class ai_agent_loop(
             }
             return
         }
-        on_main { messages.add(ai_message(role = ai_message_role.USER, text = text)) }
+        // 过 input_processor（@引用、/命令、/skill）
+        val processed = input_processor?.process(text) ?: text
+        on_main { messages.add(ai_message(role = ai_message_role.USER, text = processed)) }
         start_loop()
     }
 
@@ -72,7 +114,14 @@ class ai_agent_loop(
 
     fun clear_messages() {
         if (_is_running.value) cancel()
+        steering_queue?.clear()
         on_main { messages.clear() }
+        session_store?.delete_session(session_id)
+    }
+
+    /** 退出时清理 MCP server */
+    fun shutdown() {
+        mcp_manager?.stop()
     }
 
     private fun start_loop() {
@@ -81,10 +130,6 @@ class ai_agent_loop(
         current_job = scope_launcher { run_agent_loop() }
     }
 
-    /**
-     * 核心 agent 循环：组装请求 → 流式接收 → 有 tool_calls 就执行 → 继续。
-     * 直到模型不再调工具、达到最大轮次、或被取消。
-     */
     private suspend fun run_agent_loop() {
         val settings = settings_provider()
         val env = env_provider()
@@ -95,17 +140,17 @@ class ai_agent_loop(
             iteration++
 
             val enabled_tool_names = if (settings.enable_tools) tool_registry.all().map { it.name } else emptyList()
-            val system_prompt = build_system_prompt(env, enabled_tool_names)
-            // 取主线程 messages 的快照（避免循环中改动它）
+            val system_prompt = build_full_system_prompt(env, enabled_tool_names)
             val history_snapshot = on_main_and_wait { messages.toList() }
             val request_messages = buildList {
                 add(ai_message(role = ai_message_role.SYSTEM, text = system_prompt))
                 addAll(history_snapshot.filter { it.role != ai_message_role.SYSTEM && !it.is_error })
             }
-            val trimmed = trim_context(request_messages, settings.max_context_chars)
+            // 用 compaction 替代简单截断
+            val trimmed = ai_compaction.compact(request_messages.filter { it.role != ai_message_role.SYSTEM }, settings.max_context_chars)
+            val final_messages = listOf(request_messages.first { it.role == ai_message_role.SYSTEM }) + trimmed
             val tools_api = if (settings.enable_tools) tool_registry.to_api_tools() else emptyList()
 
-            // 创建 assistant 消息占位，加入 UI（主线程）
             val assistant_msg = ai_message(role = ai_message_role.ASSISTANT, streaming = true)
             on_main { messages.add(assistant_msg) }
             val msg_index_holder = intArrayOf(-1)
@@ -114,7 +159,7 @@ class ai_agent_loop(
             val collected_tool_calls = mutableListOf<ai_tool_call>()
             var had_error = false
 
-            client.stream_chat(trimmed, tools_api, object : ai_stream_callback {
+            client.stream_chat(final_messages, tools_api, object : ai_stream_callback {
                 override fun on_text(delta: String) {
                     assistant_msg.text += delta
                     val idx = msg_index_holder[0]
@@ -138,7 +183,7 @@ class ai_agent_loop(
             if (had_error || cancelled) break
             if (collected_tool_calls.isEmpty()) break
 
-            // 把 tool_calls 固化到 assistant 消息（供下一轮 API 带上）
+            // 固化 tool_calls
             val execs = collected_tool_calls.map { ai_tool_execution(call = it) }
             on_main {
                 val idx = msg_index_holder[0]
@@ -147,7 +192,8 @@ class ai_agent_loop(
                 }
             }
 
-            // 执行工具
+            val changed_files = mutableListOf<String>()
+
             for (exec in execs) {
                 if (cancelled) break
                 exec.status = ai_tool_status.RUNNING
@@ -155,7 +201,16 @@ class ai_agent_loop(
 
                 val tool = tool_registry.get(exec.call.name)
                 val params = JsonParser.parseString(exec.call.arguments_json).asJsonObject
-                exec.result = if (tool != null) {
+                // 按设置开关过滤 write/bash
+                val blocked = when (exec.call.name) {
+                    "write" -> !settings.enable_write
+                    "bash" -> !settings.enable_bash
+                    else -> false
+                }
+                exec.result = if (blocked) {
+                    exec.error_message = "该工具已被设置禁用"
+                    "该工具已被设置禁用（请在 AI 设置里开启）"
+                } else if (tool != null) {
                     val timeout = if (exec.call.name == "bash") 60_000L else 15_000L
                     tool.execute_safely(params, timeout)
                 } else {
@@ -163,9 +218,13 @@ class ai_agent_loop(
                     "未知工具: ${exec.call.name}"
                 }
                 exec.status = if (exec.error_message != null) ai_tool_status.ERROR else ai_tool_status.DONE
-                on_main { msg_index_holder[0].let { idx -> if (idx in messages.indices) messages[idx] = update_execution(messages[idx], exec) } }
 
-                // tool 结果作为 tool 消息追加
+                // write/edit 改了文件，记录路径通知编辑器刷新
+                if (exec.call.name in listOf("write", "edit") && exec.error_message == null) {
+                    params.string_or("path").takeIf { it.isNotBlank() }?.let { changed_files.add(it) }
+                }
+
+                on_main { msg_index_holder[0].let { idx -> if (idx in messages.indices) messages[idx] = update_execution(messages[idx], exec) } }
                 on_main {
                     messages.add(ai_message(
                         role = ai_message_role.TOOL,
@@ -174,6 +233,25 @@ class ai_agent_loop(
                     ))
                 }
             }
+
+            // 通知编辑器刷新被改的文件
+            if (changed_files.isNotEmpty()) {
+                file_change_notifier?.notify_changed(changed_files)
+            }
+            // 持久化会话
+            persist_session()
+        }
+
+        // 处理 steering 队列：有排队消息则作为新 user 消息继续
+        val steering = steering_queue?.drain() ?: emptyList()
+        on_main { _is_running.value = false }
+        if (steering.isNotEmpty() && !cancelled) {
+            for (msg in steering) {
+                val processed = input_processor?.process(msg) ?: msg
+                on_main { messages.add(ai_message(role = ai_message_role.USER, text = processed)) }
+            }
+            start_loop()
+            return
         }
 
         if (iteration >= settings.max_agent_iterations && !cancelled) {
@@ -184,7 +262,31 @@ class ai_agent_loop(
                 ))
             }
         }
-        on_main { _is_running.value = false }
+        persist_session()
+    }
+
+    /** 构建完整 system prompt：基础 + AGENTS.md + skill 索引 */
+    private fun build_full_system_prompt(env: ai_environment_context, tools: List<String>): String {
+        val base = build_system_prompt(env, tools)
+        val sb = StringBuilder(base)
+        // AGENTS.md / .ai 上下文
+        val context_files = read_context_files(env.project_dir)
+        if (context_files.isNotBlank()) {
+            sb.appendLine().appendLine(context_files)
+        }
+        // skill 索引
+        val skills = skill_manager?.skill_index_text()
+        if (!skills.isNullOrEmpty()) {
+            sb.appendLine().appendLine("## 技能（Skills）").appendLine(skills)
+        }
+        return sb.toString()
+    }
+
+    private suspend fun persist_session() {
+        session_store?.let { store ->
+            val snapshot = on_main_and_wait { messages.toList() }
+            withContext(Dispatchers.IO) { store.save_session(session_id, snapshot) }
+        }
     }
 
     private fun update_execution(msg: ai_message, exec: ai_tool_execution): ai_message {
@@ -194,25 +296,5 @@ class ai_agent_loop(
         return msg.copy(tool_executions = newExecs)
     }
 
-    /** 在主线程执行并等待结果（用于读取 messages 快照） */
     private suspend fun <T> on_main_and_wait(action: () -> T): T = withContext(Dispatchers.Main) { action() }
-
-    /** 上下文截断：保留 system + 末尾若干条，丢弃开头不完整的 assistant-tool 序列 */
-    private fun trim_context(msgs: List<ai_message>, max_chars: Int): List<ai_message> {
-        if (msgs.size <= 2) return msgs
-        val system = msgs.first { it.role == ai_message_role.SYSTEM }
-        val rest = msgs.filter { it.role != ai_message_role.SYSTEM }
-        var total = system.text.length
-        val kept = mutableListOf<ai_message>()
-        for (m in rest.asReversed()) {
-            val size = m.text.length + m.tool_calls.sumOf { it.arguments_json.length + it.name.length }
-            if (total + size > max_chars) break
-            kept.add(0, m)
-            total += size
-        }
-        // 兜底：开头不能是孤立的 tool 结果或只有 tool_calls 的 assistant
-        val safe = kept.dropWhile { it.role == ai_message_role.TOOL }
-            .dropWhile { it.role == ai_message_role.ASSISTANT && it.tool_calls.isNotEmpty() && it.text.isBlank() }
-        return listOf(system) + safe
-    }
 }

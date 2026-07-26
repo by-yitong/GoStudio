@@ -89,6 +89,8 @@ class editor_activity : ComponentActivity() {
 
     /** AI agent（在 project_dir 初始化后于 initialize_project 创建） */
     private var ai_agent: com.jmwl.gostudio.ai.ai_agent_loop? = null
+    /** AI 文件变更通知器（工具改文件后刷新编辑器） */
+    private var ai_file_change_notifier: com.jmwl.gostudio.ai.ai_file_change_notifier? = null
     /** AI 设置页覆盖层开关 */
     private var show_ai_settings by mutableStateOf(false)
 
@@ -134,6 +136,7 @@ class editor_activity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        ai_agent?.shutdown() // 清理 MCP server 进程
         block_hint_job?.cancel()
         go_build_job?.cancel()
         go_run_job?.cancel()
@@ -466,6 +469,18 @@ class editor_activity : ComponentActivity() {
      */
     private fun setup_ai_agent() {
         val project = project_dir
+        val home_dir = toolchain_runtime_provider.paths().home_dir
+        val ai_root = java.io.File(home_dir, ".ai")
+        ai_root.mkdirs()
+        val global_skills_dir = java.io.File(ai_root, "skills")
+        val global_prompts_dir = java.io.File(ai_root, "prompts")
+        val sessions_dir = java.io.File(ai_root, "sessions")
+        val project_skills_dir = java.io.File(project, ".ai/skills")
+        val project_prompts_dir = java.io.File(project, ".ai/prompts")
+
+        // 释放内置 skill 到全局目录（首次）
+        runCatching { com.jmwl.gostudio.ai.skills.release_builtin_skills(this, global_skills_dir) }
+
         val go_env = runCatching {
             toolchain_manager.project_environment(project.absolutePath).environment
         }.getOrDefault(emptyMap())
@@ -475,11 +490,25 @@ class editor_activity : ComponentActivity() {
             register(com.jmwl.gostudio.ai.tools.edit_tool(project))
             register(com.jmwl.gostudio.ai.tools.grep_tool(project))
             register(com.jmwl.gostudio.ai.tools.ls_tool(project))
-            // write/bash 受设置开关控制，注册但执行前 agent_loop 会按 enable_write/enable_bash 决定
-            // 这里先都注册，后续可按设置过滤
             register(com.jmwl.gostudio.ai.tools.write_tool(project))
             register(com.jmwl.gostudio.ai.tools.bash_tool(project, go_env))
         }
+
+        val skill_manager = com.jmwl.gostudio.ai.skills.ai_skill_manager(global_skills_dir, project_skills_dir)
+        val input_processor = com.jmwl.gostudio.ai.ai_input_processor(
+            project_dir = project,
+            skill_manager = skill_manager,
+            global_prompts_dir = global_prompts_dir,
+            project_prompts_dir = project_prompts_dir
+        )
+        val session_store = com.jmwl.gostudio.ai.ai_session_store(sessions_dir)
+        val mcp_manager = com.jmwl.gostudio.ai.mcp.ai_mcp_manager(project)
+        val file_change_notifier = com.jmwl.gostudio.ai.ai_file_change_notifier()
+        val steering_queue = com.jmwl.gostudio.ai.ai_steering_queue()
+
+        // 文件变更监听：AI 改文件后刷新编辑器
+        ai_file_change_notifier = file_change_notifier
+        file_change_notifier.set_listener { changed_paths -> refresh_files_after_ai_edit(changed_paths) }
 
         ai_agent = com.jmwl.gostudio.ai.ai_agent_loop(
             settings_provider = { com.jmwl.gostudio.ai.load_ai_settings(this) },
@@ -496,8 +525,38 @@ class editor_activity : ComponentActivity() {
                 )
             },
             tool_registry = registry,
-            scope_launcher = { block -> lifecycleScope.launch { block() } }
+            scope_launcher = { block -> lifecycleScope.launch { block() } },
+            input_processor = input_processor,
+            session_store = session_store,
+            session_id = project.name,
+            skill_manager = skill_manager,
+            mcp_manager = mcp_manager,
+            file_change_notifier = file_change_notifier,
+            steering_queue = steering_queue
         )
+
+        // 异步初始化（恢复会话 + 发现 skill + 启动 MCP）
+        lifecycleScope.launch { ai_agent?.initialize() }
+    }
+
+    /** AI 改文件后刷新编辑器对应 tab */
+    private fun refresh_files_after_ai_edit(changed_paths: List<String>) {
+        for (path in changed_paths) {
+            val file = java.io.File(path)
+            val tab = state.open_tabs.firstOrNull { java.io.File(it.file_path).absolutePath == file.absolutePath }
+            if (tab != null) {
+                runCatching {
+                    val new_content = file.readText()
+                    val cursor = tab.editor?.cursor
+                    tab.document.replace(0, tab.document.length, new_content)
+                    cursor?.let { /* 保持光标位置 */ }
+                    tab.content = new_content
+                    tab.has_changes = false
+                }
+            }
+        }
+        // 刷新文件树
+        reload_file_tree()
     }
 
     private fun prewarm_textmate_languages() {

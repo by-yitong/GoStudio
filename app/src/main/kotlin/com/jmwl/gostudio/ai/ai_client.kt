@@ -21,11 +21,9 @@ interface ai_stream_callback {
 }
 
 /**
- * OpenAI 兼容 API 客户端（智谱/DeepSeek/Kimi/OpenAI/xAI 都用这个）。
- * Anthropic 用不同格式，第一版暂不支持（会提示用户用兼容端点）。
- *
- * 流式 SSE：POST {base_url}/chat/completions 带 stream:true，
- * 响应逐行 `data: {json}`，`data: [DONE]` 结束。
+ * AI API 客户端。根据 provider 分发：
+ * - OpenAI 兼容（智谱/DeepSeek/Kimi/OpenAI/xAI）：POST /chat/completions，标准 OpenAI 格式
+ * - Anthropic：POST /messages，Messages API 格式（system 顶层、content blocks、tool_use）
  */
 class ai_client(
     private val settings: ai_settings_state
@@ -35,16 +33,10 @@ class ai_client(
 
     private val http_client = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(120, TimeUnit.SECONDS) // 流式响应可能持续很久
+        .readTimeout(120, TimeUnit.SECONDS)
         .writeTimeout(30, TimeUnit.SECONDS)
         .build()
 
-    /**
-     * 发起一次流式对话请求。
-     * @param messages 完整消息历史（含 system）
-     * @param tools 工具定义（OpenAI tools 数组），空则不带 tools 字段
-     * @param callback 流式回调（on_text 在 IO 线程触发，UI 层自行切主线程）
-     */
     suspend fun stream_chat(
         messages: List<ai_message>,
         tools: List<Map<String, Any>>,
@@ -54,16 +46,21 @@ class ai_client(
             callback.on_error("AI 未配置：请在设置里填写 base_url、model、api_key")
             return
         }
-        if (settings.provider == ai_provider.ANTHROPIC) {
-            // 第一版：Anthropic 用官方 Messages API，格式与 OpenAI 不同，暂走不了。
-            // 提示用户改用第三方 OpenAI 兼容中转，或后续版本适配。
-            callback.on_error("Anthropic 原生格式暂不支持，请用 OpenAI 兼容端点（如中转服务）或换其他提供商")
-            return
+        try {
+            if (settings.provider == ai_provider.ANTHROPIC) {
+                stream_anthropic(messages, tools, callback)
+            } else {
+                stream_openai(messages, tools, callback)
+            }
+        } catch (e: Exception) {
+            callback.on_error("网络错误: ${e.message ?: e.javaClass.simpleName}")
         }
+    }
 
+    // ============ OpenAI 兼容 ============
+    private suspend fun stream_openai(messages: List<ai_message>, tools: List<Map<String, Any>>, callback: ai_stream_callback) {
         val url = settings.base_url.trimEnd('/') + "/chat/completions"
         val body = build_request_body(messages, tools)
-
         val request = Request.Builder()
             .url(url)
             .header("Authorization", "Bearer ${settings.api_key}")
@@ -72,17 +69,13 @@ class ai_client(
             .post(body.toRequestBody(json_media_type))
             .build()
 
-        try {
-            http_client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) {
-                    val errBody = response.body?.string()?.take(500) ?: ""
-                    callback.on_error("请求失败 ${response.code}: ${errBody.ifBlank { response.message }}")
-                    return
-                }
-                parse_sse_stream(response.body?.byteStream() ?: return, callback)
+        http_client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                val errBody = response.body?.string()?.take(500) ?: ""
+                callback.on_error("请求失败 ${response.code}: ${errBody.ifBlank { response.message }}")
+                return
             }
-        } catch (e: Exception) {
-            callback.on_error("网络错误: ${e.message ?: e.javaClass.simpleName}")
+            parse_openai_sse(response.body?.byteStream() ?: return, callback)
         }
     }
 
@@ -92,46 +85,26 @@ class ai_client(
             "messages" to messages.map { it.to_api_map() },
             "stream" to true
         )
-        if (tools.isNotEmpty()) {
-            payload["tools"] = tools
-        }
+        if (tools.isNotEmpty()) payload["tools"] = tools
         return gson.toJson(payload)
     }
 
-    /**
-     * 解析 SSE 流：逐行读 `data: {...}`，累积 content delta 和 tool_calls delta。
-     * OpenAI 流式协议要点：
-     * - 每个 chunk 的 choices[0].delta.content 是文本增量
-     * - choices[0].delta.tool_calls[i] 是工具调用增量（按 index 拼接 arguments）
-     * - `data: [DONE]` 表示流结束
-     */
-    private fun parse_sse_stream(stream: java.io.InputStream, callback: ai_stream_callback) {
-        // tool_calls 累积器：index -> (id, name, arguments_builder)
+    private fun parse_openai_sse(stream: java.io.InputStream, callback: ai_stream_callback) {
         val tool_acc = mutableMapOf<Int, Triple<String, String, StringBuilder>>()
         val reader = stream.bufferedReader(Charsets.UTF_8)
-
         while (true) {
             val line = reader.readLine() ?: break
             if (!line.startsWith("data:")) continue
             val data = line.removePrefix("data:").trim()
             if (data == "[DONE]") break
             if (data.isEmpty()) continue
-
             val chunk = runCatching { JsonParser.parseString(data).asJsonObject }.getOrElse { continue }
             val choice = chunk.getAsJsonArray("choices")?.firstOrNull()?.asJsonObject ?: continue
-            // 流式错误（部分服务把错误塞在 chunk 里）
             chunk.get("error")?.asJsonObject?.let { err ->
-                callback.on_error("API 错误: ${err.get("message")?.asString ?: data}")
-                return
+                callback.on_error("API 错误: ${err.get("message")?.asString ?: data}"); return
             }
             val delta = choice.getAsJsonObject("delta") ?: continue
-
-            // 文本增量
-            delta.get("content")?.takeIf { !it.isJsonNull }?.asString?.let { text ->
-                if (text.isNotEmpty()) callback.on_text(text)
-            }
-
-            // 工具调用增量
+            delta.get("content")?.takeIf { !it.isJsonNull }?.asString?.let { if (it.isNotEmpty()) callback.on_text(it) }
             delta.getAsJsonArray("tool_calls")?.forEach { tcElem ->
                 val tc = tcElem.asJsonObject
                 val index = tc.get("index")?.asInt ?: 0
@@ -139,16 +112,218 @@ class ai_client(
                 val existing = tool_acc[index]
                 val id = tc.get("id")?.takeIf { !it.isJsonNull }?.asString ?: existing?.first ?: ""
                 val name = fn.get("name")?.takeIf { !it.isJsonNull }?.asString ?: existing?.second ?: ""
-                val argsPart = fn.get("arguments")?.takeIf { !it.isJsonNull }?.asString ?: ""
                 val argsBuilder = existing?.third ?: StringBuilder()
-                argsBuilder.append(argsPart)
+                argsBuilder.append(fn.get("arguments")?.takeIf { !it.isJsonNull }?.asString ?: "")
                 tool_acc[index] = Triple(id, name, argsBuilder)
             }
         }
-
-        // 组装最终 tool_calls（按 index 排序）
         val tool_calls = tool_acc.toSortedMap().values.map { (id, name, args) ->
             ai_tool_call(id = id, name = name, arguments_json = args.toString())
+        }
+        callback.on_done(tool_calls)
+    }
+
+    // ============ Anthropic Messages API ============
+    // 关键差异：system 是顶层字段；messages 只有 user/assistant；
+    // tool 结果作为 user 消息的 content block（type=tool_result）；
+    // tool 调用作为 assistant 的 content block（type=tool_use）。
+    private suspend fun stream_anthropic(messages: List<ai_message>, tools: List<Map<String, Any>>, callback: ai_stream_callback) {
+        val url = settings.base_url.trimEnd('/') + "/messages"
+        // 分离 system（第一条 system 消息）和对话消息
+        val system_text = messages.firstOrNull { it.role == ai_message_role.SYSTEM }?.text ?: ""
+        val conversation = messages.filter { it.role != ai_message_role.SYSTEM }
+
+        val body = build_anthropic_body(system_text, conversation, tools)
+        val request = Request.Builder()
+            .url(url)
+            .header("x-api-key", settings.api_key)
+            .header("anthropic-version", "2023-06-01")
+            .header("Content-Type", "application/json")
+            .post(body.toRequestBody(json_media_type))
+            .build()
+
+        http_client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                val errBody = response.body?.string()?.take(500) ?: ""
+                callback.on_error("Anthropic 请求失败 ${response.code}: ${errBody.ifBlank { response.message }}")
+                return
+            }
+            parse_anthropic_sse(response.body?.byteStream() ?: return, callback)
+        }
+    }
+
+    private fun build_anthropic_body(system: String, conversation: List<ai_message>, tools: List<Map<String, Any>>): String {
+        // Anthropic 要求：连续同角色消息必须合并（多个 tool 结果都是 user 角色，不能 user-user 相邻）
+        val merged = merge_consecutive_same_role(conversation)
+        val payload = linkedMapOf<String, Any>(
+            "model" to settings.model,
+            "max_tokens" to 8192, // Anthropic 必填
+            "system" to system,
+            "stream" to true,
+            "messages" to merged
+        )
+        // tools 转成 Anthropic 格式（input_schema 替代 parameters）
+        if (tools.isNotEmpty()) {
+            payload["tools"] = tools.map { t ->
+                @Suppress("UNCHECKED_CAST")
+                val fn = t["function"] as Map<String, Any>
+                val paramsJson = fn["parameters"] as String
+                linkedMapOf<String, Any>(
+                    "name" to fn["name"]!!,
+                    "description" to fn["description"]!!,
+                    "input_schema" to gson.fromJson(paramsJson, JsonObject::class.java)
+                )
+            }
+        }
+        return gson.toJson(payload)
+    }
+
+    /**
+     * 把 ai_message 转成 Anthropic 的 content 格式。
+     * Anthropic 的 content 是数组，每个元素有 type：
+     * - user 消息：[{type:text,text:...}] 或含 tool_result 时 [{type:tool_result,tool_use_id,content:...}]
+     * - assistant 消息：[{type:text,text:...}, {type:tool_use,id,name,input}]
+     */
+    private fun anthropic_message_to_content(msg: ai_message): Map<String, Any> {
+        val role = when (msg.role) {
+            ai_message_role.ASSISTANT -> "assistant"
+            else -> "user"
+        }
+        val content_blocks = mutableListOf<Map<String, Any>>()
+        // tool 结果消息（role=TOOL）→ user 的 tool_result block
+        if (msg.role == ai_message_role.TOOL) {
+            content_blocks.add(mapOf(
+                "type" to "tool_result",
+                "tool_use_id" to msg.tool_call_id,
+                "content" to msg.text
+            ))
+        } else {
+            if (msg.text.isNotBlank()) {
+                content_blocks.add(mapOf("type" to "text", "text" to msg.text))
+            }
+            // assistant 的 tool_calls → tool_use blocks
+            for (tc in msg.tool_calls) {
+                val input = runCatching { gson.fromJson(tc.arguments_json, JsonObject::class.java) }
+                    .getOrElse { JsonObject() }
+                content_blocks.add(mapOf(
+                    "type" to "tool_use",
+                    "id" to tc.id,
+                    "name" to tc.name,
+                    "input" to input
+                ))
+            }
+        }
+        // 连续同角色的 tool 结果需要合并，这里简单处理：每条消息独立成块
+        return mapOf("role" to role, "content" to content_blocks)
+    }
+
+    /**
+     * 合并连续同角色的消息（Anthropic 要求 role 必须交替 user/assistant）。
+     * 把相邻同 role 的 content blocks 拼进同一个 message。
+     */
+    private fun merge_consecutive_same_role(conversation: List<ai_message>): List<Map<String, Any>> {
+        val result = mutableListOf<Pair<String, MutableList<Map<String, Any>>>>()
+        for (msg in conversation) {
+            val role = when (msg.role) {
+                ai_message_role.ASSISTANT -> "assistant"
+                else -> "user"
+            }
+            val blocks = build_anthropic_content_blocks(msg)
+            val last = result.lastOrNull()
+            if (last != null && last.first == role) {
+                last.second.addAll(blocks)
+            } else {
+                result.add(role to blocks.toMutableList())
+            }
+        }
+        return result.map { mapOf("role" to it.first, "content" to it.second) }
+    }
+
+    /** 单条消息转 Anthropic content blocks（不含 role 包装） */
+    private fun build_anthropic_content_blocks(msg: ai_message): List<Map<String, Any>> {
+        val blocks = mutableListOf<Map<String, Any>>()
+        if (msg.role == ai_message_role.TOOL) {
+            blocks.add(mapOf(
+                "type" to "tool_result",
+                "tool_use_id" to msg.tool_call_id,
+                "content" to msg.text
+            ))
+        } else {
+            if (msg.text.isNotBlank()) blocks.add(mapOf("type" to "text", "text" to msg.text))
+            for (tc in msg.tool_calls) {
+                val input = runCatching { gson.fromJson(tc.arguments_json, JsonObject::class.java) }.getOrElse { JsonObject() }
+                blocks.add(mapOf("type" to "tool_use", "id" to tc.id, "name" to tc.name, "input" to input))
+            }
+        }
+        return blocks
+    }
+
+    /**
+     * 解析 Anthropic SSE 流。
+     * 事件类型：message_start / content_block_start / content_block_delta / content_block_stop / message_delta / message_stop
+     * 关键：content_block_delta 的 delta.type=text_delta 时有 text；=input_json_delta 时有 partial_json（拼工具参数）
+     */
+    private fun parse_anthropic_sse(stream: java.io.InputStream, callback: ai_stream_callback) {
+        val reader = stream.bufferedReader(Charsets.UTF_8)
+        // 当前 content block 的工具累积：index -> (id, name, args_builder)
+        val tool_blocks = mutableMapOf<Int, Triple<String, String, StringBuilder>>()
+        var current_index = -1
+
+        while (true) {
+            val line = reader.readLine() ?: break
+            if (!line.startsWith("data:")) continue
+            val data = line.removePrefix("data:").trim()
+            if (data.isEmpty() || data == "[DONE]") continue
+            val evt = runCatching { JsonParser.parseString(data).asJsonObject }.getOrElse { continue }
+
+            // 错误
+            evt.get("type")?.asString?.let { type ->
+                when (type) {
+                    "error" -> {
+                        val err = evt.getAsJsonObject("error")
+                        callback.on_error("Anthropic 错误: ${err?.get("message")?.asString ?: data}")
+                        return
+                    }
+                    "content_block_start" -> {
+                        val idx = evt.get("index")?.asInt ?: 0
+                        val block = evt.getAsJsonObject("content_block")
+                        if (block?.get("type")?.asString == "tool_use") {
+                            val id = block.get("id")?.asString ?: ""
+                            val name = block.get("name")?.asString ?: ""
+                            tool_blocks[idx] = Triple(id, name, StringBuilder())
+                            current_index = idx
+                        }
+                    }
+                    "content_block_delta" -> {
+                        val idx = evt.get("index")?.asInt ?: current_index
+                        val delta = evt.getAsJsonObject("delta")
+                        when (delta?.get("type")?.asString) {
+                            "text_delta" -> {
+                                delta.get("text")?.takeIf { !it.isJsonNull }?.asString?.let {
+                                    if (it.isNotEmpty()) callback.on_text(it)
+                                }
+                            }
+                            "input_json_delta" -> {
+                                val partial = delta.get("partial_json")?.takeIf { !it.isJsonNull }?.asString ?: ""
+                                tool_blocks[idx]?.third?.append(partial)
+                                current_index = idx
+                            }
+                        }
+                    }
+                    "message_stop" -> {
+                        // 流结束，组装 tool_calls
+                        val tool_calls = tool_blocks.toSortedMap().values.map { (id, name, args) ->
+                            ai_tool_call(id = id, name = name, arguments_json = args.toString().ifBlank { "{}" })
+                        }
+                        callback.on_done(tool_calls)
+                        return
+                    }
+                }
+            }
+        }
+        // 兜底（没收到 message_stop）
+        val tool_calls = tool_blocks.toSortedMap().values.map { (id, name, args) ->
+            ai_tool_call(id = id, name = name, arguments_json = args.toString().ifBlank { "{}" })
         }
         callback.on_done(tool_calls)
     }

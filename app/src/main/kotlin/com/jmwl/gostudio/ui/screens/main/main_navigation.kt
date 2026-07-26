@@ -88,11 +88,26 @@ fun main_navigation(
 
     // AI agent：主界面用通用问答（无项目上下文，不带文件工具）
     val ai_agent = remember {
+        val home_dir = com.jmwl.gostudio.toolchain.toolchain_runtime_provider.paths().home_dir
+        val ai_root = java.io.File(home_dir, ".ai").apply { mkdirs() }
+        val global_skills_dir = java.io.File(ai_root, "skills")
+        val global_prompts_dir = java.io.File(ai_root, "prompts")
+        runCatching { com.jmwl.gostudio.ai.skills.release_builtin_skills(context, global_skills_dir) }
+        val skill_mgr = com.jmwl.gostudio.ai.skills.ai_skill_manager(global_skills_dir, null)
         ai_agent_loop(
             settings_provider = { load_ai_settings(context) },
             env_provider = { ai_environment_context() },
-            tool_registry = ai_tool_registry(), // 主界面空工具表（纯问答）
-            scope_launcher = { block -> coroutine_scope.launch { block() } }
+            tool_registry = ai_tool_registry(),
+            scope_launcher = { block -> coroutine_scope.launch { block() } },
+            input_processor = com.jmwl.gostudio.ai.ai_input_processor(
+                project_dir = null,
+                skill_manager = skill_mgr,
+                global_prompts_dir = global_prompts_dir,
+                project_prompts_dir = null
+            ),
+            session_store = com.jmwl.gostudio.ai.ai_session_store(java.io.File(ai_root, "sessions")),
+            session_id = "global",
+            skill_manager = skill_mgr
         )
     }
     var ai_settings_state by remember { mutableStateOf(load_ai_settings(context)) }
@@ -216,6 +231,7 @@ fun main_navigation(
             }
             composable("editor_theme_settings") { editor_theme_settings_screen(on_back = { nav_controller.popBackStack() }) }
             composable("agent") {
+                androidx.compose.runtime.LaunchedEffect(Unit) { ai_agent.initialize() }
                 ai_chat_screen(
                     agent = ai_agent,
                     on_back = { nav_controller.popBackStack() },
