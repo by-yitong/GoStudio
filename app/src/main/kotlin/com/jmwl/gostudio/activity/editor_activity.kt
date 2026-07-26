@@ -25,6 +25,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.lifecycleScope
 import com.jmwl.gostudio.core.logging.logger_manager
 import com.jmwl.gostudio.toolchain.proot_manager
@@ -84,6 +86,12 @@ class editor_activity : ComponentActivity() {
     /** 跳转定义进行中（请求 gopls 时短暂置 true，避免重复点击） */
     private val _goto_in_progress = MutableStateFlow(false)
     val goto_in_progress: kotlinx.coroutines.flow.StateFlow<Boolean> = _goto_in_progress
+
+    /** AI agent（在 project_dir 初始化后于 initialize_project 创建） */
+    private var ai_agent: com.jmwl.gostudio.ai.ai_agent_loop? = null
+    /** AI 设置页覆盖层开关 */
+    private var show_ai_settings by mutableStateOf(false)
+
     private val file_tree_children_cache = mutableMapOf<String, List<editor_file_node>>()
     private lateinit var search_controller: editor_search_controller
     private lateinit var tab_lifecycle: editor_tab_lifecycle
@@ -258,8 +266,21 @@ class editor_activity : ComponentActivity() {
             on_file_position_click = { path, line, column -> open_file_at(path, line, column) },
             can_goto_definition = can_goto,
             goto_definition_running = goto_running,
-            on_goto_definition = { goto_definition() }
+            on_goto_definition = { goto_definition() },
+            ai_agent = ai_agent,
+            on_open_ai_settings = { show_ai_settings = true }
         )
+
+        if (show_ai_settings) {
+            com.jmwl.gostudio.ui.screens.ai.ai_settings_screen(
+                initial = com.jmwl.gostudio.ai.load_ai_settings(this),
+                on_back = { show_ai_settings = false },
+                on_save = { new_settings ->
+                    com.jmwl.gostudio.ai.save_ai_settings(this, new_settings)
+                    show_ai_settings = false
+                }
+            )
+        }
 
         if (state.show_exit_dialog) {
             editor_exit_confirm_dialog(
@@ -422,6 +443,9 @@ class editor_activity : ComponentActivity() {
     }
 
     private fun initialize_project() {
+        // 创建 AI agent（带项目文件工具）
+        setup_ai_agent()
+
         reload_file_tree {
             lifecycleScope.launch {
                 if (!state.project_exists) {
@@ -433,6 +457,47 @@ class editor_activity : ComponentActivity() {
                 restore_pinned_tabs()
             }
         }
+    }
+
+    /**
+     * 创建带项目文件工具的 AI agent。
+     * 工具：read/write/edit/grep/ls（项目根限定）+ bash（proot 执行，带 Go 环境）。
+     * 环境提供器：实时收集当前文件/光标/项目结构。
+     */
+    private fun setup_ai_agent() {
+        val project = project_dir
+        val go_env = runCatching {
+            toolchain_manager.project_environment(project.absolutePath).environment
+        }.getOrDefault(emptyMap())
+
+        val registry = com.jmwl.gostudio.ai.tools.ai_tool_registry().apply {
+            register(com.jmwl.gostudio.ai.tools.read_tool(project))
+            register(com.jmwl.gostudio.ai.tools.edit_tool(project))
+            register(com.jmwl.gostudio.ai.tools.grep_tool(project))
+            register(com.jmwl.gostudio.ai.tools.ls_tool(project))
+            // write/bash 受设置开关控制，注册但执行前 agent_loop 会按 enable_write/enable_bash 决定
+            // 这里先都注册，后续可按设置过滤
+            register(com.jmwl.gostudio.ai.tools.write_tool(project))
+            register(com.jmwl.gostudio.ai.tools.bash_tool(project, go_env))
+        }
+
+        ai_agent = com.jmwl.gostudio.ai.ai_agent_loop(
+            settings_provider = { com.jmwl.gostudio.ai.load_ai_settings(this) },
+            env_provider = {
+                com.jmwl.gostudio.ai.ai_environment_context(
+                    project_dir = project,
+                    project_name = project.name,
+                    current_file_path = state.current_file_path,
+                    current_file_name = state.current_file_name,
+                    cursor_line = state.cursor_line,
+                    cursor_column = state.cursor_column,
+                    go_mod_content = runCatching { java.io.File(project, "go.mod").takeIf { it.isFile }?.readText() }.getOrNull(),
+                    project_tree_overview = runCatching { com.jmwl.gostudio.ai.collect_tree_overview(project) }.getOrNull()
+                )
+            },
+            tool_registry = registry,
+            scope_launcher = { block -> lifecycleScope.launch { block() } }
+        )
     }
 
     private fun prewarm_textmate_languages() {

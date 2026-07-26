@@ -12,6 +12,12 @@ internal fun load_editor_settings(context: Context): editor_settings_state {
     val prefs = context.getSharedPreferences(editor_settings_prefs_name, Context.MODE_PRIVATE)
     val imported_font_path = prefs.getString("imported_font_path", defaults.imported_font_path).orEmpty()
 
+    // 一次性迁移：gopls_hover 默认值由 false 改为 true（光标停在函数名上显示函数介绍）。
+    // 仅在本次升级首次运行时强制设 true，之后用户在设置里手动改的值会被尊重。
+    if (!prefs.getBoolean("gopls_hover_default_migrated", false)) {
+        prefs.edit().putBoolean("gopls_hover", defaults.gopls_hover).putBoolean("gopls_hover_default_migrated", true).apply()
+    }
+
     return editor_settings_state(
         word_wrap = prefs.getBoolean("word_wrap", defaults.word_wrap),
         line_numbers = prefs.getBoolean("line_numbers", defaults.line_numbers),

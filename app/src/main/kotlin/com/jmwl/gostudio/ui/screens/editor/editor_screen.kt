@@ -97,7 +97,9 @@ internal fun editor_screen(
     on_file_position_click: (String, Int, Int) -> Unit,
     can_goto_definition: Boolean,
     goto_definition_running: Boolean,
-    on_goto_definition: () -> Unit
+    on_goto_definition: () -> Unit,
+    ai_agent: com.jmwl.gostudio.ai.ai_agent_loop? = null,
+    on_open_ai_settings: () -> Unit = {}
 ) {
     val colors = app_theme_provider.colors
     var drawer_open by remember { mutableStateOf(false) }
@@ -386,7 +388,9 @@ internal fun editor_screen(
             },
             on_drag = { drag_amount ->
                 drawer_width = (drawer_width.value + drag_amount.x).coerceIn(300f, 480f).dp
-            }
+            },
+            ai_agent = ai_agent,
+            on_open_ai_settings = on_open_ai_settings
         )
         }
 
