@@ -243,7 +243,8 @@ fun editor_top_bar(
     on_run: () -> Unit,
     build_running: Boolean,
     build_stopping: Boolean,
-    on_toggle_read_only: () -> Unit
+    on_toggle_read_only: () -> Unit,
+    on_open_ai: () -> Unit = {}
 ) {
 
     val colors = app_theme_provider.colors
@@ -282,6 +283,13 @@ fun editor_top_bar(
                         tint = colors.success
                     )
                 }
+            }
+            IconButton(onClick = on_open_ai) {
+                Icon(
+                    imageVector = Icons.Default.AutoAwesome,
+                    contentDescription = "AI 助手",
+                    tint = colors.editor_toolbar_icon
+                )
             }
             if (has_open_file) {
                 IconButton(onClick = on_toggle_read_only) {

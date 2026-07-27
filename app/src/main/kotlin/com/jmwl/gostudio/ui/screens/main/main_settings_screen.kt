@@ -29,7 +29,9 @@ import com.jmwl.gostudio.ui.theme.*
 fun main_settings_screen(
     on_back: () -> Unit,
     on_theme_click: () -> Unit = {},
+    on_editor_theme_click: () -> Unit = {},
     on_editor_click: () -> Unit = {},
+    on_ai_click: () -> Unit = {},
     on_about_click: () -> Unit = {}
 ) {
     val colors = app_theme_provider.colors
@@ -103,60 +105,100 @@ fun main_settings_screen(
             }
             
             Spacer(modifier = Modifier.height(30.dp))
-            
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 18.dp)
-            ) {
-                Text(
-                    text = "设置",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = colors.title_highlight,
-                    modifier = Modifier.padding(start = 4.dp, bottom = 12.dp)
+
+            settings_group(colors = colors, title = "外观") {
+                main_settings_card_item(
+                    icon = Icons.Default.BrightnessMedium,
+                    title = "主题模式",
+                    subtitle = "深色/浅色、字号缩放",
+                    colors = colors,
+                    onClick = on_theme_click,
+                    is_top = true,
+                    is_bottom = false
                 )
-                
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                ) {
-                    main_settings_card_item(
-                        icon = Icons.Default.BrightnessMedium,
-                        title = "主题",
-                        subtitle = "切换深色/浅色模式",
-                        colors = colors,
-                        onClick = on_theme_click,
-                        is_top = true,
-                        is_bottom = false
-                    )
-                    
-                    Spacer(modifier = Modifier.height(1.dp))
-                    
-                    main_settings_card_item(
-                        icon = Icons.Default.Code,
-                        title = "编辑器",
-                        subtitle = "字体大小、缩进、自动保存等",
-                        colors = colors,
-                        onClick = on_editor_click,
-                        is_top = false,
-                        is_bottom = false
-                    )
-                    
-                    Spacer(modifier = Modifier.height(1.dp))
-                    
-                    main_settings_card_item(
-                        icon = Icons.Default.Info,
-                        title = "关于",
-                        subtitle = "版本信息、开源许可",
-                        colors = colors,
-                        onClick = on_about_click,
-                        is_top = false,
-                        is_bottom = true
-                    )
-                }
+                Spacer(modifier = Modifier.height(1.dp))
+                main_settings_card_item(
+                    icon = Icons.Default.Palette,
+                    title = "编辑器主题",
+                    subtitle = "代码高亮配色",
+                    colors = colors,
+                    onClick = on_editor_theme_click,
+                    is_top = false,
+                    is_bottom = true
+                )
             }
+
+            Spacer(modifier = Modifier.height(22.dp))
+
+            settings_group(colors = colors, title = "编辑器") {
+                main_settings_card_item(
+                    icon = Icons.Default.Code,
+                    title = "编辑器",
+                    subtitle = "字体、缩进、自动保存、gopls",
+                    colors = colors,
+                    onClick = on_editor_click,
+                    is_top = true,
+                    is_bottom = true
+                )
+            }
+
+            Spacer(modifier = Modifier.height(22.dp))
+
+            settings_group(colors = colors, title = "AI") {
+                main_settings_card_item(
+                    icon = Icons.Default.AutoAwesome,
+                    title = "AI 助手",
+                    subtitle = "提供商、API Key、工具与 MCP",
+                    colors = colors,
+                    onClick = on_ai_click,
+                    is_top = true,
+                    is_bottom = true
+                )
+            }
+
+            Spacer(modifier = Modifier.height(22.dp))
+
+            settings_group(colors = colors, title = "关于") {
+                main_settings_card_item(
+                    icon = Icons.Default.Info,
+                    title = "关于",
+                    subtitle = "版本信息、开源许可",
+                    colors = colors,
+                    onClick = on_about_click,
+                    is_top = true,
+                    is_bottom = true
+                )
+            }
+
+            Spacer(modifier = Modifier.height(40.dp))
+        }
+    }
+}
+
+@Composable
+private fun settings_group(
+    colors: app_colors,
+    title: String,
+    content: @Composable () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 18.dp)
+    ) {
+        Text(
+            text = title,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            color = colors.title_highlight,
+            modifier = Modifier.padding(start = 4.dp, bottom = 12.dp)
+        )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+        ) {
+            content()
         }
     }
 }

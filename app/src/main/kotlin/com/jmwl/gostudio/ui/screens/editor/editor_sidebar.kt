@@ -1,10 +1,7 @@
 package com.jmwl.gostudio.ui.screens.editor
 
-import com.jmwl.gostudio.editor.model.editor_settings_state
 import com.jmwl.gostudio.editor.model.editor_file_node
 import com.jmwl.gostudio.project.project_ide_config
-import com.jmwl.gostudio.ai.ai_agent_loop
-import com.jmwl.gostudio.ui.screens.ai.ai_chat_panel
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -17,7 +14,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
@@ -48,12 +44,8 @@ fun editor_sidebar(
     expanded_paths: Set<String>,
     file_tree_loading: Boolean,
     project_exists: Boolean,
-    editor_settings: editor_settings_state,
     on_tool_selected: (Int) -> Unit,
-    on_editor_settings_change: (editor_settings_state) -> Unit,
     on_project_config_apply: (project_ide_config, () -> Unit) -> Unit,
-    on_import_editor_font: () -> Unit,
-    on_open_editor_theme_settings: () -> Unit,
     on_new_file: (String) -> Unit,
     on_new_folder: (String) -> Unit,
     on_refresh: (String) -> Unit,
@@ -62,18 +54,14 @@ fun editor_sidebar(
     on_directory_click: (String) -> Unit,
     on_file_click: (String) -> Unit,
     on_file_position_click: (String, Int, Int) -> Unit,
-    on_drag: (Offset) -> Unit,
-    ai_agent: ai_agent_loop? = null,
-    on_open_ai_settings: () -> Unit = {}
+    on_drag: (Offset) -> Unit
 ) {
 
     val colors = app_theme_provider.colors
     val tools = remember {
         listOf(
             editor_tool_item(Icons.Default.Folder, "文件"),
-            editor_tool_item(Icons.Default.Tune, "项目配置"),
-            editor_tool_item(Icons.Outlined.AutoAwesome, "助手"),
-            editor_tool_item(Icons.Default.Settings, "设置")
+            editor_tool_item(Icons.Default.Tune, "项目配置")
         )
     }
 
@@ -162,25 +150,6 @@ fun editor_sidebar(
                     1 -> editor_project_config_panel(
                         project_root_path = project_root_path,
                         on_apply = on_project_config_apply,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                    2 -> {
-                        val agent = ai_agent
-                        if (agent != null) {
-                            ai_chat_panel(
-                                agent = agent,
-                                on_open_settings = on_open_ai_settings,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        } else {
-                            sidebar_placeholder("AI 助手初始化中…")
-                        }
-                    }
-                    3 -> editor_settings_panel(
-                        settings = editor_settings,
-                        on_settings_change = on_editor_settings_change,
-                        on_import_font = on_import_editor_font,
-                        on_open_theme_settings = on_open_editor_theme_settings,
                         modifier = Modifier.fillMaxSize()
                     )
                 }

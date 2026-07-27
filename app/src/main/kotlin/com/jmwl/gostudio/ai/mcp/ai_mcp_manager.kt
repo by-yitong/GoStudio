@@ -64,13 +64,29 @@ class ai_mcp_manager(
         return connected
     }
 
-    /** 读取 MCP 配置（项目 .ai/mcp.json） */
+    /** 读取 MCP 配置（全局 ~/.ai/mcp.json + 项目 .ai/mcp.json 合并，项目优先） */
     private fun load_configs(): List<mcp_server_config> {
-        if (project_dir == null) return emptyList()
-        val configFile = File(project_dir, ".ai/mcp.json")
-        if (!configFile.isFile) return emptyList()
+        return (parse_config_file(global_config_file()) + (project_config_file()?.let { parse_config_file(it) } ?: emptyList()))
+            .distinctBy { it.name }
+    }
+
+    /** 全局配置文件：~/.ai/mcp.json */
+    fun global_config_file(): File = File(paths.home_dir, ".ai/mcp.json")
+
+    /** 项目配置文件：<project>/.ai/mcp.json（无项目返回 null） */
+    fun project_config_file(): File? = project_dir?.let { File(it, ".ai/mcp.json") }
+
+    /** 公开：列出全局配置的 server */
+    fun list_global_configs(): List<mcp_server_config> = parse_config_file(global_config_file())
+
+    /** 公开：列出项目配置的 server */
+    fun list_project_configs(): List<mcp_server_config> =
+        project_config_file()?.let { parse_config_file(it) } ?: emptyList()
+
+    private fun parse_config_file(file: File): List<mcp_server_config> {
+        if (!file.isFile) return emptyList()
         return runCatching {
-            val root = JsonParser.parseString(configFile.readText()).asJsonObject
+            val root = JsonParser.parseString(file.readText()).asJsonObject
             val servers = root.getAsJsonObject("mcpServers") ?: return emptyList()
             servers.entrySet().map { (name, def) ->
                 val obj = def.asJsonObject
@@ -82,6 +98,27 @@ class ai_mcp_manager(
                 )
             }.filter { it.command.isNotBlank() }
         }.getOrDefault(emptyList())
+    }
+
+    /** 保存配置到指定文件 */
+    fun save_configs(file: File, configs: List<mcp_server_config>) {
+        file.parentFile?.mkdirs()
+        val root = JsonObject()
+        val serversObj = JsonObject()
+        for (c in configs) {
+            val def = JsonObject().apply {
+                addProperty("command", c.command)
+                val argsArr = com.google.gson.JsonArray()
+                c.args.forEach { argsArr.add(it) }
+                add("args", argsArr)
+                val envObj = JsonObject()
+                c.env.forEach { (k, v) -> envObj.addProperty(k, v) }
+                add("env", envObj)
+            }
+            serversObj.add(c.name, def)
+        }
+        root.add("mcpServers", serversObj)
+        file.writeText(gson.toJson(root))
     }
 
     /** 启动单个 MCP server 进程并注册其工具 */

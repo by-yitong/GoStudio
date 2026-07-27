@@ -97,23 +97,36 @@ class ai_session_store(private val sessions_dir: File) {
 }
 
 /**
- * 上下文压缩（Compaction，参考 pi）。
+ * 上下文压缩（Compaction，参考 pi-agent）。
  *
  * 当消息历史过长时，把旧消息（保留最近若干条）摘要成一条 summary 消息，
  * 避免每轮请求都带着完整历史导致 token 爆炸。
  *
- * 简化实现：不是真正调用模型做摘要（那需要额外请求），而是把旧消息的关键信息
- * （工具调用记录、关键结论）压缩成结构化文本。真正的模型摘要可作为后续增强。
+ * 两种压缩路径：
+ * - **模型摘要**（client 非空，推荐）：真正调一次模型把旧对话压成自然语言摘要，保留语义。
+ * - **启发式摘要**（client 为空，兜底）：把旧消息的关键信息（用户意图、工具调用、结论）
+ *   压缩成结构化文本，不额外请求。
  */
 object ai_compaction {
+    /** 模型摘要的 system 提示 */
+    private const val summary_system = "你是对话压缩助手。把下面这段对话历史压缩成一段简洁的中文摘要，" +
+        "保留：用户的核心意图与需求、已做出的决策与结论、工具调用及其结果要点、未解决的问题。" +
+        "只输出摘要正文，不要寒暄、不要分条编号太细。控制在 600 字以内。"
+
     /**
      * 压缩消息历史。
      * @param messages 完整历史（不含 system）
      * @param max_chars 字符上限
      * @param keep_recent 保留最近多少条不压缩
+     * @param client 可选的 AI 客户端（非空走模型摘要，空走启发式）
      * @return 压缩后的消息列表（前面是 summary，后面是 recent 原文）
      */
-    fun compact(messages: List<ai_message>, max_chars: Int, keep_recent: Int = 10): List<ai_message> {
+    suspend fun compact(
+        messages: List<ai_message>,
+        max_chars: Int,
+        keep_recent: Int = 10,
+        client: ai_client? = null
+    ): List<ai_message> {
         val total = messages.sumOf { it.text.length + it.tool_calls.sumOf { tc -> tc.arguments_json.length } }
         if (total <= max_chars) return messages
         if (messages.size <= keep_recent) return messages
@@ -121,11 +134,63 @@ object ai_compaction {
         val toCompact = messages.dropLast(keep_recent)
         val recent = messages.takeLast(keep_recent)
 
-        val summary = build_summary(toCompact)
-        return listOf(summary) + recent
+        // 优先用模型摘要；失败则退化启发式
+        val summary = if (client != null) {
+            runCatching { summarize_with_model(client, toCompact) }
+                .onFailure { /* 记录但不中断，下面兜底 */ }
+                .getOrNull()
+        } else null
+        val final_summary = summary ?: build_summary(toCompact)
+        return listOf(final_summary) + recent
     }
 
-    /** 把一批旧消息压缩成结构化摘要 */
+    /**
+     * 调模型把旧消息摘要成一条 summary 消息。
+     * 用同步（非流式）方式收集完整回复：实现一个一次性收集的 callback。
+     */
+    private suspend fun summarize_with_model(client: ai_client, messages: List<ai_message>): ai_message {
+        val transcript = build_transcript(messages)
+        val request = listOf(
+            ai_message(role = ai_message_role.SYSTEM, text = summary_system),
+            ai_message(role = ai_message_role.USER, text = "对话历史：\n\n$transcript")
+        )
+        val acc = StringBuilder()
+        val done = java.util.concurrent.CountDownLatch(1)
+        var error: String? = null
+        client.stream_chat(request, emptyList(), object : ai_stream_callback {
+            override fun on_text(delta: String) { acc.append(delta) }
+            override fun on_done(tool_calls: List<ai_tool_call>) { done.countDown() }
+            override fun on_error(message: String) { error = message; done.countDown() }
+        })
+        done.await()
+        if (error != null) throw RuntimeException(error)
+        val text = acc.toString().ifBlank { throw RuntimeException("空摘要") }
+        return ai_message(role = ai_message_role.USER, text = "（以下是之前对话的摘要，详细内容已压缩）\n$text")
+    }
+
+    /** 把旧消息渲染成供模型摘要的纯文本流水 */
+    private fun build_transcript(messages: List<ai_message>): String {
+        val sb = StringBuilder()
+        for (msg in messages) {
+            when (msg.role) {
+                ai_message_role.USER -> {
+                    sb.appendLine("用户：${msg.text.take(800)}")
+                }
+                ai_message_role.ASSISTANT -> {
+                    if (msg.has_visible_text) sb.appendLine("助手：${msg.text.take(800)}")
+                    for (tc in msg.tool_calls) {
+                        val result = msg.tool_executions.firstOrNull { it.call.id == tc.id }
+                        sb.appendLine("  调用工具 ${tc.name}(${tc.arguments_json.take(120)}) → ${result?.to_result_content()?.take(300) ?: "(未记录)"}")
+                    }
+                }
+                ai_message_role.TOOL -> { /* 工具结果已在 assistant 里 */ }
+                else -> {}
+            }
+        }
+        return sb.toString()
+    }
+
+    /** 把一批旧消息压缩成结构化摘要（启发式兜底，不调模型） */
     private fun build_summary(messages: List<ai_message>): ai_message {
         val sb = StringBuilder()
         sb.appendLine("（以下是之前对话的摘要，详细内容已省略以节省空间）")

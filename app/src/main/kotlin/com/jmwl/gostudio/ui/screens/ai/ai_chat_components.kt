@@ -35,7 +35,13 @@ import com.jmwl.gostudio.ui.theme.app_theme_provider
  */
 @Composable
 fun ai_message_bubble(message: ai_message) {
-    if (!message.has_visible_text && message.tool_executions.isEmpty()) return
+    // 读思考过程开关：关闭时隐藏工具执行卡片（只显示最终文本回复）
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val show_thinking = remember(message) {
+        com.jmwl.gostudio.ai.load_ai_settings(context).show_thinking_process
+    }
+    val has_visible = message.has_visible_text || (show_thinking && message.tool_executions.isNotEmpty())
+    if (!has_visible) return
 
     val colors = app_theme_provider.colors
     val is_user = message.role == ai_message_role.USER
@@ -58,8 +64,8 @@ fun ai_message_bubble(message: ai_message) {
             }
         ) {
             Column(modifier = Modifier.padding(horizontal = 11.dp, vertical = 8.dp)) {
-                // 工具调用卡片（assistant 消息附带）
-                if (message.tool_executions.isNotEmpty()) {
+                // 工具调用卡片（assistant 消息附带，受思考过程开关控制）
+                if (show_thinking && message.tool_executions.isNotEmpty()) {
                     message.tool_executions.forEach { exec ->
                         ai_tool_execution_card(exec)
                         Spacer(modifier = Modifier.height(4.dp))

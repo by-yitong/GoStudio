@@ -72,7 +72,7 @@ class ai_tool_registry {
                 "function" to mapOf(
                     "name" to tool.name,
                     "description" to tool.description,
-                    "parameters" to tool.parameters_schema.toString()
+                    "parameters" to tool.parameters_schema
                 )
             )
         }

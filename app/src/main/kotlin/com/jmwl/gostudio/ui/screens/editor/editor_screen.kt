@@ -1,7 +1,6 @@
 package com.jmwl.gostudio.ui.screens.editor
 
 import com.jmwl.gostudio.editor.model.editor_tab_item
-import com.jmwl.gostudio.editor.model.editor_settings_state
 import com.jmwl.gostudio.editor.model.editor_file_node
 import com.jmwl.gostudio.project.project_ide_config
 
@@ -38,6 +37,7 @@ private data class editor_create_dialog_request(
     val parent_path: String
 )
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 internal fun editor_screen(
     project_name: String,
@@ -60,14 +60,11 @@ internal fun editor_screen(
     tabs: List<editor_tab_item>,
     selected_tab_path: String?,
     toolbar_visible: Boolean,
-    editor_settings: editor_settings_state,
     output_panel_state: editor_output_panel_state,
     terminal_cwd: String,
     terminal_extra_environment: Map<String, String>,
     on_toggle_toolbar: () -> Unit,
-    on_editor_settings_change: (editor_settings_state) -> Unit,
     on_project_config_apply: (project_ide_config, () -> Unit) -> Unit,
-    on_import_editor_font: () -> Unit,
     on_select_tab: (String) -> Unit,
     on_pin_tab: (String) -> Unit,
     on_close_tab: (String) -> Unit,
@@ -99,7 +96,12 @@ internal fun editor_screen(
     goto_definition_running: Boolean,
     on_goto_definition: () -> Unit,
     ai_agent: com.jmwl.gostudio.ai.ai_agent_loop? = null,
-    on_open_ai_settings: () -> Unit = {}
+    on_open_ai_settings: () -> Unit = {},
+    ai_current_provider: com.jmwl.gostudio.ai.ai_provider = com.jmwl.gostudio.ai.ai_provider.ZHIPU,
+    ai_current_model: String = "",
+    ai_available_models: Map<com.jmwl.gostudio.ai.ai_provider, List<String>> = emptyMap(),
+    ai_configured_providers: Set<com.jmwl.gostudio.ai.ai_provider> = emptySet(),
+    on_ai_session_model_change: (com.jmwl.gostudio.ai.ai_provider, String) -> Unit = { _, _ -> }
 ) {
     val colors = app_theme_provider.colors
     var drawer_open by remember { mutableStateOf(false) }
@@ -115,7 +117,7 @@ internal fun editor_screen(
     var search_has_match by remember { mutableStateOf(false) }
     var search_panel_offset by remember { mutableStateOf(Offset.Zero) }
     var create_dialog_request by remember { mutableStateOf<editor_create_dialog_request?>(null) }
-    var show_editor_theme_settings by remember { mutableStateOf(false) }
+    var show_ai_sheet by remember { mutableStateOf(false) }
     var editor_focused by remember { mutableStateOf(false) }
     val terminal_state = remember_editor_terminal_state()
     val drawer_progress = remember { Animatable(0f) }
@@ -127,10 +129,6 @@ internal fun editor_screen(
     val sidebar_offset_px = (-(drawer_width_px * (1f - drawer_progress_value))).roundToInt()
     val ime_visible = WindowInsets.ime.getBottom(density) > 0
     val show_symbol_bar = has_open_file && editor_focused && ime_visible
-
-    BackHandler(enabled = show_editor_theme_settings) {
-        show_editor_theme_settings = false
-    }
 
     LaunchedEffect(drawer_open) {
         if (drawer_open) {
@@ -229,7 +227,8 @@ internal fun editor_screen(
                                 on_run = on_run,
                                 build_running = output_panel_state.task_running,
                                 build_stopping = output_panel_state.task_stopping,
-                                on_toggle_read_only = on_toggle_read_only
+                                on_toggle_read_only = on_toggle_read_only,
+                                on_open_ai = { show_ai_sheet = true }
                             )
                         }
                         if (has_open_file) {
@@ -359,15 +358,8 @@ internal fun editor_screen(
             expanded_paths = expanded_paths,
             file_tree_loading = file_tree_loading,
             project_exists = project_exists,
-            editor_settings = editor_settings,
             on_tool_selected = { selected_tool = it },
-            on_editor_settings_change = on_editor_settings_change,
             on_project_config_apply = on_project_config_apply,
-            on_import_editor_font = on_import_editor_font,
-            on_open_editor_theme_settings = {
-                drawer_open = false
-                show_editor_theme_settings = true
-            },
             on_new_file = { parent_path ->
                 create_dialog_request = editor_create_dialog_request(editor_create_dialog_type.FILE, parent_path)
             },
@@ -388,9 +380,7 @@ internal fun editor_screen(
             },
             on_drag = { drag_amount ->
                 drawer_width = (drawer_width.value + drag_amount.x).coerceIn(300f, 480f).dp
-            },
-            ai_agent = ai_agent,
-            on_open_ai_settings = on_open_ai_settings
+            }
         )
         }
 
@@ -406,18 +396,6 @@ internal fun editor_screen(
         }
 
 
-        if (show_editor_theme_settings) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(colors.editor_bg)
-            ) {
-                editor_theme_settings_screen(
-                    on_back = { show_editor_theme_settings = false }
-                )
-            }
-        }
-
         create_dialog_request?.let { request ->
             editor_create_entry_dialog(
                 is_folder = request.type == editor_create_dialog_type.FOLDER,
@@ -431,6 +409,48 @@ internal fun editor_screen(
                 },
                 on_dismiss = { create_dialog_request = null }
             )
+        }
+
+        // 底部 AI 助手弹窗（类 iOS 大页面弹窗）
+        if (show_ai_sheet) {
+            val agent = ai_agent
+            if (agent != null) {
+                val ai_sheet_state = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)
+                androidx.compose.material3.ModalBottomSheet(
+                    onDismissRequest = { show_ai_sheet = false },
+                    sheetState = ai_sheet_state,
+                    containerColor = colors.editor_bg,
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+                    dragHandle = {
+                        Box(
+                            modifier = Modifier
+                                .padding(vertical = 10.dp)
+                                .width(36.dp)
+                                .height(4.dp)
+                                .background(
+                                    colors.editor_hint.copy(alpha = 0.4f),
+                                    androidx.compose.foundation.shape.RoundedCornerShape(2.dp)
+                                )
+                        )
+                    }
+                ) {
+                    com.jmwl.gostudio.ui.screens.ai.ai_chat_panel(
+                        agent = agent,
+                        on_open_settings = {
+                            show_ai_sheet = false
+                            on_open_ai_settings()
+                        },
+                        current_provider = ai_current_provider,
+                        current_model = ai_current_model,
+                        available_models = ai_available_models,
+                        configured_providers = ai_configured_providers,
+                        on_session_model_change = on_ai_session_model_change,
+                        modifier = Modifier.fillMaxWidth().fillMaxHeight(0.82f)
+                    )
+                }
+            } else {
+                show_ai_sheet = false
+            }
         }
     }
 }

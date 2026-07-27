@@ -130,7 +130,8 @@ class ai_agent_loop(
         current_job = scope_launcher { run_agent_loop() }
     }
 
-    private suspend fun run_agent_loop() {
+    private suspend fun run_agent_loop() = withContext(Dispatchers.IO) {
+        try {
         val settings = settings_provider()
         val env = env_provider()
         val client = ai_client(settings)
@@ -140,14 +141,18 @@ class ai_agent_loop(
             iteration++
 
             val enabled_tool_names = if (settings.enable_tools) tool_registry.all().map { it.name } else emptyList()
-            val system_prompt = build_full_system_prompt(env, enabled_tool_names)
+            val system_prompt = build_full_system_prompt(env, enabled_tool_names, settings)
             val history_snapshot = on_main_and_wait { messages.toList() }
             val request_messages = buildList {
                 add(ai_message(role = ai_message_role.SYSTEM, text = system_prompt))
                 addAll(history_snapshot.filter { it.role != ai_message_role.SYSTEM && !it.is_error })
             }
-            // 用 compaction 替代简单截断
-            val trimmed = ai_compaction.compact(request_messages.filter { it.role != ai_message_role.SYSTEM }, settings.max_context_chars)
+            // 用 compaction 替代简单截断（优先模型摘要，失败退化启发式）
+            val trimmed = ai_compaction.compact(
+                request_messages.filter { it.role != ai_message_role.SYSTEM },
+                settings.max_context_chars,
+                client = client
+            )
             val final_messages = listOf(request_messages.first { it.role == ai_message_role.SYSTEM }) + trimmed
             val tools_api = if (settings.enable_tools) tool_registry.to_api_tools() else emptyList()
 
@@ -163,7 +168,8 @@ class ai_agent_loop(
                 override fun on_text(delta: String) {
                     assistant_msg.text += delta
                     val idx = msg_index_holder[0]
-                    on_main { if (idx in messages.indices) messages[idx] = messages[idx] }
+                    // 用 copy() 创建新实例触发 Compose 更新（同引用 set 不会重组）
+                    on_main { if (idx in messages.indices) messages[idx] = assistant_msg.copy() }
                 }
                 override fun on_done(tool_calls: List<ai_tool_call>) {
                     collected_tool_calls.addAll(tool_calls)
@@ -173,12 +179,12 @@ class ai_agent_loop(
                     assistant_msg.is_error = true
                     had_error = true
                     val idx = msg_index_holder[0]
-                    on_main { if (idx in messages.indices) messages[idx] = messages[idx] }
+                    on_main { if (idx in messages.indices) messages[idx] = assistant_msg.copy() }
                 }
             })
 
             assistant_msg.streaming = false
-            on_main { msg_index_holder[0].let { idx -> if (idx in messages.indices) messages[idx] = messages[idx] } }
+            on_main { msg_index_holder[0].let { idx -> if (idx in messages.indices) messages[idx] = assistant_msg.copy() } }
 
             if (had_error || cancelled) break
             if (collected_tool_calls.isEmpty()) break
@@ -251,7 +257,7 @@ class ai_agent_loop(
                 on_main { messages.add(ai_message(role = ai_message_role.USER, text = processed)) }
             }
             start_loop()
-            return
+            return@withContext
         }
 
         if (iteration >= settings.max_agent_iterations && !cancelled) {
@@ -263,11 +269,21 @@ class ai_agent_loop(
             }
         }
         persist_session()
+        } catch (e: Throwable) {
+            // 捕获 loop 内任何异常，显示到对话里（避免静默失败）
+            val err_text = "⚠️ agent loop 异常: ${e.javaClass.simpleName}: ${e.message ?: ""}"
+            on_main {
+                messages.add(ai_message(role = ai_message_role.ASSISTANT, text = err_text, is_error = true))
+                _is_running.value = false
+            }
+        } finally {
+            on_main { _is_running.value = false }
+        }
     }
 
-    /** 构建完整 system prompt：基础 + AGENTS.md + skill 索引 */
-    private fun build_full_system_prompt(env: ai_environment_context, tools: List<String>): String {
-        val base = build_system_prompt(env, tools)
+    /** 构建完整 system prompt：基础 + AGENTS.md + skill 索引 + 用户自定义提示词 */
+    private fun build_full_system_prompt(env: ai_environment_context, tools: List<String>, settings: ai_settings_state): String {
+        val base = build_system_prompt(env, tools, settings.conversation_tone)
         val sb = StringBuilder(base)
         // AGENTS.md / .ai 上下文
         val context_files = read_context_files(env.project_dir)
@@ -278,6 +294,10 @@ class ai_agent_loop(
         val skills = skill_manager?.skill_index_text()
         if (!skills.isNullOrEmpty()) {
             sb.appendLine().appendLine("## 技能（Skills）").appendLine(skills)
+        }
+        // 用户自定义提示词
+        if (settings.custom_system_prompt.isNotBlank()) {
+            sb.appendLine().appendLine("## 附加指令").appendLine(settings.custom_system_prompt.trim())
         }
         return sb.toString()
     }
