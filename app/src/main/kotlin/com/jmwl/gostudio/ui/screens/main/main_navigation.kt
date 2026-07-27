@@ -43,6 +43,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import com.jmwl.gostudio.ai.ai_environment_context
 import com.jmwl.gostudio.ai.ai_agent_loop
+import com.jmwl.gostudio.ai.ai_provider
 import com.jmwl.gostudio.ai.tools.ai_tool_registry
 import com.jmwl.gostudio.ai.load_ai_settings
 import com.jmwl.gostudio.ai.save_ai_settings
@@ -86,6 +87,9 @@ fun main_navigation(
     val context = LocalContext.current
     val coroutine_scope = rememberCoroutineScope()
 
+    // 会话级提供商/模型 override（null=跟随全局设置）
+    var ai_session_override by remember { mutableStateOf<Pair<ai_provider, String>?>(null) }
+
     // AI agent：主界面用通用问答（无项目上下文，不带文件工具）
     val ai_agent = remember {
         val home_dir = com.jmwl.gostudio.toolchain.toolchain_runtime_provider.paths().home_dir
@@ -95,7 +99,18 @@ fun main_navigation(
         runCatching { com.jmwl.gostudio.ai.skills.release_builtin_skills(context, global_skills_dir) }
         val skill_mgr = com.jmwl.gostudio.ai.skills.ai_skill_manager(global_skills_dir, null)
         ai_agent_loop(
-            settings_provider = { load_ai_settings(context) },
+            settings_provider = {
+                // 会话 override 优先，覆盖全局的提供商/模型/key
+                val base = load_ai_settings(context)
+                ai_session_override?.let { (p, m) ->
+                    base.copy(
+                        provider = p,
+                        model = m,
+                        base_url = p.base_url.ifBlank { base.base_url },
+                        api_key = base.api_keys[p] ?: base.api_key
+                    )
+                } ?: base
+            },
             env_provider = { ai_environment_context() },
             tool_registry = ai_tool_registry(),
             scope_launcher = { block -> coroutine_scope.launch { block() } },
@@ -205,7 +220,9 @@ fun main_navigation(
                 main_settings_screen(
                     on_back = { nav_controller.popBackStack() },
                     on_theme_click = { nav_controller.navigate("theme_settings") },
+                    on_editor_theme_click = { nav_controller.navigate("editor_theme_settings") },
                     on_editor_click = { nav_controller.navigate("editor_settings") },
+                    on_ai_click = { nav_controller.navigate("ai_settings") },
                     on_about_click = { nav_controller.navigate("about") }
                 )
             }
@@ -235,7 +252,15 @@ fun main_navigation(
                 ai_chat_screen(
                     agent = ai_agent,
                     on_back = { nav_controller.popBackStack() },
-                    on_open_settings = { nav_controller.navigate("ai_settings") }
+                    on_open_settings = { nav_controller.navigate("ai_settings") },
+                    current_provider = ai_session_override?.first ?: ai_settings_state.provider,
+                    current_model = ai_session_override?.second ?: ai_settings_state.model,
+                    available_models = ai_provider.entries.associateWith { p ->
+                        ai_settings_state.custom_models[p.base_url] ?: emptyList()
+                    },
+                    configured_providers = ai_settings_state.api_keys
+                        .filter { it.value.isNotBlank() }.keys,
+                    on_session_model_change = { p, m -> ai_session_override = p to m }
                 )
             }
             composable("ai_settings") {

@@ -30,7 +30,7 @@ data class ai_environment_context(
  * @param env 环境（可能无项目，做通用问答）
  * @param enabled_tools 已启用的工具名列表（决定告诉模型有哪些工具可用）
  */
-fun build_system_prompt(env: ai_environment_context, enabled_tools: List<String>): String {
+fun build_system_prompt(env: ai_environment_context, enabled_tools: List<String>, tone: String = "friendly"): String {
     val sb = StringBuilder()
     sb.appendLine("你是 GoStudio 的 AI 编程助手。用户正在 Android 设备上使用 GoStudio 编写 Go 代码。")
     sb.appendLine("你的任务是帮助用户编写、调试、解释和重构 Go 代码。")
@@ -76,6 +76,7 @@ fun build_system_prompt(env: ai_environment_context, enabled_tools: List<String>
                 "bash" -> "执行 shell 命令（go build/vet/test/mod tidy 等，在项目目录内）"
                 "grep" -> "在项目文件中搜索文本（支持正则）"
                 "ls" -> "列出项目目录内容"
+                "create_skill" -> "创建新的可复用技能（写好后 AI 在合适场景自动参考）"
                 else -> null
             }
             if (desc != null) sb.appendLine("- `$name`: $desc")
@@ -92,8 +93,21 @@ fun build_system_prompt(env: ai_environment_context, enabled_tools: List<String>
 
     sb.appendLine("## 回复风格")
     sb.appendLine("- 用中文回复，代码和技术术语保持原文")
-    sb.appendLine("- 代码修改时给出完整可运行的片段，并说明改动点")
-    sb.appendLine("- 解释清晰简洁，避免冗长")
+    when (tone) {
+        "professional" -> {
+            sb.appendLine("- 保持严谨专业，注重准确性，用术语精确描述")
+            sb.appendLine("- 代码修改时给出完整可运行的片段，并说明改动点和技术依据")
+        }
+        "concise" -> {
+            sb.appendLine("- 回答精炼，直击要点，避免多余解释")
+            sb.appendLine("- 代码修改直接给出片段和一句改动说明")
+        }
+        else -> {
+            sb.appendLine("- 亲切易懂，适当鼓励，对新手友好")
+            sb.appendLine("- 代码修改时给出完整可运行的片段，并说明改动点")
+            sb.appendLine("- 解释清晰简洁，避免冗长")
+        }
+    }
 
     return sb.toString().trimEnd()
 }

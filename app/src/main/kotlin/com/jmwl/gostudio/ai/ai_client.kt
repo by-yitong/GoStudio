@@ -1,5 +1,6 @@
 package com.jmwl.gostudio.ai
 
+import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
@@ -57,6 +58,33 @@ class ai_client(
         }
     }
 
+    /**
+     * 拉取可用模型列表（OpenAI 兼容 GET /models）。
+     * 适用于智谱/DeepSeek/Kimi/OpenAI/xAI；Anthropic 无此端点不应调用。
+     * @return 模型 id 排序列表；失败抛异常由调用方提示
+     */
+    fun fetch_models(): List<String> {
+        val url = settings.base_url.trimEnd('/') + "/models"
+        val request = Request.Builder()
+            .url(url)
+            .header("Authorization", "Bearer ${settings.api_key}")
+            .header("Accept", "application/json")
+            .get()
+            .build()
+        http_client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                val errBody = response.body?.string()?.take(300) ?: ""
+                throw RuntimeException("${response.code}: ${errBody.ifBlank { response.message }}")
+            }
+            val body = response.body?.string() ?: throw RuntimeException("空响应")
+            val json = JsonParser.parseString(body).asJsonObject
+            val data = json.getAsJsonArray("data") ?: throw RuntimeException("响应无 data 字段")
+            return data.mapNotNull { elem ->
+                runCatching { elem.asJsonObject.get("id")?.takeIf { !it.isJsonNull }?.asString }.getOrNull()
+            }.filter { it.isNotBlank() }.sorted()
+        }
+    }
+
     // ============ OpenAI 兼容 ============
     private suspend fun stream_openai(messages: List<ai_message>, tools: List<Map<String, Any>>, callback: ai_stream_callback) {
         val url = settings.base_url.trimEnd('/') + "/chat/completions"
@@ -72,6 +100,7 @@ class ai_client(
         http_client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) {
                 val errBody = response.body?.string()?.take(500) ?: ""
+                Log.e("GoStudio_AI", "OpenAI 请求失败 ${response.code}\nURL: $url\n请求体: ${body.take(800)}\n响应: $errBody")
                 callback.on_error("请求失败 ${response.code}: ${errBody.ifBlank { response.message }}")
                 return
             }
@@ -167,11 +196,12 @@ class ai_client(
             payload["tools"] = tools.map { t ->
                 @Suppress("UNCHECKED_CAST")
                 val fn = t["function"] as Map<String, Any>
-                val paramsJson = fn["parameters"] as String
+                // parameters 现在是 JsonObject（to_api_tools 直接传对象），Anthropic 用 input_schema
+                val schema = fn["parameters"] as JsonObject
                 linkedMapOf<String, Any>(
                     "name" to fn["name"]!!,
                     "description" to fn["description"]!!,
-                    "input_schema" to gson.fromJson(paramsJson, JsonObject::class.java)
+                    "input_schema" to schema
                 )
             }
         }

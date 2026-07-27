@@ -21,6 +21,15 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Modifier
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -93,6 +102,31 @@ class editor_activity : ComponentActivity() {
     private var ai_file_change_notifier: com.jmwl.gostudio.ai.ai_file_change_notifier? = null
     /** AI 设置页覆盖层开关 */
     private var show_ai_settings by mutableStateOf(false)
+    /** 会话级提供商/模型 override（null=跟随全局设置）。可观察以驱动选择器显示。 */
+    private var _session_override by mutableStateOf<Pair<com.jmwl.gostudio.ai.ai_provider, String>?>(null)
+    val session_override: Pair<com.jmwl.gostudio.ai.ai_provider, String>? get() = _session_override
+
+    /** 当前生效的提供商（会话 override 优先，否则全局） */
+    private fun current_ai_provider(): com.jmwl.gostudio.ai.ai_provider =
+        _session_override?.first ?: com.jmwl.gostudio.ai.load_ai_settings(this).provider
+
+    /** 当前生效的模型 */
+    private fun current_ai_model(): String =
+        _session_override?.second ?: com.jmwl.gostudio.ai.load_ai_settings(this).model
+
+    /** 各提供商可用的模型（来自全局 custom_models 缓存，按 base_url 映射到 provider） */
+    private fun current_ai_available_models(): Map<com.jmwl.gostudio.ai.ai_provider, List<String>> {
+        val s = com.jmwl.gostudio.ai.load_ai_settings(this)
+        return com.jmwl.gostudio.ai.ai_provider.entries.associateWith { p ->
+            s.custom_models[p.base_url] ?: emptyList()
+        }
+    }
+
+    /** 已配置 key 的供应商（会话栏选择器只显示这些） */
+    private fun configured_ai_providers(): Set<com.jmwl.gostudio.ai.ai_provider> {
+        val s = com.jmwl.gostudio.ai.load_ai_settings(this)
+        return s.api_keys.filter { it.value.isNotBlank() }.keys
+    }
 
     private val file_tree_children_cache = mutableMapOf<String, List<editor_file_node>>()
     private lateinit var search_controller: editor_search_controller
@@ -133,6 +167,16 @@ class editor_activity : ComponentActivity() {
             }
         }
         initialize_project()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // 从全局设置改完编辑器配置返回后，重载让设置即时生效
+        val latest = load_editor_settings(this)
+        if (latest != state.editor_settings) {
+            state.editor_settings = latest
+            apply_editor_settings(latest)
+        }
     }
 
     override fun onDestroy() {
@@ -225,7 +269,6 @@ class editor_activity : ComponentActivity() {
             },
             selected_tab_path = state.current_file_path,
             toolbar_visible = state.toolbar_visible,
-            editor_settings = state.editor_settings,
             output_panel_state = output_panel_state,
             terminal_cwd = project_dir.takeIf { it.isDirectory }?.absolutePath
                 ?: toolchain_runtime_provider.paths().home_dir.absolutePath,
@@ -235,9 +278,7 @@ class editor_activity : ComponentActivity() {
                 emptyMap()
             },
             on_toggle_toolbar = { state.toolbar_visible = !state.toolbar_visible },
-            on_editor_settings_change = { settings -> update_editor_settings(settings) },
             on_project_config_apply = { config, on_saved -> apply_project_config(config, on_saved) },
-            on_import_editor_font = { request_import_editor_font() },
             on_select_tab = { path -> request_select_tab(path) },
             on_pin_tab = { path -> toggle_pin_tab(path) },
             on_close_tab = { path -> request_close_tab(path) },
@@ -271,18 +312,38 @@ class editor_activity : ComponentActivity() {
             goto_definition_running = goto_running,
             on_goto_definition = { goto_definition() },
             ai_agent = ai_agent,
-            on_open_ai_settings = { show_ai_settings = true }
+            on_open_ai_settings = { show_ai_settings = true },
+            ai_current_provider = current_ai_provider(),
+            ai_current_model = current_ai_model(),
+            ai_available_models = current_ai_available_models(),
+            ai_configured_providers = configured_ai_providers(),
+            on_ai_session_model_change = { p, m -> _session_override = p to m }
         )
 
-        if (show_ai_settings) {
-            com.jmwl.gostudio.ui.screens.ai.ai_settings_screen(
-                initial = com.jmwl.gostudio.ai.load_ai_settings(this),
-                on_back = { show_ai_settings = false },
-                on_save = { new_settings ->
-                    com.jmwl.gostudio.ai.save_ai_settings(this, new_settings)
-                    show_ai_settings = false
-                }
-            )
+        AnimatedVisibility(
+            visible = show_ai_settings,
+            enter = slideInHorizontally(initialOffsetX = { it }) + fadeIn(),
+            exit = slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(colors.editor_bg)
+            ) {
+                com.jmwl.gostudio.ui.screens.ai.ai_settings_screen(
+                    initial = com.jmwl.gostudio.ai.load_ai_settings(this@editor_activity),
+                    on_back = { show_ai_settings = false },
+                    on_save = { new_settings ->
+                        com.jmwl.gostudio.ai.save_ai_settings(this@editor_activity, new_settings)
+                        show_ai_settings = false
+                    },
+                    project_dir = project_dir
+                )
+            }
+        }
+
+        BackHandler(enabled = show_ai_settings) {
+            show_ai_settings = false
         }
 
         if (state.show_exit_dialog) {
@@ -495,6 +556,7 @@ class editor_activity : ComponentActivity() {
         }
 
         val skill_manager = com.jmwl.gostudio.ai.skills.ai_skill_manager(global_skills_dir, project_skills_dir)
+        registry.register(com.jmwl.gostudio.ai.tools.create_skill_tool(skill_manager))
         val input_processor = com.jmwl.gostudio.ai.ai_input_processor(
             project_dir = project,
             skill_manager = skill_manager,
@@ -511,7 +573,18 @@ class editor_activity : ComponentActivity() {
         file_change_notifier.set_listener { changed_paths -> refresh_files_after_ai_edit(changed_paths) }
 
         ai_agent = com.jmwl.gostudio.ai.ai_agent_loop(
-            settings_provider = { com.jmwl.gostudio.ai.load_ai_settings(this) },
+            settings_provider = {
+                // 会话级 override：切了提供商/模型则覆盖全局设置（含回填对应供应商的 key）
+                val base = com.jmwl.gostudio.ai.load_ai_settings(this)
+                _session_override?.let { (p, m) ->
+                    base.copy(
+                        provider = p,
+                        model = m,
+                        base_url = p.base_url.ifBlank { base.base_url },
+                        api_key = base.api_keys[p] ?: base.api_key
+                    )
+                } ?: base
+            },
             env_provider = {
                 com.jmwl.gostudio.ai.ai_environment_context(
                     project_dir = project,

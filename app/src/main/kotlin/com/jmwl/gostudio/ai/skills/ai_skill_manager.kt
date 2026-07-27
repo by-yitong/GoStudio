@@ -116,6 +116,44 @@ class ai_skill_manager(
         val s = find(name) ?: return null
         return runCatching { File(s.skill_dir, "SKILL.md").readText() }.getOrNull()
     }
+
+    /** 列出所有 skill（供管理 UI） */
+    fun all(): List<ai_skill> = skills.sortedBy { it.name }
+
+    /** 创建新 skill（写到全局目录），返回是否成功 */
+    fun create_skill(name: String, description: String, content: String): Boolean {
+        if (name.isBlank()) return false
+        val safe_name = name.trim().replace(Regex("[^a-zA-Z0-9_-]"), "-")
+        val dir = File(global_skills_dir, safe_name)
+        dir.mkdirs()
+        val md = File(dir, "SKILL.md")
+        val full = buildString {
+            appendLine("---")
+            appendLine("name: $safe_name")
+            appendLine("description: $description")
+            appendLine("---")
+            appendLine()
+            appendLine(content.trim())
+        }
+        return runCatching { md.writeText(full); discover(); true }.getOrDefault(false)
+    }
+
+    /** 删除 skill（仅允许删全局/项目的，内置不删） */
+    fun delete_skill(name: String): Boolean {
+        val s = find(name) ?: return false
+        if (s.source == skill_source.BUILT_IN) return false
+        return runCatching {
+            s.skill_dir.deleteRecursively()
+            discover()
+            true
+        }.getOrDefault(false)
+    }
+
+    /** 读取 skill 的 SKILL.md 全文 */
+    fun read_skill_content(name: String): String? {
+        val s = find(name) ?: return null
+        return runCatching { File(s.skill_dir, "SKILL.md").readText() }.getOrNull()
+    }
 }
 
 /**
