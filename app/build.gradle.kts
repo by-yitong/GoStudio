@@ -45,17 +45,33 @@ android {
     }
     
     signingConfigs {
-        create("release") {
-            keyAlias = "gostudio"
-            keyPassword = "REDACTED"
-            storePassword = "REDACTED"
-            storeFile = file("gostudio-release.jks")
+        // 从 local.properties 读取签名信息（该文件已被 .gitignore 排除，不会入库）
+        // 缺失任何一项时，不创建 release 签名配置 —— release 将降级为 debug 签名
+        val props = rootProject.file("local.properties")
+        val signProps = if (props.exists()) {
+            java.util.Properties().apply { props.inputStream().use { load(it) } }
+        } else null
+
+        val storePath = signProps?.getProperty("GOSTUDIO_KEYSTORE_PATH")
+        val keyAlias = signProps?.getProperty("GOSTUDIO_KEY_ALIAS")
+        val keyPassword = signProps?.getProperty("GOSTUDIO_KEY_PASSWORD")
+        val storePassword = signProps?.getProperty("GOSTUDIO_STORE_PASSWORD")
+
+        if (storePath != null && keyAlias != null && keyPassword != null && storePassword != null) {
+            create("release") {
+                this.keyAlias = keyAlias
+                this.keyPassword = keyPassword
+                this.storePassword = storePassword
+                storeFile = rootProject.file(storePath)
+            }
         }
     }
 
     buildTypes {
         getByName("release") {
-            signingConfig = signingConfigs.getByName("release")
+            // 仅在 release 签名配置存在时才启用签名，否则使用 debug 签名（降级）
+            signingConfig = signingConfigs.findByName("release")
+            isMinifyEnabled = false
         }
     }
     
