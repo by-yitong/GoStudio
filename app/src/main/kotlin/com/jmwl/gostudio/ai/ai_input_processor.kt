@@ -36,8 +36,8 @@ class ai_input_processor(
             }
         }
 
-        // /命令 → prompt 模板
-        if (trimmed.startsWith("/") && !trimmed.startsWith("/")) {
+        // /命令 → prompt 模板（排除已处理的 /skill: 分支）
+        if (trimmed.startsWith("/") && !trimmed.startsWith("/skill:")) {
             val parts = trimmed.removePrefix("/").split(Regex("\\s+"), limit = 2)
             val template_name = parts[0]
             val args = parts.getOrNull(1) ?: ""

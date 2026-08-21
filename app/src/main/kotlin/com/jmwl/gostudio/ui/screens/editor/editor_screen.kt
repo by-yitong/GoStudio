@@ -44,9 +44,15 @@ internal fun editor_screen(
     project_root_path: String,
     editor: CodeEditor,
     current_file_name: String,
-    cursor_line: Int,
-    cursor_column: Int,
-    cursor_selected: Boolean,
+    /**
+     * 光标状态以 provider/StateFlow 传入，在最小的叶子组合里读取：
+     * 若直接以 Int/Boolean 参数传入，每次光标移动都会让整个 editor_screen 重组
+     * （顶栏/标签栏/输出面板全部重新执行），造成主线程过慢、拖动光标卡顿。
+     */
+    cursor_line_provider: () -> Int,
+    cursor_column_provider: () -> Int,
+    cursor_selected_provider: () -> Boolean,
+    can_goto_definition_flow: kotlinx.coroutines.flow.StateFlow<Boolean>,
     has_changes: Boolean,
     loading: Boolean,
     read_only: Boolean,
@@ -92,7 +98,6 @@ internal fun editor_screen(
     on_directory_click: (String) -> Unit,
     on_file_click: (String) -> Unit,
     on_file_position_click: (String, Int, Int) -> Unit,
-    can_goto_definition: Boolean,
     goto_definition_running: Boolean,
     on_goto_definition: () -> Unit,
     ai_agent: com.jmwl.gostudio.ai.ai_agent_loop? = null,
@@ -101,7 +106,11 @@ internal fun editor_screen(
     ai_current_model: String = "",
     ai_available_models: Map<com.jmwl.gostudio.ai.ai_provider, List<String>> = emptyMap(),
     ai_configured_providers: Set<com.jmwl.gostudio.ai.ai_provider> = emptySet(),
-    on_ai_session_model_change: (com.jmwl.gostudio.ai.ai_provider, String) -> Unit = { _, _ -> }
+    on_ai_session_model_change: (com.jmwl.gostudio.ai.ai_provider, String) -> Unit = { _, _ -> },
+    ai_global_prompts_dir: java.io.File? = null,
+    ai_project_prompts_dir: java.io.File? = null,
+    /** 递增触发器：外部想让 AI 弹窗打开时把这个值 +1 */
+    ai_open_trigger: Int = 0
 ) {
     val colors = app_theme_provider.colors
     var drawer_open by remember { mutableStateOf(false) }
@@ -118,6 +127,10 @@ internal fun editor_screen(
     var search_panel_offset by remember { mutableStateOf(Offset.Zero) }
     var create_dialog_request by remember { mutableStateOf<editor_create_dialog_request?>(null) }
     var show_ai_sheet by remember { mutableStateOf(false) }
+    // 外部触发打开 AI 弹窗（编辑器选区 AI 动作）
+    LaunchedEffect(ai_open_trigger) {
+        if (ai_open_trigger > 0) show_ai_sheet = true
+    }
     var editor_focused by remember { mutableStateOf(false) }
     val terminal_state = remember_editor_terminal_state()
     val drawer_progress = remember { Animatable(0f) }
@@ -269,24 +282,19 @@ internal fun editor_screen(
                             horizontalAlignment = Alignment.End,
                             verticalArrangement = Arrangement.spacedBy(7.dp)
                         ) {
-                            cursor_chip(
-                                line = cursor_line,
-                                column = cursor_column
-                            )
-
-                            AnimatedVisibility(visible = can_goto_definition) {
-                                goto_definition_chip(
-                                    running = goto_definition_running,
-                                    on_click = on_goto_definition
-                                )
-                            }
-
-                            editor_floating_actions(
+                            // 光标相关状态全部在这个叶子组合里读取：
+                            // 光标移动只重组这一小块，不会带动整个 editor_screen
+                            editor_cursor_overlays(
+                                cursor_line_provider = cursor_line_provider,
+                                cursor_column_provider = cursor_column_provider,
+                                cursor_selected_provider = cursor_selected_provider,
+                                can_goto_definition_flow = can_goto_definition_flow,
+                                goto_definition_running = goto_definition_running,
+                                on_goto_definition = on_goto_definition,
                                 can_undo = can_undo,
                                 can_redo = can_redo,
                                 has_changes = has_changes,
                                 can_format = !read_only,
-                                format_selection = cursor_selected,
                                 show_format = true,
                                 show_save = true,
                                 on_undo = on_undo,
@@ -445,6 +453,9 @@ internal fun editor_screen(
                         available_models = ai_available_models,
                         configured_providers = ai_configured_providers,
                         on_session_model_change = on_ai_session_model_change,
+                        project_dir = java.io.File(project_root_path),
+                        global_prompts_dir = ai_global_prompts_dir,
+                        project_prompts_dir = ai_project_prompts_dir,
                         modifier = Modifier.fillMaxWidth().fillMaxHeight(0.82f)
                     )
                 }
@@ -453,4 +464,56 @@ internal fun editor_screen(
             }
         }
     }
+}
+
+/**
+ * 光标区叶子组合：行号 chip、跳转定义 chip、悬浮按钮。
+ * 光标状态（行/列/选区/可跳转）只在这里读取，光标每次移动仅重组此组合，
+ * 避免整个 editor_screen（顶栏/标签栏/输出面板）跟着重新执行。
+ */
+@Composable
+private fun editor_cursor_overlays(
+    cursor_line_provider: () -> Int,
+    cursor_column_provider: () -> Int,
+    cursor_selected_provider: () -> Boolean,
+    can_goto_definition_flow: kotlinx.coroutines.flow.StateFlow<Boolean>,
+    goto_definition_running: Boolean,
+    on_goto_definition: () -> Unit,
+    can_undo: Boolean,
+    can_redo: Boolean,
+    has_changes: Boolean,
+    can_format: Boolean,
+    show_format: Boolean,
+    show_save: Boolean,
+    on_undo: () -> Unit,
+    on_redo: () -> Unit,
+    on_format: () -> Unit,
+    on_save: () -> Unit
+) {
+    cursor_chip(
+        line = cursor_line_provider(),
+        column = cursor_column_provider()
+    )
+
+    val can_goto by can_goto_definition_flow.collectAsState()
+    AnimatedVisibility(visible = can_goto) {
+        goto_definition_chip(
+            running = goto_definition_running,
+            on_click = on_goto_definition
+        )
+    }
+
+    editor_floating_actions(
+        can_undo = can_undo,
+        can_redo = can_redo,
+        has_changes = has_changes,
+        can_format = can_format,
+        format_selection = cursor_selected_provider(),
+        show_format = show_format,
+        show_save = show_save,
+        on_undo = on_undo,
+        on_redo = on_redo,
+        on_format = on_format,
+        on_save = on_save
+    )
 }

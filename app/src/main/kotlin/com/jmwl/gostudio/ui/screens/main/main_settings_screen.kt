@@ -249,7 +249,7 @@ private fun main_settings_card_item(
             Box(
                 modifier = Modifier
                     .size(28.dp)
-                    .clip(RoundedCornerShape(7.dp))
+                    .clip(RoundedCornerShape(8.dp))
                     .background(colors.card_icon_bg.copy(alpha = 0.15f)),
                 contentAlignment = Alignment.Center
             ) {

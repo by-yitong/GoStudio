@@ -970,7 +970,7 @@ private fun ai_mode_tab(label: String, active: Boolean, colors: app_colors, on_c
         onClick = on_click
     ) {
         Text(label, fontSize = 12.sp, fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
-            color = if (active) androidx.compose.ui.graphics.Color.White else colors.subtitle,
+            color = if (active) colors.dialog_clone_text else colors.subtitle,
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp))
     }
 }
@@ -1088,7 +1088,7 @@ private fun ai_icon_chip(icon: ImageVector, colors: app_colors) {
     Box(
         modifier = Modifier
             .size(28.dp)
-            .clip(RoundedCornerShape(7.dp))
+            .clip(RoundedCornerShape(8.dp))
             .background(colors.card_icon_bg.copy(alpha = 0.15f)),
         contentAlignment = Alignment.Center
     ) {
@@ -1291,13 +1291,13 @@ private fun ai_save_button(colors: app_colors, label: String = "保存设置", o
         Icon(
             Icons.Default.Security,
             contentDescription = null,
-            tint = Color.White,
+            tint = colors.dialog_clone_text,
             modifier = Modifier.size(18.dp)
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(
             text = label,
-            color = Color.White,
+            color = colors.dialog_clone_text,
             fontSize = 15.sp,
             fontWeight = FontWeight.Bold
         )

@@ -13,6 +13,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.lifecycleScope
 import com.jmwl.gostudio.toolchain.proot_manager
 import com.jmwl.gostudio.toolchain.install_go_toolchain
+import com.jmwl.gostudio.toolchain.toolchain_manager
 import com.jmwl.gostudio.toolchain.runtime.format_rootfs_size
 import com.jmwl.gostudio.toolchain.runtime.format_rootfs_speed
 import com.jmwl.gostudio.toolchain.runtime.rootfs_install_event
@@ -190,6 +191,8 @@ class install_activity : ComponentActivity() {
                 }
 
                 add_log("所有安装步骤完成")
+                // 工具链刚装好，让 installed_go() 探测缓存失效
+                toolchain_manager.invalidate_go_probe()
                 delay(2000)
                 navigate_to_main()
             } catch (e: Exception) {

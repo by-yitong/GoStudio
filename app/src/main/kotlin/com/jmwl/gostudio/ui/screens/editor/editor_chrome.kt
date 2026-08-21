@@ -171,7 +171,7 @@ fun editor_tabs_bar(
                                     .padding(start = 8.dp)
                                     .size(4.dp)
                                     .clip(CircleShape)
-                                    .background(Color(0xFF2F80FF))
+                                    .background(colors.editor_tab_selected_icon)
                             )
                         }
                     }
@@ -265,7 +265,7 @@ fun editor_top_bar(
                     Icon(
                         imageVector = Icons.Default.Stop,
                         contentDescription = if (build_stopping) "正在停止" else "停止",
-                        tint = Color(0xFFFF5252)
+                        tint = colors.danger
                     )
                 }
             } else {

@@ -17,12 +17,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.jmwl.gostudio.ui.theme.app_theme_provider
 
 @Composable
 fun manage_storage_dialog(
@@ -102,25 +102,27 @@ private fun permission_dialog_card(
     on_cancel: () -> Unit,
     on_confirm: () -> Unit
 ) {
+    val colors = app_theme_provider.colors
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(24.dp),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = colors.dialog_bg)
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Text(
                 text = title,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.Black
+                color = colors.dialog_text
             )
             Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = message,
                 fontSize = 14.sp,
-                color = Color.Gray
+                color = colors.dialog_hint
             )
             Spacer(modifier = Modifier.height(20.dp))
             Row(
@@ -128,14 +130,14 @@ private fun permission_dialog_card(
                 horizontalArrangement = Arrangement.End
             ) {
                 TextButton(onClick = on_cancel) {
-                    Text(cancel_text, color = Color.Gray)
+                    Text(cancel_text, color = colors.dialog_hint)
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Button(
                     onClick = on_confirm,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF004DEA))
+                    colors = ButtonDefaults.buttonColors(containerColor = colors.dialog_clone_bg)
                 ) {
-                    Text(confirm_text, color = Color.White)
+                    Text(confirm_text, color = colors.dialog_clone_text)
                 }
             }
         }

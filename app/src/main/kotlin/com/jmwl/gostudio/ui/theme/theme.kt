@@ -20,16 +20,37 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
+// Hallmark-aligned: residual Material3 colorScheme mirrors the app_colors accent + neutrals
+// so the two surfaces that still read MaterialTheme.colorScheme.* (install_screen progress bar,
+// editor_search_panel surface) no longer render the default Material purple.
 private val dark_color_scheme = darkColorScheme(
-    primary = Color(0xFFD0BCFF),
-    secondary = Color(0xFFCCC2DC),
-    tertiary = Color(0xFFEFB8C8)
+    primary = Color(0xFF5B8DEF),         // accent (Go-blue)
+    onPrimary = Color(0xFFFAFBFC),       // accent-ink
+    secondary = Color(0xFF20232B),       // surface
+    onSecondary = Color(0xFFE8EAEE),     // ink
+    tertiary = Color(0xFF8A8F9A),        // muted
+    background = Color(0xFF17181D),      // paper
+    onBackground = Color(0xFFE8EAEE),    // ink
+    surface = Color(0xFF20232B),         // surface
+    onSurface = Color(0xFFE8EAEE),       // ink
+    surfaceVariant = Color(0xFF17181D),  // paper
+    onSurfaceVariant = Color(0xFF8A8F9A),// muted
+    outline = Color(0xFF343841)          // rule
 )
 
 private val light_color_scheme = lightColorScheme(
-    primary = Color(0xFF6650a4),
-    secondary = Color(0xFF625b71),
-    tertiary = Color(0xFF7D5260)
+    primary = Color(0xFF1F54E8),         // accent (Go-blue)
+    onPrimary = Color(0xFFFFFFFF),       // accent-ink
+    secondary = Color(0xFFF1F3F6),       // surface
+    onSecondary = Color(0xFF1A1D23),     // ink
+    tertiary = Color(0xFF5F6571),        // muted
+    background = Color(0xFFFAFBFC),      // paper
+    onBackground = Color(0xFF1A1D23),    // ink
+    surface = Color(0xFFFFFFFF),         // sunken
+    onSurface = Color(0xFF1A1D23),       // ink
+    surfaceVariant = Color(0xFFF1F3F6),  // surface
+    onSurfaceVariant = Color(0xFF5F6571),// muted
+    outline = Color(0xFFE0E3E8)          // rule
 )
 
 @Composable

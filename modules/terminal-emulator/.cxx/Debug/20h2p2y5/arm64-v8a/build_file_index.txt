@@ -1,1 +1,0 @@
-/home/admins/AndroidStudioProjects/XCode/modules/terminal-emulator/src/main/cpp/CMakeLists.txt

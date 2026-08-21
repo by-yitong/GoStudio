@@ -371,13 +371,13 @@ private fun search_option_button(
     Surface(
         modifier = Modifier
             .size(width = 34.dp, height = 28.dp)
-            .clip(RoundedCornerShape(7.dp))
+            .clip(RoundedCornerShape(8.dp))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = ripple(bounded = true),
                 onClick = on_click
             ),
-        shape = RoundedCornerShape(7.dp),
+        shape = RoundedCornerShape(8.dp),
         color = if (selected) colors.editor_sidebar_selected_bg else Color.Transparent
     ) {
         Box(contentAlignment = Alignment.Center) {
@@ -404,7 +404,7 @@ private fun search_replace_button(
     Box(
         modifier = modifier
             .size(width = 34.dp, height = 28.dp)
-            .clip(RoundedCornerShape(7.dp))
+            .clip(RoundedCornerShape(8.dp))
             .clickable(
                 enabled = enabled,
                 interactionSource = remember { MutableInteractionSource() },

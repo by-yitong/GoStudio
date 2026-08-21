@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -49,7 +51,7 @@ android {
         // 缺失任何一项时，不创建 release 签名配置 —— release 将降级为 debug 签名
         val props = rootProject.file("local.properties")
         val signProps = if (props.exists()) {
-            java.util.Properties().apply { props.inputStream().use { load(it) } }
+            Properties().apply { props.inputStream().use { load(it) } }
         } else null
 
         val storePath = signProps?.getProperty("GOSTUDIO_KEYSTORE_PATH")

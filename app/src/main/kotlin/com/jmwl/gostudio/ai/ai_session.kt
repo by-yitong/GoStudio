@@ -5,6 +5,14 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import java.io.File
 
+/** 会话元信息（用于历史列表展示） */
+data class ai_session_meta(
+    val id: String,
+    val title: String,
+    val mtime: Long,
+    val message_count: Int
+)
+
 /**
  * 会话持久化：每个项目一个 JSONL 文件，每行一条消息。
  *
@@ -19,20 +27,40 @@ class ai_session_store(private val sessions_dir: File) {
     init { sessions_dir.mkdirs() }
 
     private fun session_file(session_id: String): File = File(sessions_dir, "$session_id.jsonl")
+    private fun meta_file(session_id: String): File = File(sessions_dir, "$session_id.meta.json")
 
-    /** 保存整个对话历史（覆盖写） */
+    /** 保存整个对话历史（覆盖写），同时更新会话元信息（标题/消息数） */
     fun save_session(session_id: String, messages: List<ai_message>) {
         val file = session_file(session_id)
+        var first_user_text = ""
+        var visible_count = 0
         file.bufferedWriter(Charsets.UTF_8).use { writer ->
             // 只持久化有意义的消息（跳过 streaming 中的占位、空 assistant）
             for (msg in messages) {
                 if (msg.role == ai_message_role.SYSTEM) continue
                 if (msg.streaming) continue
                 if (msg.role == ai_message_role.ASSISTANT && !msg.has_visible_text && msg.tool_calls.isEmpty()) continue
+                if (msg.role == ai_message_role.USER && first_user_text.isBlank()) {
+                    first_user_text = msg.text.take(30).replace("\n", " ").trim()
+                }
+                visible_count++
                 val obj = message_to_json(msg)
                 writer.write(obj.toString())
                 writer.newLine()
             }
+        }
+        // 更新 sidecar 元信息
+        save_meta(session_id, first_user_text.ifBlank { "新对话" }, visible_count)
+    }
+
+    /** 保存会话元信息 sidecar（标题/消息数） */
+    private fun save_meta(session_id: String, title: String, message_count: Int) {
+        runCatching {
+            val obj = JsonObject().apply {
+                addProperty("title", title)
+                addProperty("message_count", message_count)
+            }
+            meta_file(session_id).writeText(obj.toString())
         }
     }
 
@@ -49,17 +77,45 @@ class ai_session_store(private val sessions_dir: File) {
         }.getOrDefault(emptyList())
     }
 
-    /** 列出所有会话（按修改时间倒序） */
-    fun list_sessions(): List<Pair<String, Long>> {
+    /** 列出所有会话（按修改时间倒序），含标题/消息数 */
+    fun list_sessions(): List<ai_session_meta> {
         return sessions_dir.listFiles { f -> f.isFile && f.name.endsWith(".jsonl") }
-            ?.map { it.nameWithoutExtension to it.lastModified() }
-            ?.sortedByDescending { it.second }
+            ?.map { file ->
+                val id = file.nameWithoutExtension
+                val meta = read_meta(id)
+                ai_session_meta(
+                    id = id,
+                    title = meta?.first ?: "新对话",
+                    mtime = file.lastModified(),
+                    message_count = meta?.second ?: 0
+                )
+            }
+            ?.sortedByDescending { it.mtime }
             ?: emptyList()
     }
 
-    /** 删除某会话 */
+    /** 读取 sidecar 元信息，返回 (title, message_count) */
+    private fun read_meta(session_id: String): Pair<String, Int>? {
+        val file = meta_file(session_id)
+        if (!file.isFile) return null
+        return runCatching {
+            val obj = JsonParser.parseString(file.readText()).asJsonObject
+            val title = obj.get("title")?.takeIf { !it.isJsonNull }?.asString ?: "新对话"
+            val count = obj.get("message_count")?.takeIf { !it.isJsonNull }?.asInt ?: 0
+            title to count
+        }.getOrNull()
+    }
+
+    /** 重命名会话（只改 sidecar 标题） */
+    fun rename_session(session_id: String, new_title: String) {
+        val existing = read_meta(session_id) ?: ("新对话" to 0)
+        save_meta(session_id, new_title.take(60), existing.second)
+    }
+
+    /** 删除某会话（含 sidecar） */
     fun delete_session(session_id: String) {
         session_file(session_id).delete()
+        meta_file(session_id).delete()
     }
 
     private fun message_to_json(msg: ai_message): JsonObject {
@@ -73,6 +129,7 @@ class ai_session_store(private val sessions_dir: File) {
         }
         if (msg.tool_call_id.isNotEmpty()) obj.addProperty("tool_call_id", msg.tool_call_id)
         if (msg.is_error) obj.addProperty("is_error", true)
+        if (msg.reasoning.isNotBlank()) obj.addProperty("reasoning", msg.reasoning)
         return obj
     }
 
@@ -89,9 +146,10 @@ class ai_session_store(private val sessions_dir: File) {
         } ?: emptyList()
         val tool_call_id = obj.get("tool_call_id")?.takeIf { !it.isJsonNull }?.asString ?: ""
         val is_error = obj.get("is_error")?.takeIf { !it.isJsonNull }?.asBoolean ?: false
+        val reasoning = obj.get("reasoning")?.takeIf { !it.isJsonNull }?.asString ?: ""
         return ai_message(
             role = role, text = text, tool_calls = tool_calls,
-            tool_call_id = tool_call_id, is_error = is_error
+            tool_call_id = tool_call_id, is_error = is_error, reasoning = reasoning
         )
     }
 }

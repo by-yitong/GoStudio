@@ -33,7 +33,7 @@ class ai_agent_loop(
     private val scope_launcher: (suspend () -> Unit) -> Job,
     private val input_processor: ai_input_processor? = null,
     private val session_store: ai_session_store? = null,
-    private val session_id: String = "default",
+    private var session_id: String = "default",
     private val skill_manager: com.jmwl.gostudio.ai.skills.ai_skill_manager? = null,
     private val mcp_manager: com.jmwl.gostudio.ai.mcp.ai_mcp_manager? = null,
     private val file_change_notifier: ai_file_change_notifier? = null,
@@ -119,6 +119,121 @@ class ai_agent_loop(
         session_store?.delete_session(session_id)
     }
 
+    /** 当前会话 id */
+    fun current_session_id(): String = session_id
+
+    /** 列出所有历史会话（UI 展示用） */
+    fun list_sessions(): List<ai_session_meta> = session_store?.list_sessions() ?: emptyList()
+
+    /** 切换到指定会话：清内存 → 加载该会话历史 → 重设 session_id */
+    suspend fun switch_session(new_id: String) {
+        if (_is_running.value) cancel()
+        steering_queue?.clear()
+        session_id = new_id
+        val history = session_store?.load_session(new_id) ?: emptyList()
+        on_main {
+            messages.clear()
+            messages.addAll(history)
+        }
+    }
+
+    /** 新建空会话：生成时间戳 id，清内存 */
+    fun new_session(): String {
+        if (_is_running.value) cancel()
+        steering_queue?.clear()
+        val new_id = "chat-" + System.currentTimeMillis()
+        session_id = new_id
+        on_main { messages.clear() }
+        return new_id
+    }
+
+    /** 重命名当前会话（只改 sidecar 标题） */
+    fun rename_session(new_title: String) {
+        session_store?.rename_session(session_id, new_title)
+    }
+
+    /** 删除指定会话（不切换当前） */
+    fun delete_session_by_id(id: String) {
+        session_store?.delete_session(id)
+    }
+
+    /**
+     * 重新生成最后一条 assistant 回复：
+     * 找到最后一条 assistant 消息及其后的所有 TOOL 消息，一并移除，然后用上一条 user 消息重跑。
+     */
+    fun regenerate_last() {
+        if (_is_running.value) return
+        if (messages.isEmpty()) return
+        on_main {
+            // 从后往前找最后一条 assistant
+            var lastAssistantIdx = -1
+            for (i in messages.indices.reversed()) {
+                if (messages[i].role == ai_message_role.ASSISTANT) {
+                    lastAssistantIdx = i
+                    break
+                }
+            }
+            if (lastAssistantIdx < 0) return@on_main
+            // 删除该 assistant 及其之后的所有消息
+            while (messages.size > lastAssistantIdx) messages.removeAt(messages.size - 1)
+            // 上一条 user 必须存在才能重跑
+            val hasUser = messages.any { it.role == ai_message_role.USER }
+            if (!hasUser) return@on_main
+        }
+        persist_session_via_scope()
+        start_loop()
+    }
+
+    /**
+     * 删除指定索引的单条消息。若删的是 assistant，连带其后属于它的 TOOL 结果消息。
+     */
+    fun delete_message(index: Int) {
+        if (_is_running.value) return
+        if (index !in messages.indices) return
+        on_main {
+            val msg = messages[index]
+            messages.removeAt(index)
+            // 若删的是 assistant，移除紧随其后的 TOOL 消息（直到下一条 user/assistant）
+            if (msg.role == ai_message_role.ASSISTANT) {
+                while (messages.size > index && messages[index].role == ai_message_role.TOOL) {
+                    messages.removeAt(index)
+                }
+            }
+            // 若删的是 user，其后紧随的 assistant+tool 一并删（避免悬空）
+            if (msg.role == ai_message_role.USER) {
+                while (messages.size > index && messages[index].role != ai_message_role.USER) {
+                    messages.removeAt(index)
+                }
+            }
+        }
+        persist_session_via_scope()
+    }
+
+    /**
+     * 编辑某条 user 消息并重发：改写文本，删除其后所有消息，重新跑 loop。
+     */
+    fun edit_and_resend_user(index: Int, new_text: String) {
+        if (_is_running.value) return
+        if (index !in messages.indices) return
+        val trimmed = new_text.trim()
+        if (trimmed.isEmpty()) return
+        val processed = input_processor?.process(trimmed) ?: trimmed
+        on_main {
+            if (messages[index].role != ai_message_role.USER) return@on_main
+            messages[index] = messages[index].copy(text = processed)
+            // 删除其后所有消息
+            while (messages.size > index + 1) messages.removeAt(messages.size - 1)
+        }
+        persist_session_via_scope()
+        start_loop()
+    }
+
+    private fun persist_session_via_scope() {
+        scope_launcher {
+            persist_session()
+        }
+    }
+
     /** 退出时清理 MCP server */
     fun shutdown() {
         mcp_manager?.stop()
@@ -169,6 +284,12 @@ class ai_agent_loop(
                     assistant_msg.text += delta
                     val idx = msg_index_holder[0]
                     // 用 copy() 创建新实例触发 Compose 更新（同引用 set 不会重组）
+                    on_main { if (idx in messages.indices) messages[idx] = assistant_msg.copy() }
+                }
+                override fun on_reasoning(delta: String) {
+                    // reasoning 模型的思考链增量（UI 展示用，不发给 API）
+                    assistant_msg.reasoning += delta
+                    val idx = msg_index_holder[0]
                     on_main { if (idx in messages.indices) messages[idx] = assistant_msg.copy() }
                 }
                 override fun on_done(tool_calls: List<ai_tool_call>) {

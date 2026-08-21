@@ -1,8 +1,0 @@
-{
-	"InstallScripts" : 
-	[
-		"/home/admins/AndroidStudioProjects/XCode/modules/sora-oniguruma-native/.cxx/Debug/1s414i11/arm64-v8a/cmake_install.cmake",
-		"/home/admins/AndroidStudioProjects/XCode/modules/sora-oniguruma-native/.cxx/Debug/1s414i11/arm64-v8a/oniguruma/cmake_install.cmake"
-	],
-	"Parallel" : false
-}

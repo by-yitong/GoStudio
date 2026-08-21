@@ -1,6 +1,11 @@
 package com.jmwl.gostudio.ui.screens.ai
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
@@ -32,55 +37,87 @@ import com.jmwl.gostudio.ui.theme.app_theme_provider
  * - user: 右对齐，强调色背景
  * - assistant: 左对齐，卡片背景，支持代码块/流式光标
  * - tool: 不单独显示气泡（归入 assistant 的工具卡片）
+ *
+ * @param show_thinking 是否展示工具执行卡片（由调用方从设置读一次后传入，避免每条消息都读磁盘）
+ * @param on_copy/on_share/on_delete/on_regenerate/on_edit 长按菜单动作；为 null 表示该动作不可用
  */
 @Composable
-fun ai_message_bubble(message: ai_message) {
-    // 读思考过程开关：关闭时隐藏工具执行卡片（只显示最终文本回复）
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val show_thinking = remember(message) {
-        com.jmwl.gostudio.ai.load_ai_settings(context).show_thinking_process
-    }
+fun ai_message_bubble(
+    message: ai_message,
+    show_thinking: Boolean = true,
+    on_copy: (() -> Unit)? = null,
+    on_share: (() -> Unit)? = null,
+    on_delete: (() -> Unit)? = null,
+    on_regenerate: (() -> Unit)? = null,
+    on_edit: ((String) -> Unit)? = null
+) {
     val has_visible = message.has_visible_text || (show_thinking && message.tool_executions.isNotEmpty())
     if (!has_visible) return
 
     val colors = app_theme_provider.colors
     val is_user = message.role == ai_message_role.USER
 
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 3.dp),
-        horizontalArrangement = if (is_user) Arrangement.End else Arrangement.Start
-    ) {
-        Surface(
-            modifier = Modifier.widthIn(max = 320.dp),
-            shape = RoundedCornerShape(
-                topStart = 14.dp, topEnd = 14.dp,
-                bottomStart = if (is_user) 14.dp else 4.dp,
-                bottomEnd = if (is_user) 4.dp else 14.dp
-            ),
-            color = when {
-                message.is_error -> colors.danger_bg.copy(alpha = 0.5f)
-                is_user -> colors.title_highlight.copy(alpha = 0.15f)
-                else -> colors.card_bg
-            }
+    val bubble_content: @Composable () -> Unit = {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 3.dp),
+            horizontalArrangement = if (is_user) Arrangement.End else Arrangement.Start
         ) {
-            Column(modifier = Modifier.padding(horizontal = 11.dp, vertical = 8.dp)) {
-                // 工具调用卡片（assistant 消息附带，受思考过程开关控制）
-                if (show_thinking && message.tool_executions.isNotEmpty()) {
-                    message.tool_executions.forEach { exec ->
-                        ai_tool_execution_card(exec)
+            Surface(
+                modifier = Modifier.widthIn(max = 320.dp),
+                shape = RoundedCornerShape(
+                    topStart = 14.dp, topEnd = 14.dp,
+                    bottomStart = if (is_user) 14.dp else 4.dp,
+                    bottomEnd = if (is_user) 4.dp else 14.dp
+                ),
+                color = when {
+                    message.is_error -> colors.danger_bg.copy(alpha = 0.5f)
+                    is_user -> colors.title_highlight.copy(alpha = 0.15f)
+                    else -> colors.card_bg
+                }
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 11.dp, vertical = 8.dp)) {
+                    // 工具调用卡片（assistant 消息附带，受思考过程开关控制）
+                    if (show_thinking && message.tool_executions.isNotEmpty()) {
+                        message.tool_executions.forEach { exec ->
+                            ai_tool_execution_card(exec)
+                            Spacer(modifier = Modifier.height(4.dp))
+                        }
+                    }
+                    // reasoning 思考链卡片（DeepSeek reasoning_content / Anthropic thinking）
+                    if (show_thinking && message.reasoning.isNotBlank()) {
+                        ai_reasoning_card(message.reasoning, message.streaming)
                         Spacer(modifier = Modifier.height(4.dp))
                     }
-                }
-                // 文本内容（代码块用等宽字体着色）
-                if (message.has_visible_text) {
-                    ai_text_with_code_blocks(
-                        text = message.text,
-                        color = if (message.is_error) colors.danger else colors.card_text_title,
-                        streaming = message.streaming
-                    )
+                    // 流式中且还没有文本/思考：显示打字指示器
+                    if (message.streaming && !message.has_visible_text && message.reasoning.isBlank()) {
+                        ai_typing_indicator()
+                    }
+                    // 文本内容（Markdown 渲染：标题/列表/表格/代码块/行内格式）
+                    if (message.has_visible_text) {
+                        ai_markdown_text(
+                            text = message.text,
+                            color = if (message.is_error) colors.danger else colors.card_text_title,
+                            streaming = message.streaming
+                        )
+                    }
                 }
             }
         }
+    }
+
+    // 有操作回调时，包一层长按菜单
+    if (on_copy != null || on_delete != null) {
+        ai_message_with_actions(
+            message = message,
+            on_copy = { on_copy?.invoke() },
+            on_share = { on_share?.invoke() },
+            on_delete = { on_delete?.invoke() },
+            on_regenerate = { on_regenerate?.invoke() },
+            on_edit = on_edit,
+            content = bubble_content
+        )
+    } else {
+        bubble_content()
     }
 }
 
@@ -166,68 +203,83 @@ private fun tool_display_name(name: String): String = when (name) {
 }
 
 /**
- * 简易文本渲染：识别 ``` 代码块，用等宽字体+背景色渲染。
- * 流式时末尾加光标 ▌。
- * （完整 markdown 渲染后续可加，第一版用这个够用）
+ * @deprecated 由 [ai_markdown_text] 取代（完整 Markdown 渲染）。保留空壳避免外部引用断裂。
  */
 @Composable
 fun ai_text_with_code_blocks(text: String, color: Color, streaming: Boolean) {
-    val colors = app_theme_provider.colors
-    val segments = remember(text) { split_code_blocks(text) }
+    ai_markdown_text(text = text, color = color, streaming = streaming)
+}
 
-    Column {
-        for (seg in segments) {
-            if (seg.is_code) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
-                    shape = RoundedCornerShape(6.dp),
-                    color = colors.editor_bg.copy(alpha = 0.6f)
-                ) {
-                    Text(
-                        text = seg.content,
-                        fontSize = 11.sp,
-                        fontFamily = FontFamily.Monospace,
-                        color = colors.editor_text,
-                        modifier = Modifier.padding(8.dp)
-                    )
-                }
-            } else if (seg.content.isNotBlank()) {
+/**
+ * reasoning 思考链卡片（可折叠）。流式中默认展开，结束后默认折叠。
+ */
+@Composable
+fun ai_reasoning_card(reasoning: String, streaming: Boolean) {
+    val colors = app_theme_provider.colors
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val auto_expand = remember { com.jmwl.gostudio.ai.load_ai_settings(context).auto_expand_thinking }
+    var expanded by remember(reasoning.isNotEmpty()) { mutableStateOf(streaming || auto_expand) }
+
+    Surface(
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp))
+            .clickable { expanded = !expanded },
+        color = colors.editor_bg.copy(alpha = 0.4f)
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                Text("💭", fontSize = 11.sp)
                 Text(
-                    text = seg.content,
-                    fontSize = 13.sp,
-                    color = color,
-                    lineHeight = 18.sp
+                    text = if (streaming) "思考中…" else "思考过程",
+                    fontSize = 11.sp, fontWeight = FontWeight.Medium,
+                    color = colors.subtitle
+                )
+                Spacer(Modifier.weight(1f))
+                Icon(
+                    if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = null, tint = colors.subtitle, modifier = Modifier.size(13.dp)
                 )
             }
-        }
-        if (streaming) {
-            Text("▌", fontSize = 13.sp, color = colors.title_highlight)
+            AnimatedVisibility(visible = expanded, enter = expandVertically(), exit = shrinkVertically()) {
+                Text(
+                    text = reasoning,
+                    fontSize = 10.5.sp,
+                    fontFamily = FontFamily.Monospace,
+                    color = colors.subtitle,
+                    lineHeight = 15.sp,
+                    modifier = Modifier.padding(top = 5.dp).heightIn(max = 200.dp).verticalScroll(rememberScrollState())
+                )
+            }
         }
     }
 }
 
-private data class text_segment(val content: String, val is_code: Boolean)
-
-private fun split_code_blocks(text: String): List<text_segment> {
-    val result = mutableListOf<text_segment>()
-    val regex = Regex("```(\\w*)\\n?([\\s\\S]*?)```")
-    var lastEnd = 0
-    for (m in regex.findAll(text)) {
-        if (m.range.first > lastEnd) {
-            result.add(text_segment(text.substring(lastEnd, m.range.first), false))
+/**
+ * 打字指示器：三个错相位跳动的圆点。
+ */
+@Composable
+fun ai_typing_indicator() {
+    val colors = app_theme_provider.colors
+    val transition = rememberInfiniteTransition(label = "typing")
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier.padding(vertical = 2.dp)
+    ) {
+        repeat(3) { i ->
+            val alpha by transition.animateFloat(
+                initialValue = 0.3f,
+                targetValue = 1f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(600, delayMillis = i * 150),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "dot_$i"
+            )
+            Box(
+                modifier = Modifier
+                    .size(7.dp)
+                    .clip(androidx.compose.foundation.shape.CircleShape)
+                    .background(colors.title_highlight.copy(alpha = alpha))
+            )
         }
-        result.add(text_segment(m.groupValues[2].trimEnd('\n'), true))
-        lastEnd = m.range.last + 1
     }
-    if (lastEnd < text.length) result.add(text_segment(text.substring(lastEnd), false))
-    // 流式中可能有不完整的 ``` 开头（代码块还没闭合）
-    val afterLast = result.lastOrNull()?.takeIf { !it.is_code }
-    if (afterLast != null && afterLast.content.contains("```")) {
-        val idx = afterLast.content.indexOf("```")
-        if (idx >= 0) {
-            result[result.lastIndex] = text_segment(afterLast.content.substring(0, idx), false)
-            result.add(text_segment(afterLast.content.substring(idx + 3), true))
-        }
-    }
-    return result
 }

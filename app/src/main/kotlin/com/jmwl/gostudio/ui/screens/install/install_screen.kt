@@ -16,25 +16,23 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Circle
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.jmwl.gostudio.ui.theme.app_theme_provider
 import kotlinx.coroutines.delay
 
 @Composable
@@ -47,6 +45,7 @@ fun install_screen(
     on_export_logs: () -> Unit
 ) {
     val list_state = rememberLazyListState()
+    val colors = app_theme_provider.colors
 
     LaunchedEffect(logs.size, logs.lastOrNull()) {
         delay(50)
@@ -66,7 +65,7 @@ fun install_screen(
             text = "GoStudio",
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
+            color = colors.title_highlight
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -74,7 +73,7 @@ fun install_screen(
         Text(
             text = "Ubuntu基础环境安装",
             fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = colors.subtitle
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -84,40 +83,29 @@ fun install_screen(
                 .fillMaxWidth()
                 .height(320.dp),
             shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E2E))
+            colors = CardDefaults.cardColors(containerColor = colors.editor_bg)
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color(0xFF2A2A3A))
+                        .background(colors.card_bg)
                         .padding(horizontal = 12.dp, vertical = 10.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        horizontalArrangement = Arrangement.Start,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.Circle, null, tint = Color(0xFFFF5F56), modifier = Modifier.size(12.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Icon(Icons.Default.Circle, null, tint = Color(0xFFFFBD2E), modifier = Modifier.size(12.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Icon(Icons.Default.Circle, null, tint = Color(0xFF27C93F), modifier = Modifier.size(12.dp))
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = "usr@gostudio:~",
-                            fontSize = 11.sp,
-                            color = Color.White.copy(alpha = 0.7f),
-                            fontFamily = FontFamily.Monospace
-                        )
-                    }
+                    Text(
+                        text = "安装日志",
+                        fontSize = 11.sp,
+                        color = colors.card_text_subtitle,
+                        fontFamily = FontFamily.Monospace
+                    )
 
                     IconButton(onClick = on_export_logs, modifier = Modifier.size(24.dp)) {
                         Icon(
                             Icons.Default.Download,
                             contentDescription = "导出",
-                            tint = Color.White.copy(alpha = 0.6f),
+                            tint = colors.card_chevron,
                             modifier = Modifier.size(16.dp)
                         )
                     }
@@ -132,10 +120,10 @@ fun install_screen(
                 ) {
                     items(logs) { log ->
                         val color = when {
-                            log.startsWith("解压:") || log.startsWith("下载进度:") -> Color.White.copy(alpha = 0.7f)
-                            log.contains("失败") || log.contains("错误") -> Color(0xFFFF5555)
-                            log.contains("完成") || log.contains("通过") || log.contains("成功") -> Color(0xFF4CAF50)
-                            else -> Color.White
+                            log.startsWith("解压:") || log.startsWith("下载进度:") -> colors.subtitle
+                            log.contains("失败") || log.contains("错误") -> colors.danger
+                            log.contains("完成") || log.contains("通过") || log.contains("成功") -> colors.success
+                            else -> colors.editor_text
                         }
                         Text(log, color = color, fontSize = 11.sp, fontFamily = FontFamily.Monospace)
                     }
@@ -151,8 +139,8 @@ fun install_screen(
                     .fillMaxWidth()
                     .height(4.dp)
                     .clip(RoundedCornerShape(2.dp)),
-                color = MaterialTheme.colorScheme.primary,
-                trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                color = colors.title_highlight,
+                trackColor = colors.title_highlight.copy(alpha = 0.2f)
             )
         }
     }

@@ -294,6 +294,59 @@ enum class terminal_close_last_behavior {
     ClosePanel
 }
 
+/**
+ * 在终端面板新建一个运行指定命令的 PTY 会话标签页（如 `go run .`），
+ * 会话内可直接交互输入。命令结束后标签保留（可查看输出），由用户手动关闭。
+ */
+fun terminal_state.launch_command_tab(
+    context: Context,
+    title: String,
+    host_working_dir: String,
+    command: String,
+    extra_environment: Map<String, String> = emptyMap()
+) {
+    val shell_path = toolchain_runtime_provider.paths().proot_file.absolutePath
+    val args = toolchain_runtime_provider.command_builder()
+        .command(
+            shell_command = command,
+            working_dir = host_working_dir,
+            extra_environment = extra_environment
+        )
+        .drop(1) // command() 首项是 proot 路径，TerminalSession 的 shellPath 单独传
+        .toTypedArray()
+    val env = terminal_env(extra_environment)
+    val handler = Handler(Looper.getMainLooper())
+    val session = create_terminal_session(
+        context = context,
+        shell_path = shell_path,
+        cwd = host_working_dir,
+        args = args,
+        env = env,
+        transcript_rows = 2000,
+        on_text_changed = { changed_session ->
+            handler.post {
+                if (terminal_view?.getCurrentSession() == changed_session) {
+                    terminal_view?.invalidate()
+                }
+            }
+        },
+        on_session_finished = { finished_session ->
+            handler.post {
+                if (terminal_view?.getCurrentSession() == finished_session) {
+                    terminal_view?.invalidate()
+                }
+            }
+        }
+    )
+    val used_numbers = terminal_tabs.map { it.number }.toSet()
+    var number = 1
+    while (number in used_numbers) number += 1
+    terminal_tabs.add(terminal_tab(number, title, session))
+    terminal_sessions.add(session)
+    selected_tab_index = terminal_tabs.lastIndex
+    terminal_session = session
+}
+
 private fun terminal_args(cwd: String): Array<String> {
     return toolchain_runtime_provider.command_builder().interactive_args(cwd)
 }

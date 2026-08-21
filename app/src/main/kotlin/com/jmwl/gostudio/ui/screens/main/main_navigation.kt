@@ -32,7 +32,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
@@ -132,14 +131,6 @@ fun main_navigation(
     val active_toolchain_trigger = toolchain_tasks.firstOrNull()
     var toolchain_dialog_visible by remember(active_toolchain_trigger) { mutableStateOf(true) }
 
-    val gradient_brush = Brush.verticalGradient(
-        colorStops = arrayOf(
-            0.00f to colors.gradient_start,
-            0.10f to colors.gradient_middle,
-            0.20f to colors.gradient_end
-        )
-    )
-
     BackHandler(enabled = true) {
         if (current_back_stack?.destination?.route != "main") {
             nav_controller.popBackStack()
@@ -151,7 +142,7 @@ fun main_navigation(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(brush = gradient_brush)
+            .background(colors.gradient_start)
     ) {
         NavHost(
             navController = nav_controller,

@@ -80,19 +80,19 @@ fun main_about_screen(
 
         Spacer(modifier = Modifier.height(34.dp))
 
-        Text(
-            text = "关于",
-            fontSize = 34.sp,
-            fontWeight = FontWeight.Bold,
-            color = colors.title_highlight
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = "设置",
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Light,
-            color = colors.subtitle
-        )
+       Text(
+           text = "关于",
+           fontSize = 34.sp,
+           fontWeight = FontWeight.Bold,
+            color = colors.title_large
+       )
+       Spacer(modifier = Modifier.height(4.dp))
+       Text(
+            text = "Go 语言集成开发环境",
+           fontSize = 14.sp,
+           fontWeight = FontWeight.Light,
+           color = colors.subtitle
+       )
 
         Spacer(modifier = Modifier.height(42.dp))
 
@@ -100,11 +100,11 @@ fun main_about_screen(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Surface(
-                modifier = Modifier.size(88.dp),
-                shape = RoundedCornerShape(18.dp),
-                color = colors.card_bg.copy(alpha = 0.58f)
-            ) {
+           Surface(
+               modifier = Modifier.size(88.dp),
+                shape = RoundedCornerShape(12.dp),
+                color = colors.card_bg
+           ) {
                 Box(contentAlignment = Alignment.Center) {
                     Image(
                         painter = painterResource(id = R.drawable.ic_gostudio_logo),
@@ -127,12 +127,12 @@ fun main_about_screen(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            Surface(
-                shape = RoundedCornerShape(20.dp),
-                color = colors.card_bg.copy(alpha = 0.78f)
-            ) {
-                Text(
-                    text = version_text,
+           Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = colors.card_bg
+           ) {
+               Text(
+                   text = version_text,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     color = colors.title_highlight,
@@ -187,13 +187,13 @@ private fun about_section_title(
         text = title,
         fontSize = 13.sp,
         letterSpacing = 0.sp,
-        fontWeight = FontWeight.Bold,
-        color = colors.title_highlight,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 12.dp),
-        textAlign = TextAlign.Center
-    )
+       fontWeight = FontWeight.Bold,
+        color = colors.section_title,
+       modifier = Modifier
+           .fillMaxWidth()
+           .padding(bottom = 12.dp),
+        textAlign = TextAlign.Start
+   )
 }
 
 @Composable
@@ -203,11 +203,11 @@ private fun about_info_group(
 ) {
     Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-    ) {
-        rows.forEachIndexed { index, row ->
-            about_info_row(
+           .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+   ) {
+       rows.forEachIndexed { index, row ->
+           about_info_row(
                 label = row.first,
                 value = row.second,
                 colors = colors,
@@ -233,9 +233,9 @@ private fun about_info_row(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(shape)
-            .background(colors.card_bg.copy(alpha = 0.72f))
-            .heightIn(min = 48.dp)
+           .clip(shape)
+            .background(colors.card_bg)
+           .heightIn(min = 48.dp)
             .padding(horizontal = 14.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -272,11 +272,11 @@ private fun about_link_group(
 ) {
     Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-    ) {
-        rows.forEachIndexed { index, row ->
-            about_link_row(
+           .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+   ) {
+       rows.forEachIndexed { index, row ->
+           about_link_row(
                 item = row,
                 colors = colors,
                 shape = about_group_item_shape(
@@ -301,10 +301,10 @@ private fun about_link_row(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(shape)
-            .background(colors.card_bg.copy(alpha = 0.72f))
-            .clickable {
-                runCatching {
+           .clip(shape)
+            .background(colors.card_bg)
+           .clickable {
+               runCatching {
                     context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(item.url)))
                 }
             }
@@ -361,10 +361,10 @@ private fun about_group_item_shape(
     is_top: Boolean,
     is_bottom: Boolean
 ): RoundedCornerShape {
-    return when {
-        is_top && is_bottom -> RoundedCornerShape(16.dp)
-        is_top -> RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 0.dp, bottomEnd = 0.dp)
-        is_bottom -> RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 16.dp, bottomEnd = 16.dp)
-        else -> RoundedCornerShape(0.dp)
-    }
+   return when {
+        is_top && is_bottom -> RoundedCornerShape(12.dp)
+        is_top -> RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp, bottomStart = 0.dp, bottomEnd = 0.dp)
+        is_bottom -> RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 12.dp, bottomEnd = 12.dp)
+       else -> RoundedCornerShape(0.dp)
+   }
 }

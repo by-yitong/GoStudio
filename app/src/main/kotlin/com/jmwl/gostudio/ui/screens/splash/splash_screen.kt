@@ -12,12 +12,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.jmwl.gostudio.ui.theme.app_theme_provider
 import kotlinx.coroutines.delay
 
 @Composable
@@ -82,14 +81,12 @@ fun splash_content(
         }
     }
 
+    val colors = app_theme_provider.colors
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(Color.White, Color(0xFFF0F0F0))
-                )
-            ),
+            .background(colors.gradient_end),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -100,7 +97,7 @@ fun splash_content(
                 text = "Go",
                 fontSize = 48.sp,
                 fontWeight = FontWeight.Black,
-                color = Color(0xFF45C8FF),
+                color = colors.title_highlight,
                 letterSpacing = 4.sp,
                 modifier = Modifier.graphicsLayer(scaleX = scale, scaleY = scale)
             )
@@ -111,7 +108,7 @@ fun splash_content(
                 text = "Studio",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Medium,
-                color = Color.Gray,
+                color = colors.subtitle,
                 letterSpacing = 2.sp,
                 modifier = Modifier.alpha(alpha)
             )
@@ -126,7 +123,7 @@ fun splash_content(
                 },
                 label = "tip"
             ) { tip ->
-                Text(text = tip, fontSize = 13.sp, color = Color.Gray)
+                Text(text = tip, fontSize = 13.sp, color = colors.subtitle)
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -137,8 +134,8 @@ fun splash_content(
                     .width(200.dp)
                     .height(6.dp)
                     .clip(RoundedCornerShape(3.dp)),
-                color = Color.Black,
-                trackColor = Color.Black.copy(alpha = 0.2f)
+                color = colors.title_large,
+                trackColor = colors.title_large.copy(alpha = 0.2f)
             )
         }
     }

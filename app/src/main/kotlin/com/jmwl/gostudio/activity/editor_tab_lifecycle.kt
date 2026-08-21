@@ -28,6 +28,7 @@ internal class editor_tab_lifecycle(
     private val on_selection_changed: (CodeEditor) -> Unit,
     private val current_comment_action: () -> Boolean?,
     private val on_toggle_comment: () -> Unit,
+    private val on_ai_action: ((String, String) -> Unit)? = null,
     private val initial_styles_timeout_ms: Long
 ) {
     fun create_editor(file_path: String?): CodeEditor {
@@ -52,7 +53,8 @@ internal class editor_tab_lifecycle(
                 editor_text_action_window(
                     editor = this,
                     current_comment_action = current_comment_action,
-                    on_toggle_comment = on_toggle_comment
+                    on_toggle_comment = on_toggle_comment,
+                    on_ai_action = on_ai_action
                 )
             )
             val code_editor = this

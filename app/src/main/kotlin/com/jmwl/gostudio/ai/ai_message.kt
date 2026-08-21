@@ -58,6 +58,8 @@ data class ai_message(
     var streaming: Boolean = false,
     /** 错误标记（请求失败时，把错误信息作为 assistant 消息展示） */
     var is_error: Boolean = false,
+    /** reasoning 模型的思考链内容（DeepSeek reasoning_content / Anthropic thinking block）。UI 展示用，不发给 API */
+    var reasoning: String = "",
     val timestamp: Long = System.currentTimeMillis()
 ) {
     /** 是否有实际可见文本（空白/纯工具调用的 assistant 消息不显示气泡） */

@@ -468,7 +468,7 @@ private fun project_config_arg_chip(
                 .align(Alignment.TopEnd)
                 .offset(x = 2.dp, y = (-2).dp)
                 .size(14.dp),
-            shape = RoundedCornerShape(7.dp),
+            shape = RoundedCornerShape(8.dp),
             color = colors.card_bg,
             onClick = on_remove
         ) {

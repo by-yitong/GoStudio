@@ -13,6 +13,7 @@ import com.jmwl.gostudio.editor.settings.*
 import com.jmwl.gostudio.editor.model.*
 import com.jmwl.gostudio.editor.core.*
 
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import com.jmwl.gostudio.ui.toast.app_toast
@@ -98,6 +99,11 @@ class editor_activity : ComponentActivity() {
 
     /** AI agent（在 project_dir 初始化后于 initialize_project 创建） */
     private var ai_agent: com.jmwl.gostudio.ai.ai_agent_loop? = null
+    /** AI prompts 目录（供输入补全使用） */
+    private var ai_global_prompts_dir: java.io.File? = null
+    private var ai_project_prompts_dir: java.io.File? = null
+    /** AI 弹窗打开触发器（编辑器选区 AI 动作时 +1） */
+    private var ai_open_trigger by mutableStateOf(0)
     /** AI 文件变更通知器（工具改文件后刷新编辑器） */
     private var ai_file_change_notifier: com.jmwl.gostudio.ai.ai_file_change_notifier? = null
     /** AI 设置页覆盖层开关 */
@@ -106,17 +112,22 @@ class editor_activity : ComponentActivity() {
     private var _session_override by mutableStateOf<Pair<com.jmwl.gostudio.ai.ai_provider, String>?>(null)
     val session_override: Pair<com.jmwl.gostudio.ai.ai_provider, String>? get() = _session_override
 
+    /**
+     * 以下 4 个函数会在每次 Compose 重组时被调用（光标每移动一次就重组一次），
+     * 必须走内存缓存 [cached_ai_settings]；直接用 load_ai_settings 会在主线程反复做
+     * EncryptedSharedPreferences/Keystore I/O，导致光标移动卡顿。
+     */
     /** 当前生效的提供商（会话 override 优先，否则全局） */
     private fun current_ai_provider(): com.jmwl.gostudio.ai.ai_provider =
-        _session_override?.first ?: com.jmwl.gostudio.ai.load_ai_settings(this).provider
+        _session_override?.first ?: com.jmwl.gostudio.ai.cached_ai_settings(this).provider
 
     /** 当前生效的模型 */
     private fun current_ai_model(): String =
-        _session_override?.second ?: com.jmwl.gostudio.ai.load_ai_settings(this).model
+        _session_override?.second ?: com.jmwl.gostudio.ai.cached_ai_settings(this).model
 
     /** 各提供商可用的模型（来自全局 custom_models 缓存，按 base_url 映射到 provider） */
     private fun current_ai_available_models(): Map<com.jmwl.gostudio.ai.ai_provider, List<String>> {
-        val s = com.jmwl.gostudio.ai.load_ai_settings(this)
+        val s = com.jmwl.gostudio.ai.cached_ai_settings(this)
         return com.jmwl.gostudio.ai.ai_provider.entries.associateWith { p ->
             s.custom_models[p.base_url] ?: emptyList()
         }
@@ -124,7 +135,7 @@ class editor_activity : ComponentActivity() {
 
     /** 已配置 key 的供应商（会话栏选择器只显示这些） */
     private fun configured_ai_providers(): Set<com.jmwl.gostudio.ai.ai_provider> {
-        val s = com.jmwl.gostudio.ai.load_ai_settings(this)
+        val s = com.jmwl.gostudio.ai.cached_ai_settings(this)
         return s.api_keys.filter { it.value.isNotBlank() }.keys
     }
 
@@ -216,7 +227,6 @@ class editor_activity : ComponentActivity() {
     @Composable
     private fun editor_activity_content() {
         val colors = app_theme_provider.colors
-        val can_goto by can_goto_definition.collectAsState()
         val goto_running by goto_in_progress.collectAsState()
 
         BackHandler(enabled = true) {
@@ -246,9 +256,11 @@ class editor_activity : ComponentActivity() {
             project_root_path = project_dir.absolutePath,
             editor = editor,
             current_file_name = state.current_file_name,
-            cursor_line = state.cursor_line,
-            cursor_column = state.cursor_column,
-            cursor_selected = state.cursor_selected,
+            // 光标状态以 provider/StateFlow 下传，在叶子组件里读取，
+            // 避免每次光标移动重组整个 editor_screen（见 editor_screen 注释）
+            cursor_line_provider = { state.cursor_line },
+            cursor_column_provider = { state.cursor_column },
+            cursor_selected_provider = { state.cursor_selected },
             has_changes = state.has_changes,
             loading = state.loading,
             read_only = state.read_only,
@@ -308,7 +320,7 @@ class editor_activity : ComponentActivity() {
             on_directory_click = { path -> toggle_directory(path) },
             on_file_click = { path -> request_open_file(path) },
             on_file_position_click = { path, line, column -> open_file_at(path, line, column) },
-            can_goto_definition = can_goto,
+            can_goto_definition_flow = can_goto_definition,
             goto_definition_running = goto_running,
             on_goto_definition = { goto_definition() },
             ai_agent = ai_agent,
@@ -317,7 +329,10 @@ class editor_activity : ComponentActivity() {
             ai_current_model = current_ai_model(),
             ai_available_models = current_ai_available_models(),
             ai_configured_providers = configured_ai_providers(),
-            on_ai_session_model_change = { p, m -> _session_override = p to m }
+            on_ai_session_model_change = { p, m -> _session_override = p to m },
+            ai_global_prompts_dir = ai_global_prompts_dir,
+            ai_project_prompts_dir = ai_project_prompts_dir,
+            ai_open_trigger = ai_open_trigger
         )
 
         AnimatedVisibility(
@@ -372,8 +387,24 @@ class editor_activity : ComponentActivity() {
             on_selection_changed = { changed_editor -> handle_editor_selection_changed(changed_editor) },
             current_comment_action = { current_line_comment_action() },
             on_toggle_comment = { toggle_line_comment() },
+            on_ai_action = { action, selection -> handle_ai_action_from_editor(action, selection) },
             initial_styles_timeout_ms = initial_editor_styles_timeout_ms
         )
+    }
+
+    /** 编辑器选区 AI 动作：打开 AI 弹窗并注入提示 */
+    private fun handle_ai_action_from_editor(action: String, selection: String) {
+        val agent = ai_agent ?: run {
+            app_toast.show(this, "AI 助手未就绪", app_toast.LENGTH_SHORT)
+            return
+        }
+        val prompt = when (action) {
+            "explain" -> "请解释这段代码：\n```\n${selection.take(2000)}\n```"
+            "fix" -> "这段代码有问题，请帮我修复：\n```\n${selection.take(2000)}\n```"
+            else -> "请处理这段代码：\n```\n${selection.take(2000)}\n```"
+        }
+        ai_open_trigger += 1
+        agent.send_user_message(prompt)
     }
 
     private fun create_code_editor(): CodeEditor {
@@ -538,6 +569,9 @@ class editor_activity : ComponentActivity() {
         val sessions_dir = java.io.File(ai_root, "sessions")
         val project_skills_dir = java.io.File(project, ".ai/skills")
         val project_prompts_dir = java.io.File(project, ".ai/prompts")
+        // 暴露给输入补全 UI 使用
+        ai_global_prompts_dir = global_prompts_dir
+        ai_project_prompts_dir = project_prompts_dir
 
         // 释放内置 skill 到全局目录（首次）
         runCatching { com.jmwl.gostudio.ai.skills.release_builtin_skills(this, global_skills_dir) }
@@ -575,7 +609,8 @@ class editor_activity : ComponentActivity() {
         ai_agent = com.jmwl.gostudio.ai.ai_agent_loop(
             settings_provider = {
                 // 会话级 override：切了提供商/模型则覆盖全局设置（含回填对应供应商的 key）
-                val base = com.jmwl.gostudio.ai.load_ai_settings(this)
+                // 用内存缓存版本：agent 每轮都会调用，避免重复 Keystore I/O（保存设置时会同步缓存）
+                val base = com.jmwl.gostudio.ai.cached_ai_settings(this)
                 _session_override?.let { (p, m) ->
                     base.copy(
                         provider = p,
@@ -857,15 +892,12 @@ class editor_activity : ComponentActivity() {
     }
 
     /**
-     * 运行当前 Go 项目：执行 `go run .`（输出实时写入输出面板）。
+     * 运行当前 Go 项目：打开独立终端页面，在 PTY 会话中执行 `go run .`，
+     * 程序需要标准输入时可直接在终端里交互输入。
      */
     private fun run_go_project() {
         if (detected_project_info.kind != project_kind.GO) {
             app_toast.show(this, "当前项目不是 Go 项目", app_toast.LENGTH_SHORT)
-            return
-        }
-        if (output_panel_state.task_running) {
-            app_toast.show(this, "任务正在运行中，请先停止", app_toast.LENGTH_SHORT)
             return
         }
 
@@ -878,42 +910,22 @@ class editor_activity : ComponentActivity() {
         }
 
         go_run_job = lifecycleScope.launch {
-            output_panel_state.selected_tab = editor_output_tab.Output
-            output_panel_state.clear_output()
-            output_panel_state.task_title = "运行输出"
-            output_panel_state.task_subtitle = "正在保存文件"
-            output_panel_state.task_running = true
-            output_panel_state.task_stopping = false
             if (!save_dirty_open_files(show_toast = false)) {
-                output_panel_state.append_output("运行取消，文件保存失败", editor_output_line_level.ERROR)
-                output_panel_state.task_running = false
-                output_panel_state.task_stopping = false
+                app_toast.show(this@editor_activity, "运行取消，文件保存失败", app_toast.LENGTH_SHORT)
                 return@launch
             }
-            output_panel_state.task_subtitle = "正在运行 (go run)"
 
-            val success = try {
-                val build = project_manager.read_project_build_config(project_dir.absolutePath)
-                proot_manager.execute_command_with_environment(
-                    command = build_go_run_command(build) + " .",
-                    working_dir = project_dir.absolutePath,
-                    extra_environment = project_environment.environment,
-                    on_log = { line -> output_panel_state.append_output(line, output_level_for_line(line)) }
-                )
-            } catch (_: CancellationException) {
-                output_panel_state.append_output("运行已停止", editor_output_line_level.WARNING)
-                return@launch
-            } finally {
-                output_panel_state.task_running = false
-                output_panel_state.task_stopping = false
-            }
-
-            if (success) {
-                output_panel_state.append_output("—— 程序运行结束 ——", editor_output_line_level.SUCCESS)
-                app_toast.show(this@editor_activity, "运行结束", app_toast.LENGTH_SHORT)
-            } else {
-                output_panel_state.append_output("—— 程序异常退出（非零退出码） ——", editor_output_line_level.WARNING)
-            }
+            val build = project_manager.read_project_build_config(project_dir.absolutePath)
+            startActivity(
+                Intent(this@editor_activity, terminal_activity::class.java)
+                    .putExtra(terminal_activity.EXTRA_RUN_COMMAND, build_go_run_command(build) + " .")
+                    .putExtra(terminal_activity.EXTRA_RUN_TITLE, "go run")
+                    .putExtra(terminal_activity.EXTRA_RUN_WORKING_DIR, project_dir.absolutePath)
+                    .putStringArrayListExtra(
+                        terminal_activity.EXTRA_RUN_ENVIRONMENT,
+                        ArrayList(project_environment.environment.map { (key, value) -> "$key=$value" })
+                    )
+            )
         }
     }
 

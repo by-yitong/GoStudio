@@ -16,17 +16,22 @@ import io.github.rosemoe.sora.widget.schemes.EditorColorScheme
 class editor_text_action_window(
     private val editor: CodeEditor,
     private val current_comment_action: () -> Boolean?,
-    private val on_toggle_comment: () -> Unit
+    private val on_toggle_comment: () -> Unit,
+    private val on_ai_action: ((String, String) -> Unit)? = null
 ) : EditorTextActionWindow(editor) {
 
     private var comment_button: ImageButton? = null
+    private var ai_button: ImageButton? = null
 
     init {
         val comment = create_comment_button()
         comment_button = comment
+        val ai = create_ai_button()
+        ai_button = ai
         val scroll_view = getView().findViewById<HorizontalScrollView>(SoraR.id.panel_hv)
         val action_container = scroll_view?.getChildAt(0) as? LinearLayout
         action_container?.addView(comment)
+        action_container?.addView(ai)
         apply_action_button_color()
     }
 
@@ -34,6 +39,12 @@ class editor_text_action_window(
         val should_uncomment = current_comment_action()
         comment_button?.visibility = if (editor.cursor.isSelected && editor.isEditable && should_uncomment != null) {
             update_comment_button_mode(should_uncomment)
+            View.VISIBLE
+        } else {
+            View.GONE
+        }
+        // AI 按钮：仅在选中文本且配置了回调时显示
+        ai_button?.visibility = if (editor.cursor.isSelected && on_ai_action != null) {
             View.VISIBLE
         } else {
             View.GONE
@@ -51,6 +62,25 @@ class editor_text_action_window(
     private fun create_comment_button(): ImageButton {
         return create_action_button(R.drawable.ic_editor_comment, "注释") {
             on_toggle_comment()
+            dismiss()
+        }
+    }
+
+    /** AI 动作按钮：把选中文本发给 AI 助手 */
+    private fun create_ai_button(): ImageButton {
+        return create_action_button(R.drawable.ic_editor_ai, "问 AI") {
+            val cursor = editor.cursor
+            if (cursor.isSelected) {
+                val text = editor.text
+                val start = cursor.left().index
+                val end = cursor.right().index
+                if (end > start) {
+                    val selection = text.subSequence(start, end).toString()
+                    if (selection.isNotEmpty() && on_ai_action != null) {
+                        on_ai_action("explain", selection)
+                    }
+                }
+            }
             dismiss()
         }
     }

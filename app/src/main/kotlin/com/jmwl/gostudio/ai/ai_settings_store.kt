@@ -118,6 +118,22 @@ private fun encrypted_prefs(context: Context) = runCatching {
 
 private val settings_gson = Gson()
 
+/**
+ * AI 设置内存缓存。
+ *
+ * [load_ai_settings] 每次调用都会执行 EncryptedSharedPreferences.create() + MasterKey
+ * （Android Keystore 硬件操作，单次可达几十毫秒）+ Gson 解析。
+ * 它绝不能出现在 Compose 组合/重组热路径里——否则每次光标移动触发的重组都会做 Keystore I/O，
+ * 直接造成编辑器光标卡顿。UI 热路径一律用 [cached_ai_settings]。
+ */
+@Volatile
+private var ai_settings_memory_cache: ai_settings_state? = null
+
+/** 读 AI 设置（带内存缓存）。首次读磁盘，之后走内存；[save_ai_settings] 会同步更新缓存。 */
+fun cached_ai_settings(context: Context): ai_settings_state {
+    return ai_settings_memory_cache ?: load_ai_settings(context).also { ai_settings_memory_cache = it }
+}
+
 fun load_ai_settings(context: Context): ai_settings_state {
     val prefs = encrypted_prefs(context)
     val providerName = prefs.getString("provider", ai_provider.ZHIPU.name) ?: ai_provider.ZHIPU.name
@@ -192,6 +208,8 @@ fun save_ai_settings(context: Context, settings: ai_settings_state) {
         putBoolean("show_thinking_process", settings.show_thinking_process)
         putBoolean("auto_expand_thinking", settings.auto_expand_thinking)
     }.apply()
+    // 同步内存缓存，保证 cached_ai_settings 读到最新值
+    ai_settings_memory_cache = settings
 }
 
 /** 是否已配置可用（有 base_url + model + api_key） */

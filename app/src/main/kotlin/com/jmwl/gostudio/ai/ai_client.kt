@@ -13,10 +13,12 @@ import java.util.concurrent.TimeUnit
 /**
  * AI 流式响应回调。
  * - on_text: 收到一段文本增量（可能很短，如单个字/词），UI 累加显示
+ * - on_reasoning: reasoning 模型的思考链增量（DeepSeek reasoning_content / Anthropic thinking block）
  * - on_done: 一轮回复完成，[tool_calls] 为模型要求调用的工具（可能为空）
  */
 interface ai_stream_callback {
     fun on_text(delta: String)
+    fun on_reasoning(delta: String) {}
     fun on_done(tool_calls: List<ai_tool_call>)
     fun on_error(message: String)
 }
@@ -134,6 +136,9 @@ class ai_client(
             }
             val delta = choice.getAsJsonObject("delta") ?: continue
             delta.get("content")?.takeIf { !it.isJsonNull }?.asString?.let { if (it.isNotEmpty()) callback.on_text(it) }
+            // reasoning 思考链（DeepSeek/OpenAI o-series）：reasoning_content 或 reasoning 字段
+            delta.get("reasoning_content")?.takeIf { !it.isJsonNull }?.asString?.let { if (it.isNotEmpty()) callback.on_reasoning(it) }
+            delta.get("reasoning")?.takeIf { !it.isJsonNull }?.asString?.let { if (it.isNotEmpty()) callback.on_reasoning(it) }
             delta.getAsJsonArray("tool_calls")?.forEach { tcElem ->
                 val tc = tcElem.asJsonObject
                 val index = tc.get("index")?.asInt ?: 0
@@ -331,6 +336,12 @@ class ai_client(
                             "text_delta" -> {
                                 delta.get("text")?.takeIf { !it.isJsonNull }?.asString?.let {
                                     if (it.isNotEmpty()) callback.on_text(it)
+                                }
+                            }
+                            "thinking_delta" -> {
+                                // Anthropic extended thinking
+                                delta.get("thinking")?.takeIf { !it.isJsonNull }?.asString?.let {
+                                    if (it.isNotEmpty()) callback.on_reasoning(it)
                                 }
                             }
                             "input_json_delta" -> {

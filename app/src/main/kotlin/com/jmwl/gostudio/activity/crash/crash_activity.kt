@@ -21,7 +21,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -128,48 +127,49 @@ fun crash_screen(
         lines.addAll(crash_stack.split("\n"))
         lines
     }
+    val colors = app_theme_provider.colors
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(colors.gradient_end)
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(modifier = Modifier.weight(0.2f))
-        
+
         Icon(
             imageVector = Icons.Default.Error,
             contentDescription = null,
             modifier = Modifier.size(64.dp),
-            tint = Color(0xFFE74C3C)
+            tint = colors.danger
         )
-        
+
         Spacer(modifier = Modifier.height(12.dp))
-        
+
         Text(
             text = "程序出现异常",
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
-            color = Color.Black,
+            color = colors.title_large,
             textAlign = TextAlign.Center
         )
-        
+
         Spacer(modifier = Modifier.height(6.dp))
-        
+
         Text(
             text = "很抱歉，GoStudio 遇到了一个意外错误",
             fontSize = 13.sp,
-            color = Color.Gray,
+            color = colors.subtitle,
             textAlign = TextAlign.Center
         )
-        
+
         Spacer(modifier = Modifier.height(20.dp))
-        
+
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(10.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
+            colors = CardDefaults.cardColors(containerColor = colors.card_bg)
         ) {
             Column(
                 modifier = Modifier.padding(14.dp)
@@ -178,27 +178,27 @@ fun crash_screen(
                     text = "错误信息",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFFE74C3C)
+                    color = colors.danger
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     text = crash_log.take(300),
                     fontSize = 11.sp,
-                    color = Color.DarkGray,
+                    color = colors.card_text_subtitle,
                     fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
                     lineHeight = 16.sp
                 )
             }
         }
-        
+
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(250.dp),
             shape = RoundedCornerShape(10.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFFAFAFA))
+            colors = CardDefaults.cardColors(containerColor = colors.card_bg)
         ) {
             LazyColumn(
                 modifier = Modifier.padding(10.dp),
@@ -206,11 +206,11 @@ fun crash_screen(
             ) {
                 items(log_lines) { line ->
                     val color = when {
-                        line.contains("Caused by") -> Color(0xFFE74C3C)
-                        line.contains("Exception") || line.contains("Error") -> Color(0xFFE74C3C)
-                        line.startsWith("\t") -> Color.Gray
-                        line == "Crash Log" || line == "Stack Trace" -> Color(0xFFFF9800)
-                        else -> Color.DarkGray
+                        line.contains("Caused by") -> colors.danger
+                        line.contains("Exception") || line.contains("Error") -> colors.danger
+                        line.startsWith("\t") -> colors.subtitle
+                        line == "Crash Log" || line == "Stack Trace" -> colors.warning
+                        else -> colors.card_text_subtitle
                     }
                     Text(
                         text = line,
@@ -222,9 +222,9 @@ fun crash_screen(
                 }
             }
         }
-        
+
         Spacer(modifier = Modifier.weight(0.5f))
-        
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -242,7 +242,7 @@ fun crash_screen(
                 Spacer(modifier = Modifier.width(4.dp))
                 Text("复制", fontSize = 13.sp)
             }
-            
+
             OutlinedButton(
                 onClick = { on_save(crash_log, crash_stack) },
                 modifier = Modifier.weight(1f),
@@ -257,9 +257,9 @@ fun crash_screen(
                 Text("保存", fontSize = 13.sp)
             }
         }
-        
+
         Spacer(modifier = Modifier.height(10.dp))
-        
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -268,35 +268,35 @@ fun crash_screen(
                 onClick = on_restart,
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                colors = ButtonDefaults.buttonColors(containerColor = colors.success)
             ) {
                 Icon(
                     imageVector = Icons.Default.Refresh,
                     contentDescription = null,
                     modifier = Modifier.size(16.dp),
-                    tint = Color.White
+                    tint = colors.dialog_clone_text
                 )
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("重启应用", fontSize = 13.sp, color = Color.White)
+                Text("重启应用", fontSize = 13.sp, color = colors.dialog_clone_text)
             }
-            
+
             Button(
                 onClick = on_exit,
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE74C3C))
+                colors = ButtonDefaults.buttonColors(containerColor = colors.danger)
             ) {
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = null,
                     modifier = Modifier.size(16.dp),
-                    tint = Color.White
+                    tint = colors.dialog_clone_text
                 )
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("退出", fontSize = 13.sp, color = Color.White)
+                Text("退出", fontSize = 13.sp, color = colors.dialog_clone_text)
             }
         }
-        
+
         Spacer(modifier = Modifier.height(16.dp))
     }
 }

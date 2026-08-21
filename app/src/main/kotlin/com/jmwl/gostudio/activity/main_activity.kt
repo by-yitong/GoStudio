@@ -206,6 +206,8 @@ class main_activity : ComponentActivity() {
 
     private fun on_toolchain_task_success(trigger: toolchain_trigger) {
         toolchain_tasks = toolchain_tasks.drop(1)
+        // 工具链已变化，让 installed_go() 探测缓存失效（编辑器重组热路径依赖它）
+        toolchain_manager.invalidate_go_probe()
         app_toast.show(this, "${trigger.title} 完成", app_toast.LENGTH_SHORT)
         lifecycleScope.launch { refresh_toolchain_status() }
     }

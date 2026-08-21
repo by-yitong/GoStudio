@@ -92,7 +92,7 @@ fun editor_theme_color_dialog(
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = colors.dialog_input_border,
                             unfocusedBorderColor = colors.dialog_input_hint.copy(alpha = 0.5f),
-                            errorBorderColor = Color(0xFFFF6B6B),
+                            errorBorderColor = colors.danger,
                             focusedTextColor = colors.dialog_input_text,
                             unfocusedTextColor = colors.dialog_input_text,
                             cursorColor = colors.dialog_input_border,

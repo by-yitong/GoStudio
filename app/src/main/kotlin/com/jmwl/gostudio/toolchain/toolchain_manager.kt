@@ -77,8 +77,31 @@ object toolchain_manager {
      *   二进制在 /usr/lib/go/bin/go，/usr/bin/go 为软链。
      *
      * 版本号需 proot 执行 `go version` 才能拿到，这里只判断存在性，版本延迟到运行时。
+     *
+     * 结果走内存缓存：本函数会被 Compose 重组热路径调用（编辑器界面每次重组都要组装终端环境），
+     * 每次都做文件 stat / listFiles 会拖慢光标移动。装完工具链后调用 [invalidate_go_probe] 失效。
      */
     fun installed_go(): go_toolchain_info? {
+        if (go_probe_resolved) return go_probe_cache
+        return probe_installed_go().also {
+            go_probe_cache = it
+            go_probe_resolved = true
+        }
+    }
+
+    /** 工具链安装/卸载后调用，让 [installed_go] 下次重新探测磁盘。 */
+    fun invalidate_go_probe() {
+        go_probe_resolved = false
+        go_probe_cache = null
+    }
+
+    @Volatile
+    private var go_probe_cache: go_toolchain_info? = null
+
+    @Volatile
+    private var go_probe_resolved: Boolean = false
+
+    private fun probe_installed_go(): go_toolchain_info? {
         val rootfs = toolchain_runtime_provider.paths().ubuntu_base_dir
 
         // 1) 手动安装：/usr/local/go/bin/go

@@ -321,7 +321,7 @@ private fun editor_symbol_button_shape(position: symbol_button_position): Rounde
             bottomEnd = 16.dp
         )
         symbol_button_position.single -> RoundedCornerShape(16.dp)
-        symbol_button_position.middle -> RoundedCornerShape(7.dp)
+        symbol_button_position.middle -> RoundedCornerShape(8.dp)
     }
 }
 
