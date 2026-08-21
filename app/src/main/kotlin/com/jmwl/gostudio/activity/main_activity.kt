@@ -46,6 +46,20 @@ class main_activity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             app_theme_provider {
+                // 启动后静默检查更新（仅发现新版本时弹窗）
+                val context = androidx.compose.ui.platform.LocalContext.current
+                val update_controller = androidx.compose.runtime.remember {
+                    com.jmwl.gostudio.update.app_update_controller(context)
+                }
+                androidx.compose.runtime.LaunchedEffect(Unit) {
+                    kotlinx.coroutines.delay(2500)
+                    update_controller.check()
+                }
+                com.jmwl.gostudio.ui.dialogs.main.app_update_dialog(
+                    controller = update_controller,
+                    on_dismiss = { update_controller.reset() }
+                )
+
                 main_navigation(
                     recent_projects = recent_projects,
                     toolchain_status = toolchain_status,

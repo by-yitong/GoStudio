@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jmwl.gostudio.ui.theme.*
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,6 +36,43 @@ fun main_settings_screen(
     on_about_click: () -> Unit = {}
 ) {
     val colors = app_theme_provider.colors
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val update_controller = remember { com.jmwl.gostudio.update.app_update_controller(context) }
+    var update_checking by remember { mutableStateOf(false) }
+
+    // 手动检查更新
+    fun start_update_check() {
+        if (update_checking) return
+        update_checking = true
+        scope.launch {
+            val result = update_controller.check()
+            update_checking = false
+            when (result) {
+                is com.jmwl.gostudio.update.app_update_check_result.UpToDate ->
+                    android.widget.Toast.makeText(
+                        context,
+                        "当前已是最新版本 v${com.jmwl.gostudio.update.app_update_controller.current_version_name(context)}",
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                is com.jmwl.gostudio.update.app_update_check_result.Error ->
+                    android.widget.Toast.makeText(
+                        context,
+                        "检查更新失败：${result.message}",
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
+                is com.jmwl.gostudio.update.app_update_check_result.UpdateAvailable -> Unit // 弹窗自动弹出
+            }
+        }
+    }
+
+    if (update_checking) {
+        com.jmwl.gostudio.ui.dialogs.main.app_update_checking_dialog()
+    }
+    com.jmwl.gostudio.ui.dialogs.main.app_update_dialog(
+        controller = update_controller,
+        on_dismiss = { update_controller.reset() }
+    )
     
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -160,12 +198,22 @@ fun main_settings_screen(
 
             settings_group(colors = colors, title = "关于") {
                 main_settings_card_item(
+                    icon = Icons.Default.SystemUpdateAlt,
+                    title = "检查更新",
+                    subtitle = "当前版本 v${com.jmwl.gostudio.update.app_update_controller.current_version_name(context)} · 通过 GitHub 检查新版本",
+                    colors = colors,
+                    onClick = { start_update_check() },
+                    is_top = true,
+                    is_bottom = false
+                )
+                Spacer(modifier = Modifier.height(1.dp))
+                main_settings_card_item(
                     icon = Icons.Default.Info,
                     title = "关于",
                     subtitle = "版本信息、开源许可",
                     colors = colors,
                     onClick = on_about_click,
-                    is_top = true,
+                    is_top = false,
                     is_bottom = true
                 )
             }

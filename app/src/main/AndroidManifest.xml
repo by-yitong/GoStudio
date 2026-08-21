@@ -23,6 +23,9 @@
     
     <!-- 其他 -->
     <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- 应用内更新：下载 APK 后唤起系统安装器 -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     
     <application
         android:allowBackup="true"
@@ -89,6 +92,17 @@
                 android:name="android.foreground_service_type_special_use_description"
                 android:value="Continuous operation in the background" />
         </service>
-        
+
+        <!-- 应用内更新：向系统安装器共享下载的 APK -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.file_provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
     </application>
 </manifest>
