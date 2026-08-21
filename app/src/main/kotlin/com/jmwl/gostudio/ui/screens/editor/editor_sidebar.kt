@@ -13,6 +13,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ListAlt
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -29,22 +30,35 @@ import androidx.compose.ui.unit.sp
 import com.jmwl.gostudio.project_file_tree.project_file_tree_colors
 import com.jmwl.gostudio.ui.theme.app_theme_provider
 
+/** 左侧抽屉的工具页签 */
+internal enum class editor_sidebar_tool {
+    FILE,
+    PROJECT_CONFIG,
+    LOG,
+    TERMINAL
+}
+
 private data class editor_tool_item(
+    val tool: editor_sidebar_tool,
     val icon: ImageVector,
     val label: String
 )
 
 @Composable
-fun editor_sidebar(
+internal fun editor_sidebar(
     drawer_width: Dp,
     drawer_offset_px: Int,
-    selected_tool: Int,
+    selected_tool: editor_sidebar_tool,
+    output_panel_state: editor_output_panel_state,
+    terminal_state: editor_terminal_state,
+    terminal_cwd: String,
+    terminal_extra_environment: Map<String, String>,
     project_root_path: String,
     file_nodes: List<editor_file_node>,
     expanded_paths: Set<String>,
     file_tree_loading: Boolean,
     project_exists: Boolean,
-    on_tool_selected: (Int) -> Unit,
+    on_tool_selected: (editor_sidebar_tool) -> Unit,
     on_project_config_apply: (project_ide_config, () -> Unit) -> Unit,
     on_new_file: (String) -> Unit,
     on_new_folder: (String) -> Unit,
@@ -60,8 +74,10 @@ fun editor_sidebar(
     val colors = app_theme_provider.colors
     val tools = remember {
         listOf(
-            editor_tool_item(Icons.Default.Folder, "文件"),
-            editor_tool_item(Icons.Default.Tune, "项目配置")
+            editor_tool_item(editor_sidebar_tool.FILE, Icons.Default.Folder, "文件"),
+            editor_tool_item(editor_sidebar_tool.PROJECT_CONFIG, Icons.Default.Tune, "项目配置"),
+            editor_tool_item(editor_sidebar_tool.LOG, Icons.AutoMirrored.Filled.ListAlt, "日志"),
+            editor_tool_item(editor_sidebar_tool.TERMINAL, Icons.Default.Terminal, "终端")
         )
     }
 
@@ -76,52 +92,9 @@ fun editor_sidebar(
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 40.dp)
-                        .heightIn(min = 48.dp)
-                        .horizontalScroll(rememberScrollState())
-                        .padding(horizontal = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    tools.forEachIndexed { index, tool ->
-                        val selected = selected_tool == index
-                        Box(
-                            modifier = Modifier
-                                .size(width = 48.dp, height = 38.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(if (selected) colors.editor_sidebar_selected_bg else Color.Transparent)
-                                .clickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = ripple(bounded = true),
-                                    onClick = {
-                                        if (!selected) on_tool_selected(index)
-                                    }
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = tool.icon,
-                                contentDescription = tool.label,
-                                tint = if (selected) colors.editor_icon else colors.editor_hint,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                    }
-                }
-
-                HorizontalDivider(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(end = 16.dp),
-                    color = colors.editor_divider,
-                    thickness = 0.5.dp
-                )
-
-                when (selected_tool) {
-                    0 -> file_tree_panel(
+                Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                    when (selected_tool) {
+                    editor_sidebar_tool.FILE -> file_tree_panel(
                         nodes = file_nodes,
                         project_root_path = project_root_path,
                         expanded_paths = expanded_paths,
@@ -147,11 +120,67 @@ fun editor_sidebar(
                         ),
                         modifier = Modifier.fillMaxSize()
                     )
-                    1 -> editor_project_config_panel(
+                    editor_sidebar_tool.PROJECT_CONFIG -> editor_project_config_panel(
                         project_root_path = project_root_path,
                         on_apply = on_project_config_apply,
                         modifier = Modifier.fillMaxSize()
                     )
+                    editor_sidebar_tool.LOG -> editor_log_panel(
+                        state = output_panel_state,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                    editor_sidebar_tool.TERMINAL -> editor_terminal_panel(
+                        state = terminal_state,
+                        cwd = terminal_cwd,
+                        extra_environment = terminal_extra_environment,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                    }
+                }
+
+                HorizontalDivider(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(end = 16.dp),
+                    color = colors.editor_divider,
+                    thickness = 0.5.dp
+                )
+
+                // 工具页签固定在抽屉底部：文件 / 项目配置 / 日志 / 终端
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .heightIn(min = 48.dp)
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    tools.forEach { tool ->
+                        val selected = selected_tool == tool.tool
+                        Box(
+                            modifier = Modifier
+                                .size(width = 48.dp, height = 38.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(if (selected) colors.editor_sidebar_selected_bg else Color.Transparent)
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = ripple(bounded = true),
+                                    onClick = {
+                                        if (!selected) on_tool_selected(tool.tool)
+                                    }
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = tool.icon,
+                                contentDescription = tool.label,
+                                tint = if (selected) colors.editor_icon else colors.editor_hint,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
                 }
             }
 

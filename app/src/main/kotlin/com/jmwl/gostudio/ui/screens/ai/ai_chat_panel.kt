@@ -20,7 +20,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jmwl.gostudio.ai.ai_agent_loop
@@ -75,7 +74,6 @@ fun ai_chat_panel(
     }
 
     Column(modifier = modifier.fillMaxSize()) {
-        var model_menu_open by remember { mutableStateOf(false) }
         var show_clear_confirm by remember { mutableStateOf(false) }
         var show_history by remember { mutableStateOf(false) }
         var sessions by remember { mutableStateOf(agent.list_sessions()) }
@@ -114,118 +112,15 @@ fun ai_chat_panel(
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             // 提供商/模型选择器
-            Box(modifier = Modifier.weight(1f)) {
-                val has_any_configured = configured_providers.isNotEmpty()
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .clickable {
-                            // 没有任何已配置供应商时，点击直接跳设置页
-                            if (has_any_configured) model_menu_open = true else on_open_settings()
-                        }
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.Outlined.AutoAwesome, contentDescription = null, tint = colors.title_highlight, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        if (has_any_configured) {
-                            Text(
-                                text = current_provider.display_name,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = colors.title_large,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            Text(
-                                text = current_model,
-                                fontSize = 10.sp,
-                                color = colors.subtitle,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        } else {
-                            Text(
-                                text = "未配置",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = colors.danger,
-                                maxLines = 1
-                            )
-                            Text(
-                                text = "点击设置 AI 提供商",
-                                fontSize = 10.sp,
-                                color = colors.subtitle,
-                                maxLines = 1
-                            )
-                        }
-                    }
-                    if (has_any_configured) {
-                        Icon(Icons.Default.ArrowDropDown, contentDescription = "切换", tint = colors.subtitle, modifier = Modifier.size(18.dp))
-                    } else {
-                        Icon(Icons.Default.Settings, contentDescription = "去设置", tint = colors.subtitle, modifier = Modifier.size(14.dp))
-                    }
-                }
-                DropdownMenu(
-                    expanded = model_menu_open,
-                    onDismissRequest = { model_menu_open = false }
-                ) {
-                    // 只显示已配置 key 的供应商
-                    val visible_providers = ai_provider.entries.filter { it in configured_providers }
-                    if (visible_providers.isEmpty()) {
-                        DropdownMenuItem(
-                            text = { Text("暂无已配置的供应商，去设置？", color = colors.subtitle, fontSize = 12.sp) },
-                            onClick = { model_menu_open = false; on_open_settings() }
-                        )
-                    } else {
-                        visible_providers.forEach { p ->
-                            val models = (available_models[p] ?: emptyList()) + p.default_models
-                            val deduped = models.distinct()
-                            if (deduped.isNotEmpty()) {
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            p.display_name,
-                                            color = if (p == current_provider) colors.title_highlight else colors.dialog_text,
-                                            fontWeight = if (p == current_provider) FontWeight.Bold else FontWeight.Normal,
-                                            fontSize = 13.sp
-                                        )
-                                    },
-                                    onClick = {
-                                        on_session_model_change(p, p.default_model.ifBlank { current_model })
-                                        model_menu_open = false
-                                    }
-                                )
-                                deduped.forEach { m ->
-                                    DropdownMenuItem(
-                                        text = {
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Spacer(modifier = Modifier.width(16.dp))
-                                                Text(
-                                                    m,
-                                                    color = if (p == current_provider && m == current_model) colors.title_highlight else colors.subtitle,
-                                                    fontSize = 12.sp,
-                                                    modifier = Modifier.weight(1f)
-                                                )
-                                                if (p == current_provider && m == current_model) {
-                                                    Icon(Icons.Default.Check, contentDescription = null, tint = colors.title_highlight, modifier = Modifier.size(14.dp))
-                                                }
-                                            }
-                                        },
-                                        onClick = {
-                                            on_session_model_change(p, m)
-                                            model_menu_open = false
-                                        }
-                                    )
-                                }
-                                HorizontalDivider(color = colors.input_border.copy(alpha = 0.2f))
-                            }
-                        }
-                    }
-                }
-            }
+            ai_model_selector(
+                current_provider = current_provider,
+                current_model = current_model,
+                available_models = available_models,
+                configured_providers = configured_providers,
+                on_session_model_change = on_session_model_change,
+                on_open_settings = on_open_settings,
+                modifier = Modifier.weight(1f)
+            )
             IconButton(onClick = on_open_settings, modifier = Modifier.size(32.dp)) {
                 Icon(Icons.Default.Settings, contentDescription = "AI 设置", tint = colors.top_button_icon, modifier = Modifier.size(18.dp))
             }
@@ -398,7 +293,7 @@ fun ai_chat_panel(
 }
 
 /** 复制文本到系统剪贴板 */
-private fun copy_text_to_clipboard(context: android.content.Context, text: String) {
+internal fun copy_text_to_clipboard(context: android.content.Context, text: String) {
     val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
     clipboard.setPrimaryClip(android.content.ClipData.newPlainText("AI 消息", text))
 }
@@ -415,7 +310,7 @@ val default_suggestion_prompts = listOf(
 
 /** 快捷建议 chip */
 @Composable
-private fun ai_suggestion_chip(text: String, on_click: () -> Unit) {
+internal fun ai_suggestion_chip(text: String, on_click: () -> Unit) {
     val colors = app_theme_provider.colors
     androidx.compose.material3.AssistChip(
         onClick = on_click,

@@ -16,6 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,9 +29,140 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jmwl.gostudio.ai.ai_message
 import com.jmwl.gostudio.ai.ai_message_role
+import com.jmwl.gostudio.ai.ai_provider
 import com.jmwl.gostudio.ai.ai_tool_execution
 import com.jmwl.gostudio.ai.ai_tool_status
 import com.jmwl.gostudio.ui.theme.app_theme_provider
+
+/**
+ * 提供商/模型选择器：展示当前会话生效的模型，点击弹出切换菜单。
+ * 没有任何已配置供应商时，点击直接跳设置页。
+ */
+@Composable
+fun ai_model_selector(
+    current_provider: ai_provider,
+    current_model: String,
+    available_models: Map<ai_provider, List<String>>,
+    configured_providers: Set<ai_provider>,
+    on_session_model_change: (ai_provider, String) -> Unit,
+    on_open_settings: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val colors = app_theme_provider.colors
+    var model_menu_open by remember { mutableStateOf(false) }
+
+    Box(modifier = modifier) {
+        val has_any_configured = configured_providers.isNotEmpty()
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+                .clickable {
+                    if (has_any_configured) model_menu_open = true else on_open_settings()
+                }
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Outlined.AutoAwesome, contentDescription = null, tint = colors.title_highlight, modifier = Modifier.size(16.dp))
+            Spacer(modifier = Modifier.width(6.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                if (has_any_configured) {
+                    Text(
+                        text = current_provider.display_name,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.title_large,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = current_model,
+                        fontSize = 10.sp,
+                        color = colors.subtitle,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
+                } else {
+                    Text(
+                        text = "未配置",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.danger,
+                        maxLines = 1
+                    )
+                    Text(
+                        text = "点击设置 AI 提供商",
+                        fontSize = 10.sp,
+                        color = colors.subtitle,
+                        maxLines = 1
+                    )
+                }
+            }
+            if (has_any_configured) {
+                Icon(Icons.Default.ArrowDropDown, contentDescription = "切换", tint = colors.subtitle, modifier = Modifier.size(18.dp))
+            } else {
+                Icon(Icons.Default.Settings, contentDescription = "去设置", tint = colors.subtitle, modifier = Modifier.size(14.dp))
+            }
+        }
+        DropdownMenu(
+            expanded = model_menu_open,
+            onDismissRequest = { model_menu_open = false }
+        ) {
+            // 只显示已配置 key 的供应商
+            val visible_providers = ai_provider.entries.filter { it in configured_providers }
+            if (visible_providers.isEmpty()) {
+                DropdownMenuItem(
+                    text = { Text("暂无已配置的供应商，去设置？", color = colors.subtitle, fontSize = 12.sp) },
+                    onClick = { model_menu_open = false; on_open_settings() }
+                )
+            } else {
+                visible_providers.forEach { p ->
+                    val models = (available_models[p] ?: emptyList()) + p.default_models
+                    val deduped = models.distinct()
+                    if (deduped.isNotEmpty()) {
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    p.display_name,
+                                    color = if (p == current_provider) colors.title_highlight else colors.dialog_text,
+                                    fontWeight = if (p == current_provider) FontWeight.Bold else FontWeight.Normal,
+                                    fontSize = 13.sp
+                                )
+                            },
+                            onClick = {
+                                on_session_model_change(p, p.default_model.ifBlank { current_model })
+                                model_menu_open = false
+                            }
+                        )
+                        deduped.forEach { m ->
+                            DropdownMenuItem(
+                                text = {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Spacer(modifier = Modifier.width(16.dp))
+                                        Text(
+                                            m,
+                                            color = if (p == current_provider && m == current_model) colors.title_highlight else colors.subtitle,
+                                            fontSize = 12.sp,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        if (p == current_provider && m == current_model) {
+                                            Icon(Icons.Default.Check, contentDescription = null, tint = colors.title_highlight, modifier = Modifier.size(14.dp))
+                                        }
+                                    }
+                                },
+                                onClick = {
+                                    on_session_model_change(p, m)
+                                    model_menu_open = false
+                                }
+                            )
+                        }
+                        HorizontalDivider(color = colors.input_border.copy(alpha = 0.2f))
+                    }
+                }
+            }
+        }
+    }
+}
 
 /**
  * 单条消息气泡。

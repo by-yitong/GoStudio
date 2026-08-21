@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -61,10 +62,13 @@ fun editor_floating_actions(
     format_selection: Boolean,
     show_format: Boolean,
     show_save: Boolean,
+    show_search: Boolean,
+    search_active: Boolean,
     on_undo: () -> Unit,
     on_redo: () -> Unit,
     on_format: () -> Unit,
     on_save: () -> Unit,
+    on_toggle_search: () -> Unit,
     modifier: Modifier = Modifier
 ) {
 
@@ -82,6 +86,15 @@ fun editor_floating_actions(
                 modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
                 horizontalArrangement = Arrangement.spacedBy(3.dp)
             ) {
+                if (show_search) {
+                    compact_floating_icon_button(
+                        icon = Icons.Default.Search,
+                        content_description = if (search_active) "关闭搜索" else "搜索",
+                        enabled = true,
+                        tint = if (search_active) colors.editor_icon else colors.editor_text,
+                        on_click = on_toggle_search
+                    )
+                }
                 compact_floating_icon_button(
                     icon = Icons.AutoMirrored.Filled.Undo,
                     content_description = "撤销",

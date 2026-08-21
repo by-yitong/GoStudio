@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ListAlt
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -34,16 +35,18 @@ fun editor_tabs_bar(
     selected_tab_path: String?,
     toolbar_visible: Boolean,
     on_toggle_toolbar: () -> Unit,
+    on_open_logs: () -> Unit,
     on_select_tab: (String) -> Unit,
     on_pin_tab: (String) -> Unit,
     on_close_tab: (String) -> Unit,
     on_close_other_tabs: (String) -> Unit,
-    on_close_all_tabs: () -> Unit
+    on_close_all_tabs: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
 
     val colors = app_theme_provider.colors
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .heightIn(min = 34.dp, max = 34.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -226,6 +229,25 @@ fun editor_tabs_bar(
                 }
             }
         }
+
+        Box(
+            modifier = Modifier
+                .fillMaxHeight()
+                .width(38.dp)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = ripple(bounded = true),
+                    onClick = on_open_logs
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ListAlt,
+                contentDescription = "日志",
+                tint = colors.editor_tab_add_icon,
+                modifier = Modifier.size(20.dp)
+            )
+        }
     }
 }
 
@@ -236,9 +258,7 @@ fun editor_top_bar(
     subtitle: String,
     read_only: Boolean,
     has_open_file: Boolean,
-    search_visible: Boolean,
     on_toggle_drawer: () -> Unit,
-    on_toggle_search: () -> Unit,
     on_build: () -> Unit,
     on_run: () -> Unit,
     build_running: Boolean,
@@ -261,6 +281,7 @@ fun editor_top_bar(
         },
         actions = {
             if (build_running) {
+                // 构建运行中：显示停止按钮（点击取消任务）
                 IconButton(onClick = on_build) {
                     Icon(
                         imageVector = Icons.Default.Stop,
@@ -269,13 +290,6 @@ fun editor_top_bar(
                     )
                 }
             } else {
-                IconButton(onClick = on_build) {
-                    Icon(
-                        imageVector = Icons.Default.Build,
-                        contentDescription = "构建 (go build)",
-                        tint = colors.editor_toolbar_icon
-                    )
-                }
                 IconButton(onClick = on_run) {
                     Icon(
                         imageVector = Icons.Default.PlayArrow,
@@ -297,13 +311,6 @@ fun editor_top_bar(
                         imageVector = if (read_only) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                         contentDescription = "只读",
                         tint = if (read_only) colors.editor_icon else colors.editor_toolbar_icon
-                    )
-                }
-                IconButton(onClick = on_toggle_search) {
-                    Icon(
-                        Icons.Default.Search,
-                        contentDescription = "搜索",
-                        tint = if (search_visible) colors.editor_icon else colors.editor_toolbar_icon
                     )
                 }
             }

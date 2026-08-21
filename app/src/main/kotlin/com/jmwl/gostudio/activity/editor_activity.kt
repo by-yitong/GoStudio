@@ -811,7 +811,6 @@ class editor_activity : ComponentActivity() {
         if (output_panel_state.task_running) {
             if (!output_panel_state.task_stopping) {
                 output_panel_state.task_stopping = true
-                output_panel_state.task_subtitle = "正在停止任务"
                 go_build_job?.cancel()
                 go_run_job?.cancel()
             }
@@ -848,8 +847,6 @@ class editor_activity : ComponentActivity() {
         go_build_job = lifecycleScope.launch {
             output_panel_state.selected_tab = editor_output_tab.Output
             output_panel_state.clear_output()
-            output_panel_state.task_title = "构建输出"
-            output_panel_state.task_subtitle = "正在保存文件"
             output_panel_state.task_running = true
             output_panel_state.task_stopping = false
             if (!save_dirty_open_files(show_toast = false)) {
@@ -858,7 +855,6 @@ class editor_activity : ComponentActivity() {
                 output_panel_state.task_stopping = false
                 return@launch
             }
-            output_panel_state.task_subtitle = "正在构建项目 (go build)"
 
             val success = try {
                 val build = project_manager.read_project_build_config(project_dir.absolutePath)
