@@ -23,12 +23,13 @@ import java.io.File
 fun File.is_alpine_rootfs(): Boolean {
     if (!exists() || !isDirectory) return false
     val required_dirs = listOf("bin", "etc", "lib", "usr", "var", "tmp")
-    val required_files = listOf("bin/busybox", "bin/sh", "bin/env", "etc/apk")
+    // 注意 env 在 usr/bin/env（busybox applet 布局），bin/ 下没有 env
+    val required_files = listOf("bin/busybox", "bin/sh", "usr/bin/env", "etc/apk")
     val has_all_dirs = required_dirs.all { dir ->
         File(this, dir).exists() && File(this, dir).isDirectory
     }
     val has_all_files = required_files.all { file ->
-        // bin/sh、bin/env 是指向 busybox 的符号链接，exists() 会跟随链接判断目标存在
+        // bin/sh 是指向 busybox 的符号链接，exists() 会跟随链接判断目标存在
         File(this, file).exists()
     }
     return has_all_dirs && has_all_files

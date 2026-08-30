@@ -213,8 +213,8 @@ class rootfs_installer(
             require(staging_dir.renameTo(output_dir)) { "Failed to move Alpine rootfs into place" }
             on_event(rootfs_install_event.log("Alpine 解压完成"))
             true
-        } catch (_: Exception) {
-            on_event(rootfs_install_event.log("Alpine 解压失败"))
+        } catch (e: Exception) {
+            on_event(rootfs_install_event.log("Alpine 解压失败: ${e.message ?: e.javaClass.simpleName}"))
             staging_dir.deleteRecursively()
             on_event(rootfs_install_event.log("请重试"))
             false
@@ -444,7 +444,9 @@ class rootfs_installer(
 
     private fun normalize_tar_path(path: String): String {
         val normalized = path.replace('\\', '/').trim().trimStart('/').removePrefix("./")
-        require(normalized.isNotBlank()) { "Rootfs entry path is blank" }
+        // 根目录条目 "./" 归一化后为空：返回空串交由调用方跳过。
+        // Alpine minirootfs 的首个条目就是 "./"，Ubuntu 镜像没有——所以旧逻辑没暴露。
+        if (normalized.isBlank()) return ""
         require(!normalized.contains('\u0000')) { "Rootfs entry path contains invalid character" }
         require(normalized.split('/').none { it == ".." }) { "Rootfs entry escapes target directory: $path" }
         return normalized

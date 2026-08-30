@@ -93,6 +93,14 @@ class install_activity : ComponentActivity() {
 
     private fun start_download() {
         lifecycleScope.launch {
+            // rootfs 已完整（安装中途进程被杀后重进此页、或路由误判）：跳过下载/解压，
+            // 直接进配置阶段。防止「清理旧目录」把装好的环境删掉重来。
+            if (withContext(Dispatchers.IO) { rootfs_dir_path.is_alpine_rootfs() }) {
+                add_log("检测到已解压的 Alpine 环境，跳过下载")
+                configure_environment()
+                return@launch
+            }
+
             is_downloading = true
             is_extracting = false
 
