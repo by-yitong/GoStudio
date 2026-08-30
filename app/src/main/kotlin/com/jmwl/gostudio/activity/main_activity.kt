@@ -13,6 +13,7 @@ import androidx.lifecycle.lifecycleScope
 import com.jmwl.gostudio.project.project_manager
 import com.jmwl.gostudio.project.recent_project_info
 import com.jmwl.gostudio.toolchain.install_garble
+import com.jmwl.gostudio.toolchain.install_gcc
 import com.jmwl.gostudio.toolchain.install_git
 import com.jmwl.gostudio.toolchain.install_go
 import com.jmwl.gostudio.toolchain.install_gopls
@@ -214,6 +215,7 @@ class main_activity : ComponentActivity() {
             toolchain_action.INSTALL_GO -> install_go_toolchain(on_log, on_progress)
             toolchain_action.INSTALL_GOPLS -> install_gopls(on_log, on_progress)
             toolchain_action.INSTALL_GIT -> install_git(on_log, on_progress)
+            toolchain_action.INSTALL_GCC -> install_gcc(on_log, on_progress)
             toolchain_action.INSTALL_GARBLE -> install_garble(on_log, on_progress)
         }
     }

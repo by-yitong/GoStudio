@@ -14,14 +14,14 @@ object toolchain_runtime_provider {
         context: Context,
         gostudio_dir: File,
         home_dir: File,
-        ubuntu_base_dir: File,
+        rootfs_dir: File,
         proot_tmp_dir: File,
         external_storage_dir: File? = Environment.getExternalStorageDirectory()
     ) {
         runtime_paths = toolchain_runtime_paths(
             gostudio_dir = gostudio_dir,
             home_dir = home_dir,
-            ubuntu_base_dir = ubuntu_base_dir,
+            rootfs_dir = rootfs_dir,
             proot_tmp_dir = proot_tmp_dir,
             external_storage_dir = external_storage_dir,
             native_library_dir = File(context.applicationInfo.nativeLibraryDir)

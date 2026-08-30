@@ -9,11 +9,11 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 /**
- * 一个 apt 镜像源候选。
+ * 一个 apk 镜像源候选。
  *
  * @param name 显示名（"清华" / "阿里云" / "中科大" / "官方"）
- * @param host 镜像主机名，用于替换 ubuntu.sources 里的 archive.ubuntu.com / security.ubuntu.com
- * @param probeUrl 测速 URL（指向稳定存在的小文件，如 noble 的 Release 文件）
+ * @param host 镜像主机名，用于生成 /etc/apk/repositories 里的仓库 URL
+ * @param probeUrl 测速 URL（指向稳定存在的小文件，如 v3.24 的 APKINDEX）
  */
 data class MirrorCandidate(
     val name: String,
@@ -30,9 +30,9 @@ data class MirrorSpeedResult(
 )
 
 /**
- * 国内 Ubuntu 镜像测速器（纯 Kotlin，无 Android 依赖）。
+ * 国内 Alpine 镜像测速器（纯 Kotlin，无 Android 依赖）。
  *
- * 对候选镜像**并发**测速（HEAD/GET probeUrl），记录从连接到响应的耗时，
+ * 对候选镜像**并发**测速（GET probeUrl），记录从连接到响应的耗时，
  * 返回按耗时升序排序的列表（可用且最快在前，不可用置末）。
  * 进度通过 [onProgress] 实时回调（每完成一个镜像通知一次）。
  */
@@ -41,13 +41,13 @@ object MirrorSpeedTest {
     /**
      * 默认候选列表（顺序也是兜底回退顺序）：
      * 清华 → 阿里云 → 中科大 → 官方。
-     * probe 用 noble 的 Release 文件（稳定存在，~几十 KB）。
+     * probe 用 v3.24 main 仓库的 APKINDEX.tar.gz（稳定存在，~1MB，只读响应头即断开）。
      */
     val DEFAULT_CANDIDATES: List<MirrorCandidate> = listOf(
-        MirrorCandidate("清华", "mirrors.tuna.tsinghua.edu.cn", "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/dists/noble/Release"),
-        MirrorCandidate("阿里云", "mirrors.aliyun.com", "https://mirrors.aliyun.com/ubuntu/dists/noble/Release"),
-        MirrorCandidate("中科大", "mirrors.ustc.edu.cn", "https://mirrors.ustc.edu.cn/ubuntu/dists/noble/Release"),
-        MirrorCandidate("官方", "archive.ubuntu.com", "http://archive.ubuntu.com/ubuntu/dists/noble/Release"),
+        MirrorCandidate("清华", "mirrors.tuna.tsinghua.edu.cn", "https://mirrors.tuna.tsinghua.edu.cn/alpine/v3.24/main/aarch64/APKINDEX.tar.gz"),
+        MirrorCandidate("阿里云", "mirrors.aliyun.com", "https://mirrors.aliyun.com/alpine/v3.24/main/aarch64/APKINDEX.tar.gz"),
+        MirrorCandidate("中科大", "mirrors.ustc.edu.cn", "https://mirrors.ustc.edu.cn/alpine/v3.24/main/aarch64/APKINDEX.tar.gz"),
+        MirrorCandidate("官方", "dl-cdn.alpinelinux.org", "http://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/APKINDEX.tar.gz"),
     )
 
     /**

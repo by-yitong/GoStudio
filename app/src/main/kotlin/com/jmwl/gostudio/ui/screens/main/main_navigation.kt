@@ -194,6 +194,14 @@ fun main_navigation(
                             )
                         )
                     },
+                    on_install_gcc = {
+                        on_toolchain_trigger_change(
+                            toolchain_trigger(
+                                title = "安装 gcc",
+                                action = toolchain_action.INSTALL_GCC
+                            )
+                        )
+                    },
                     on_install_garble = {
                         on_toolchain_trigger_change(
                             toolchain_trigger(

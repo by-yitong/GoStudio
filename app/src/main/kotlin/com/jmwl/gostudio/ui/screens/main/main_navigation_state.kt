@@ -4,6 +4,7 @@ enum class toolchain_action {
     INSTALL_GO,
     INSTALL_GOPLS,
     INSTALL_GIT,
+    INSTALL_GCC,
     INSTALL_GARBLE
 }
 

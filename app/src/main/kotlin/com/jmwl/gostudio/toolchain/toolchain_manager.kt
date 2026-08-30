@@ -102,7 +102,7 @@ object toolchain_manager {
     private var go_probe_resolved: Boolean = false
 
     private fun probe_installed_go(): go_toolchain_info? {
-        val rootfs = toolchain_runtime_provider.paths().ubuntu_base_dir
+        val rootfs = toolchain_runtime_provider.paths().rootfs_dir
 
         // 1) 手动安装：/usr/local/go/bin/go
         val manual_go_bin = File(rootfs, "usr/local/go/bin/go")
@@ -165,7 +165,7 @@ object toolchain_manager {
 
     /** gopls 是否已安装（/home/go/bin/gopls 或 /usr/bin/gopls 或 /usr/local/go/bin/gopls）。 */
     fun is_gopls_installed(): Boolean {
-        val rootfs = toolchain_runtime_provider.paths().ubuntu_base_dir
+        val rootfs = toolchain_runtime_provider.paths().rootfs_dir
         return File(toolchain_runtime_provider.paths().home_dir, "go/bin/gopls").isFile ||
             File(rootfs, "usr/bin/gopls").isFile ||
             File(rootfs, "usr/local/go/bin/gopls").isFile
@@ -173,7 +173,7 @@ object toolchain_manager {
 
     /** git 是否已安装（rootfs 内 /usr/bin/git）。 */
     fun is_git_installed(): Boolean =
-        File(toolchain_runtime_provider.paths().ubuntu_base_dir, "usr/bin/git").isFile
+        File(toolchain_runtime_provider.paths().rootfs_dir, "usr/bin/git").isFile
 
     /**
      * 组装项目构建环境。

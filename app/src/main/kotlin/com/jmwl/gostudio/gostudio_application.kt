@@ -41,7 +41,7 @@ class gostudio_application : Application() {
             File(android.os.Environment.getExternalStorageDirectory(), "GoStudioProjects"),
             File(filesDir, "home"),
             File(filesDir, "home/gostudio/proot-tmps"),
-            File(filesDir, "home/gostudio/ubuntu-base")
+            File(filesDir, "home/gostudio/alpine-rootfs")
         )
         for (dir in create_dirs) {
             if (!dir.exists()) dir.mkdirs()
@@ -51,7 +51,7 @@ class gostudio_application : Application() {
             context = this,
             gostudio_dir = File(filesDir, "home/gostudio"),
             home_dir = File(filesDir, "home"),
-            ubuntu_base_dir = File(filesDir, "home/gostudio/ubuntu-base"),
+            rootfs_dir = File(filesDir, "home/gostudio/alpine-rootfs"),
             proot_tmp_dir = File(filesDir, "home/gostudio/proot-tmps")
         )
 

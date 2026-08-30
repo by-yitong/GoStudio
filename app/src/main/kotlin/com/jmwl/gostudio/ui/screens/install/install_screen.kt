@@ -71,7 +71,7 @@ fun install_screen(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Ubuntu基础环境安装",
+            text = "Alpine 基础环境安装",
             fontSize = 14.sp,
             color = colors.subtitle
         )

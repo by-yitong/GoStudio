@@ -20,15 +20,16 @@ import com.jmwl.gostudio.ui.theme.app_theme_provider
 import permissions.dispatcher.*
 import java.io.File
 
-fun File.is_ubuntu_rootfs(): Boolean {
+fun File.is_alpine_rootfs(): Boolean {
     if (!exists() || !isDirectory) return false
-    val required_dirs = listOf("home", "bin", "etc", "lib", "usr", "var", "run")
-    val required_files = listOf("bin/dpkg", "bin/bash", "bin/apt", "bin/env", "bin/ls")
+    val required_dirs = listOf("bin", "etc", "lib", "usr", "var", "tmp")
+    val required_files = listOf("bin/busybox", "bin/sh", "bin/env", "etc/apk")
     val has_all_dirs = required_dirs.all { dir ->
         File(this, dir).exists() && File(this, dir).isDirectory
     }
     val has_all_files = required_files.all { file ->
-        File(this, file).exists() && File(this, file).isFile
+        // bin/sh、bin/env 是指向 busybox 的符号链接，exists() 会跟随链接判断目标存在
+        File(this, file).exists()
     }
     return has_all_dirs && has_all_files
 }
@@ -84,8 +85,8 @@ class splash_activity : ComponentActivity() {
     }
 
     private fun check_and_navigate() {
-        val ubuntu_path = File(filesDir, "home/gostudio/ubuntu-base")
-        if (ubuntu_path.is_ubuntu_rootfs()) {
+        val alpine_path = File(filesDir, "home/gostudio/alpine-rootfs")
+        if (alpine_path.is_alpine_rootfs()) {
             navigate_to_main()
         } else {
             navigate_to_install()

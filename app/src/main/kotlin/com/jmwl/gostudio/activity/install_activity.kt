@@ -39,15 +39,20 @@ class install_activity : ComponentActivity() {
 
     private val home_dir_path: File get() = File(filesDir, "home")
     private val gostudio_dir_path: File get() = File(home_dir_path, "gostudio")
-    private val ubuntu_base_dir_path: File get() = File(gostudio_dir_path, "ubuntu-base")
+    private val rootfs_dir_path: File get() = File(gostudio_dir_path, "alpine-rootfs")
+    private val legacy_ubuntu_dir_path: File get() = File(gostudio_dir_path, "ubuntu-base")
 
-    private val ubuntu_version = "24.04.4"
-    private val expected_md5 = "5acb2eb6fe98908f41bc4e9ac0014c91"
-    private val ubuntu_filename = "ubuntu-base-${ubuntu_version}-base-arm64.tar.gz"
+    // Alpine minirootfs 元数据来自 dl-cdn.alpinelinux.org/alpine/v3.24/releases/aarch64/
+    // latest-releases.yaml（版本升级时同步更新 sha256）。
+    private val alpine_branch = "v3.24"
+    private val alpine_version = "3.24.1"
+    private val expected_sha256 = "f55a90f69052c5bd6f92cb09a8f47065970830b194c917a006fb94028e721259"
+    private val alpine_filename = "alpine-minirootfs-${alpine_version}-aarch64.tar.gz"
     private val mirrors = listOf(
-        "https://mirrors.aliyun.com/ubuntu-cdimage/ubuntu-base/releases/${ubuntu_version}/release/$ubuntu_filename",
-        "https://mirrors.ustc.edu.cn/ubuntu-cdimage/ubuntu-base/releases/${ubuntu_version}/release/$ubuntu_filename",
-        "https://mirrors.tuna.tsinghua.edu.cn/ubuntu-cdimage/ubuntu-base/releases/${ubuntu_version}/release/$ubuntu_filename"
+        "https://mirrors.tuna.tsinghua.edu.cn/alpine/$alpine_branch/releases/aarch64/$alpine_filename",
+        "https://mirrors.ustc.edu.cn/alpine/$alpine_branch/releases/aarch64/$alpine_filename",
+        "https://mirrors.aliyun.com/alpine/$alpine_branch/releases/aarch64/$alpine_filename",
+        "https://dl-cdn.alpinelinux.org/alpine/$alpine_branch/releases/aarch64/$alpine_filename"
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -90,20 +95,29 @@ class install_activity : ComponentActivity() {
         lifecycleScope.launch {
             is_downloading = true
             is_extracting = false
+
+            // 彻底替换 Ubuntu：检测到旧环境的目录直接清理（含已装工具链，~数百 MB）。
+            if (legacy_ubuntu_dir_path.exists()) {
+                withContext(Dispatchers.IO) {
+                    add_log("检测到旧版 Ubuntu 环境，正在清理...")
+                    legacy_ubuntu_dir_path.deleteRecursively()
+                }
+            }
+
             val installer = rootfs_installer(
                 toolchain_runtime_paths(
                     gostudio_dir = gostudio_dir_path,
                     home_dir = home_dir_path,
-                    ubuntu_base_dir = ubuntu_base_dir_path,
+                    rootfs_dir = rootfs_dir_path,
                     proot_tmp_dir = File(gostudio_dir_path, "proot-tmps"),
                     external_storage_dir = null,
                     native_library_dir = File(applicationInfo.nativeLibraryDir)
                 )
             )
-            val success = installer.install_ubuntu_base(
+            val success = installer.install_rootfs(
                 mirrors = mirrors,
-                file_name = ubuntu_filename,
-                expected_md5 = expected_md5
+                file_name = alpine_filename,
+                expected_digest = expected_sha256
             ) { event ->
                 withContext(Dispatchers.Main) {
                     when (event) {
@@ -134,11 +148,10 @@ class install_activity : ComponentActivity() {
     private fun configure_environment() {
         lifecycleScope.launch {
             is_configuring = true
-            add_log("开始配置 Ubuntu 环境...")
+            add_log("开始配置 Alpine 环境...")
 
             try {
-                val ubuntu_fs = ubuntu_base_dir_path
-                val installed_flag = File(ubuntu_base_dir_path, ".gostudio_installed")
+                val installed_flag = File(rootfs_dir_path, ".gostudio_installed")
 
                 suspend fun run_required_command(status: String, command: String): Boolean {
                     add_log(status)
@@ -154,14 +167,13 @@ class install_activity : ComponentActivity() {
                 }
 
                 if (needs_initialization) {
-                    // 基础工具（ubuntu-base 可能已自带部分，缺失也无妨）
-                    val base_packages = listOf("wget", "tar", "unzip", "xz-utils", "ca-certificates")
-                    for (package_name in base_packages) {
-                        run_required_command(
-                            "安装 $package_name...",
-                            "DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $package_name"
+                    // 基础包：bash（终端与 wrapper 生态依赖）、CA 证书（https）、tzdata（时区）。
+                    // wget/tar/unzip/xz 用 busybox 自带 applet，无需安装。
+                    if (!run_required_command(
+                            "安装基础包（bash / ca-certificates / tzdata）...",
+                            "apk add bash ca-certificates tzdata"
                         )
-                    }
+                    ) return@launch
 
                     // Go 工具链（go + gopls + git）：走带镜像测速与回退的安装流程，国内网络更稳
                     add_log("安装 Go 工具链（go + gopls + git）...")
@@ -174,13 +186,6 @@ class install_activity : ComponentActivity() {
                     } else {
                         add_log("Go 工具链安装完成")
                     }
-
-                    run_required_command(
-                        "安装 command-not-found...",
-                        "DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends command-not-found"
-                    )
-
-                    if (!run_required_command("刷新命令索引...", "apt-get update -qq -y")) return@launch
 
                     withContext(Dispatchers.IO) {
                         installed_flag.createNewFile()

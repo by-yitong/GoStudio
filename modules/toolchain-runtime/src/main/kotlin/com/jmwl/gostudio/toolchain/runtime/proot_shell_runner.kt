@@ -33,8 +33,8 @@ class proot_shell_runner(
             return@withContext false
         }
         
-        if (!paths.ubuntu_base_dir.isDirectory) {
-            on_log("错误: Ubuntu rootfs 未找到: ${paths.ubuntu_base_dir.absolutePath}")
+        if (!paths.rootfs_dir.isDirectory) {
+            on_log("错误: Alpine rootfs 未找到: ${paths.rootfs_dir.absolutePath}")
             return@withContext false
         }
 

@@ -29,8 +29,8 @@ import com.jmwl.gostudio.ui.theme.app_theme_provider
 /**
  * Go 工具链安装状态（由 main_activity.refresh_toolchain_status 填充）。
  *
- * Go 工具链组件通过 apt 在 proot Ubuntu rootfs 内安装：
- * - golang: Go 编译器（go build / go run / go install）
+ * Go 工具链组件通过 apk 在 proot Alpine rootfs 内安装：
+ * - go: Go 编译器（go build / go run / go install）
  * - gopls:  Go 语言服务器（IDE 补全/诊断/跳转/格式化）
  * - git:    版本控制（go get / go mod 依赖）
  */
@@ -47,6 +47,7 @@ fun main_tools_screen(
     on_install_go: () -> Unit = {},
     on_install_gopls: () -> Unit = {},
     on_install_git: () -> Unit = {},
+    on_install_gcc: () -> Unit = {},
     on_install_garble: () -> Unit = {},
     install_status: main_tools_install_status = main_tools_install_status()
 ) {
@@ -179,13 +180,23 @@ fun main_tools_screen(
                     on_install = on_install_garble
                 )
 
+                main_tools_tool_card(
+                    icon = Icons.Default.Build,
+                    title = "gcc（cgo 编译器）",
+                    description = "C/C++ 编译器 + musl 头文件，编译调用 C 库的项目（cgo）时安装",
+                    status_text = "可选工具",
+                    installed = false,
+                    install_text = "安装 gcc",
+                    on_install = on_install_gcc
+                )
+
                 main_tools_info_card(
                     icon = Icons.Default.Info,
                     title = "安装说明",
                     lines = listOf(
-                        "所有工具通过 apt / go install 安装到 Ubuntu rootfs",
-                        "安装路径：/usr/local/go（Go）、/usr/local/go/bin/gopls",
-                        "首次安装会测速国内镜像源并配置 apt 源"
+                        "所有工具通过 apk / go install 安装到 Alpine rootfs",
+                        "Go 安装路径：/usr/lib/go，gopls 在 /home/go/bin",
+                        "首次安装会测速国内镜像源并配置 apk 源"
                     )
                 )
             }

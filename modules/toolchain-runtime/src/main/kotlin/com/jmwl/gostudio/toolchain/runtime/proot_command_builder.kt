@@ -13,7 +13,7 @@ class proot_command_builder(
             "--link2symlink",
             "--kill-on-exit",
             "-0",
-            "-r", paths.ubuntu_base_dir.absolutePath,
+            "-r", paths.rootfs_dir.absolutePath,
             "-b", "/sys",
             "-b", "/dev",
             "-b", "/proc",
@@ -55,6 +55,18 @@ class proot_command_builder(
         return args
     }
 
+    /**
+     * guest 内 shell 选择：优先 /bin/bash（安装环境时会 apk add bash，终端与
+     * .bashrc 生态都依赖它）；rootfs 未装 bash 时退回 busybox /bin/sh。
+     */
+    private fun login_shell(): List<String> {
+        return if (java.io.File(paths.rootfs_dir, "bin/bash").isFile) {
+            listOf("/bin/bash", "-l")
+        } else {
+            listOf("/bin/sh")
+        }
+    }
+
     fun command(
         shell_command: String,
         working_dir: String = "/home",
@@ -67,9 +79,8 @@ class proot_command_builder(
         return listOf(paths.proot_file.absolutePath) +
             base_args(working_dir, include_gostudio_mount, extra_mounts) +
             clean_shell_env_args(extra_environment = extra_environment) +
+            login_shell() +
             listOf(
-                "/bin/bash",
-                "-l",
                 "-c",
                 wrapper,
                 "gostudio",
@@ -83,8 +94,9 @@ class proot_command_builder(
         include_gostudio_mount: Boolean = true,
         extra_mounts: List<proot_bind_mount> = emptyList()
     ): Array<String> {
+        val shell = if (java.io.File(paths.rootfs_dir, "bin/bash").isFile) "/bin/bash" else "/bin/sh"
         return (base_args(working_dir, include_gostudio_mount, extra_mounts) +
             clean_shell_env_args() +
-            listOf("/bin/bash")).toTypedArray()
+            listOf(shell)).toTypedArray()
     }
 }

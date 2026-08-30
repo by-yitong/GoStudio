@@ -5,7 +5,7 @@ import java.io.File
 data class toolchain_runtime_paths(
     val gostudio_dir: File,
     val home_dir: File,
-    val ubuntu_base_dir: File,
+    val rootfs_dir: File,
     val proot_tmp_dir: File,
     val external_storage_dir: File? = null,
     val native_library_dir: File

@@ -34,10 +34,10 @@ sealed class rootfs_install_event {
 class rootfs_installer(
     private val paths: toolchain_runtime_paths
 ) {
-    suspend fun install_ubuntu_base(
+    suspend fun install_rootfs(
         mirrors: List<String>,
         file_name: String,
-        expected_md5: String,
+        expected_digest: String,
         on_event: suspend (rootfs_install_event) -> Unit
     ): Boolean = withContext(Dispatchers.IO) {
         require(mirrors.isNotEmpty()) { "Rootfs mirrors are required" }
@@ -46,12 +46,12 @@ class rootfs_installer(
 
         if (archive.exists() && archive.length() > 0) {
             on_event(rootfs_install_event.log("找到缓存文件"))
-            on_event(rootfs_install_event.log("验证 MD5..."))
-            if (verify_md5(archive, expected_md5, on_event)) {
-                on_event(rootfs_install_event.log("MD5 校验通过"))
+            on_event(rootfs_install_event.log("验证校验和..."))
+            if (verify_digest(archive, expected_digest, on_event)) {
+                on_event(rootfs_install_event.log("校验和通过"))
                 return@withContext extract_rootfs(archive, on_event)
             }
-            on_event(rootfs_install_event.log("缓存文件 MD5 校验失败，删除缓存文件"))
+            on_event(rootfs_install_event.log("缓存文件校验失败，删除缓存文件"))
             archive.delete()
         }
 
@@ -64,13 +64,13 @@ class rootfs_installer(
                 archive.delete()
                 continue
             }
-            on_event(rootfs_install_event.log("验证 MD5..."))
-            if (verify_md5(archive, expected_md5, on_event)) {
+            on_event(rootfs_install_event.log("验证校验和..."))
+            if (verify_digest(archive, expected_digest, on_event)) {
                 download_ok = true
                 on_event(rootfs_install_event.log("下载完成"))
                 break
             }
-            on_event(rootfs_install_event.log("MD5 校验失败，文件可能损坏"))
+            on_event(rootfs_install_event.log("校验失败，文件可能损坏"))
             archive.delete()
         }
 
@@ -152,20 +152,32 @@ class rootfs_installer(
         }
     }
 
-    private suspend fun verify_md5(
+    /**
+     * 校验归档摘要。摘要长度自动区分算法：32 位十六进制 = MD5，64 位 = SHA-256
+     * （Alpine 官方只发布 .sha256，Ubuntu 基础镜像时代用的 MD5 保持兼容）。
+     */
+    private suspend fun verify_digest(
         file: File,
-        expected_md5: String,
+        expected_digest: String,
         on_event: suspend (rootfs_install_event) -> Unit
     ): Boolean {
-        val calculated = calculate_md5(file)
-        on_event(rootfs_install_event.log("计算 MD5: $calculated"))
-        return calculated == expected_md5
+        val algorithm = when (expected_digest.trim().length) {
+            64 -> "SHA-256"
+            32 -> "MD5"
+            else -> {
+                on_event(rootfs_install_event.log("无法识别的摘要长度，跳过校验"))
+                return false
+            }
+        }
+        val calculated = calculate_digest(file, algorithm)
+        on_event(rootfs_install_event.log("计算 $algorithm: $calculated"))
+        return calculated == expected_digest.trim().lowercase(Locale.US)
     }
 
-    private fun calculate_md5(file: File): String? {
+    private fun calculate_digest(file: File, algorithm: String): String? {
         if (!file.exists()) return null
         return try {
-            val digest = MessageDigest.getInstance("MD5")
+            val digest = MessageDigest.getInstance(algorithm)
             val buffer = ByteArray(8192)
             FileInputStream(file).use { input ->
                 while (true) {
@@ -184,25 +196,25 @@ class rootfs_installer(
         archive: File,
         on_event: suspend (rootfs_install_event) -> Unit
     ): Boolean {
-        on_event(rootfs_install_event.log("开始解压 Ubuntu 文件系统..."))
-        val output_dir = paths.ubuntu_base_dir
-        val staging_dir = File(paths.proot_tmp_dir, "ubuntu-base-staging")
+        on_event(rootfs_install_event.log("开始解压 Alpine 文件系统..."))
+        val output_dir = paths.rootfs_dir
+        val staging_dir = File(paths.proot_tmp_dir, "alpine-rootfs-staging")
         staging_dir.deleteRecursively()
         staging_dir.mkdirs()
 
         return try {
             val total_entries = count_tar_entries(archive).coerceAtLeast(1)
             extract_tar(archive, staging_dir, total_entries, on_event)
-            rootfs_patcher().patch(paths.copy(ubuntu_base_dir = staging_dir))
+            rootfs_patcher().patch(paths.copy(rootfs_dir = staging_dir))
             if (output_dir.exists()) {
                 on_event(rootfs_install_event.log("清理旧目录"))
                 output_dir.deleteRecursively()
             }
-            require(staging_dir.renameTo(output_dir)) { "Failed to move Ubuntu rootfs into place" }
-            on_event(rootfs_install_event.log("Ubuntu 解压完成"))
+            require(staging_dir.renameTo(output_dir)) { "Failed to move Alpine rootfs into place" }
+            on_event(rootfs_install_event.log("Alpine 解压完成"))
             true
         } catch (_: Exception) {
-            on_event(rootfs_install_event.log("Ubuntu 解压失败"))
+            on_event(rootfs_install_event.log("Alpine 解压失败"))
             staging_dir.deleteRecursively()
             on_event(rootfs_install_event.log("请重试"))
             false

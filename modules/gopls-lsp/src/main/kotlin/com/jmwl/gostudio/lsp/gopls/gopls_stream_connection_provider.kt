@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit
 /**
  * gopls 进程启动器（参照 clangd_stream_connection_provider）。
  *
- * 通过 proot 在 Ubuntu rootfs 内启动 gopls，其 stdin/stdout 作为 JSON-RPC 传输。
+ * 通过 proot 在 Alpine rootfs 内启动 gopls，其 stdin/stdout 作为 JSON-RPC 传输。
  *
  * 关键（解决旧工程 gopls 路径警告）：
  * - proot 工作目录 = 项目根（与 rootUri 一致），gopls 的 os.Getwd() 直接是项目根
@@ -83,7 +83,7 @@ class gopls_stream_connection_provider(
         val paths = config.runtime_paths
         require(paths.proot_file.isFile) { "proot not found: ${paths.proot_file.absolutePath}" }
         require(paths.proot_loader_file.isFile) { "proot loader not found: ${paths.proot_loader_file.absolutePath}" }
-        require(paths.ubuntu_base_dir.isDirectory) { "Ubuntu rootfs not found: ${paths.ubuntu_base_dir.absolutePath}" }
+        require(paths.rootfs_dir.isDirectory) { "Alpine rootfs not found: ${paths.rootfs_dir.absolutePath}" }
     }
 
     /**

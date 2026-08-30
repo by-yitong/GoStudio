@@ -8,7 +8,7 @@ class rootfs_patcher {
         paths: toolchain_runtime_paths,
         options: rootfs_patch_options = rootfs_patch_options()
     ) {
-        val rootfs = paths.ubuntu_base_dir
+        val rootfs = paths.rootfs_dir
         val etc_dir = File(rootfs, "etc")
         if (!etc_dir.isDirectory) return
 
@@ -178,6 +178,20 @@ class rootfs_patcher {
             } else {
                 profile.createNewFile()
             }
+        }
+
+        // Alpine 的默认 .profile 不 source .bashrc（Ubuntu 的会）。终端用 bash 登录 shell
+        // 时只读 .profile，没有这段守卫 .bashrc 里的欢迎语/历史设置全部丢失。幂等追加。
+        val guard_marker = "GoStudio bashrc source guard"
+        val content = profile.readText()
+        if (!content.contains(guard_marker)) {
+            profile.writeText(
+                content.trimEnd('\n') + "\n\n" +
+                    "# $guard_marker\n" +
+                    "if [ -n \"\$BASH_VERSION\" ] && [ -f \"\$HOME/.bashrc\" ]; then\n" +
+                    "  . \"\$HOME/.bashrc\"\n" +
+                    "fi\n"
+            )
         }
     }
 
