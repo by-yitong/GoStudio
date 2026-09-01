@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- GoStudio 启动器图标 background：与 logo 四角一致的深蓝纯色 #102036 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:pathData="M0,0L108,0L108,108L0,108z"
+        android:fillColor="#FF102036" />
+</vector>

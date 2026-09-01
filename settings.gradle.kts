@@ -19,6 +19,7 @@ rootProject.name = "GoStudio"
 
 include(
     ":app",
+    ":shell",
     ":modules:editor-core",
     ":modules:project-file-tree",
     ":modules:sora-editor",
