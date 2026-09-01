@@ -101,22 +101,117 @@ private class d_node(
     }
 }
 
-private val CONTAINERS = setOf("LinearLayout", "FrameLayout", "RelativeLayout", "ScrollView", "HorizontalScrollView")
-private val WIDGET_TAGS = listOf("TextView", "EditText", "Button", "ImageView", "CheckBox", "Switch")
-private val LAYOUT_TAGS = listOf("LinearLayout", "FrameLayout", "RelativeLayout", "ScrollView", "HorizontalScrollView")
+private val CONTAINERS = setOf(
+    "LinearLayout", "FrameLayout", "RelativeLayout", "ScrollView", "HorizontalScrollView",
+    "NestedScrollView", "GridLayout", "TableLayout", "TableRow", "RadioGroup", "ViewFlipper"
+)
+private val WIDGET_TAGS = listOf(
+    "TextView", "EditText", "AutoCompleteTextView", "Button", "ImageView", "ImageButton",
+    "CheckBox", "RadioButton", "Switch", "ToggleButton", "ProgressBar", "SeekBar",
+    "RatingBar", "Spinner", "ListView", "GridView", "DatePicker", "TimePicker",
+    "CalendarView", "NumberPicker", "Chronometer", "TextClock", "VideoView",
+    "WebView", "View", "Space"
+)
+private val LAYOUT_TAGS = listOf(
+    "LinearLayout", "FrameLayout", "RelativeLayout", "GridLayout", "TableLayout",
+    "TableRow", "RadioGroup", "ScrollView", "HorizontalScrollView",
+    "NestedScrollView", "ViewFlipper"
+)
 private val TAG_CN = mapOf(
     "LinearLayout" to "线性布局", "FrameLayout" to "帧布局", "RelativeLayout" to "相对布局",
-    "ScrollView" to "滚动视图", "HorizontalScrollView" to "横向滚动",
-    "TextView" to "文本", "EditText" to "输入框", "Button" to "按钮",
-    "ImageView" to "图片", "CheckBox" to "复选框", "Switch" to "开关"
+    "GridLayout" to "网格布局", "TableLayout" to "表格布局", "TableRow" to "表格行",
+    "RadioGroup" to "单选组", "ScrollView" to "滚动视图", "HorizontalScrollView" to "横向滚动",
+    "NestedScrollView" to "嵌套滚动", "ViewFlipper" to "翻页布局",
+    "TextView" to "文本", "EditText" to "输入框", "AutoCompleteTextView" to "自动补全输入框",
+    "Button" to "按钮", "ImageView" to "图片", "ImageButton" to "图片按钮",
+    "CheckBox" to "复选框", "RadioButton" to "单选框", "Switch" to "开关",
+    "ToggleButton" to "开关按钮", "ProgressBar" to "进度条", "SeekBar" to "拖动条",
+    "RatingBar" to "评分条", "Spinner" to "下拉框", "ListView" to "列表",
+    "GridView" to "网格列表", "DatePicker" to "日期选择器", "TimePicker" to "时间选择器",
+    "CalendarView" to "日历", "NumberPicker" to "数字选择器", "Chronometer" to "计时器",
+    "TextClock" to "文本时钟", "VideoView" to "视频", "WebView" to "网页",
+    "View" to "占位视图", "Space" to "空白占位"
+)
+private val COMMON_ATTRS = listOf(
+    "id", "layout_width", "layout_height", "layout_margin", "layout_marginTop", "layout_marginBottom",
+    "layout_marginLeft", "layout_marginRight",
+    "background", "visibility", "enabled", "padding"
+)
+private val TEXT_ATTRS = listOf("text", "hint", "textSize", "textColor", "textColorHint", "gravity", "singleLine", "maxLines")
+private val LAYOUT_ONLY_ATTRS = listOf("orientation", "gravity", "columnCount", "rowCount")
+private val TAG_ATTRS = mapOf(
+    "ImageView" to listOf("src"),
+    "ImageButton" to listOf("src"),
+    "CheckBox" to listOf("checked", "text"),
+    "RadioButton" to listOf("checked", "text"),
+    "Switch" to listOf("checked", "text"),
+    "ToggleButton" to listOf("textOn", "textOff"),
+    "ProgressBar" to listOf("max", "progress"),
+    "SeekBar" to listOf("max", "progress"),
+    "RatingBar" to listOf("numStars", "rating", "stepSize"),
+    "DatePicker" to listOf("spinnersShown", "calendarViewShown"),
+    "NumberPicker" to listOf("minValue", "maxValue", "value"),
+    "Chronometer" to listOf("countDown", "autoStart"),
+    "TextClock" to listOf("format12Hour", "format24Hour"),
+    "ViewFlipper" to listOf("autoStart", "flipInterval")
+)
+private val CONTAINER_EXTRA_ATTRS = mapOf(
+    "LinearLayout" to listOf("orientation", "gravity"),
+    "RadioGroup" to listOf("orientation", "gravity"),
+    "GridLayout" to listOf("orientation", "columnCount", "rowCount")
+)
+private val PARENT_ATTRS = mapOf(
+    "LinearLayout" to listOf("layout_weight", "layout_gravity"),
+    "RadioGroup" to listOf("layout_weight", "layout_gravity"),
+    "TableLayout" to listOf("layout_weight", "layout_gravity"),
+    "TableRow" to listOf("layout_weight", "layout_gravity"),
+    "FrameLayout" to listOf("layout_gravity"),
+    "ScrollView" to listOf("layout_gravity"),
+    "HorizontalScrollView" to listOf("layout_gravity"),
+    "NestedScrollView" to listOf("layout_gravity"),
+    "ViewFlipper" to listOf("layout_gravity"),
+    "RelativeLayout" to listOf(
+        "layout_centerInParent", "layout_centerHorizontal", "layout_centerVertical",
+        "layout_alignParentTop", "layout_alignParentBottom", "layout_alignParentLeft", "layout_alignParentRight"
+    ),
+    "GridLayout" to listOf("layout_row", "layout_column", "layout_rowSpan", "layout_columnSpan")
 )
 private val ATTR_CN = mapOf(
     "id" to "ID", "text" to "文本", "hint" to "提示", "textSize" to "字号",
-    "textColor" to "文字颜色", "background" to "背景", "layout_width" to "宽度",
-    "layout_height" to "高度", "layout_marginTop" to "上边距", "layout_marginBottom" to "下边距",
-    "layout_gravity" to "位置", "gravity" to "内容对齐", "orientation" to "方向", "padding" to "内边距"
+    "textColor" to "文字颜色", "textColorHint" to "提示颜色", "background" to "背景",
+    "layout_width" to "宽度", "layout_height" to "高度", "layout_margin" to "外边距",
+    "layout_marginTop" to "上边距", "layout_marginBottom" to "下边距",
+    "layout_marginLeft" to "左边距", "layout_marginRight" to "右边距",
+    "layout_gravity" to "位置", "gravity" to "内容对齐", "orientation" to "方向",
+    "padding" to "内边距", "visibility" to "可见性", "enabled" to "可用",
+    "singleLine" to "单行", "maxLines" to "最大行数", "src" to "图片资源",
+    "checked" to "选中", "textOn" to "开启文本", "textOff" to "关闭文本",
+    "max" to "最大值", "progress" to "当前值", "numStars" to "星星数",
+    "rating" to "评分", "stepSize" to "步长", "columnCount" to "列数",
+    "rowCount" to "行数", "layout_weight" to "权重", "checkedButton" to "选中项",
+    "layout_row" to "所在行", "layout_column" to "所在列", "layout_rowSpan" to "跨行数",
+    "layout_columnSpan" to "跨列数", "layout_centerInParent" to "父容器居中",
+    "layout_centerHorizontal" to "水平居中", "layout_centerVertical" to "垂直居中",
+    "layout_alignParentTop" to "贴住顶部", "layout_alignParentBottom" to "贴住底部",
+    "layout_alignParentLeft" to "贴住左侧", "layout_alignParentRight" to "贴住右侧",
+    "spinnersShown" to "显示滚轮", "calendarViewShown" to "显示日历",
+    "minValue" to "最小值", "value" to "当前值", "countDown" to "倒计时",
+    "autoStart" to "自动开始", "format12Hour" to "12小时格式", "format24Hour" to "24小时格式",
+    "flipInterval" to "切换间隔"
 )
 private fun tag_cn(tag: String) = TAG_CN[tag] ?: tag
+
+/** 按控件类型和父容器返回属性字段，避免给普通按钮显示无意义的日期/列表属性。 */
+private fun attrs_for(tag: String, parent_tag: String? = null): List<String> {
+    val result = COMMON_ATTRS.toMutableList()
+    if (tag == "TextView" || tag == "EditText" || tag == "AutoCompleteTextView" ||
+        tag in setOf("Button", "CheckBox", "RadioButton", "Switch", "ToggleButton", "Chronometer", "TextClock")
+    ) result.addAll(TEXT_ATTRS)
+    if (tag in CONTAINERS) result.addAll(LAYOUT_ONLY_ATTRS + (CONTAINER_EXTRA_ATTRS[tag] ?: emptyList()))
+    parent_tag?.let { result.addAll(PARENT_ATTRS[it] ?: emptyList()) }
+    TAG_ATTRS[tag]?.let { result.addAll(it) }
+    return result.distinct()
+}
 
 private fun parse_xml(xml: String): d_node {
     val parser = android.util.Xml.newPullParser()
@@ -164,17 +259,45 @@ private fun default_attrs(tag: String, root: d_node): MutableMap<String, String>
     val m = mutableMapOf(
         "layout_width" to "wrap_content",
         "layout_height" to "wrap_content",
-        "layout_marginTop" to "8dp"
+        "layout_marginTop" to "8dp",
+        "id" to next_id(root, tag)
     )
     when (tag) {
-        "LinearLayout" -> { m["orientation"] = "vertical"; m["id"] = next_id(root, tag) }
-        "ScrollView" -> { m["layout_height"] = "match_parent" }
-        else -> m["id"] = next_id(root, tag)
+        "LinearLayout" -> m["orientation"] = "vertical"
+        "RadioGroup" -> m["orientation"] = "vertical"
+        "ScrollView", "NestedScrollView" -> m["layout_height"] = "match_parent"
+        "HorizontalScrollView" -> m["layout_width"] = "match_parent"
+        "GridLayout" -> { m["columnCount"] = "2"; m["layout_width"] = "match_parent" }
+        "TableLayout" -> m["layout_width"] = "match_parent"
+        "ViewFlipper" -> { m["layout_width"] = "match_parent"; m["layout_height"] = "match_parent" }
     }
     when (tag) {
         "TextView" -> m["text"] = "文本"
         "Button" -> m["text"] = "按钮"
         "EditText" -> m["hint"] = "输入"
+        "AutoCompleteTextView" -> m["hint"] = "自动补全"
+        "CheckBox" -> m["text"] = "复选框"
+        "RadioButton" -> m["text"] = "单选框"
+        "Switch" -> m["text"] = "开关"
+        "ToggleButton" -> m["text"] = "开关按钮"
+        "ImageView" -> { m["layout_width"] = "96dp"; m["layout_height"] = "96dp"; m["background"] = "#C8CACD" }
+        "ImageButton" -> { m["layout_width"] = "48dp"; m["layout_height"] = "48dp"; m["background"] = "#C8CACD" }
+        "SeekBar" -> { m["layout_width"] = "match_parent"; m["max"] = "100"; m["progress"] = "30" }
+        "ProgressBar" -> { m["max"] = "100"; m["progress"] = "30" }
+        "RatingBar" -> { m["numStars"] = "5"; m["rating"] = "4"; m["stepSize"] = "1" }
+        "Spinner" -> m["layout_width"] = "match_parent"
+        "ListView" -> { m["layout_width"] = "match_parent"; m["layout_height"] = "180dp" }
+        "GridView" -> { m["layout_width"] = "match_parent"; m["layout_height"] = "180dp"; m["numColumns"] = "3" }
+        "DatePicker" -> { m["layout_width"] = "wrap_content"; m["layout_height"] = "wrap_content" }
+        "TimePicker" -> { m["layout_width"] = "wrap_content"; m["layout_height"] = "wrap_content" }
+        "CalendarView" -> { m["layout_width"] = "match_parent"; m["layout_height"] = "240dp" }
+        "NumberPicker" -> { m["layout_width"] = "90dp"; m["layout_height"] = "140dp"; m["minValue"] = "0"; m["maxValue"] = "100"; m["value"] = "30" }
+        "Chronometer" -> m["textSize"] = "18sp"
+        "TextClock" -> { m["format24Hour"] = "HH:mm:ss"; m["layout_width"] = "wrap_content"; m["layout_height"] = "wrap_content" }
+        "VideoView" -> { m["layout_width"] = "240dp"; m["layout_height"] = "140dp"; m["background"] = "#111111" }
+        "WebView" -> { m["layout_width"] = "match_parent"; m["layout_height"] = "180dp"; m["background"] = "#FFFFFF" }
+        "View" -> { m["layout_width"] = "120dp"; m["layout_height"] = "48dp"; m["background"] = "#C8CACD" }
+        "Space" -> { m["layout_width"] = "16dp"; m["layout_height"] = "16dp" }
     }
     return m
 }
@@ -644,11 +767,8 @@ private fun PropertyDrawer(
     on_delete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val attr_list = listOf(
-        "id", "text", "hint", "textSize", "textColor", "background",
-        "layout_width", "layout_height", "layout_marginTop", "layout_marginBottom",
-        "layout_gravity", "gravity", "orientation", "padding"
-    )
+    val defined_attrs = attrs_for(node?.tag ?: "", node?.parent?.tag)
+    val attr_list = defined_attrs + node?.attrs?.keys.orEmpty().filter { it !in defined_attrs }
 
     var show_delete_confirm by remember { mutableStateOf(false) }
 
