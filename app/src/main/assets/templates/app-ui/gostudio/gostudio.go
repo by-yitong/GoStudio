@@ -79,6 +79,33 @@ func (a *App) Log(args ...any) {
 	a.send(message{Op: "log", Text: fmt.Sprint(args...)})
 }
 
+// View 是布局中控件的句柄，对应 layout.xml 里的 id 属性。
+type View struct {
+	app *App
+	id  string
+}
+
+// Button 返回按钮句柄。
+func (a *App) Button(id string) *Button { return &Button{View{a, id}} }
+
+// Text 返回文本控件句柄（TextView / EditText 通用）。
+func (a *App) Text(id string) *Text { return &Text{View{a, id}} }
+
+// Button 按钮。
+type Button struct{ View }
+
+// Text 文本控件。
+type Text struct{ View }
+
+// OnClick 注册点击事件。
+func (v *View) OnClick(fn func()) { v.app.OnClick(v.id, fn) }
+
+// SetText 设置控件文本。
+func (v *View) SetText(text string) { v.app.SetText(v.id, text) }
+
+// GetText 读取控件文本。
+func (v *View) GetText() (string, error) { return v.app.GetText(v.id) }
+
 // Quit 请求宿主关闭当前运行界面。
 func (a *App) Quit() error {
 	return a.call(message{Op: "quit"})

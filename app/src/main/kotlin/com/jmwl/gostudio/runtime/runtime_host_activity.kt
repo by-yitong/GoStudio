@@ -1,6 +1,6 @@
 package com.jmwl.gostudio.runtime
 
-import android.app.Activity
+import androidx.appcompat.app.AppCompatActivity
 import android.graphics.Color
 import android.os.Bundle
 import android.view.Gravity
@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  *
  * 控件在布局里用 android:tag="控件id" 标记，Go 侧用同名 id 操作。
  */
-class runtime_host_activity : Activity(), runtime_bridge.protocol_handler {
+class runtime_host_activity : AppCompatActivity(), runtime_bridge.protocol_handler {
 
     private lateinit var project_dir: File
     private var views_by_id: Map<String, View> = emptyMap()
@@ -39,6 +39,8 @@ class runtime_host_activity : Activity(), runtime_bridge.protocol_handler {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Material You 动态取色（Android 12+），低版本回退默认 M3 色板
+        com.google.android.material.color.DynamicColors.applyToActivityIfAvailable(this)
         val project_path = intent.getStringExtra(EXTRA_PROJECT_DIR)
             ?: run { finish(); return }
         project_dir = File(project_path)
@@ -102,7 +104,7 @@ class runtime_host_activity : Activity(), runtime_bridge.protocol_handler {
     /** 业务布局 + 底部日志浮层。 */
     private fun build_content(root: View): View {
         val frame = FrameLayout(this)
-        frame.setBackgroundColor(Color.parseColor("#101014"))
+        frame.setBackgroundColor(com.google.android.material.color.MaterialColors.getColor(frame, com.google.android.material.R.attr.colorSurface))
         frame.addView(
             root,
             FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)

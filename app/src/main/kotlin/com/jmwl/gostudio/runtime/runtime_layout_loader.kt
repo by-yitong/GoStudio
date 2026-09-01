@@ -25,6 +25,8 @@ import android.widget.SeekBar
 import android.widget.Space
 import android.widget.Switch
 import android.widget.TextView
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.textview.MaterialTextView
 import java.io.File
 import java.lang.reflect.Method
 
@@ -69,8 +71,8 @@ class runtime_layout_loader(private val context: Context) {
         "RelativeLayout" to { RelativeLayout(it) },
         "ScrollView" to { ScrollView(it) },
         "HorizontalScrollView" to { HorizontalScrollView(it) },
-        "TextView" to { TextView(it) },
-        "Button" to { Button(it) },
+        "TextView" to { MaterialTextView(it) },
+        "Button" to { MaterialButton(it) },
         "EditText" to { EditText(it) },
         "ImageView" to { ImageView(it) },
         "ImageButton" to { ImageButton(it) },

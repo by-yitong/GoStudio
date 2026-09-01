@@ -224,23 +224,18 @@ object project_manager {
     private fun go_app_ui_template(): String = """
 package main
 
-import (
-	"gostudio"
-)
+import "gostudio"
 
 func main() {
 	app := gostudio.Start()
+	tv := app.Text("tv")
 
-	app.OnClick("btn", func() {
-		name, err := app.GetText("input")
-		if err != nil {
-			app.Log("读取输入失败: ", err)
-			return
-		}
+	app.Button("btn").OnClick(func() {
+		name, _ := app.Text("input").GetText()
 		if name == "" {
 			name = "GoStudio"
 		}
-		app.SetText("tv", "你好，"+name+"！")
+		tv.SetText("你好，" + name + "！")
 	})
 
 	app.Run()
