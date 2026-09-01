@@ -3,6 +3,7 @@ package com.jmwl.gostudio.runtime
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.content.Intent
 import android.net.Uri
@@ -22,6 +23,7 @@ import android.widget.Button
 import android.widget.CompoundButton
 import android.widget.DatePicker
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.RatingBar
 import android.widget.ScrollView
@@ -36,6 +38,8 @@ import com.jmwl.gostudio.toolchain.sandbox_dns
 import com.jmwl.gostudio.toolchain.toolchain_manager
 import com.jmwl.gostudio.toolchain.toolchain_runtime_provider
 import java.io.File
+import java.net.HttpURLConnection
+import java.net.URL
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -251,6 +255,41 @@ class runtime_host_activity : AppCompatActivity(), runtime_bridge.protocol_handl
         } else {
             append_log("警告: set_text 找不到控件 \"$vid\"")
         }
+    }
+
+    override fun on_set_image(vid: String, url: String) {
+        load_network_image(vid, url)
+    }
+
+    private fun load_network_image(vid: String, url: String) {
+        val target = views_by_id[vid] as? ImageView
+        if (target == null) {
+            append_log("警告: set_image 找不到控件 \"$vid\"")
+            return
+        }
+        Thread {
+            val result = runCatching {
+                val parsed = URL(url)
+                check(parsed.protocol == "http" || parsed.protocol == "https") { "仅支持 http/https 图片" }
+                val connection = parsed.openConnection() as HttpURLConnection
+                connection.connectTimeout = 15_000
+                connection.readTimeout = 15_000
+                connection.setRequestProperty("User-Agent", "GoStudio Runtime")
+                val bitmap = connection.inputStream.use(BitmapFactory::decodeStream)
+                checkNotNull(bitmap) { "图片解码失败" }
+            }
+            Handler(Looper.getMainLooper()).post {
+                result.onSuccess { bitmap ->
+                    if (!isDestroyed && !isFinishing) {
+                        target.setImageBitmap(bitmap)
+                        target.invalidate()
+                        append_log("图片已更新: $vid")
+                    }
+                }.onFailure { error ->
+                    append_log("网络图片加载失败: ${error.message}")
+                }
+            }
+        }.apply { isDaemon = true }.start()
     }
 
     override fun on_get_text(vid: String): String {

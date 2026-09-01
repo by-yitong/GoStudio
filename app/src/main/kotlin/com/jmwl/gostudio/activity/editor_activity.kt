@@ -1342,7 +1342,7 @@ class editor_activity : ComponentActivity() {
     private fun upgrade_app_ui_runtime_sdk_if_needed() {
         if (!File(project_dir, "layout.xml").isFile) return
         val sdk_file = File(project_dir, "gostudio/gostudio.go")
-        if (sdk_file.isFile && sdk_file.readText().contains("func (a *App) Dialog")) return
+        if (sdk_file.isFile && sdk_file.readText().contains("func (a *App) SetImage")) return
         sdk_file.parentFile?.mkdirs()
         gostudio_application.instance.assets.open("templates/app-ui/gostudio/gostudio.go").use { input ->
             sdk_file.outputStream().use { input.copyTo(it) }

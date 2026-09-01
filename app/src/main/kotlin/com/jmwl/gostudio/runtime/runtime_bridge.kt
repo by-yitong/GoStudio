@@ -28,6 +28,7 @@ class runtime_bridge(
 ) {
     interface protocol_handler {
         fun on_set_text(vid: String, text: String)
+        fun on_set_image(vid: String, url: String)
         fun on_get_text(vid: String): String
         fun on_system_call(action: String, msg: JSONObject): String
         fun on_quit()
@@ -129,6 +130,12 @@ class runtime_bridge(
                 val vid = msg.optString("vid")
                 val text = msg.optString("text")
                 post_to_main { handler.on_set_text(vid, text) }
+                send_ack(msg.optLong("seq"))
+            }
+            "set_image" -> {
+                val vid = msg.optString("vid")
+                val url = msg.optString("text")
+                post_to_main { handler.on_set_image(vid, url) }
                 send_ack(msg.optLong("seq"))
             }
             "get_text" -> {

@@ -166,6 +166,11 @@ func (a *App) GetText(id string) (string, error) {
 	return reply.Text, nil
 }
 
+// SetImage 把 ImageView / ImageButton 的图片替换为网络 URL。
+func (a *App) SetImage(id, url string) error {
+	return a.call(message{Op: "set_image", Vid: id, Text: url})
+}
+
 // Log 在宿主界面的日志区输出一行信息。
 func (a *App) Log(args ...any) {
 	a.send(message{Op: "log", Text: fmt.Sprint(args...)})
@@ -256,11 +261,17 @@ type View struct {
 // Button 返回按钮句柄。
 func (a *App) Button(id string) *Button { return &Button{View{a, id}} }
 
+// Image 返回图片控件句柄。
+func (a *App) Image(id string) *Image { return &Image{View{a, id}} }
+
 // Text 返回文本控件句柄（TextView / EditText 通用）。
 func (a *App) Text(id string) *Text { return &Text{View{a, id}} }
 
 // Button 按钮。
 type Button struct{ View }
+
+// Image 图片控件。
+type Image struct{ View }
 
 // Text 文本控件。
 type Text struct{ View }
@@ -276,6 +287,9 @@ func (v *View) SetText(text string) error { return v.app.SetText(v.id, text) }
 
 // GetText 读取控件文本。
 func (v *View) GetText() (string, error) { return v.app.GetText(v.id) }
+
+// SetImage 设置网络图片，支持 http/https URL。
+func (v *Image) SetImage(url string) error { return v.app.SetImage(v.id, url) }
 
 // Quit 请求宿主关闭当前运行界面。
 func (a *App) Quit() error {

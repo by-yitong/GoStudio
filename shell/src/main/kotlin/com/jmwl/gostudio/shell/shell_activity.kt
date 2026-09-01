@@ -12,6 +12,7 @@ import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.graphics.BitmapFactory
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.Gravity
@@ -20,6 +21,7 @@ import android.view.ViewGroup
 import android.widget.CompoundButton
 import android.widget.DatePicker
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.RatingBar
 import android.widget.ScrollView
@@ -31,6 +33,8 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import org.json.JSONObject
 import java.io.File
+import java.net.HttpURLConnection
+import java.net.URL
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.FutureTask
 import java.util.concurrent.TimeUnit
@@ -232,6 +236,41 @@ class shell_activity : AppCompatActivity() {
     fun on_set_text(vid: String, text: String) {
         val target = views_by_id[vid] as? TextView
         if (target != null) target.text = text else append_log("警告: set_text 找不到控件 \"$vid\"")
+    }
+
+    fun on_set_image(vid: String, url: String) {
+        load_network_image(vid, url)
+    }
+
+    private fun load_network_image(vid: String, url: String) {
+        val target = views_by_id[vid] as? ImageView
+        if (target == null) {
+            append_log("警告: set_image 找不到控件 \"$vid\"")
+            return
+        }
+        Thread {
+            val result = runCatching {
+                val parsed = URL(url)
+                check(parsed.protocol == "http" || parsed.protocol == "https") { "仅支持 http/https 图片" }
+                val connection = parsed.openConnection() as HttpURLConnection
+                connection.connectTimeout = 15_000
+                connection.readTimeout = 15_000
+                connection.setRequestProperty("User-Agent", "GoStudio App")
+                val bitmap = connection.inputStream.use(BitmapFactory::decodeStream)
+                checkNotNull(bitmap) { "图片解码失败" }
+            }
+            Handler(Looper.getMainLooper()).post {
+                result.onSuccess { bitmap ->
+                    if (!isDestroyed && !isFinishing) {
+                        target.setImageBitmap(bitmap)
+                        target.invalidate()
+                        append_log("图片已更新: $vid")
+                    }
+                }.onFailure { error ->
+                    append_log("网络图片加载失败: ${error.message}")
+                }
+            }
+        }.apply { isDaemon = true }.start()
     }
 
     fun on_get_text(vid: String): String {
@@ -452,6 +491,12 @@ class standalone_bridge(
                 val vid = msg.optString("vid")
                 val text = msg.optString("text")
                 main_handler.post { handler.on_set_text(vid, text) }
+                send_ack(msg.optLong("seq"))
+            }
+            "set_image" -> {
+                val vid = msg.optString("vid")
+                val url = msg.optString("text")
+                main_handler.post { handler.on_set_image(vid, url) }
                 send_ack(msg.optLong("seq"))
             }
             "get_text" -> {
