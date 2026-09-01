@@ -189,8 +189,13 @@ private fun remove_node(root: d_node, target: d_node): Boolean {
 
 private fun find_node(root: d_node, target: d_node): d_node? {
     if (root === target) return root
-    root.children.forEach { c -> find_node(c, target)?.let { return it } }
-    return null
+    // deep_copy 后引用不同，按内容匹配：tag + id + 子节点数
+    fun match(n: d_node): d_node? {
+        if (n.tag == target.tag && n.id == target.id && n.children.size == target.children.size) return n
+        n.children.forEach { c -> match(c)?.let { return it } }
+        return null
+    }
+    return match(root)
 }
 
 /* ---------- 设计器界面 ---------- */
@@ -645,6 +650,29 @@ private fun PropertyDrawer(
         "layout_gravity", "gravity", "orientation", "padding"
     )
 
+    var show_delete_confirm by remember { mutableStateOf(false) }
+
+    // 删除确认弹窗
+    if (show_delete_confirm) {
+        AlertDialog(
+            onDismissRequest = { show_delete_confirm = false },
+            title = { Text("删除组件", fontSize = 15.sp, fontWeight = FontWeight.Bold) },
+            text = { Text("确定删除 ${tag_cn(node?.tag ?: "")}${node?.id?.takeIf { it.isNotBlank() }?.let { " (#$it)" } ?: ""} 吗？", fontSize = 13.sp) },
+            confirmButton = {
+                TextButton(onClick = {
+                    show_delete_confirm = false
+                    on_delete()
+                }) { Text("删除", color = androidx.compose.ui.graphics.Color(0xFFFF6B6B)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { show_delete_confirm = false }) { Text("取消") }
+            },
+            containerColor = app_theme_provider.colors.editor_bg,
+            titleContentColor = app_theme_provider.colors.editor_text,
+            textContentColor = app_theme_provider.colors.editor_hint
+        )
+    }
+
     Column(modifier.verticalScroll(rememberScrollState()).padding(10.dp)) {
         if (node == null) {
             Text("未选中组件\n点击预览或组件树", fontSize = 11.sp, color = app_theme_provider.colors.editor_hint)
@@ -658,7 +686,7 @@ private fun PropertyDrawer(
             }
             Spacer(Modifier.weight(1f))
             if (!is_root) {
-                IconButton(onClick = on_delete, modifier = Modifier.size(28.dp)) {
+                IconButton(onClick = { show_delete_confirm = true }, modifier = Modifier.size(28.dp)) {
                     Icon(Icons.Default.Delete, "删除", tint = androidx.compose.ui.graphics.Color(0xFFFF6B6B), modifier = Modifier.size(15.dp))
                 }
             }
