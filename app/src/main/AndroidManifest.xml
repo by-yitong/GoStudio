@@ -82,7 +82,7 @@
             android:name=".designer.layout_designer_activity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize"
-            android:theme="@style/Theme.ComposeEmptyActivity"
+            android:theme="@style/Theme.Material3.DayNight.NoActionBar"
             android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".activity.editor_activity"
