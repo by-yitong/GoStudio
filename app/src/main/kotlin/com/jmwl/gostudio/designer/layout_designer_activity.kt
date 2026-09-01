@@ -184,6 +184,8 @@ private fun designer_screen(
     var tree by remember { mutableStateOf(parse_xml(initial_xml)) }
     var selected by remember { mutableStateOf<d_node?>(null) }
     var preview_revision by remember { mutableIntStateOf(0) }
+    var left_open by remember { mutableStateOf(true) }
+    var right_open by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     fun rebuild_from_tree() {
@@ -194,54 +196,82 @@ private fun designer_screen(
     Scaffold(
         topBar = {
             Surface(shadowElevation = 2.dp) {
-                Row(Modifier.fillMaxWidth().height(48.dp).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.fillMaxWidth().height(48.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = on_back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回") }
-                    Text("布局设计器", fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    TextButton(onClick = { left_open = !left_open }) {
+                        Text("组件", fontSize = 12.sp, color = if (left_open) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+                    }
+                    Text("布局设计器", fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    TextButton(onClick = { right_open = !right_open }) {
+                        Text("属性", fontSize = 12.sp, color = if (right_open) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+                    }
                     TextButton(onClick = { on_save(serialize(tree)) }) { Text("保存", color = MaterialTheme.colorScheme.primary) }
                 }
             }
         }
     ) { padding ->
-        Row(Modifier.fillMaxSize().padding(padding)) {
-            // 左抽屉：组件面板（宽 120dp）
-            ComponentPalette(
-                on_add = { tag ->
-                    val target = selected?.takeIf { it.is_container } ?: tree
-                    val node = d_node(tag, default_attrs(tag, tree))
-                    node.parent = target
-                    target.children.add(node)
-                    selected = node
-                    tree = tree.deep_copy().also { selected = find_node(it, node) }
-                    rebuild_from_tree()
+        Box(Modifier.fillMaxSize().padding(padding)) {
+            // 中间：实时预览（全屏，点选控件后自动弹右抽屉）
+            RealtimePreview(
+                xml = xml,
+                revision = preview_revision,
+                on_select = { id ->
+                    selected = find_by_id(tree, id)
+                    right_open = true
                 },
-                modifier = Modifier.width(120.dp).fillMaxHeight()
+                modifier = Modifier.fillMaxSize()
             )
-            // 中间：实时预览（点选控件）
-            Box(Modifier.weight(1f).fillMaxHeight()) {
-                RealtimePreview(
-                    xml = xml,
-                    revision = preview_revision,
-                    on_select = { id -> selected = find_by_id(tree, id) }
-                )
+
+            // 左抽屉：组件面板（从左滑入，浮层）
+            androidx.compose.animation.AnimatedVisibility(
+                visible = left_open,
+                enter = androidx.compose.animation.slideInHorizontally { -it } + androidx.compose.animation.fadeIn(),
+                exit = androidx.compose.animation.slideOutHorizontally { -it } + androidx.compose.animation.fadeOut(),
+                modifier = Modifier.align(Alignment.CenterStart).fillMaxHeight()
+            ) {
+                Surface(shadowElevation = 8.dp, color = MaterialTheme.colorScheme.surface) {
+                    ComponentPalette(
+                        on_add = { tag ->
+                            val target = selected?.takeIf { it.is_container } ?: tree
+                            val node = d_node(tag, default_attrs(tag, tree))
+                            node.parent = target
+                            target.children.add(node)
+                            selected = node
+                            tree = tree.deep_copy().also { selected = find_node(it, node) }
+                            rebuild_from_tree()
+                        },
+                        modifier = Modifier.width(130.dp).fillMaxHeight()
+                    )
+                }
             }
-            // 右抽屉：属性面板（宽 240dp）
-            PropertyDrawer(
-                node = selected,
-                is_root = selected === tree,
-                on_change = {
-                    tree = tree.deep_copy().also { selected = find_node(it, selected!!) }
-                    rebuild_from_tree()
-                },
-                on_delete = {
-                    if (selected != null && selected !== tree) {
-                        remove_node(tree, selected!!)
-                        selected = null
-                        tree = tree.deep_copy()
-                        rebuild_from_tree()
-                    }
-                },
-                modifier = Modifier.width(240.dp).fillMaxHeight()
-            )
+
+            // 右抽屉：属性面板（从右滑入，浮层）
+            androidx.compose.animation.AnimatedVisibility(
+                visible = right_open,
+                enter = androidx.compose.animation.slideInHorizontally { it } + androidx.compose.animation.fadeIn(),
+                exit = androidx.compose.animation.slideOutHorizontally { it } + androidx.compose.animation.fadeOut(),
+                modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight()
+            ) {
+                Surface(shadowElevation = 8.dp, color = MaterialTheme.colorScheme.surface) {
+                    PropertyDrawer(
+                        node = selected,
+                        is_root = selected === tree,
+                        on_change = {
+                            tree = tree.deep_copy().also { selected = find_node(it, selected!!) }
+                            rebuild_from_tree()
+                        },
+                        on_delete = {
+                            if (selected != null && selected !== tree) {
+                                remove_node(tree, selected!!)
+                                selected = null
+                                tree = tree.deep_copy()
+                                rebuild_from_tree()
+                            }
+                        },
+                        modifier = Modifier.width(240.dp).fillMaxHeight()
+                    )
+                }
+            }
         }
     }
 }
@@ -277,7 +307,7 @@ private fun ComponentPalette(on_add: (String) -> Unit, modifier: Modifier = Modi
 
 /* 中间：实时预览（原生渲染 + 点选） */
 @Composable
-private fun RealtimePreview(xml: String, revision: Int, on_select: (String) -> Unit) {
+private fun RealtimePreview(xml: String, revision: Int, on_select: (String) -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     var result by remember { mutableStateOf<runtime_layout_loader.Result?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -295,7 +325,7 @@ private fun RealtimePreview(xml: String, revision: Int, on_select: (String) -> U
         }.fold(onSuccess = { result = it }, onFailure = { error = it.message })
     }
 
-    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))) {
+    Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))) {
         error?.let {
             Text("解析错误: $it", color = MaterialTheme.colorScheme.error, fontSize = 11.sp, modifier = Modifier.align(Alignment.TopCenter).padding(8.dp))
         }
