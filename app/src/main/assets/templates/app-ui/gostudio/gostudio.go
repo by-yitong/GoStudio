@@ -8,7 +8,7 @@
 //	app.OnResume(func() { app.Log("onResume") })
 //	app.Run()
 //
-// 注意：协议占用标准输出，业务日志请使用 app.Log()，不要直接 fmt.Println 到 stdout。
+// fmt.Println 等普通 stdout 输出会被宿主识别为运行日志；协议消息仍使用 stdout 传输。
 package gostudio
 
 import (
@@ -169,6 +169,33 @@ func (a *App) GetText(id string) (string, error) {
 // Log 在宿主界面的日志区输出一行信息。
 func (a *App) Log(args ...any) {
 	a.send(message{Op: "log", Text: fmt.Sprint(args...)})
+}
+
+
+// Alert 显示只有一个“确定”按钮的系统弹窗。
+func (a *App) Alert(title, message string) error {
+	return a.Dialog(title, message, "确定")
+}
+
+// Dialog 显示系统弹窗，buttons 是自定义按钮文本。
+func (a *App) Dialog(title, content string, buttons ...string) error {
+	labels := buttons
+	if len(labels) == 0 {
+		labels = []string{"确定"}
+	}
+	value, err := json.Marshal(labels)
+	if err != nil {
+		return err
+	}
+	return a.call(message{
+		Op: "system", Action: "dialog", Title: title,
+		Text: content, Value: value,
+	})
+}
+
+// OnDialog 注册弹窗按钮回调，button 是被点击按钮的文本。
+func (a *App) OnDialog(fn func(button string)) {
+	a.On("", "dialog", func(e Event) { fn(e.Text) })
 }
 
 // Toast 显示系统短 Toast；duration 为 0 短 Toast，为 1 长 Toast。

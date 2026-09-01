@@ -136,6 +136,14 @@ private val native_templates = listOf(
         "app.Vibrate(300)"
     ),
     editor_code_template(
+        "alert", "弹窗提示", "显示原生系统弹窗",
+        "app.Alert(\"提示\", \"你好，GoStudio\")"
+    ),
+    editor_code_template(
+        "dialog", "多按钮弹窗", "显示可回调的系统弹窗",
+        "app.Dialog(\"选择\", \"请选择一个操作\", \"继续\", \"取消\")\napp.OnDialog(func(button string) {\n\tapp.Log(\"弹窗按钮: \" + button)\n})"
+    ),
+    editor_code_template(
         "clipboard_set", "写剪贴板", "复制文本到系统剪贴板",
         "app.SetClipboard(\"要复制的文本\")"
     ),

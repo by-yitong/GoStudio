@@ -128,6 +128,7 @@ class editor_activity : ComponentActivity() {
     /** AI 弹窗打开触发器（编辑器选区 AI 动作时 +1） */
     private var ai_open_trigger by mutableStateOf(0)
     private var sidebar_log_open_trigger by mutableStateOf(0)
+    private var sidebar_log_close_trigger by mutableStateOf(0)
     /** AI 文件变更通知器（工具改文件后刷新编辑器） */
     private var ai_file_change_notifier: com.jmwl.gostudio.ai.ai_file_change_notifier? = null
     /** AI 设置页覆盖层开关 */
@@ -405,6 +406,7 @@ class editor_activity : ComponentActivity() {
             ai_project_prompts_dir = ai_project_prompts_dir,
             ai_open_trigger = ai_open_trigger,
             sidebar_log_open_trigger = sidebar_log_open_trigger,
+            sidebar_log_close_trigger = sidebar_log_close_trigger,
             on_open_designer = ::open_layout_designer,
             ai_settings_visible = show_ai_settings || ai_settings_exiting
         )
@@ -1334,7 +1336,7 @@ class editor_activity : ComponentActivity() {
     private fun upgrade_app_ui_runtime_sdk_if_needed() {
         if (!File(project_dir, "layout.xml").isFile) return
         val sdk_file = File(project_dir, "gostudio/gostudio.go")
-        if (sdk_file.isFile && sdk_file.readText().contains("func (a *App) OnCreate")) return
+        if (sdk_file.isFile && sdk_file.readText().contains("func (a *App) Dialog")) return
         sdk_file.parentFile?.mkdirs()
         gostudio_application.instance.assets.open("templates/app-ui/gostudio/gostudio.go").use { input ->
             sdk_file.outputStream().use { input.copyTo(it) }
@@ -1393,6 +1395,7 @@ class editor_activity : ComponentActivity() {
 
             if (success) {
                 output_panel_state.append_output("启动宿主运行: ${project_dir.name}", editor_output_line_level.SUCCESS)
+                sidebar_log_close_trigger++
                 startActivity(
                     Intent(this@editor_activity, runtime_host_activity::class.java)
                         .putExtra(runtime_host_activity.EXTRA_PROJECT_DIR, project_dir.absolutePath)

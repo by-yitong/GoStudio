@@ -119,7 +119,11 @@ class runtime_bridge(
     }
 
     private fun handle_line(line: String, handler: protocol_handler) {
-        val msg = runCatching { JSONObject(line) }.getOrNull() ?: return
+        // 协议必须是 JSON 行；fmt.Println 等普通输出直接显示到运行日志。
+        val msg = runCatching { JSONObject(line) }.getOrNull() ?: run {
+            log_ui(line)
+            return
+        }
         when (msg.optString("op")) {
             "set_text" -> {
                 val vid = msg.optString("vid")

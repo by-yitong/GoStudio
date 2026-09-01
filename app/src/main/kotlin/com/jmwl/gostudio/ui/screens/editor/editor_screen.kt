@@ -144,6 +144,8 @@ internal fun editor_screen(
     ai_open_trigger: Int = 0,
     /** 递增触发器：外部想让左侧日志栏打开时把这个值 +1（构建/打包前自动弹出） */
     sidebar_log_open_trigger: Int = 0,
+    /** 递增触发器：App 编译完成并进入运行界面后切走编译日志 */
+    sidebar_log_close_trigger: Int = 0,
     on_open_designer: () -> Unit = {},
     layout_components_provider: () -> List<editor_layout_component> = { emptyList() },
     on_insert_generated_code: (String) -> Unit = {},
@@ -209,6 +211,12 @@ internal fun editor_screen(
         if (sidebar_log_open_trigger > 0) {
             selected_tool = editor_sidebar_tool.LOG
             drawer_open = true
+        }
+    }
+    LaunchedEffect(sidebar_log_close_trigger) {
+        if (sidebar_log_close_trigger > 0) {
+            selected_tool = editor_sidebar_tool.FILE
+            drawer_open = false
         }
     }
 

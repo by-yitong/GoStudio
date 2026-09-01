@@ -20,12 +20,14 @@ import android.view.ViewGroup
 import android.widget.CompoundButton
 import android.widget.DatePicker
 import android.widget.FrameLayout
+import android.widget.LinearLayout
 import android.widget.RatingBar
 import android.widget.ScrollView
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.TimePicker
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import org.json.JSONObject
 import java.io.File
@@ -44,6 +46,9 @@ class shell_activity : AppCompatActivity() {
     private var views_by_id: Map<String, View> = emptyMap()
     private var bridge: standalone_bridge? = null
     private var log_view: TextView? = null
+    private var log_scroll: ScrollView? = null
+    private var log_header: TextView? = null
+    private var log_expanded = true
     private val started = AtomicBoolean(false)
     private val log_lines = ArrayDeque<String>()
 
@@ -156,20 +161,44 @@ class shell_activity : AppCompatActivity() {
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT
         ))
 
-        val log_scroll = ScrollView(this)
+        val density = resources.displayMetrics.density
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(0xFF1B1C1F.toInt())
+        }
+        val header = TextView(this).apply {
+            text = "运行日志    ▾"
+            setTextColor(0xFF5CCFE6.toInt())
+            textSize = 12f
+            setPadding((density * 14).toInt(), (density * 9).toInt(), (density * 14).toInt(), (density * 9).toInt())
+            setOnClickListener {
+                log_expanded = !log_expanded
+                log_scroll?.visibility = if (log_expanded) View.VISIBLE else View.GONE
+                text = if (log_expanded) "运行日志    ▾" else "运行日志    ▸"
+            }
+        }
+        log_header = header
+        val scroll = ScrollView(this)
+        log_scroll = scroll
         log_view = TextView(this).apply {
             setTextIsSelectable(true)
             setTextColor(0xFFE6E6E6.toInt())
             textSize = 11f
-            setPadding(24, 20, 24, 20)
+            setPadding((density * 14).toInt(), (density * 8).toInt(), (density * 14).toInt(), (density * 12).toInt())
         }
-        log_scroll.addView(log_view, ViewGroup.LayoutParams(
+        scroll.addView(log_view, ViewGroup.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
         ))
-        log_scroll.setBackgroundColor(0xCC1C1C22.toInt())
-        frame.addView(log_scroll, FrameLayout.LayoutParams(
+        scroll.setBackgroundColor(0xFFF0101013.toInt())
+        panel.addView(header, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+        ))
+        panel.addView(scroll, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, (density * 136).toInt()
+        ))
+        frame.addView(panel, FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
-            (resources.displayMetrics.density * 96).toInt(),
+            ViewGroup.LayoutParams.WRAP_CONTENT,
             Gravity.BOTTOM
         ))
         return frame
@@ -182,6 +211,7 @@ class shell_activity : AppCompatActivity() {
             while (log_lines.size > 200) log_lines.removeFirst()
             view.text = log_lines.joinToString("\n")
         }
+        log_scroll?.post { log_scroll?.fullScroll(ScrollView.FOCUS_DOWN) }
     }
 
     // ---- Go -> 界面 ----
@@ -197,6 +227,35 @@ class shell_activity : AppCompatActivity() {
         return view.text?.toString() ?: ""
     }
 
+    private fun show_native_dialog(title: String, message: String, buttons: List<String>) {
+        val builder = AlertDialog.Builder(this)
+            .setTitle(title.ifBlank { "提示" })
+            .setMessage(message)
+        when (buttons.size) {
+            1 -> builder.setPositiveButton(buttons[0]) { dialog, _ ->
+                dialog.dismiss()
+                bridge?.send_event("", "dialog", text = buttons[0])
+            }
+            else -> {
+                builder.setPositiveButton(buttons[0]) { dialog, _ ->
+                    dialog.dismiss()
+                    bridge?.send_event("", "dialog", text = buttons[0])
+                }
+                builder.setNegativeButton(buttons[1]) { dialog, _ ->
+                    dialog.dismiss()
+                    bridge?.send_event("", "dialog", text = buttons[1])
+                }
+                if (buttons.size > 2) {
+                    builder.setNeutralButton(buttons[2]) { dialog, _ ->
+                        dialog.dismiss()
+                        bridge?.send_event("", "dialog", text = buttons[2])
+                    }
+                }
+            }
+        }
+        builder.show()
+    }
+
     fun on_quit() = finish()
 
     fun on_system_call(action: String, msg: JSONObject): String {
@@ -207,6 +266,29 @@ class shell_activity : AppCompatActivity() {
                     msg.optString("text"),
                     if (msg.optInt("duration") == 1) Toast.LENGTH_LONG else Toast.LENGTH_SHORT
                 ).show()
+                ""
+            }
+            "alert" -> {
+                show_native_dialog(
+                    title = msg.optString("title"),
+                    message = msg.optString("text"),
+                    buttons = listOf("确定")
+                )
+                ""
+            }
+            "dialog" -> {
+                val labels = mutableListOf<String>()
+                msg.optJSONArray("value")?.let { array ->
+                    repeat(array.length()) { index ->
+                        array.optString(index).takeIf { it.isNotBlank() }?.let(labels::add)
+                    }
+                }
+                if (labels.isEmpty()) labels += "确定"
+                show_native_dialog(
+                    title = msg.optString("title"),
+                    message = msg.optString("text"),
+                    buttons = labels.take(3)
+                )
                 ""
             }
             "vibrate" -> {
@@ -347,7 +429,11 @@ class standalone_bridge(
     }
 
     private fun handle_line(line: String, handler: shell_activity) {
-        val msg = runCatching { org.json.JSONObject(line) }.getOrNull() ?: return
+        // 协议必须是 JSON 行；fmt.Println 等普通输出直接显示到运行日志。
+        val msg = runCatching { org.json.JSONObject(line) }.getOrNull() ?: run {
+            main_handler.post { on_ui_log(line) }
+            return
+        }
         when (msg.optString("op")) {
             "set_text" -> {
                 val vid = msg.optString("vid")

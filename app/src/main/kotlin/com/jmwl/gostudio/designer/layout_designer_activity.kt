@@ -279,6 +279,40 @@ private fun property_display(attr: String, value: String): String {
         else -> value
     }
 }
+private data class property_group(val title: String, val attrs: List<String>)
+
+private fun property_groups_for(attrs: List<String>): List<property_group> {
+    val consumed = mutableSetOf<String>()
+    fun take(predicate: (String) -> Boolean): List<String> {
+        val values = attrs.filter { it !in consumed && predicate(it) }
+        consumed += values
+        return values
+    }
+    val basic = take {
+        it in setOf("id", "layout_width", "layout_height", "visibility", "enabled", "background", "padding")
+    }
+    val layout = take {
+        it.startsWith("layout_") || it in setOf(
+            "orientation", "gravity", "columnCount", "rowCount"
+        )
+    }
+    val text = take {
+        it in setOf(
+            "text", "hint", "textSize", "textColor", "textColorHint",
+            "singleLine", "maxLines"
+        )
+    }
+    val component = attrs.filter { it !in consumed }
+    return listOf(
+        "基础属性" to basic,
+        "布局属性" to layout,
+        "文本属性" to text,
+        "组件属性" to component
+    ).mapNotNull { (title, values) ->
+        if (values.isEmpty()) null else property_group(title, values)
+    }
+}
+
 private fun component_events(tag: String): List<Pair<String, String>> {
     val events = mutableListOf(
         "click" to "点击事件",
@@ -950,47 +984,18 @@ private fun PropertyDrawer(
         }
         Spacer(Modifier.height(10.dp))
         var editing_attr by remember(node) { mutableStateOf<String?>(null) }
-        attr_list.forEach { attr ->
-            val value = node.attrs[attr] ?: ""
-            Surface(
-                onClick = { editing_attr = attr },
-                shape = RoundedCornerShape(8.dp),
-                color = colors.editor_button_bg.copy(alpha = 0.45f),
-                modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)
-            ) {
-                Row(
-                    Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 9.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        ATTR_CN[attr] ?: attr,
-                        fontSize = 11.sp,
-                        color = colors.editor_text,
-                        modifier = Modifier.weight(1f)
-                    )
-                    if (property_spec_for(attr).kind == property_kind.COLOR && value.isNotBlank()) {
-                        Box(
-                            Modifier
-                                .size(12.dp)
-                                .background(parse_preview_color(value), RoundedCornerShape(3.dp))
-                        )
-                        Spacer(Modifier.width(6.dp))
-                    }
-                    Text(
-                        property_display(attr, value),
-                        fontSize = 10.sp,
-                        color = if (value.isBlank()) colors.editor_hint else colors.editor_icon,
-                        maxLines = 1
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    Icon(
-                        Icons.Default.ChevronRight,
-                        contentDescription = "修改",
-                        tint = colors.editor_hint,
-                        modifier = Modifier.size(13.dp)
-                    )
-                }
-            }
+        var expanded_group by remember(node) { mutableStateOf<String?>(null) }
+        property_groups_for(attr_list).forEach { group ->
+            PropertyGroupCard(
+                title = group.title,
+                attrs = group.attrs,
+                node = node,
+                expanded = expanded_group == group.title,
+                on_toggle = {
+                    expanded_group = if (expanded_group == group.title) null else group.title
+                },
+                on_edit = { editing_attr = it }
+            )
         }
 
         if (!is_root) {
@@ -1045,6 +1050,110 @@ private fun PropertyDrawer(
     }
 }
 
+
+/* 属性折叠面板：标题固定，内容区固定高度并独立滚动 */
+@Composable
+private fun PropertyGroupCard(
+    title: String,
+    attrs: List<String>,
+    node: d_node,
+    expanded: Boolean,
+    on_toggle: () -> Unit,
+    on_edit: (String) -> Unit
+) {
+    val colors = app_theme_provider.colors
+    Column(Modifier.fillMaxWidth().padding(vertical = 3.dp)) {
+        Surface(
+            onClick = on_toggle,
+            shape = RoundedCornerShape(8.dp),
+            color = colors.editor_button_bg.copy(alpha = 0.65f),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 9.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    title,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = colors.editor_text,
+                    modifier = Modifier.weight(1f)
+                )
+                Text("${attrs.size} 项", fontSize = 9.sp, color = colors.editor_hint)
+                Spacer(Modifier.width(6.dp))
+                Text(if (expanded) "▾" else "▸", fontSize = 11.sp, color = colors.editor_hint)
+            }
+        }
+        if (expanded) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .height(176.dp)
+                    .verticalScroll(rememberScrollState())
+                    .padding(top = 4.dp)
+            ) {
+                attrs.forEach { attr ->
+                    PropertyRow(
+                        attr = attr,
+                        value = node.attrs[attr] ?: "",
+                        node = node,
+                        on_edit = on_edit
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PropertyRow(
+    attr: String,
+    value: String,
+    node: d_node,
+    on_edit: (String) -> Unit
+) {
+    val colors = app_theme_provider.colors
+    Surface(
+        onClick = { on_edit(attr) },
+        shape = RoundedCornerShape(8.dp),
+        color = colors.editor_button_bg.copy(alpha = 0.45f),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 9.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                ATTR_CN[attr] ?: attr,
+                fontSize = 11.sp,
+                color = colors.editor_text,
+                modifier = Modifier.weight(1f)
+            )
+            if (property_spec_for(attr).kind == property_kind.COLOR && value.isNotBlank()) {
+                Box(
+                    Modifier
+                        .size(12.dp)
+                        .background(parse_preview_color(value), RoundedCornerShape(3.dp))
+                )
+                Spacer(Modifier.width(6.dp))
+            }
+            Text(
+                property_display(attr, value),
+                fontSize = 10.sp,
+                color = if (value.isBlank()) colors.editor_hint else colors.editor_icon,
+                maxLines = 1
+            )
+            Spacer(Modifier.width(4.dp))
+            Icon(
+                Icons.Default.ChevronRight,
+                contentDescription = "修改",
+                tint = colors.editor_hint,
+                modifier = Modifier.size(13.dp)
+            )
+        }
+    }
+}
 
 /* 属性弹窗：按属性类型提供单选、多选、开关、滑杆、颜色与文本编辑 */
 @Composable
