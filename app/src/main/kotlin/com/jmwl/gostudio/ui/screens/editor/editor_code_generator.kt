@@ -157,6 +157,10 @@ private val native_templates = listOf(
     )
 )
 
+/** 供设计器“跳转事件”复用的组件事件模板。 */
+fun editor_component_event_templates(component: editor_layout_component): List<editor_code_template> =
+    component_templates(component)
+
 @Composable
 fun editor_code_generator_dialog(
     components: List<editor_layout_component>,

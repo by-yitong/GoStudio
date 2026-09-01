@@ -171,6 +171,25 @@ class editor_activity : ComponentActivity() {
             import_editor_font_from_uri(uri)
         }
     }
+    private val layout_designer_launcher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode != RESULT_OK) return@registerForActivityResult
+        refresh_files_after_ai_edit(listOf(File(project_dir, "layout.xml").absolutePath))
+        val data = result.data ?: return@registerForActivityResult
+        val component_id = data.getStringExtra(
+            com.jmwl.gostudio.designer.layout_designer_activity.EXTRA_EVENT_COMPONENT_ID
+        )
+        val event_type = data.getStringExtra(
+            com.jmwl.gostudio.designer.layout_designer_activity.EXTRA_EVENT_TYPE
+        )
+        val component_tag = data.getStringExtra(
+            com.jmwl.gostudio.designer.layout_designer_activity.EXTRA_EVENT_COMPONENT_TAG
+        )
+        if (!component_id.isNullOrBlank() && !event_type.isNullOrBlank()) {
+            open_component_event(component_id, event_type, component_tag ?: "")
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -869,10 +888,100 @@ class editor_activity : ComponentActivity() {
         }
     }
 
+    /** 设计器里点击事件按钮后：已有事件直接定位，没有则生成并定位。 */
+    private fun open_component_event(component_id: String, event_type: String, component_tag: String) {
+        lifecycleScope.launch {
+            val component = editor_layout_component(
+                id = component_id,
+                tag = component_tag,
+                title = "${component_tag} #$component_id"
+            )
+            val template = editor_component_event_templates(component)
+                .firstOrNull { it.id == event_type }
+            if (template == null) {
+                app_toast.show(this@editor_activity, "该组件暂不支持此事件", app_toast.LENGTH_SHORT)
+                return@launch
+            }
+
+            val build = project_manager.read_project_build_config(project_dir.absolutePath)
+            val entry = File(project_dir, build.run_entry).canonicalFile
+            val target = if (entry.isFile) entry else File(project_dir, "main.go").canonicalFile
+            if (state.current_file_path != target.absolutePath) {
+                val index = find_tab_index(target.absolutePath)
+                if (index >= 0) {
+                    attach_editor_tab(index)
+                } else {
+                    val loaded = withContext(Dispatchers.IO) {
+                        load_project_file(project_dir, target.absolutePath)
+                    }.getOrElse { error ->
+                        app_toast.show(this@editor_activity, "打开事件代码失败: ${error.message}", app_toast.LENGTH_LONG)
+                        return@launch
+                    }
+                    open_loaded_file_tab(loaded)
+                }
+            }
+            if (state.read_only) {
+                app_toast.show(this@editor_activity, "只读模式不能生成事件", app_toast.LENGTH_SHORT)
+                return@launch
+            }
+
+            val text = editor.text
+            val existing_line = find_component_event_line(text, component_id, event_type)
+            if (existing_line != null) {
+                move_cursor_to(existing_line, 0)
+                app_toast.show(this@editor_activity, "已跳转事件", app_toast.LENGTH_SHORT)
+                return@launch
+            }
+
+            val run_line = (0 until text.lineCount).firstOrNull { line ->
+                text.getLineString(line).trim() == "app.Run()"
+            }
+            val closing_line = if (run_line == null) {
+                (text.lineCount - 1 downTo 0).firstOrNull { line ->
+                    text.getLineString(line).trim() == "}"
+                }
+            } else null
+            val insert_line = run_line ?: closing_line ?: text.lineCount - 1
+            val indent = text.getLineString(insert_line).takeWhile { it == ' ' || it == '\t' }
+            val snippet = template.code.prependIndent(indent)
+            text.beginBatchEdit()
+            text.insert(insert_line, 0, snippet + "\n")
+            text.endBatchEdit()
+            active_tab()?.has_changes = true
+            state.has_changes = true
+            update_history_state()
+            move_cursor_to(insert_line, indent.length)
+            app_toast.show(this@editor_activity, "已生成并跳转事件", app_toast.LENGTH_SHORT)
+        }
+    }
+
+    private fun find_component_event_line(
+        text: Content,
+        component_id: String,
+        event_type: String
+    ): Int? {
+        val id = "\"$component_id\""
+        return (0 until text.lineCount).firstOrNull { line ->
+            val code = text.getLineString(line).replace(" ", "").replace("\t", "")
+            when (event_type) {
+                "click" -> code.contains("app.OnClick($id") ||
+                    code.contains("app.Button($id).OnClick(")
+                "long_click" -> code.contains("app.OnLongClick($id")
+                "text_change" -> code.contains("app.OnTextChanged($id")
+                "checked_change" -> code.contains("app.OnCheckedChange($id")
+                "progress_change" -> code.contains("app.OnProgressChange($id")
+                "rating_change" -> code.contains("app.OnRatingChange($id")
+                "date_change" -> code.contains("app.OnDateChange($id")
+                "time_change" -> code.contains("app.OnTimeChange($id")
+                else -> false
+            }
+        }
+    }
+
     /** 打开独立布局设计器（编辑当前项目的 layout.xml）。 */
     private fun open_layout_designer() {
         lifecycleScope.launch { save_dirty_open_files(show_toast = false) }
-        startActivity(
+        layout_designer_launcher.launch(
             android.content.Intent(this, com.jmwl.gostudio.designer.layout_designer_activity::class.java)
                 .putExtra(com.jmwl.gostudio.designer.layout_designer_activity.EXTRA_PROJECT_DIR, project_dir.absolutePath)
         )

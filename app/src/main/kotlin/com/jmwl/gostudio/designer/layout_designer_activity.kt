@@ -67,9 +67,21 @@ class layout_designer_activity : androidx.activity.ComponentActivity() {
             MaterialTheme {
                 designer_screen(
                     initial_xml = initial,
-                                        on_save = { xml ->
+                    on_save = { xml ->
                         layout_file.writeText(xml)
                         setResult(RESULT_OK, Intent().putExtra(EXTRA_SAVED, true))
+                        finish()
+                    },
+                    on_open_event = { xml, component_id, event_type, component_tag ->
+                        layout_file.writeText(xml)
+                        setResult(
+                            RESULT_OK,
+                            Intent()
+                                .putExtra(EXTRA_SAVED, true)
+                                .putExtra(EXTRA_EVENT_COMPONENT_ID, component_id)
+                                .putExtra(EXTRA_EVENT_TYPE, event_type)
+                                .putExtra(EXTRA_EVENT_COMPONENT_TAG, component_tag)
+                        )
                         finish()
                     }
                 )
@@ -80,6 +92,9 @@ class layout_designer_activity : androidx.activity.ComponentActivity() {
     companion object {
         const val EXTRA_PROJECT_DIR = "project_dir"
         const val EXTRA_SAVED = "saved"
+        const val EXTRA_EVENT_COMPONENT_ID = "event_component_id"
+        const val EXTRA_EVENT_TYPE = "event_type"
+        const val EXTRA_EVENT_COMPONENT_TAG = "event_component_tag"
         const val DEFAULT_LAYOUT = """<LinearLayout orientation="vertical" gravity="center" padding="24dp">
 
     <TextView id="tv" text="你好" textSize="24sp"/>
@@ -264,6 +279,26 @@ private fun property_display(attr: String, value: String): String {
         else -> value
     }
 }
+private fun component_events(tag: String): List<Pair<String, String>> {
+    val events = mutableListOf(
+        "click" to "点击事件",
+        "long_click" to "长按事件"
+    )
+    if (tag in setOf(
+            "TextView", "EditText", "AutoCompleteTextView", "Button", "CheckBox",
+            "RadioButton", "Switch", "ToggleButton", "Chronometer", "TextClock"
+        )
+    ) events += "text_change" to "文本变化事件"
+    if (tag in setOf("CheckBox", "RadioButton", "Switch", "ToggleButton")) {
+        events += "checked_change" to "选中变化事件"
+    }
+    if (tag == "SeekBar" || tag == "ProgressBar") events += "progress_change" to "进度变化事件"
+    if (tag == "RatingBar") events += "rating_change" to "评分变化事件"
+    if (tag == "DatePicker") events += "date_change" to "日期变化事件"
+    if (tag == "TimePicker") events += "time_change" to "时间变化事件"
+    return events
+}
+
 private fun tag_cn(tag: String) = TAG_CN[tag] ?: tag
 
 /** 按控件类型和父容器返回属性字段，避免给普通按钮显示无意义的日期/列表属性。 */
@@ -391,7 +426,8 @@ private fun find_node(root: d_node, target: d_node): d_node? {
 @Composable
 private fun designer_screen(
     initial_xml: String,
-    on_save: (String) -> Unit
+    on_save: (String) -> Unit,
+    on_open_event: (String, String, String, String) -> Unit
 ) {
     var xml by remember { mutableStateOf(initial_xml) }
     var tree by remember { mutableStateOf(parse_xml(initial_xml)) }
@@ -610,6 +646,11 @@ private fun designer_screen(
                                 selected = null
                                 tree = tree.deep_copy()
                                 rebuild_from_tree()
+                            }
+                        },
+                        on_open_event = { component_id, event_type ->
+                            selected?.tag?.let { tag ->
+                                on_open_event(serialize(tree), component_id, event_type, tag)
                             }
                         },
                         modifier = Modifier.width(240.dp).fillMaxHeight()
@@ -859,6 +900,7 @@ private fun PropertyDrawer(
     is_root: Boolean,
     on_change: () -> Unit,
     on_delete: () -> Unit,
+    on_open_event: (String, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val colors = app_theme_provider.colors
@@ -947,6 +989,42 @@ private fun PropertyDrawer(
                         tint = colors.editor_hint,
                         modifier = Modifier.size(13.dp)
                     )
+                }
+            }
+        }
+
+        if (!is_root) {
+            Spacer(Modifier.height(10.dp))
+            Text(
+                "事件",
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                color = colors.editor_icon,
+                modifier = Modifier.padding(start = 2.dp)
+            )
+            Spacer(Modifier.height(5.dp))
+            if (node.id.isBlank()) {
+                Text(
+                    "先设置 ID 后才能生成事件",
+                    fontSize = 10.sp,
+                    color = colors.editor_hint,
+                    modifier = Modifier.padding(start = 2.dp)
+                )
+            } else {
+                component_events(node.tag).forEach { event ->
+                    Surface(
+                        onClick = { on_open_event(node.id, event.first) },
+                        shape = RoundedCornerShape(8.dp),
+                        color = colors.editor_icon.copy(alpha = 0.14f),
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)
+                    ) {
+                        Text(
+                            event.second,
+                            fontSize = 11.sp,
+                            color = colors.editor_icon,
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 9.dp)
+                        )
+                    }
                 }
             }
         }
