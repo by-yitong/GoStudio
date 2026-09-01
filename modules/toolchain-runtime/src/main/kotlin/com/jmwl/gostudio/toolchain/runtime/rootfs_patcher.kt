@@ -241,7 +241,9 @@ class rootfs_patcher {
         private const val default_hostname = "localhost"
         private val whitespace_regex = Regex("\\s+")
         private val local_resolvers = setOf("127.0.0.1", "127.0.0.53", "::1")
-        private val default_dns_servers = listOf("1.1.1.1", "8.8.8.8", "223.5.5.5")
+        // 国内优先：223.5.5.5（阿里）/119.29.29.29（腾讯）在运营商网络基本可达，
+        // 8.8.8.8 仅作海外兜底。app 层 sandbox_dns 会用系统 DNS 覆盖此默认。
+        private val default_dns_servers = listOf("223.5.5.5", "119.29.29.29", "8.8.8.8")
     }
 }
 

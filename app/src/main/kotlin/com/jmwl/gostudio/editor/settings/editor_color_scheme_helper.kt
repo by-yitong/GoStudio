@@ -2,20 +2,22 @@ package com.jmwl.gostudio.editor.settings
 
 import android.content.Context
 import com.jmwl.gostudio.editor.theme.editor_theme_manager
+import com.jmwl.gostudio.ui.theme.theme_manager
 import io.github.rosemoe.sora.langs.textmate.TextMateColorScheme
 import io.github.rosemoe.sora.langs.textmate.registry.ThemeRegistry
 import io.github.rosemoe.sora.widget.CodeEditor
 import io.github.rosemoe.sora.widget.schemes.EditorColorScheme
 
 internal fun apply_editor_colors(context: Context, editor: CodeEditor) {
-    editor_theme_manager.set_current_theme(context)
+    val is_dark = theme_manager.resolve_is_dark(context, theme_manager.theme.value)
+    editor_theme_manager.set_current_theme(context, is_dark)
     val scheme = TextMateColorScheme.create(ThemeRegistry.getInstance())
-    apply_textmate_extra_editor_colors(context, scheme)
+    apply_textmate_extra_editor_colors(context, is_dark, scheme)
     editor.colorScheme = scheme
 }
 
-private fun apply_textmate_extra_editor_colors(context: Context, scheme: EditorColorScheme) {
-    val theme_colors = editor_theme_manager.load_color_object(context) ?: return
+private fun apply_textmate_extra_editor_colors(context: Context, is_dark: Boolean, scheme: EditorColorScheme) {
+    val theme_colors = editor_theme_manager.load_color_object(context, is_dark) ?: return
 
     fun theme_color(vararg keys: String): Int? {
         keys.forEach { key ->

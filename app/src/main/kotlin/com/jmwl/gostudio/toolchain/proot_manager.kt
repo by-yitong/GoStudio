@@ -24,6 +24,8 @@ object proot_manager {
         on_log: (String) -> Unit
     ): Boolean {
         return try {
+            // 网络类命令（apk/go install）依赖 resolv.conf，先同步系统 DNS
+            sandbox_dns.refresh(com.jmwl.gostudio.gostudio_application.instance)
             toolchain_runtime_provider.shell_runner().execute(
                 command = command,
                 working_dir = working_dir,

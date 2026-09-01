@@ -13,7 +13,6 @@ import com.jmwl.gostudio.utils.app_lifecycle_observer
 import io.github.rosemoe.sora.langs.textmate.TextMateLanguage
 import io.github.rosemoe.sora.langs.textmate.registry.FileProviderRegistry
 import io.github.rosemoe.sora.langs.textmate.registry.GrammarRegistry
-import io.github.rosemoe.sora.langs.textmate.registry.ThemeRegistry
 import io.github.rosemoe.sora.langs.textmate.registry.provider.AssetsFileResolver
 import org.eclipse.tm4e.core.internal.oniguruma.Oniguruma
 import java.io.File
@@ -70,7 +69,6 @@ class gostudio_application : Application() {
 
             editor_theme_manager.init(this)
 
-            ThemeRegistry.getInstance().setTheme("gostudio_user")
             GrammarRegistry.getInstance().loadGrammars("textmate/languages.json")
 
             textmate_initialized = true
@@ -84,16 +82,6 @@ class gostudio_application : Application() {
             Oniguruma().setUseNativeOniguruma(true)
         }.onFailure { error ->
             logger_manager.e("gostudio_application", "TextMate native Oniguruma unavailable: ${error.message}", error)
-        }
-    }
-
-    fun set_textmate_theme(is_dark: Boolean) {
-        if (!textmate_initialized) return
-
-        try {
-            editor_theme_manager.set_current_theme(this)
-        } catch (e: Exception) {
-            logger_manager.e("gostudio_application", "Failed to set TextMate theme: ${e.message}")
         }
     }
 

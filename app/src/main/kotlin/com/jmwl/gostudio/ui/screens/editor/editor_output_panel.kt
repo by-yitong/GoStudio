@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ListAlt
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Terminal
@@ -53,7 +54,8 @@ import java.time.format.DateTimeFormatter
 
 internal enum class editor_output_tab(val title: String) {
     Output("构建输出"),
-    Log("IDE日志")
+    Log("IDE日志"),
+    Problems("问题")
 }
 
 internal enum class editor_output_line_level {
@@ -104,6 +106,7 @@ internal class editor_output_panel_state {
                 log_lines.clear()
                 output_revision++
             }
+            editor_output_tab.Problems -> {} // 诊断来自 gopls，不可手动清空
         }
     }
 
@@ -111,6 +114,7 @@ internal class editor_output_panel_state {
         val lines = when (selected_tab) {
             editor_output_tab.Output -> output_lines
             editor_output_tab.Log -> log_lines
+            editor_output_tab.Problems -> emptyList()
         }
         return lines.joinToString("\n") { line -> line.text }
     }
@@ -134,13 +138,16 @@ internal class editor_output_panel_state {
 }
 
 /**
- * 左侧抽屉「日志」工具面板：构建输出 / IDE 日志两个子页签，
- * 右侧提供分享与清空入口。
+ * 左侧抽屉「日志」工具面板：构建输出 / IDE 日志 / 问题 三个子页签，
+ * 右侧提供分享与清空入口。「问题」页签展示当前文件的 gopls 诊断，
+ * 点击条目跳转并打开诊断详情弹层（快速修复入口）。
  */
 @Composable
 internal fun editor_log_panel(
     state: editor_output_panel_state,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    diagnostics: List<com.jmwl.gostudio.lsp.gopls.gopls_diagnostic> = emptyList(),
+    on_diagnostic_click: (com.jmwl.gostudio.lsp.gopls.gopls_diagnostic) -> Unit = {}
 ) {
     val colors = app_theme_provider.colors
     val context = LocalContext.current
@@ -222,9 +229,28 @@ internal fun editor_log_panel(
             }
         }
 
+        if (state.selected_tab == editor_output_tab.Problems) {
+            if (diagnostics.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    editor_output_empty_state(tab = state.selected_tab)
+                }
+            } else {
+                problems_list(
+                    diagnostics = diagnostics,
+                    on_click = on_diagnostic_click,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            return@Column
+        }
+
         val lines = when (state.selected_tab) {
             editor_output_tab.Output -> state.output_lines
             editor_output_tab.Log -> state.log_lines
+            editor_output_tab.Problems -> emptyList()
         }
         if (lines.isEmpty()) {
             Box(
@@ -332,6 +358,64 @@ private fun editor_output_line_list(
 }
 
 @Composable
+private fun problems_list(
+    diagnostics: List<com.jmwl.gostudio.lsp.gopls.gopls_diagnostic>,
+    on_click: (com.jmwl.gostudio.lsp.gopls.gopls_diagnostic) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val colors = app_theme_provider.colors
+    androidx.compose.foundation.lazy.LazyColumn(modifier) {
+        items(
+            count = diagnostics.size,
+            key = { index -> "diag-$index-${diagnostics[index].line}-${diagnostics[index].message}" }
+        ) { index ->
+            val diagnostic = diagnostics[index]
+            val (tint, label) = when (diagnostic.severity) {
+                1 -> colors.danger to "错误"
+                2 -> colors.warning to "警告"
+                else -> colors.info to "信息"
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { on_click(diagnostic) }
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .padding(top = 2.dp)
+                        .size(16.dp)
+                        .background(tint.copy(alpha = 0.16f), RoundedCornerShape(4.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = label.take(1),
+                        color = tint,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = diagnostic.message.lineSequence().firstOrNull() ?: "",
+                        color = colors.editor_text,
+                        fontSize = 13.sp,
+                        maxLines = 2
+                    )
+                    Text(
+                        text = "行 ${diagnostic.line + 1}",
+                        color = colors.editor_hint,
+                        fontSize = 11.sp
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun editor_output_empty_state(
     tab: editor_output_tab,
     modifier: Modifier = Modifier
@@ -340,14 +424,17 @@ private fun editor_output_empty_state(
     val title = when (tab) {
         editor_output_tab.Output -> "暂无构建输出"
         editor_output_tab.Log -> "暂无 IDE 日志"
+        editor_output_tab.Problems -> "没有发现问题"
     }
     val subtitle = when (tab) {
         editor_output_tab.Output -> "点击编译后，构建输出会显示在这里"
         editor_output_tab.Log -> "项目识别与 IDE 状态会显示在这里"
+        editor_output_tab.Problems -> "gopls 连接后，当前文件的问题会显示在这里"
     }
     val icon = when (tab) {
         editor_output_tab.Output -> Icons.Default.Terminal
         editor_output_tab.Log -> Icons.AutoMirrored.Filled.ListAlt
+        editor_output_tab.Problems -> Icons.Default.CheckCircle
     }
     Column(
         modifier = modifier.padding(horizontal = 32.dp),

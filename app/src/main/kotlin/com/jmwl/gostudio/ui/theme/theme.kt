@@ -2,8 +2,8 @@ package com.jmwl.gostudio.ui.theme
 
 import android.app.Activity
 import android.content.Context
+import android.content.res.Configuration
 import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -20,37 +20,48 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-// Hallmark-aligned: residual Material3 colorScheme mirrors the app_colors accent + neutrals
-// so the two surfaces that still read MaterialTheme.colorScheme.* (install_screen progress bar,
-// editor_search_panel surface) no longer render the default Material purple.
+// Material3 色板 = CodeAssist DNA（Teal 强调 + 三阶表面色），供 M3 原生组件
+// （LargeTopAppBar/NavigationBar/卡片角色色）读取，与 app_colors 保持同一体系。
 private val dark_color_scheme = darkColorScheme(
-    primary = Color(0xFF5B8DEF),         // accent (Go-blue)
-    onPrimary = Color(0xFFFAFBFC),       // accent-ink
-    secondary = Color(0xFF20232B),       // surface
-    onSecondary = Color(0xFFE8EAEE),     // ink
-    tertiary = Color(0xFF8A8F9A),        // muted
-    background = Color(0xFF17181D),      // paper
-    onBackground = Color(0xFFE8EAEE),    // ink
-    surface = Color(0xFF20232B),         // surface
-    onSurface = Color(0xFFE8EAEE),       // ink
-    surfaceVariant = Color(0xFF17181D),  // paper
-    onSurfaceVariant = Color(0xFF8A8F9A),// muted
-    outline = Color(0xFF343841)          // rule
+    primary = Color(0xFF5CCFE6),             // accent teal
+    onPrimary = Color(0xFF06272E),           // 深墨（青色上的文字）
+    primaryContainer = Color(0xFF123B44),    // 青色调暗容器（主操作卡）
+    onPrimaryContainer = Color(0xFF9FE8F5),  // 青色调亮文字
+    secondary = Color(0xFF2B2C31),           // surface2
+    onSecondary = Color(0xFFE9E9EC),
+    tertiary = Color(0xFF6F7079),            // textTertiary
+    background = Color(0xFF161719),          // bg
+    onBackground = Color(0xFFE9E9EC),
+    surface = Color(0xFF232428),             // surface
+    onSurface = Color(0xFFE9E9EC),
+    surfaceVariant = Color(0xFF1B1C1F),
+    onSurfaceVariant = Color(0xFFA0A1AA),    // textSecondary
+    surfaceContainer = Color(0xFF26272B),
+    surfaceContainerHigh = Color(0xFF2B2C31),// surface2
+    surfaceContainerHighest = Color(0xFF34353B), // surface3
+    outline = Color(0xFF6F7079),             // textTertiary
+    outlineVariant = Color(0xFF3A3B41)       // separatorStrong 实色
 )
 
 private val light_color_scheme = lightColorScheme(
-    primary = Color(0xFF1F54E8),         // accent (Go-blue)
-    onPrimary = Color(0xFFFFFFFF),       // accent-ink
-    secondary = Color(0xFFF1F3F6),       // surface
-    onSecondary = Color(0xFF1A1D23),     // ink
-    tertiary = Color(0xFF5F6571),        // muted
-    background = Color(0xFFFAFBFC),      // paper
-    onBackground = Color(0xFF1A1D23),    // ink
-    surface = Color(0xFFFFFFFF),         // sunken
-    onSurface = Color(0xFF1A1D23),       // ink
-    surfaceVariant = Color(0xFFF1F3F6),  // surface
-    onSurfaceVariant = Color(0xFF5F6571),// muted
-    outline = Color(0xFFE0E3E8)          // rule
+    primary = Color(0xFF137E9C),             // accent teal strong
+    onPrimary = Color(0xFFFFFFFF),
+    primaryContainer = Color(0xFFB8EBF4),    // 青色调亮容器
+    onPrimaryContainer = Color(0xFF0C3944),
+    secondary = Color(0xFFF4F3EF),           // surface2
+    onSecondary = Color(0xFF1D1E22),
+    tertiary = Color(0xFF97989F),
+    background = Color(0xFFECEBE7),          // bg 暖米白
+    onBackground = Color(0xFF1D1E22),
+    surface = Color(0xFFFFFFFF),
+    onSurface = Color(0xFF1D1E22),
+    surfaceVariant = Color(0xFFFAF9F6),
+    onSurfaceVariant = Color(0xFF62636B),
+    surfaceContainer = Color(0xFFF7F6F3),
+    surfaceContainerHigh = Color(0xFFF4F3EF),
+    surfaceContainerHighest = Color(0xFFE8E7E1),
+    outline = Color(0xFF97989F),
+    outlineVariant = Color(0xFFDDDCD6)
 )
 
 @Composable
@@ -76,6 +87,19 @@ enum class app_theme_type {
 object theme_manager {
     private val _theme = MutableStateFlow(app_theme_type.DARK)
     val theme: StateFlow<app_theme_type> = _theme.asStateFlow()
+
+    fun resolve_is_dark(context: Context, type: app_theme_type): Boolean {
+        return when (type) {
+            app_theme_type.DARK -> true
+            app_theme_type.LIGHT -> false
+            app_theme_type.SYSTEM -> is_system_dark(context)
+        }
+    }
+
+    private fun is_system_dark(context: Context): Boolean {
+        val ui_mode = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+        return ui_mode == Configuration.UI_MODE_NIGHT_YES
+    }
     
     private val _scale = MutableStateFlow(1f)
     val scale: StateFlow<Float> = _scale.asStateFlow()
@@ -129,11 +153,7 @@ fun app_theme_provider(
     val theme by theme_manager.theme.collectAsState()
     val scale_value by theme_manager.scale.collectAsState()
     
-    val is_dark_theme = when (theme) {
-        app_theme_type.DARK -> true
-        app_theme_type.LIGHT -> false
-        app_theme_type.SYSTEM -> isSystemInDarkTheme()
-    }
+    val is_dark_theme = theme_manager.resolve_is_dark(context, theme)
     
     setup_system_bars(is_dark_theme)
     

@@ -1,11 +1,15 @@
 package com.jmwl.gostudio.ui.screens.main
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.core.tween
+import androidx.navigation.NavBackStackEntry
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -56,7 +60,47 @@ import com.jmwl.gostudio.ui.screens.editor.editor_settings_screen
 import com.jmwl.gostudio.ui.screens.editor.editor_theme_settings_screen
 import com.jmwl.gostudio.ui.theme.app_theme_provider
 import com.jmwl.gostudio.ui.theme.app_theme_type
+import com.jmwl.gostudio.ui.theme.motion
 import kotlinx.coroutines.launch
+
+/** 路由层级表：数字越大越「深」。页面过渡按层级判断前进/后退方向。 */
+private val route_levels = mapOf(
+    "main" to 0,
+    "tools" to 1,
+    "plugins" to 1,
+    "settings" to 1,
+    "agent" to 1,
+    "learn" to 1,
+    "about" to 2,
+    "theme_settings" to 2,
+    "editor_settings" to 2,
+    "ai_settings" to 2,
+    "editor_theme_settings" to 3,
+    "learn_track" to 2,
+    "learn_lesson" to 3
+)
+
+private fun route_level(route: String?): Int = route_levels[route] ?: 1
+
+/**
+ * 方向感知 shared-axis X 过渡（移植自 CodeAssist ScreenTransition.mobileSharedAxis）：
+ * 前进 = 新页从右侧 1/4 屏宽滑入 + 淡入、旧页左滑淡出；后退反向。
+ * 空间感明确，符合手机原生导航直觉。
+ */
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.shared_axis_forward(): Boolean =
+    route_level(targetState.destination.route) >= route_level(initialState.destination.route)
+
+private fun shared_axis_enter(forward: Boolean): EnterTransition {
+    val dir = if (forward) 1 else -1
+    return slideInHorizontally(tween(motion.BASE, easing = motion.quiet)) { dir * it / 4 } +
+        fadeIn(tween(motion.BASE, easing = motion.soft))
+}
+
+private fun shared_axis_exit(forward: Boolean): ExitTransition {
+    val dir = if (forward) 1 else -1
+    return slideOutHorizontally(tween(motion.BASE, easing = motion.quiet)) { -dir * it / 4 } +
+        fadeOut(tween(motion.BASE, easing = motion.soft))
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -131,11 +175,20 @@ fun main_navigation(
     val active_toolchain_trigger = toolchain_tasks.firstOrNull()
     var toolchain_dialog_visible by remember(active_toolchain_trigger) { mutableStateOf(true) }
 
+    // 首页双击返回退出：第一次提示，2 秒内再按才退到后台
+    var last_back_press_at by remember { mutableStateOf(0L) }
+
     BackHandler(enabled = true) {
         if (current_back_stack?.destination?.route != "main") {
             nav_controller.popBackStack()
         } else {
-            on_back_to_background()
+            val now = System.currentTimeMillis()
+            if (now - last_back_press_at < 2000) {
+                on_back_to_background()
+            } else {
+                last_back_press_at = now
+                android.widget.Toast.makeText(context, "再按一次返回键退出", android.widget.Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -147,10 +200,10 @@ fun main_navigation(
         NavHost(
             navController = nav_controller,
             startDestination = "main",
-            enterTransition = { fadeIn(animationSpec = tween(300)) + slideInHorizontally() },
-            exitTransition = { fadeOut(animationSpec = tween(300)) + slideOutHorizontally() },
-            popEnterTransition = { fadeIn(animationSpec = tween(300)) + slideInHorizontally() },
-            popExitTransition = { fadeOut(animationSpec = tween(300)) + slideOutHorizontally() }
+            enterTransition = { shared_axis_enter(shared_axis_forward()) },
+            exitTransition = { shared_axis_exit(shared_axis_forward()) },
+            popEnterTransition = { shared_axis_enter(forward = false) },
+            popExitTransition = { shared_axis_exit(forward = false) }
         ) {
             composable("main") {
                 main_screen(
@@ -159,9 +212,17 @@ fun main_navigation(
                     recent_projects = recent_projects,
                     on_tools = { nav_controller.navigate("tools") },
                     on_plugins = { nav_controller.navigate("plugins") },
-                    on_settings = { nav_controller.navigate("settings") },
                     on_terminal = on_terminal,
                     on_ai = { nav_controller.navigate("agent") },
+                    on_learn_open_track = { track_id -> nav_controller.navigate("learn_track/$track_id") },
+                    on_learn_resume = { lesson_id, step_index ->
+                        nav_controller.navigate("learn_lesson/$lesson_id?step=$step_index")
+                    },
+                    on_theme_click = { nav_controller.navigate("theme_settings") },
+                    on_editor_theme_click = { nav_controller.navigate("editor_theme_settings") },
+                    on_editor_click = { nav_controller.navigate("editor_settings") },
+                    on_ai_settings_click = { nav_controller.navigate("ai_settings") },
+                    on_about_click = { nav_controller.navigate("about") },
                     on_project_click = on_project_click,
                     on_project_remove = on_project_remove
                 )
@@ -260,6 +321,46 @@ fun main_navigation(
                     configured_providers = ai_settings_state.api_keys
                         .filter { it.value.isNotBlank() }.keys,
                     on_session_model_change = { p, m -> ai_session_override = p to m }
+                )
+            }
+            composable("learn") {
+                com.jmwl.gostudio.ui.screens.learn.learn_home_screen(
+                    on_back = { nav_controller.popBackStack() },
+                    on_open_track = { track_id -> nav_controller.navigate("learn_track/$track_id") },
+                    on_resume = { lesson_id, step_index ->
+                        nav_controller.navigate("learn_lesson/$lesson_id?step=$step_index")
+                    }
+                )
+            }
+            composable(
+                route = "learn_track/{track_id}",
+                arguments = listOf(androidx.navigation.navArgument("track_id") { type = androidx.navigation.NavType.StringType })
+            ) { entry ->
+                val track_id = entry.arguments?.getString("track_id").orEmpty()
+                com.jmwl.gostudio.ui.screens.learn.learn_track_screen(
+                    track_id = track_id,
+                    on_back = { nav_controller.popBackStack() },
+                    on_open_lesson = { lesson_id, step_index ->
+                        nav_controller.navigate("learn_lesson/$lesson_id?step=$step_index")
+                    }
+                )
+            }
+            composable(
+                route = "learn_lesson/{lesson_id}?step={step}",
+                arguments = listOf(
+                    androidx.navigation.navArgument("lesson_id") { type = androidx.navigation.NavType.StringType },
+                    androidx.navigation.navArgument("step") {
+                        type = androidx.navigation.NavType.IntType
+                        defaultValue = 0
+                    }
+                )
+            ) { entry ->
+                val lesson_id = entry.arguments?.getString("lesson_id").orEmpty()
+                val step = entry.arguments?.getInt("step") ?: 0
+                com.jmwl.gostudio.ui.screens.learn.learn_player_screen(
+                    lesson_id = lesson_id,
+                    initial_step = step,
+                    on_exit = { nav_controller.popBackStack() }
                 )
             }
             composable("ai_settings") {

@@ -53,6 +53,32 @@ class keep_alive_service : Service() {
         startForeground(NOTIFICATION_ID, create_notification().build())
     }
 
+    /**
+     * 安装模式下保持真正的前台服务身份（可见通知）。
+     *
+     * 平时 onCreate 里 startForeground 后立即 stopForeground（静默保活），但这会把
+     * 前台身份一并取消——进程优先级跌回普通后台，在 vivo/OPPO 等激进查杀的 ROM 上
+     * 锁屏或切后台数秒内就被杀，环境安装永远跑不完（表现为每次打开都"重新安装"）。
+     * 安装期间改用带可见通知的前台身份，系统与用户都能感知，查杀阈值大幅提高。
+     */
+    fun show_install_notification() {
+        startForeground(
+            NOTIFICATION_ID,
+            NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle("正在安装 Linux 环境")
+                .setContentText("下载/配置 Go 工具链中，请勿清理 GoStudio 后台")
+                .setSmallIcon(android.R.drawable.stat_sys_download)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setOngoing(true)
+                .build()
+        )
+        // 安装可能超过普通 wake lock 的 10 分钟窗口，重新计时
+        wake_lock?.let { runCatching { it.release() } }
+        val power_manager = getSystemService(POWER_SERVICE) as PowerManager
+        wake_lock = power_manager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "GoStudio:install")
+            .also { it.acquire(20 * 60 * 1000L) }
+    }
+
     private fun create_notification_channel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(

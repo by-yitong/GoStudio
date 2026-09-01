@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.google.gson.Gson
+import com.google.gson.JsonArray
+import com.google.gson.JsonObject
 import com.google.gson.reflect.TypeToken
 
 /** AI 助手设置：提供商 / API key / 模型 / 工具开关。用 EncryptedSharedPreferences 加密存储 API key。 */
@@ -41,6 +43,52 @@ enum class ai_provider(
     val supports_model_list: Boolean get() = this != ANTHROPIC && this != CUSTOM
 }
 
+/**
+ * 一个已配置的提供商实例（多实例模型，参考 OpenMinis 的 ProviderInstance）。
+ * 同一类型可以添加多个（如两个不同的中转站）；`ai_settings_state` 的扁平字段
+ * 始终镜像「当前使用」的实例，供 ai_client / 会话栏切换等既有逻辑直接消费。
+ */
+data class provider_instance(
+    val id: String,
+    val label: String,
+    val provider: ai_provider,
+    val base_url: String,
+    val model: String,
+    val api_key: String = "",
+    val enabled: Boolean = true,
+    /** 拉取/手填的模型列表缓存（候选 = 此列表 + 类型预置列表） */
+    val models: List<String> = emptyList(),
+    /** 用户隐藏的模型（从候选中排除，不删除） */
+    val hidden_models: List<String> = emptyList()
+) {
+    /** key 掩码摘要（列表行展示用），如 sk-abc1…wxyz */
+    fun masked_key(): String = when {
+        api_key.isBlank() -> "未配置密钥"
+        api_key.length <= 10 -> "••••"
+        else -> api_key.take(6) + "…" + api_key.takeLast(4)
+    }
+
+    /** 模型选择候选：拉取列表 + 类型预置列表去重，排除隐藏 */
+    fun selectable_models(): List<String> =
+        (models + provider.default_models).distinct().filter { it !in hidden_models }
+
+    /** 已配置且启用（列表行的状态点） */
+    val is_ready: Boolean get() = enabled && base_url.isNotBlank() && model.isNotBlank() && api_key.isNotBlank()
+}
+
+/** 新建一个某类型的实例（label 自动编号避免同名） */
+fun new_provider_instance(provider: ai_provider, existing: List<provider_instance>): provider_instance {
+    val same_type_count = existing.count { it.provider == provider }
+    val label = if (same_type_count == 0) provider.display_name else "${provider.display_name} ${same_type_count + 1}"
+    return provider_instance(
+        id = java.util.UUID.randomUUID().toString(),
+        label = label,
+        provider = provider,
+        base_url = provider.base_url,
+        model = provider.default_model
+    )
+}
+
 data class ai_settings_state(
     val provider: ai_provider = ai_provider.ZHIPU,
     val base_url: String = ai_provider.ZHIPU.base_url,
@@ -48,6 +96,9 @@ data class ai_settings_state(
     val api_key: String = "",
     /** 每个供应商独立的 API key（会话栏切供应商时回填对应 key） */
     val api_keys: Map<ai_provider, String> = emptyMap(),
+    /** 多实例列表与当前使用的实例 id（详情见 provider_instance） */
+    val instances: List<provider_instance> = emptyList(),
+    val active_instance_id: String = "",
     /** 动态获取的模型列表缓存，key=base_url（避免重复请求 /v1/models） */
     val custom_models: Map<String, List<String>> = emptyMap(),
     /** 上下文窗口上限（用于截断历史消息），默认 60000 token 约等于 24 万字符估算 */
@@ -94,6 +145,46 @@ fun default_state_for_provider(provider: ai_provider): ai_settings_state {
         base_url = provider.base_url,
         model = provider.default_model
     )
+}
+
+/** 当前使用的实例（active id 失效时回退第一个） */
+fun ai_settings_state.active_provider_instance(): provider_instance? =
+    instances.firstOrNull { it.id == active_instance_id } ?: instances.firstOrNull()
+
+/** 把实例字段镜像到全局生效配置（ai_client / 会话栏切换读这些扁平字段） */
+private fun ai_settings_state.mirror_instance(instance: provider_instance): ai_settings_state = copy(
+    provider = instance.provider,
+    base_url = instance.base_url,
+    model = instance.model,
+    api_key = instance.api_key,
+    api_keys = api_keys + (instance.provider to instance.api_key),
+    custom_models = if (instance.models.isEmpty()) custom_models else custom_models + (instance.base_url to instance.models)
+)
+
+/** 新增或更新一个实例；若它是当前使用的实例（或还没有任何实例），同步镜像到全局生效字段 */
+fun ai_settings_state.with_instance(updated: provider_instance): ai_settings_state {
+    val next_instances = if (instances.any { it.id == updated.id }) {
+        instances.map { if (it.id == updated.id) updated else it }
+    } else instances + updated
+    var next = copy(instances = next_instances)
+    if (updated.id == active_instance_id || active_instance_id.isBlank()) {
+        next = next.copy(active_instance_id = updated.id).mirror_instance(updated)
+    }
+    return next
+}
+
+/** 切换「当前使用」的实例（镜像到全局生效字段） */
+fun ai_settings_state.with_active_instance(id: String): ai_settings_state {
+    val instance = instances.firstOrNull { it.id == id } ?: return this
+    return copy(active_instance_id = id).mirror_instance(instance)
+}
+
+/** 删除实例；若删的是当前使用的，切到剩余第一个 */
+fun ai_settings_state.without_instance(id: String): ai_settings_state {
+    val next = copy(instances = instances.filterNot { it.id == id })
+    if (id != active_instance_id) return next
+    val fallback = next.instances.firstOrNull() ?: return next.copy(active_instance_id = "")
+    return next.with_active_instance(fallback.id)
 }
 
 private fun master_key(context: Context): MasterKey {
@@ -169,12 +260,33 @@ fun load_ai_settings(context: Context): ai_settings_state {
         }.getOrDefault(emptyMap())
     }
 
+    val base_url = prefs.getString("base_url", provider.base_url) ?: provider.base_url
+    val model = prefs.getString("model", provider.default_model) ?: provider.default_model
+
+    // 多实例列表；老数据没有 instances_json 时从旧的单提供商配置迁移
+    val instances: List<provider_instance> = run {
+        val json = prefs.getString("instances_json", null)
+        if (json != null) {
+            runCatching {
+                settings_gson.fromJson(json, JsonArray::class.java)
+            }.getOrNull()?.mapNotNull { elem -> instance_from_json(elem.asJsonObject) } ?: emptyList()
+        } else {
+            migrate_legacy_instances(provider, base_url, model, api_key, api_keys, custom_models)
+        }
+    }
+    val active_instance_id = prefs.getString("active_instance_id", null)
+        ?.takeIf { saved -> instances.any { it.id == saved } }
+        ?: instances.firstOrNull { it.provider == provider }?.id
+        ?: instances.firstOrNull()?.id.orEmpty()
+
     return ai_settings_state(
         provider = provider,
-        base_url = prefs.getString("base_url", provider.base_url) ?: provider.base_url,
-        model = prefs.getString("model", provider.default_model) ?: provider.default_model,
+        base_url = base_url,
+        model = model,
         api_key = api_key,
         api_keys = api_keys,
+        instances = instances,
+        active_instance_id = active_instance_id,
         custom_models = custom_models,
         max_context_chars = prefs.getInt("max_context_chars", 200_000),
         enable_tools = prefs.getBoolean("enable_tools", true),
@@ -196,6 +308,10 @@ fun save_ai_settings(context: Context, settings: ai_settings_state) {
         putString("model", settings.model)
         putString("api_key", settings.api_key)
         putString("api_keys_json", settings_gson.toJson(settings.api_keys.mapKeys { it.key.name }))
+        putString("instances_json", settings_gson.toJson(JsonArray().apply {
+            settings.instances.forEach { inst -> add(instance_to_json(inst)) }
+        }))
+        putString("active_instance_id", settings.active_instance_id)
         putString("custom_models_json", settings_gson.toJson(settings.custom_models))
         putInt("max_context_chars", settings.max_context_chars)
         putBoolean("enable_tools", settings.enable_tools)
@@ -215,4 +331,75 @@ fun save_ai_settings(context: Context, settings: ai_settings_state) {
 /** 是否已配置可用（有 base_url + model + api_key） */
 fun ai_settings_state.is_configured(): Boolean {
     return base_url.isNotBlank() && model.isNotBlank() && api_key.isNotBlank()
+}
+
+// ============ 实例的 JSON 序列化（手写字段，缺字段时取默认值，避免 Gson 绕过构造器的坑） ============
+
+private fun instance_to_json(i: provider_instance): JsonObject {
+    val o = JsonObject()
+    o.addProperty("id", i.id)
+    o.addProperty("label", i.label)
+    o.addProperty("provider", i.provider.name)
+    o.addProperty("base_url", i.base_url)
+    o.addProperty("model", i.model)
+    o.addProperty("api_key", i.api_key)
+    o.addProperty("enabled", i.enabled)
+    o.add("models", JsonArray().apply { i.models.forEach { add(it) } })
+    o.add("hidden_models", JsonArray().apply { i.hidden_models.forEach { add(it) } })
+    return o
+}
+
+private fun instance_from_json(o: JsonObject): provider_instance? = runCatching {
+    provider_instance(
+        id = o.get("id")?.takeIf { !it.isJsonNull }?.asString ?: java.util.UUID.randomUUID().toString(),
+        label = o.get("label")?.takeIf { !it.isJsonNull }?.asString ?: "",
+        provider = ai_provider.valueOf(o.get("provider").asString),
+        base_url = o.get("base_url")?.takeIf { !it.isJsonNull }?.asString ?: "",
+        model = o.get("model")?.takeIf { !it.isJsonNull }?.asString ?: "",
+        api_key = o.get("api_key")?.takeIf { !it.isJsonNull }?.asString ?: "",
+        enabled = o.get("enabled")?.takeIf { !it.isJsonNull }?.asBoolean ?: true,
+        models = o.getAsJsonArray("models")?.mapNotNull { e -> e.takeIf { !e.isJsonNull }?.asString } ?: emptyList(),
+        hidden_models = o.getAsJsonArray("hidden_models")?.mapNotNull { e -> e.takeIf { !e.isJsonNull }?.asString } ?: emptyList()
+    )
+}.getOrNull()
+
+/** 旧单提供商数据 → 多实例：当前提供商一个实例（带当前 base_url/model/key），其余有 key 的供应商各一个 */
+private fun migrate_legacy_instances(
+    provider: ai_provider,
+    base_url: String,
+    model: String,
+    api_key: String,
+    api_keys: Map<ai_provider, String>,
+    custom_models: Map<String, List<String>>
+): List<provider_instance> {
+    val result = mutableListOf<provider_instance>()
+    result.add(
+        provider_instance(
+            id = java.util.UUID.randomUUID().toString(),
+            label = provider.display_name,
+            provider = provider,
+            base_url = base_url.ifBlank { provider.base_url },
+            model = model.ifBlank { provider.default_model },
+            api_key = api_key,
+            models = custom_models[base_url] ?: emptyList()
+        )
+    )
+    for (p in ai_provider.entries) {
+        if (p == provider || p == ai_provider.CUSTOM) continue
+        val key = api_keys[p]
+        if (!key.isNullOrBlank()) {
+            result.add(
+                provider_instance(
+                    id = java.util.UUID.randomUUID().toString(),
+                    label = p.display_name,
+                    provider = p,
+                    base_url = p.base_url,
+                    model = p.default_model,
+                    api_key = key,
+                    models = custom_models[p.base_url] ?: emptyList()
+                )
+            )
+        }
+    }
+    return result
 }

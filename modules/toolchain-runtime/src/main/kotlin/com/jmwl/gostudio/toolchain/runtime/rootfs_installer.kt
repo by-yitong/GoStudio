@@ -309,7 +309,16 @@ class rootfs_installer(
     private fun create_symlink(root: File, target: File, link_name: String) {
         if (link_name.isBlank()) return
         val link_target = if (File(link_name).isAbsolute) {
-            File(link_name)
+            // tar 内的绝对链接（如 bin/sh → /bin/busybox）指向的是 guest 内路径。
+            // 原样落在宿主上是断链（宿主没有 /bin/busybox），一切跟随链接的
+            // File.exists() 探测都会失败。目标位于 rootfs 内时改写成相对链接，
+            // guest（proot 会做路径翻译）与宿主侧都能正确解析。
+            val target_in_root = File(root, link_name.trimStart('/'))
+            if (target_in_root.exists()) {
+                (target.parentFile ?: root).toPath().relativize(target_in_root.toPath()).toFile()
+            } else {
+                File(link_name)
+            }
         } else {
             val resolved = File(target.parentFile ?: root, link_name).canonicalFile
             val root_file = root.canonicalFile

@@ -50,6 +50,9 @@ import com.jmwl.gostudio.project.project_kind
 import com.jmwl.gostudio.project.project_manager
 import com.jmwl.gostudio.lsp.gopls.gopls_lsp_config
 import com.jmwl.gostudio.lsp.gopls.gopls_lsp_project
+import com.jmwl.gostudio.lsp.gopls.apply_code_action
+import com.jmwl.gostudio.lsp.gopls.current_diagnostics
+import com.jmwl.gostudio.lsp.gopls.request_code_actions
 import com.jmwl.gostudio.lsp.gopls.request_definition
 import com.jmwl.gostudio.editor.theme.editor_theme_manager
 import com.jmwl.gostudio.ui.dialogs.editor.editor_exit_confirm_dialog
@@ -96,6 +99,19 @@ class editor_activity : ComponentActivity() {
     /** 跳转定义进行中（请求 gopls 时短暂置 true，避免重复点击） */
     private val _goto_in_progress = MutableStateFlow(false)
     val goto_in_progress: kotlinx.coroutines.flow.StateFlow<Boolean> = _goto_in_progress
+
+    /** 当前文件代码结构符号（gopls 优先，正则兜底；见 refresh_structure_symbols） */
+    private var structure_symbols by mutableStateOf(emptyList<com.jmwl.gostudio.editor.core.editor_outline_symbol>())
+    private var structure_job: Job? = null
+
+    /** 当前文件的 gopls 诊断（问题页签 + 诊断弹层数据源） */
+    private var file_diagnostics by mutableStateOf(emptyList<com.jmwl.gostudio.lsp.gopls.gopls_diagnostic>())
+    private var diagnostics_job: Job? = null
+    /** 诊断详情弹层状态 */
+    private var sheet_diagnostic by mutableStateOf<com.jmwl.gostudio.lsp.gopls.gopls_diagnostic?>(null)
+    private var sheet_actions by mutableStateOf(emptyList<com.jmwl.gostudio.lsp.gopls.gopls_code_action>())
+    private var sheet_actions_loading by mutableStateOf(false)
+    private var sheet_actions_job: Job? = null
 
     /** AI agent（在 project_dir 初始化后于 initialize_project 创建） */
     private var ai_agent: com.jmwl.gostudio.ai.ai_agent_loop? = null
@@ -251,6 +267,12 @@ class editor_activity : ComponentActivity() {
             open_editors().forEach { tab_editor -> tab_editor.isEditable = !state.read_only }
         }
 
+        // 代码结构符号：打开文件时刷新（编辑中由 handle_editor_content_changed 防抖触发）
+        LaunchedEffect(state.current_file_path) {
+            refresh_structure_symbols()
+            schedule_diagnostics_refresh()
+        }
+
         editor_screen(
             project_name = state.project_name,
             project_root_path = project_dir.absolutePath,
@@ -298,6 +320,7 @@ class editor_activity : ComponentActivity() {
             on_close_all_tabs = { request_close_all_tabs() },
             on_build = { handle_build_button_click() },
             on_run = { run_go_project() },
+            on_test = { run_go_tests() },
             on_save = { request_save_file() },
             on_format = { format_current_file() },
             on_toggle_read_only = { toggle_read_only() },
@@ -323,6 +346,12 @@ class editor_activity : ComponentActivity() {
             can_goto_definition_flow = can_goto_definition,
             goto_definition_running = goto_running,
             on_goto_definition = { goto_definition() },
+            structure_file_name = state.current_file_path?.let { File(it).name },
+            structure_symbols = structure_symbols,
+            on_structure_navigate = { line -> navigate_to_structure_line(line) },
+            on_project_search = { keyword -> search_project(keyword) },
+            file_diagnostics = file_diagnostics,
+            on_diagnostic_click = { diagnostic -> open_diagnostic_sheet(diagnostic) },
             ai_agent = ai_agent,
             on_open_ai_settings = { show_ai_settings = true },
             ai_current_provider = current_ai_provider(),
@@ -359,6 +388,18 @@ class editor_activity : ComponentActivity() {
 
         BackHandler(enabled = show_ai_settings) {
             show_ai_settings = false
+        }
+
+        // 诊断详情弹层（问题页签点击条目打开）
+        sheet_diagnostic?.let { diagnostic ->
+            BackHandler { sheet_diagnostic = null }
+            com.jmwl.gostudio.ui.screens.editor.editor_diagnostic_sheet(
+                diagnostic = diagnostic,
+                actions = sheet_actions,
+                actions_loading = sheet_actions_loading,
+                on_apply_action = { action -> apply_diagnostic_action(action) },
+                on_dismiss = { sheet_diagnostic = null }
+            )
         }
 
         if (state.show_exit_dialog) {
@@ -431,6 +472,8 @@ class editor_activity : ComponentActivity() {
         }
         update_history_state()
         schedule_block_end_hints_update()
+        schedule_structure_refresh()
+        schedule_diagnostics_refresh()
     }
 
     private fun handle_editor_selection_changed(changed_editor: CodeEditor) {
@@ -948,6 +991,62 @@ class editor_activity : ComponentActivity() {
         return parts.joinToString(" ")
     }
 
+    /**
+     * 运行当前项目的测试（`go test ./...`），输出流式写入输出面板。
+     */
+    private fun run_go_tests() {
+        if (detected_project_info.kind != project_kind.GO) {
+            app_toast.show(this, "当前项目不是 Go 项目", app_toast.LENGTH_SHORT)
+            return
+        }
+        if (go_build_job?.isActive == true || go_run_job?.isActive == true) {
+            app_toast.show(this, "任务正在运行中", app_toast.LENGTH_SHORT)
+            return
+        }
+        val project_environment = toolchain_manager.project_environment(project_dir.absolutePath)
+        if (project_environment.missing.isNotEmpty()) {
+            val message = project_environment.missing.joinToString("；")
+            app_toast.show(this, message, app_toast.LENGTH_LONG)
+            output_panel_state.append_output("错误: $message", editor_output_line_level.ERROR)
+            return
+        }
+
+        go_build_job = lifecycleScope.launch {
+            output_panel_state.selected_tab = editor_output_tab.Output
+            output_panel_state.clear_output()
+            output_panel_state.task_running = true
+            output_panel_state.task_stopping = false
+            if (!save_dirty_open_files(show_toast = false)) {
+                output_panel_state.append_output("测试取消，文件保存失败", editor_output_line_level.ERROR)
+                output_panel_state.task_running = false
+                output_panel_state.task_stopping = false
+                return@launch
+            }
+            val success = try {
+                proot_manager.execute_command_with_environment(
+                    command = "go test ./...",
+                    working_dir = project_dir.absolutePath,
+                    extra_environment = project_environment.environment,
+                    on_log = { line -> output_panel_state.append_output(line, output_level_for_line(line)) }
+                )
+            } catch (_: CancellationException) {
+                output_panel_state.append_output("测试已停止", editor_output_line_level.WARNING)
+                return@launch
+            } finally {
+                output_panel_state.task_running = false
+                output_panel_state.task_stopping = false
+            }
+
+            if (success) {
+                output_panel_state.append_output("测试通过", editor_output_line_level.SUCCESS)
+                app_toast.show(this@editor_activity, "测试通过", app_toast.LENGTH_SHORT)
+            } else {
+                output_panel_state.append_output("测试失败", editor_output_line_level.ERROR)
+                app_toast.show(this@editor_activity, "测试失败", app_toast.LENGTH_LONG)
+            }
+        }
+    }
+
     private fun output_level_for_line(line: String): editor_output_line_level {
         val text = line.lowercase()
         return when {
@@ -1388,6 +1487,10 @@ class editor_activity : ComponentActivity() {
             lsp_editor.eventListener = { _, new_status, old_status ->
                 if (new_status != old_status) {
                     log_gopls_status(file, new_status)
+                    if (new_status == LspEditorStatus.CONNECTED) {
+                        // 连接完成后 gopls 很快会推送首批诊断，稍等再读容器
+                        schedule_diagnostics_refresh(1500L)
+                    }
                 }
             }
             if (!lsp_editor.isConnected) {
@@ -1419,7 +1522,140 @@ class editor_activity : ComponentActivity() {
             LspEditorStatus.DISCONNECTED -> "gopls: 已断开 ${file.name}"
             else -> return
         }
-        lifecycleScope.launch(Dispatchers.Main) { output_panel_state.append_log(message) }
+        lifecycleScope.launch { output_panel_state.append_log(message) }
+    }
+
+    // ---- 代码结构（大纲） ----
+
+    /** 编辑中防抖刷新结构符号（150ms）。 */
+    private fun schedule_structure_refresh() {
+        structure_job?.cancel()
+        structure_job = lifecycleScope.launch {
+            delay(150)
+            refresh_structure_symbols()
+        }
+    }
+
+    /**
+     * 重算当前文件的大纲符号：主线程读文本，Default 线程解析。
+     * gopls documentSymbol 接入前的正则兜底实现。
+     */
+    private fun refresh_structure_symbols() {
+        val file_path = state.current_file_path
+        if (file_path == null || !file_path.endsWith(".go")) {
+            structure_symbols = emptyList()
+            return
+        }
+        val file_name = File(file_path).name
+        val text = editor.text.toString()
+        structure_job?.cancel()
+        structure_job = lifecycleScope.launch(Dispatchers.Default) {
+            val parsed = com.jmwl.gostudio.editor.core.editor_outline_parser.parse_go_outline(text, file_name)
+            withContext(Dispatchers.Main) { structure_symbols = parsed }
+        }
+    }
+
+    /** 代码结构面板点击跳转：光标落到目标行并滚动可见。 */
+    private fun navigate_to_structure_line(line: Int) {
+        val line_count = editor.text.lineCount.coerceAtLeast(1)
+        val target = line.coerceIn(0, line_count - 1)
+        editor.setSelection(target, 0)
+        runCatching { editor.ensureSelectionVisible() }
+        state.cursor_line = target + 1
+        state.cursor_column = 1
+    }
+
+    // ---- LSP 诊断（问题页签 / 诊断弹层） ----
+
+    /** 编辑后防抖刷新诊断（gopls 推送有延迟，默认 800ms 后读容器）。 */
+    private fun schedule_diagnostics_refresh(delay_ms: Long = 800L) {
+        diagnostics_job?.cancel()
+        diagnostics_job = lifecycleScope.launch {
+            delay(delay_ms)
+            refresh_file_diagnostics()
+        }
+    }
+
+    private fun refresh_file_diagnostics() {
+        val project = gopls_project
+        val path = state.current_file_path
+        if (project == null || path == null) {
+            file_diagnostics = emptyList()
+            return
+        }
+        file_diagnostics = project.current_diagnostics(File(path))
+    }
+
+    /** 打开诊断详情弹层：跳到该行并异步查询快速修复。 */
+    private fun open_diagnostic_sheet(diagnostic: com.jmwl.gostudio.lsp.gopls.gopls_diagnostic) {
+        sheet_diagnostic = diagnostic
+        sheet_actions = emptyList()
+        sheet_actions_loading = true
+        navigate_to_structure_line(diagnostic.line)
+        sheet_actions_job?.cancel()
+        sheet_actions_job = lifecycleScope.launch {
+            val project = gopls_project
+            val path = state.current_file_path
+            val actions = if (project != null && path != null) {
+                runCatching {
+                    project.request_code_actions(File(path), editor, diagnostic.line)
+                }.getOrDefault(emptyList())
+            } else {
+                emptyList()
+            }
+            sheet_actions = actions
+            sheet_actions_loading = false
+        }
+    }
+
+    /** 应用快速修复后：关闭弹层并延时刷新诊断。 */
+    private fun apply_diagnostic_action(action: com.jmwl.gostudio.lsp.gopls.gopls_code_action) {
+        val project = gopls_project
+        val path = state.current_file_path
+        if (project != null && path != null) {
+            val ok = runCatching { project.apply_code_action(File(path), action) }.getOrDefault(false)
+            if (!ok) {
+                app_toast.show(this, "修复应用失败", app_toast.LENGTH_SHORT)
+            }
+        }
+        sheet_diagnostic = null
+        schedule_diagnostics_refresh()
+    }
+
+    // ---- 全局搜索（proot grep） ----
+
+    /** grep 输出行解析：./relative/path.go:行号:内容 */
+    private val grep_hit_pattern = Regex("^(\\./[^:]+):(\\d+):(.*)$")
+
+    /**
+     * 在项目内全局搜索（proot `grep -rn --include=*.go`，排除 vendor/.git/bin，
+     * 限 300 条命中）。空关键字返回空结果。
+     */
+    private suspend fun search_project(keyword: String): List<editor_project_search_hit> {
+        val trimmed = keyword.trim()
+        if (trimmed.length < 2 || !project_dir.isDirectory) return emptyList()
+        val hits = mutableListOf<editor_project_search_hit>()
+        val environment = toolchain_manager.project_environment(project_dir.absolutePath).environment
+        val escaped = trimmed.replace("'", "'\\''")
+        proot_manager.execute_command_with_environment(
+            command = "grep -rn --include=\"*.go\" --exclude-dir=vendor --exclude-dir=.git --exclude-dir=bin -- '$escaped' . | head -n 300",
+            working_dir = project_dir.absolutePath,
+            extra_environment = environment,
+            on_log = { line ->
+                grep_hit_pattern.find(line.trim())?.let { match ->
+                    val relative = match.groupValues[1].removePrefix("./")
+                    val absolute = File(project_dir, relative).absolutePath
+                    hits += editor_project_search_hit(
+                        path = absolute,
+                        relative_path = relative,
+                        file_name = relative.substringAfterLast('/'),
+                        line = match.groupValues[2].toIntOrNull() ?: return@let,
+                        preview = match.groupValues[3].take(160)
+                    )
+                }
+            }
+        )
+        return hits
     }
 
     private fun restore_editor_selection(tab: editor_open_tab) {

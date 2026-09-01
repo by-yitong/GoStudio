@@ -22,6 +22,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -345,16 +348,19 @@ private fun editor_symbol_button(
     on_insert: (String) -> Unit
 ) {
     val colors = app_theme_provider.colors
-    // 不使用卡片背景，符号直接显示为可点击文字
-    // 宽度自适应：短符号用固定宽度，长关键词（import/package 等）按内容宽度
-    val width = when {
-        symbol == "TAB" -> 44.dp
-        symbol.length <= 2 -> 38.dp
-        else -> (symbol.length * 11 + 16).dp
+    val text_measurer = rememberTextMeasurer()
+    val density = LocalDensity.current
+    val text_width = text_measurer.measure(
+        text = symbol,
+        style = TextStyle(fontSize = 12.5.sp)
+    ).size.width
+    val width = with(density) {
+        (text_width + 12.dp.toPx()).toDp().coerceAtLeast(28.dp)
     }
+
     Box(
         modifier = Modifier
-            .size(width = width, height = 34.dp)
+            .size(width = width, height = 32.dp)
             .clickable { on_insert(symbol) },
         contentAlignment = Alignment.Center
     ) {
@@ -368,10 +374,7 @@ private fun editor_symbol_button(
     }
 }
 
-/**
- * 跳转到定义的浮动图标。光标停在标识符上时显示在编辑器右上角，
- * 点击请求 gopls 的 textDocument/definition 并跳转。请求中显示「…」。
- */
+/** 跳转到定义的胶囊按钮，由编辑器底部中间展示。 */
 @Composable
 fun goto_definition_chip(
     running: Boolean,
@@ -379,25 +382,41 @@ fun goto_definition_chip(
     modifier: Modifier = Modifier
 ) {
     val colors = app_theme_provider.colors
+    val text_measurer = rememberTextMeasurer()
+    val density = LocalDensity.current
+    val label = "跳转定义"
+    val label_width = text_measurer.measure(
+        text = label,
+        style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+    ).size.width
+    val chip_width = with(density) { (label_width + 50.dp.toPx()).toDp() }
+
     Surface(
         modifier = modifier
-            .size(30.dp)
+            .size(width = chip_width, height = 32.dp)
             .clickable(enabled = !running) { on_click() },
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(16.dp),
         color = colors.editor_panel_overlay
     ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = if (running) "…" else "⇲",
                 color = colors.title_highlight,
-                fontSize = 15.sp,
+                fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
+                maxLines = 1
+            )
+            Text(
+                text = label,
+                color = colors.title_highlight,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
                 maxLines = 1
             )
         }
     }
 }
-

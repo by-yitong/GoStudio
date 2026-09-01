@@ -17,16 +17,28 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.jmwl.gostudio.ui.theme.app_theme_provider
+import com.jmwl.gostudio.ui.theme.motion
 import com.jmwl.gostudio.ui.dialogs.editor.editor_create_entry_dialog
+import io.github.rosemoe.sora.event.InterceptTarget
 import io.github.rosemoe.sora.event.EventReceiver
+import io.github.rosemoe.sora.event.LongPressEvent
 import io.github.rosemoe.sora.event.PublishSearchResultEvent
 import io.github.rosemoe.sora.widget.CodeEditor
 import kotlin.math.roundToInt
@@ -36,6 +48,12 @@ private enum class editor_create_dialog_type { FILE, FOLDER }
 private data class editor_create_dialog_request(
     val type: editor_create_dialog_type,
     val parent_path: String
+)
+
+private data class editor_long_press_menu(
+    val position: Offset,
+    val line: Int,
+    val column: Int
 )
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
@@ -79,6 +97,7 @@ internal fun editor_screen(
     on_close_all_tabs: () -> Unit,
     on_build: () -> Unit,
     on_run: () -> Unit,
+    on_test: () -> Unit = {},
     on_save: () -> Unit,
     on_format: () -> Unit,
     on_toggle_read_only: () -> Unit,
@@ -101,6 +120,12 @@ internal fun editor_screen(
     on_file_position_click: (String, Int, Int) -> Unit,
     goto_definition_running: Boolean,
     on_goto_definition: () -> Unit,
+    structure_file_name: String? = null,
+    structure_symbols: List<com.jmwl.gostudio.editor.core.editor_outline_symbol> = emptyList(),
+    on_structure_navigate: (Int) -> Unit = {},
+    on_project_search: suspend (String) -> List<editor_project_search_hit> = { emptyList() },
+    file_diagnostics: List<com.jmwl.gostudio.lsp.gopls.gopls_diagnostic> = emptyList(),
+    on_diagnostic_click: (com.jmwl.gostudio.lsp.gopls.gopls_diagnostic) -> Unit = {},
     ai_agent: com.jmwl.gostudio.ai.ai_agent_loop? = null,
     on_open_ai_settings: () -> Unit = {},
     ai_current_provider: com.jmwl.gostudio.ai.ai_provider = com.jmwl.gostudio.ai.ai_provider.ZHIPU,
@@ -128,11 +153,13 @@ internal fun editor_screen(
     var search_panel_offset by remember { mutableStateOf(Offset.Zero) }
     var create_dialog_request by remember { mutableStateOf<editor_create_dialog_request?>(null) }
     var show_ai_page by remember { mutableStateOf(false) }
+    var show_project_config by remember { mutableStateOf(false) }
     // 外部触发打开 AI 页面（编辑器选区 AI 动作）
     LaunchedEffect(ai_open_trigger) {
         if (ai_open_trigger > 0) show_ai_page = true
     }
     var editor_focused by remember { mutableStateOf(false) }
+    var long_press_menu by remember { mutableStateOf<editor_long_press_menu?>(null) }
     val terminal_state = remember_editor_terminal_state()
     val drawer_progress = remember { Animatable(0f) }
     val safe_project_name = project_name.ifBlank { "项目" }
@@ -151,7 +178,7 @@ internal fun editor_screen(
         }
         drawer_progress.animateTo(
             targetValue = if (drawer_open) 1f else 0f,
-            animationSpec = tween(220)
+            animationSpec = tween(motion.SLOW, easing = motion.quiet)
         )
     }
 
@@ -160,6 +187,9 @@ internal fun editor_screen(
 
     // AI 页面打开时返回键先关闭页面
     BackHandler(enabled = show_ai_page) { show_ai_page = false }
+
+    // 项目配置页打开时返回键先关闭页面
+    BackHandler(enabled = show_project_config) { show_project_config = false }
 
     LaunchedEffect(search_visible) {
         if (search_visible) {
@@ -180,6 +210,21 @@ internal fun editor_screen(
                 val searcher = event.getSearcher()
                 searcher.hasQuery() && searcher.matchedPositionCount > 0
             }.getOrDefault(false)
+        })
+        onDispose { receipt.unsubscribe() }
+    }
+
+    DisposableEffect(editor) {
+        val receipt = editor.subscribeEvent(LongPressEvent::class.java, EventReceiver { event, _ ->
+            editor.selectWord(event.line, event.column)
+            if (editor.cursor.isSelected) {
+                long_press_menu = editor_long_press_menu(
+                    position = Offset(event.x, event.y),
+                    line = event.line,
+                    column = event.column
+                )
+                event.intercept(InterceptTarget.TARGET_EDITOR or InterceptTarget.TARGET_RECEIVERS)
+            }
         })
         onDispose { receipt.unsubscribe() }
     }
@@ -205,45 +250,45 @@ internal fun editor_screen(
                     AnimatedVisibility(
                         visible = toolbar_visible,
                         enter = slideInVertically(
-                            animationSpec = tween(220),
+                            animationSpec = tween(motion.BASE, easing = motion.quiet),
                             initialOffsetY = { -it }
                         ) + expandVertically(
-                            animationSpec = tween(220),
+                            animationSpec = tween(motion.BASE, easing = motion.quiet),
                             expandFrom = Alignment.Top
                         ),
                         exit = slideOutVertically(
-                            animationSpec = tween(220),
+                            animationSpec = tween(motion.BASE, easing = motion.quiet),
                             targetOffsetY = { -it }
                         ) + shrinkVertically(
-                            animationSpec = tween(220),
+                            animationSpec = tween(motion.BASE, easing = motion.quiet),
                             shrinkTowards = Alignment.Top
                         )
                     ) {
                         editor_top_bar(
-                            title = safe_project_name,
-                            subtitle = current_file_name,
+                            project_name = safe_project_name,
+                            has_changes = has_changes,
+                            on_save = on_save,
                             read_only = read_only,
                             has_open_file = has_open_file,
                             on_toggle_drawer = { drawer_open = !drawer_open },
+                            drawer_fraction = { drawer_progress.value },
                             on_build = on_build,
                             on_run = on_run,
+                            on_test = on_test,
                             build_running = output_panel_state.task_running,
                             build_stopping = output_panel_state.task_stopping,
                             on_toggle_read_only = on_toggle_read_only,
-                            on_open_ai = { show_ai_page = true }
+                            on_open_ai = { show_ai_page = true },
+                            on_open_project_config = { show_project_config = true }
                         )
                     }
-                    // 文件标签栏保持在顶部：文件页签 + 日志入口
+                    // 文件标签栏保持在顶部
                     if (has_open_file) {
                         editor_tabs_bar(
                             tabs = tabs,
                             selected_tab_path = selected_tab_path,
                             toolbar_visible = toolbar_visible,
                             on_toggle_toolbar = on_toggle_toolbar,
-                            on_open_logs = {
-                                selected_tool = editor_sidebar_tool.LOG
-                                drawer_open = true
-                            },
                             on_select_tab = on_select_tab,
                             on_pin_tab = on_pin_tab,
                             on_close_tab = on_close_tab,
@@ -263,6 +308,71 @@ internal fun editor_screen(
                             modifier = Modifier.fillMaxSize(),
                             on_focus_change = { focused -> editor_focused = focused }
                         )
+
+                        long_press_menu?.let { menu ->
+                            Box(
+                                modifier = Modifier
+                                    .offset {
+                                        IntOffset(
+                                            menu.position.x.roundToInt(),
+                                            menu.position.y.roundToInt()
+                                        )
+                                    }
+                                    .size(0.dp)
+                            ) {
+                                DropdownMenu(
+                                    expanded = true,
+                                    onDismissRequest = { long_press_menu = null }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("跳转定义") },
+                                        onClick = {
+                                            val column_count = editor.text?.getColumnCount(menu.line) ?: 0
+                                            editor.setSelection(menu.line, (menu.column + 1).coerceAtMost(column_count))
+                                            long_press_menu = null
+                                            on_goto_definition()
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("复制") },
+                                        onClick = {
+                                            editor.copyText(false)
+                                            long_press_menu = null
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("粘贴") },
+                                        enabled = !read_only,
+                                        onClick = {
+                                            editor.pasteText()
+                                            long_press_menu = null
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("全选") },
+                                        onClick = {
+                                            editor.selectAll()
+                                            long_press_menu = null
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("搜索") },
+                                        onClick = {
+                                            long_press_menu = null
+                                            search_visible = true
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("格式化") },
+                                        enabled = !read_only,
+                                        onClick = {
+                                            long_press_menu = null
+                                            on_format()
+                                        }
+                                    )
+                                }
+                            }
+                        }
 
                         // 左下角行列号（独立叶子：光标移动只重组这一小块）
                         Box(
@@ -287,9 +397,6 @@ internal fun editor_screen(
                             // 光标移动只重组这一小块，不会带动整个 editor_screen
                             editor_cursor_overlays(
                                 cursor_selected_provider = cursor_selected_provider,
-                                can_goto_definition_flow = can_goto_definition_flow,
-                                goto_definition_running = goto_definition_running,
-                                on_goto_definition = on_goto_definition,
                                 can_undo = can_undo,
                                 can_redo = can_redo,
                                 has_changes = has_changes,
@@ -360,7 +467,7 @@ internal fun editor_screen(
             }
 
             // 符号栏悬浮在底部（键盘上方），不打断上面的布局
-            if (show_symbol_bar) {
+                if (show_symbol_bar) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
@@ -370,6 +477,13 @@ internal fun editor_screen(
                         on_insert = on_insert_symbol
                     )
                 }
+
+                editor_definition_overlay(
+                    can_goto_definition_flow = can_goto_definition_flow,
+                    goto_definition_running = goto_definition_running,
+                    on_goto_definition = on_goto_definition,
+                    bottom_padding = if (show_symbol_bar) 54.dp else 10.dp
+                )
             }
         }
 
@@ -387,8 +501,16 @@ internal fun editor_screen(
                 expanded_paths = expanded_paths,
                 file_tree_loading = file_tree_loading,
                 project_exists = project_exists,
+                structure_file_name = structure_file_name,
+                structure_symbols = structure_symbols,
+                on_structure_navigate = { line ->
+                    drawer_open = false
+                    on_structure_navigate(line)
+                },
+                on_project_search = on_project_search,
+                file_diagnostics = file_diagnostics,
+                on_diagnostic_click = on_diagnostic_click,
                 on_tool_selected = { selected_tool = it },
-            on_project_config_apply = on_project_config_apply,
             on_new_file = { parent_path ->
                 create_dialog_request = editor_create_dialog_request(editor_create_dialog_type.FILE, parent_path)
             },
@@ -444,11 +566,11 @@ internal fun editor_screen(
         AnimatedVisibility(
             visible = show_ai_page,
             enter = slideInHorizontally(
-                animationSpec = tween(220),
+                animationSpec = tween(motion.BASE, easing = motion.quiet),
                 initialOffsetX = { it }
             ) + androidx.compose.animation.fadeIn(),
             exit = slideOutHorizontally(
-                animationSpec = tween(220),
+                animationSpec = tween(motion.BASE, easing = motion.quiet),
                 targetOffsetX = { it }
             ) + androidx.compose.animation.fadeOut()
         ) {
@@ -475,11 +597,60 @@ internal fun editor_screen(
                 show_ai_page = false
             }
         }
+
+        // 项目配置全屏页（顶栏「更多」菜单进入；原为左侧抽屉工具页签）
+        AnimatedVisibility(
+            visible = show_project_config,
+            enter = slideInHorizontally(
+                animationSpec = tween(motion.BASE, easing = motion.quiet),
+                initialOffsetX = { it }
+            ) + androidx.compose.animation.fadeIn(),
+            exit = slideOutHorizontally(
+                animationSpec = tween(motion.BASE, easing = motion.quiet),
+                targetOffsetX = { it }
+            ) + androidx.compose.animation.fadeOut()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(colors.editor_bg)
+                    .statusBarsPadding()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "项目配置",
+                        color = colors.editor_text,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(start = 18.dp)
+                    )
+                    IconButton(onClick = { show_project_config = false }) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "关闭",
+                            tint = colors.editor_toolbar_icon
+                        )
+                    }
+                }
+                editor_project_config_panel(
+                    project_root_path = project_root_path,
+                    on_apply = on_project_config_apply,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
     }
 }
 
 /**
- * 光标区叶子组合：跳转定义 chip、悬浮按钮（含搜索入口）。
+ * 光标区叶子组合：悬浮按钮（含搜索入口）。
  * 光标选区/可跳转状态只在这里读取，光标每次移动仅重组此组合，
  * 避免整个 editor_screen（顶栏/标签栏）跟着重新执行。
  * 行列号 chip 在别处（左下角）单独作为叶子读取。
@@ -487,9 +658,6 @@ internal fun editor_screen(
 @Composable
 private fun editor_cursor_overlays(
     cursor_selected_provider: () -> Boolean,
-    can_goto_definition_flow: kotlinx.coroutines.flow.StateFlow<Boolean>,
-    goto_definition_running: Boolean,
-    on_goto_definition: () -> Unit,
     can_undo: Boolean,
     can_redo: Boolean,
     has_changes: Boolean,
@@ -504,14 +672,6 @@ private fun editor_cursor_overlays(
     on_save: () -> Unit,
     on_toggle_search: () -> Unit
 ) {
-    val can_goto by can_goto_definition_flow.collectAsState()
-    AnimatedVisibility(visible = can_goto) {
-        goto_definition_chip(
-            running = goto_definition_running,
-            on_click = on_goto_definition
-        )
-    }
-
     editor_floating_actions(
         can_undo = can_undo,
         can_redo = can_redo,
@@ -528,6 +688,28 @@ private fun editor_cursor_overlays(
         on_save = on_save,
         on_toggle_search = on_toggle_search
     )
+}
+
+@Composable
+private fun BoxScope.editor_definition_overlay(
+    can_goto_definition_flow: kotlinx.coroutines.flow.StateFlow<Boolean>,
+    goto_definition_running: Boolean,
+    on_goto_definition: () -> Unit,
+    bottom_padding: androidx.compose.ui.unit.Dp
+) {
+    val can_goto by can_goto_definition_flow.collectAsState()
+    if (can_goto) {
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = bottom_padding)
+        ) {
+            goto_definition_chip(
+                running = goto_definition_running,
+                on_click = on_goto_definition
+            )
+        }
+    }
 }
 
 /**

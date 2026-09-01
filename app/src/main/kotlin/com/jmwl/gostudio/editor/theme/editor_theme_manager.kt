@@ -1,6 +1,7 @@
 package com.jmwl.gostudio.editor.theme
 
 import com.jmwl.gostudio.core.logging.logger_manager
+import com.jmwl.gostudio.ui.theme.theme_manager
 
 import android.content.Context
 import io.github.rosemoe.sora.langs.textmate.registry.ThemeRegistry
@@ -57,13 +58,24 @@ data class editor_theme_preview_palette(
 )
 
 object editor_theme_manager {
-    private const val DEFAULT_THEME_ASSET = "textmate/themes/gostudio.json"
+    private const val DEFAULT_DARK_THEME_ASSET = "textmate/themes/gostudio.json"
+    private const val DEFAULT_LIGHT_THEME_ASSET = "textmate/themes/gostudio_light.json"
     private const val USER_THEME_DIR = "textmate/themes"
-    private const val USER_THEME_FILE = "gostudio.json"
-    private const val THEME_NAME = "gostudio_user"
+    private const val USER_DARK_THEME_FILE = "gostudio.json"
+    private const val USER_LIGHT_THEME_FILE = "gostudio_light.json"
+    private const val DARK_THEME_NAME = "gostudio_user_dark"
+    private const val LIGHT_THEME_NAME = "gostudio_user_light"
 
     private val _version = MutableStateFlow(0)
     val version: StateFlow<Int> = _version.asStateFlow()
+
+    private fun theme_name(is_dark: Boolean): String {
+        return if (is_dark) DARK_THEME_NAME else LIGHT_THEME_NAME
+    }
+
+    private fun default_theme_asset(is_dark: Boolean): String {
+        return if (is_dark) DEFAULT_DARK_THEME_ASSET else DEFAULT_LIGHT_THEME_ASSET
+    }
 
     private val color_definitions = listOf(
         editor_theme_color_definition("editor.background", "编辑器背景", "代码编辑区的整体背景色"),
@@ -101,16 +113,20 @@ object editor_theme_manager {
     )
 
     fun init(context: Context) {
-        ensure_user_theme(context)
-        reload_textmate_theme(context)
+        ensure_user_theme(context, is_dark = true)
+        ensure_user_theme(context, is_dark = false)
+        reload_textmate_theme(context, is_dark = true)
+        reload_textmate_theme(context, is_dark = false)
+        set_current_theme(context, theme_manager.resolve_is_dark(context, theme_manager.theme.value))
     }
 
-    fun user_theme_file(context: Context): File {
-        return File(File(context.filesDir, USER_THEME_DIR), USER_THEME_FILE)
+    fun user_theme_file(context: Context, is_dark: Boolean): File {
+        val file_name = if (is_dark) USER_DARK_THEME_FILE else USER_LIGHT_THEME_FILE
+        return File(File(context.filesDir, USER_THEME_DIR), file_name)
     }
 
-    fun load_color_items(context: Context): List<editor_theme_color_item> {
-        val colors = load_color_map(context)
+    fun load_color_items(context: Context, is_dark: Boolean): List<editor_theme_color_item> {
+        val colors = load_color_map(context, is_dark)
         return color_definitions.map { definition ->
             editor_theme_color_item(
                 key = definition.key,
@@ -121,8 +137,8 @@ object editor_theme_manager {
         }
     }
 
-    fun load_token_color_items(context: Context): List<editor_theme_token_color_item> {
-        val json = read_theme_json(context, ensure_user_theme(context))
+    fun load_token_color_items(context: Context, is_dark: Boolean): List<editor_theme_token_color_item> {
+        val json = read_theme_json(context, ensure_user_theme(context, is_dark), is_dark)
         val token_colors = json.optJSONArray("tokenColors") ?: return emptyList()
         val result = mutableListOf<editor_theme_token_color_item>()
         for (index in 0 until token_colors.length()) {
@@ -144,55 +160,55 @@ object editor_theme_manager {
         return result
     }
 
-    fun load_color_object(context: Context): JSONObject? {
+    fun load_color_object(context: Context, is_dark: Boolean): JSONObject? {
         return runCatching {
-            read_theme_json(context, ensure_user_theme(context)).optJSONObject("colors")
+            read_theme_json(context, ensure_user_theme(context, is_dark), is_dark).optJSONObject("colors")
         }.getOrNull()
     }
 
-    fun load_preview_palette(context: Context): editor_theme_preview_palette {
-        val colors = load_color_map(context)
-        val json = read_theme_json(context, ensure_user_theme(context))
+    fun load_preview_palette(context: Context, is_dark: Boolean): editor_theme_preview_palette {
+        val colors = load_color_map(context, is_dark)
+        val json = read_theme_json(context, ensure_user_theme(context, is_dark), is_dark)
 
-        fun editor_color(key: String, fallback: String): String {
-            return colors[key].orEmpty().ifBlank { fallback }
+        fun editor_color(key: String, dark_fallback: String, light_fallback: String): String {
+            return colors[key].orEmpty().ifBlank { if (is_dark) dark_fallback else light_fallback }
         }
 
-        fun token_color(fallback: String, vararg scopes: String): String {
-            return find_token_color(json, scopes.toList()) ?: fallback
+        fun token_color(dark_fallback: String, light_fallback: String, vararg scopes: String): String {
+            return find_token_color(json, scopes.toList()) ?: if (is_dark) dark_fallback else light_fallback
         }
 
         return editor_theme_preview_palette(
-            background = editor_color("editor.background", "#1A242E"),
-            foreground = editor_color("editor.foreground", "#E8EDF2"),
-            cursor = editor_color("editorCursor.foreground", "#4A9EFF"),
-            selection = editor_color("editor.selectionBackground", "#2A3A4A"),
-            line_highlight = editor_color("editor.lineHighlightBackground", "#1E2A36"),
-            indent_line = editor_color("editorIndentGuide.background", "#2A3A4A"),
-            block_line = editor_color("editorIndentGuide.activeBackground", "#5A7A9A"),
-            line_number = editor_color("editorLineNumber.foreground", "#5A7A9A"),
-            active_line_number = editor_color("editorLineNumber.activeForeground", "#4A9EFF"),
-            keyword = token_color("#E5B567", "keyword.control", "keyword"),
-            type = token_color("#7DB7E8", "storage.type", "entity.name.type", "support.type"),
-            function = token_color("#7FD6C2", "entity.name.function", "meta.function-call"),
-            string = token_color("#A5C25C", "string"),
-            number = token_color("#D19A66", "constant.numeric"),
-            comment = token_color("#6A7A8A", "comment"),
-            constant = token_color("#FF9E64", "constant.language"),
-            operator = token_color("#89DDFF", "keyword.operator"),
-            punctuation = token_color("#FFD166", "punctuation.section")
+            background = editor_color("editor.background", "#1A242E", "#FAFBFC"),
+            foreground = editor_color("editor.foreground", "#E8EDF2", "#242B33"),
+            cursor = editor_color("editorCursor.foreground", "#4A9EFF", "#1F6FEB"),
+            selection = editor_color("editor.selectionBackground", "#2A3A4A", "#B9D7F7"),
+            line_highlight = editor_color("editor.lineHighlightBackground", "#1E2A36", "#EFF3F7"),
+            indent_line = editor_color("editorIndentGuide.background", "#2A3A4A", "#E2E7ED"),
+            block_line = editor_color("editorIndentGuide.activeBackground", "#5A7A9A", "#1F6FEB99"),
+            line_number = editor_color("editorLineNumber.foreground", "#5A7A9A", "#9AA7B5"),
+            active_line_number = editor_color("editorLineNumber.activeForeground", "#4A9EFF", "#1F6FEB"),
+            keyword = token_color("#E5B567", "#D1493B", "keyword.control", "keyword"),
+            type = token_color("#7DB7E8", "#108070", "storage.type", "entity.name.type", "support.type"),
+            function = token_color("#7FD6C2", "#0F8A72", "entity.name.function", "meta.function-call"),
+            string = token_color("#A5C25C", "#338A3E", "string"),
+            number = token_color("#D19A66", "#B06E1F", "constant.numeric"),
+            comment = token_color("#6A7A8A", "#8A97A3", "comment"),
+            constant = token_color("#FF9E64", "#C76B29", "constant.language"),
+            operator = token_color("#89DDFF", "#0E87A8", "keyword.operator"),
+            punctuation = token_color("#FFD166", "#B7791F", "punctuation.section")
         )
     }
 
-    fun update_color(context: Context, key: String, value: String): Boolean {
+    fun update_color(context: Context, is_dark: Boolean, key: String, value: String): Boolean {
         val normalized = normalize_color(value) ?: return false
         return runCatching {
-            val theme_file = ensure_user_theme(context)
-            val json = read_theme_json(context, theme_file)
+            val theme_file = ensure_user_theme(context, is_dark)
+            val json = read_theme_json(context, theme_file, is_dark)
             val colors = json.optJSONObject("colors") ?: JSONObject().also { json.put("colors", it) }
             colors.put(key, normalized)
             write_theme_json(theme_file, json)
-            reload_textmate_theme(context)
+            reload_textmate_theme(context, is_dark)
             true
         }.getOrElse { error ->
             logger_manager.e("editor_theme_manager", "Failed to update editor theme color: ${error.message}", error)
@@ -200,17 +216,17 @@ object editor_theme_manager {
         }
     }
 
-    fun update_token_color(context: Context, index: Int, value: String): Boolean {
+    fun update_token_color(context: Context, is_dark: Boolean, index: Int, value: String): Boolean {
         val normalized = normalize_color(value) ?: return false
         return runCatching {
-            val theme_file = ensure_user_theme(context)
-            val json = read_theme_json(context, theme_file)
+            val theme_file = ensure_user_theme(context, is_dark)
+            val json = read_theme_json(context, theme_file, is_dark)
             val token_colors = json.optJSONArray("tokenColors") ?: return false
             val item = token_colors.optJSONObject(index) ?: return false
             val settings = item.optJSONObject("settings") ?: JSONObject().also { item.put("settings", it) }
             settings.put("foreground", normalized)
             write_theme_json(theme_file, json)
-            reload_textmate_theme(context)
+            reload_textmate_theme(context, is_dark)
             true
         }.getOrElse { error ->
             logger_manager.e("editor_theme_manager", "Failed to update token color: ${error.message}", error)
@@ -218,10 +234,10 @@ object editor_theme_manager {
         }
     }
 
-    fun reset_to_default(context: Context): Boolean {
+    fun reset_to_default(context: Context, is_dark: Boolean): Boolean {
         return runCatching {
-            copy_default_theme(context, user_theme_file(context))
-            reload_textmate_theme(context)
+            copy_default_theme(context, user_theme_file(context, is_dark), is_dark)
+            reload_textmate_theme(context, is_dark)
             true
         }.getOrElse { error ->
             logger_manager.e("editor_theme_manager", "Failed to reset editor theme: ${error.message}", error)
@@ -229,11 +245,11 @@ object editor_theme_manager {
         }
     }
 
-    fun set_current_theme(context: Context): Boolean {
+    fun set_current_theme(context: Context, is_dark: Boolean): Boolean {
         return runCatching {
             val registry = ThemeRegistry.getInstance()
-            if (!registry.setTheme(THEME_NAME)) {
-                reload_textmate_theme(context)
+            if (!registry.setTheme(theme_name(is_dark))) {
+                reload_textmate_theme(context, is_dark)
             } else {
                 true
             }
@@ -243,18 +259,19 @@ object editor_theme_manager {
         }
     }
 
-    fun reload_textmate_theme(context: Context): Boolean {
+    fun reload_textmate_theme(context: Context, is_dark: Boolean): Boolean {
         return runCatching {
-            val theme_file = ensure_user_theme(context)
+            val theme_file = ensure_user_theme(context, is_dark)
             val registry = ThemeRegistry.getInstance()
-            val existing = registry.findThemeByFileName(THEME_NAME)
+            val name = theme_name(is_dark)
+            val existing = registry.findThemeByFileName(name)
             if (existing != null) {
                 existing.load()
-                existing.setDark(true)
+                existing.setDark(is_dark)
                 registry.setTheme(existing)
             } else {
-                val model = ThemeModel(create_theme_source(theme_file), THEME_NAME)
-                model.setDark(true)
+                val model = ThemeModel(create_theme_source(theme_file), name)
+                model.setDark(is_dark)
                 model.load()
                 registry.loadTheme(model, true)
                 registry.setTheme(model)
@@ -323,25 +340,25 @@ object editor_theme_manager {
         }
     }
 
-    private fun ensure_user_theme(context: Context): File {
-        val theme_file = user_theme_file(context)
+    private fun ensure_user_theme(context: Context, is_dark: Boolean): File {
+        val theme_file = user_theme_file(context, is_dark)
         if (!theme_file.exists()) {
-            copy_default_theme(context, theme_file)
+            copy_default_theme(context, theme_file, is_dark)
         }
-        merge_theme_defaults(context, theme_file)
+        merge_theme_defaults(context, theme_file, is_dark)
         return theme_file
     }
 
-    private fun copy_default_theme(context: Context, target: File) {
+    private fun copy_default_theme(context: Context, target: File, is_dark: Boolean) {
         target.parentFile?.mkdirs()
-        context.assets.open(DEFAULT_THEME_ASSET).use { input ->
+        context.assets.open(default_theme_asset(is_dark)).use { input ->
             target.outputStream().use { output -> input.copyTo(output) }
         }
     }
 
-    private fun merge_theme_defaults(context: Context, theme_file: File) {
-        val defaults = read_default_theme_json(context)
-        val current = read_theme_json_or_default(context, theme_file)
+    private fun merge_theme_defaults(context: Context, theme_file: File, is_dark: Boolean) {
+        val defaults = read_default_theme_json(context, is_dark)
+        val current = read_theme_json_or_default(context, theme_file, is_dark)
         var changed = false
 
         if (!current.has("name")) {
@@ -375,10 +392,10 @@ object editor_theme_manager {
         }
     }
 
-    private fun load_color_map(context: Context): Map<String, String> {
-        val theme_file = ensure_user_theme(context)
-        val current_colors = read_theme_json(context, theme_file).optJSONObject("colors")
-        val default_colors = read_default_theme_json(context).optJSONObject("colors")
+    private fun load_color_map(context: Context, is_dark: Boolean): Map<String, String> {
+        val theme_file = ensure_user_theme(context, is_dark)
+        val current_colors = read_theme_json(context, theme_file, is_dark).optJSONObject("colors")
+        val default_colors = read_default_theme_json(context, is_dark).optJSONObject("colors")
         return color_definitions.associate { definition ->
             val value = current_colors?.optString(definition.key).orEmpty()
                 .ifBlank { default_colors?.optString(definition.key).orEmpty() }
@@ -386,24 +403,24 @@ object editor_theme_manager {
         }
     }
 
-    private fun read_default_theme_json(context: Context): JSONObject {
+    private fun read_default_theme_json(context: Context, is_dark: Boolean): JSONObject {
         return JSONObject(
-            context.assets.open(DEFAULT_THEME_ASSET)
+            context.assets.open(default_theme_asset(is_dark))
                 .bufferedReader()
                 .use { it.readText() }
         )
     }
 
-    private fun read_theme_json(context: Context, theme_file: File): JSONObject {
-        return read_theme_json_or_default(context, theme_file)
+    private fun read_theme_json(context: Context, theme_file: File, is_dark: Boolean): JSONObject {
+        return read_theme_json_or_default(context, theme_file, is_dark)
     }
 
-    private fun read_theme_json_or_default(context: Context, theme_file: File): JSONObject {
+    private fun read_theme_json_or_default(context: Context, theme_file: File, is_dark: Boolean): JSONObject {
         val content = runCatching { theme_file.readText() }.getOrNull()
         if (content.isNullOrBlank()) {
-            return read_default_theme_json(context)
+            return read_default_theme_json(context, is_dark)
         }
-        return runCatching { JSONObject(content) }.getOrElse { read_default_theme_json(context) }
+        return runCatching { JSONObject(content) }.getOrElse { read_default_theme_json(context, is_dark) }
     }
 
     private fun write_theme_json(theme_file: File, json: JSONObject) {

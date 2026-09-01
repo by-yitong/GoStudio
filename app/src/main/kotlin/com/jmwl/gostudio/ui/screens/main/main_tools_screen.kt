@@ -6,11 +6,9 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.jmwl.gostudio.ui.components.sub_page_top_bar
 import com.jmwl.gostudio.ui.theme.app_colors
 import com.jmwl.gostudio.ui.theme.app_theme_provider
 
@@ -55,7 +54,8 @@ fun main_tools_screen(
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        containerColor = Color.Transparent
+        containerColor = Color.Transparent,
+        topBar = { sub_page_top_bar("开发工具", on_back) }
     ) { padding_values ->
         Column(
             modifier = Modifier
@@ -63,63 +63,15 @@ fun main_tools_screen(
                 .padding(padding_values)
                 .verticalScroll(rememberScrollState())
         ) {
-            Spacer(modifier = Modifier.height(30.dp))
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 18.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Surface(
-                    modifier = Modifier.size(35.dp),
-                    shape = CircleShape,
-                    color = colors.top_button_bg,
-                    onClick = on_back
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "返回",
-                            tint = colors.top_button_icon,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.size(35.dp))
-            }
-
-            Spacer(modifier = Modifier.height(30.dp))
-
-            Column(
-                horizontalAlignment = Alignment.Start,
+            Text(
+                text = "管理 Go 编译器、语言服务器与开发工具",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Light,
+                color = colors.subtitle,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 18.dp)
-            ) {
-                Text(
-                    text = "开发工具",
-                    fontSize = 30.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = colors.title_large
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Go 工具链",
-                    fontSize = 30.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = colors.title_highlight
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "管理 Go 编译器、语言服务器与开发工具",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Light,
-                    color = colors.subtitle
-                )
-            }
+            )
 
             Spacer(modifier = Modifier.height(18.dp))
 

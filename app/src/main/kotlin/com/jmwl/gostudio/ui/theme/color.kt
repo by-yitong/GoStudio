@@ -2,14 +2,12 @@ package com.jmwl.gostudio.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Hallmark · genre: modern-minimal · macrostructure: Workbench(app)/Long Document(list) ·
-// design-system: design.md · designed-as-app · anchor hue: 255 (cool Go-blue) ·
-// accent: oklch(68% 0.14 255) dark / oklch(52% 0.19 255) light · one restrained signal accent ≤5% ·
-// fonts: Inter (UI) + JetBrains Mono (code). No pure black, no pure white, no gradients.
-// All neutrals tinted cool toward the 255 anchor. Status colors desaturated to Tailwind register.
-
+// Hallmark · studied-DNA (source: CodeAssist 开源 IDE) · macrostructure: IDE 卡片流 + 底部三页导航
+// theme: studied-DNA · paper #161719(dark)/#ECEBE7(light) · accent Teal #5CCFE6(dark)/#1C9BBD(light)
+// 三阶表面色分层（surface/2/3），1px 分隔线（白/黑 9%），无渐变无阴影，圆角 12-18。
+// 排版收敛：标题 28 bold，正文 16，层级靠字重不靠色。间距 4pt 制，卡片间距 12。
 data class app_colors(
-    // 渐变 & 背景
+    // 渐变 & 背景（CodeAssist 无渐变 → 三段统一为 bg 纯色）
     val gradient_start: Color,
     val gradient_middle: Color,
     val gradient_end: Color,
@@ -102,196 +100,196 @@ data class app_colors(
     val editor_line_divider: Color
 )
 
-// ===== 深色模式 =====
-// paper #17181D · surface #20232B · sunken #121317 · rule #343841
-// ink #E8EAEE · ink-2 #C8CCD4 · muted #8A8F9A · accent #5B8DEF · accent-ink #FAFBFC
+// ===== 深色模式（CodeAssist darkColors · Teal 强调） =====
+// bg #161719 · surface #232428/#2B2C31/#34353B · editor #1B1C1F
+// ink #E9E9EC · ink-2 #A0A1AA · muted #6F7079 · accent #5CCFE6 · 分隔线 白 9%/14%/7%
 val dark_app_colors = app_colors(
-    // ===== 渐变 & 背景（杀死渐变 → 三段统一为 paper） =====
-    gradient_start = Color(0xFF17181D),
-    gradient_middle = Color(0xFF17181D),
-    gradient_end = Color(0xFF17181D),
+    // ===== 背景（纯色，无渐变） =====
+    gradient_start = Color(0xFF161719),
+    gradient_middle = Color(0xFF161719),
+    gradient_end = Color(0xFF161719),
 
     // ===== 文字 =====
-    title_large = Color(0xFFE8EAEE),
-    title_highlight = Color(0xFF5B8DEF),
-    subtitle = Color(0xFF8A8F9A),
-    section_title = Color(0xFFE8EAEE),
+    title_large = Color(0xFFE9E9EC),
+    title_highlight = Color(0xFF5CCFE6),
+    subtitle = Color(0xFFA0A1AA),
+    section_title = Color(0xFFA0A1AA),
 
     // ===== 卡片 =====
-    card_bg = Color(0xFF20232B),
-    card_pressed = Color(0xFF2C3038),
-    card_text_title = Color(0xFFE8EAEE),
-    card_text_subtitle = Color(0xFF8A8F9A),
-    card_icon_bg = Color(0xFF5B8DEF),
-    card_chevron = Color(0xFF4A4F5A),
+    card_bg = Color(0xFF232428),
+    card_pressed = Color(0xFF34353B),
+    card_text_title = Color(0xFFE9E9EC),
+    card_text_subtitle = Color(0xFFA0A1AA),
+    card_icon_bg = Color(0xFF5CCFE6),
+    card_chevron = Color(0xFF6F7079),
 
     // ===== 顶部栏 & Logo =====
-    logo_tint = Color(0xFFE8EAEE),
-    top_button_bg = Color(0xFF20232B),
-    top_button_icon = Color(0xFFC8CCD4),
+    logo_tint = Color(0xFFE9E9EC),
+    top_button_bg = Color(0xFF2B2C31),
+    top_button_icon = Color(0xFFA0A1AA),
 
     // ===== 搜索 & 输入框 =====
-    search_button_active = Color(0xFF5B8DEF),
-    search_button_bg_active = Color(0x265B8DEF),
-    input_hint = Color(0xFF8A8F9A),
-    input_text = Color(0xFFE8EAEE),
-    input_border = Color(0xFF5B8DEF),
+    search_button_active = Color(0xFF5CCFE6),
+    search_button_bg_active = Color(0x295CCFE6),
+    input_hint = Color(0xFFA0A1AA),
+    input_text = Color(0xFFE9E9EC),
+    input_border = Color(0xFF5CCFE6),
 
     // ===== 弹窗 =====
-    dialog_bg = Color(0xFF20232B),
-    dialog_text = Color(0xFFE8EAEE),
-    dialog_hint = Color(0xFF8A8F9A),
-    dialog_icon = Color(0xFF5B8DEF),
-    dialog_cancel = Color(0xFF5B8DEF),
-    dialog_clone_bg = Color(0xFF5B8DEF),
-    dialog_clone_text = Color(0xFFFAFBFC),
-    dialog_card_bg = Color(0xFF17181D),
-    dialog_input_bg = Color(0xFF17181D),
-    dialog_input_text = Color(0xFFE8EAEE),
-    dialog_input_hint = Color(0xFF8A8F9A),
-    dialog_input_border = Color(0xFF5B8DEF),
-    dialog_input_icon = Color(0xFF74A0FF),
-    dialog_input_icon_hint = Color(0xFF8A8F9A),
-
-    // ===== 状态色 =====
-    danger = Color(0xFFF87171),
-    danger_bg = Color(0x29F87171),
-    success = Color(0xFF34D399),
-    success_bg = Color(0x2934D399),
-    warning = Color(0xFFFBBF24),
-    warning_bg = Color(0x29FBBF24),
-    info = Color(0xFF5B8DEF),
-    info_bg = Color(0x295B8DEF),
-
-    // ===== 终端（比编辑器略深一层） =====
-    terminal_cursor = 0xFF74A0FF.toInt(),
-    terminal_foreground = 0xFFE8EAEE.toInt(),
-    terminal_background = 0xFF121317.toInt(),
-    key_button_pressed_bg = Color(0xFF2C3038),
-    key_button_pressed_text = Color(0xFFFAFBFC),
-    key_button_normal_text = Color(0xFF8A8F9A),
-    key_button_active_text = Color(0xFF5B8DEF),
-    terminal_tab_add_icon = Color(0xFFE8EAEE),
-    terminal_tab_separator = Color(0xFF343841),
-    terminal_tab_selected_bg = Color(0x00000000),
-    terminal_tab_unselected_bg = Color(0xFF20232B),
-    terminal_tab_selected_icon = Color(0xFF5B8DEF),
-    terminal_tab_selected_text = Color(0xFFE8EAEE),
-    terminal_tab_unselected_content = Color(0xFF8A8F9A),
-
-    // ===== 编辑器 =====
-    editor_bg = Color(0xFF17181D),
-    editor_text = Color(0xFFE8EAEE),
-    editor_hint = Color(0xFF8A8F9A),
-    editor_icon = Color(0xFF5B8DEF),
-    editor_toolbar_icon = Color(0xFFC8CCD4),
-    editor_panel_overlay = Color(0xD117181D),
-    editor_button_bg = Color(0xFF20232B),
-    editor_tab_add_icon = Color(0xFFE8EAEE),
-    editor_tab_separator = Color(0xFF343841),
-    editor_tab_selected_bg = Color(0x00000000),
-    editor_tab_unselected_bg = Color(0xFF20232B),
-    editor_tab_selected_icon = Color(0xFF5B8DEF),
-    editor_tab_selected_text = Color(0xFFE8EAEE),
-    editor_tab_unselected_content = Color(0xFF8A8F9A),
-    editor_sidebar_selected_bg = Color(0x295B8DEF),
-    editor_divider = Color(0x4D343841),
-    editor_line_divider = Color(0x2E343841)
-)
-
-// ===== 浅色模式 =====
-// paper #FAFBFC · surface #F1F3F6 · sunken #FFFFFF · rule #E0E3E8
-// ink #1A1D23 · ink-2 #2C303A · muted #5F6571 · accent #1F54E8 · accent-ink #FFFFFF
-val light_app_colors = app_colors(
-    // ===== 渐变 & 背景（杀死渐变 → 三段统一为 paper） =====
-    gradient_start = Color(0xFFFAFBFC),
-    gradient_middle = Color(0xFFFAFBFC),
-    gradient_end = Color(0xFFFAFBFC),
-
-    // ===== 文字 =====
-    title_large = Color(0xFF1A1D23),
-    title_highlight = Color(0xFF1F54E8),
-    subtitle = Color(0xFF5F6571),
-    section_title = Color(0xFF1A1D23),
-
-    // ===== 卡片 =====
-    card_bg = Color(0xFFF1F3F6),
-    card_pressed = Color(0xFFE5E8ED),
-    card_text_title = Color(0xFF1A1D23),
-    card_text_subtitle = Color(0xFF5F6571),
-    card_icon_bg = Color(0xFF1F54E8),
-    card_chevron = Color(0xFFA8AEB8),
-
-    // ===== 顶部栏 & Logo =====
-    logo_tint = Color(0xFF1A1D23),
-    top_button_bg = Color(0xFFF1F3F6),
-    top_button_icon = Color(0xFF2C303A),
-
-    // ===== 搜索 & 输入框 =====
-    search_button_active = Color(0xFF1F54E8),
-    search_button_bg_active = Color(0x261F54E8),
-    input_hint = Color(0xFF5F6571),
-    input_text = Color(0xFF1A1D23),
-    input_border = Color(0xFF1F54E8),
-
-    // ===== 弹窗 =====
-    dialog_bg = Color(0xFFFFFFFF),
-    dialog_text = Color(0xFF1A1D23),
-    dialog_hint = Color(0xFF5F6571),
-    dialog_icon = Color(0xFF1F54E8),
-    dialog_cancel = Color(0xFF1F54E8),
-    dialog_clone_bg = Color(0xFF1F54E8),
+    dialog_bg = Color(0xFF2B2C31),
+    dialog_text = Color(0xFFE9E9EC),
+    dialog_hint = Color(0xFFA0A1AA),
+    dialog_icon = Color(0xFF5CCFE6),
+    dialog_cancel = Color(0xFF5CCFE6),
+    dialog_clone_bg = Color(0xFF5CCFE6),
     dialog_clone_text = Color(0xFFFFFFFF),
-    dialog_card_bg = Color(0xFFF1F3F6),
-    dialog_input_bg = Color(0xFFFFFFFF),
-    dialog_input_text = Color(0xFF1A1D23),
-    dialog_input_hint = Color(0xFF5F6571),
-    dialog_input_border = Color(0xFF1F54E8),
-    dialog_input_icon = Color(0xFF1F54E8),
-    dialog_input_icon_hint = Color(0xFF5F6571),
+    dialog_card_bg = Color(0xFF161719),
+    dialog_input_bg = Color(0xFF161719),
+    dialog_input_text = Color(0xFFE9E9EC),
+    dialog_input_hint = Color(0xFFA0A1AA),
+    dialog_input_border = Color(0xFF5CCFE6),
+    dialog_input_icon = Color(0xFF5CCFE6),
+    dialog_input_icon_hint = Color(0xFFA0A1AA),
 
     // ===== 状态色 =====
-    danger = Color(0xFFE5484D),
-    danger_bg = Color(0x1FE5484D),
-    success = Color(0xFF168A4A),
-    success_bg = Color(0x1F168A4A),
-    warning = Color(0xFFB7791F),
-    warning_bg = Color(0x1FB7791F),
-    info = Color(0xFF1F54E8),
-    info_bg = Color(0x1F1F54E8),
+    danger = Color(0xFFFF6B63),
+    danger_bg = Color(0x29FF6B63),
+    success = Color(0xFF34D058),
+    success_bg = Color(0x2934D058),
+    warning = Color(0xFFFFB340),
+    warning_bg = Color(0x29FFB340),
+    info = Color(0xFF5AC8E0),
+    info_bg = Color(0x295AC8E0),
 
     // ===== 终端 =====
-    terminal_cursor = 0xFF1F54E8.toInt(),
-    terminal_foreground = 0xFF1A1D23.toInt(),
-    terminal_background = 0xFFFFFFFF.toInt(),
-    key_button_pressed_bg = Color(0xFFE5E8ED),
-    key_button_pressed_text = Color(0xFF1A1D23),
-    key_button_normal_text = Color(0xFF5F6571),
-    key_button_active_text = Color(0xFF1F54E8),
-    terminal_tab_add_icon = Color(0xFF1A1D23),
-    terminal_tab_separator = Color(0xFFE0E3E8),
+    terminal_cursor = 0xFF5CCFE6.toInt(),
+    terminal_foreground = 0xFFE9E9EC.toInt(),
+    terminal_background = 0xFF161719.toInt(),
+    key_button_pressed_bg = Color(0xFF34353B),
+    key_button_pressed_text = Color(0xFFFFFFFF),
+    key_button_normal_text = Color(0xFFA0A1AA),
+    key_button_active_text = Color(0xFF5CCFE6),
+    terminal_tab_add_icon = Color(0xFFE9E9EC),
+    terminal_tab_separator = Color(0x17FFFFFF),
     terminal_tab_selected_bg = Color(0x00000000),
-    terminal_tab_unselected_bg = Color(0xFFF1F3F6),
-    terminal_tab_selected_icon = Color(0xFF1F54E8),
-    terminal_tab_selected_text = Color(0xFF1A1D23),
-    terminal_tab_unselected_content = Color(0xFF5F6571),
+    terminal_tab_unselected_bg = Color(0xFF232428),
+    terminal_tab_selected_icon = Color(0xFF5CCFE6),
+    terminal_tab_selected_text = Color(0xFFE9E9EC),
+    terminal_tab_unselected_content = Color(0xFFA0A1AA),
 
     // ===== 编辑器 =====
-    editor_bg = Color(0xFFFFFFFF),
-    editor_text = Color(0xFF1A1D23),
-    editor_hint = Color(0xFF5F6571),
-    editor_icon = Color(0xFF1F54E8),
-    editor_toolbar_icon = Color(0xFF2C303A),
-    editor_panel_overlay = Color(0xD1FAFBFC),
-    editor_button_bg = Color(0xFFF1F3F6),
-    editor_tab_add_icon = Color(0xFF1A1D23),
-    editor_tab_separator = Color(0xFFE0E3E8),
+    editor_bg = Color(0xFF1B1C1F),
+    editor_text = Color(0xFFE9E9EC),
+    editor_hint = Color(0xFFA0A1AA),
+    editor_icon = Color(0xFF5CCFE6),
+    editor_toolbar_icon = Color(0xFFA0A1AA),
+    editor_panel_overlay = Color(0xD1161719),
+    editor_button_bg = Color(0xFF2B2C31),
+    editor_tab_add_icon = Color(0xFFE9E9EC),
+    editor_tab_separator = Color(0x17FFFFFF),
     editor_tab_selected_bg = Color(0x00000000),
-    editor_tab_unselected_bg = Color(0xFFF1F3F6),
-    editor_tab_selected_icon = Color(0xFF1F54E8),
-    editor_tab_selected_text = Color(0xFF1A1D23),
-    editor_tab_unselected_content = Color(0xFF5F6571),
-    editor_sidebar_selected_bg = Color(0x291F54E8),
-    editor_divider = Color(0x4DE0E3E8),
-    editor_line_divider = Color(0x2EE0E3E8)
+    editor_tab_unselected_bg = Color(0xFF232428),
+    editor_tab_selected_icon = Color(0xFF5CCFE6),
+    editor_tab_selected_text = Color(0xFFE9E9EC),
+    editor_tab_unselected_content = Color(0xFFA0A1AA),
+    editor_sidebar_selected_bg = Color(0x295CCFE6),
+    editor_divider = Color(0x1FFFFFFF),
+    editor_line_divider = Color(0x12FFFFFF)
+)
+
+// ===== 浅色模式（CodeAssist lightColors · Teal 强调） =====
+// bg #ECEBE7 暖米白 · surface #FFFFFF/#F4F3EF/#E8E7E1 · editor #FAF9F6
+// ink #1D1E22 · ink-2 #62636B · muted #97989F · accent #1C9BBD · 分隔线 黑 9%/14%/6%
+val light_app_colors = app_colors(
+    // ===== 背景（纯色，无渐变） =====
+    gradient_start = Color(0xFFECEBE7),
+    gradient_middle = Color(0xFFECEBE7),
+    gradient_end = Color(0xFFECEBE7),
+
+    // ===== 文字 =====
+    title_large = Color(0xFF1D1E22),
+    title_highlight = Color(0xFF1C9BBD),
+    subtitle = Color(0xFF62636B),
+    section_title = Color(0xFF62636B),
+
+    // ===== 卡片 =====
+    card_bg = Color(0xFFFFFFFF),
+    card_pressed = Color(0xFFE8E7E1),
+    card_text_title = Color(0xFF1D1E22),
+    card_text_subtitle = Color(0xFF62636B),
+    card_icon_bg = Color(0xFF1C9BBD),
+    card_chevron = Color(0xFF97989F),
+
+    // ===== 顶部栏 & Logo =====
+    logo_tint = Color(0xFF1D1E22),
+    top_button_bg = Color(0xFFF4F3EF),
+    top_button_icon = Color(0xFF62636B),
+
+    // ===== 搜索 & 输入框 =====
+    search_button_active = Color(0xFF1C9BBD),
+    search_button_bg_active = Color(0x261C9BBD),
+    input_hint = Color(0xFF62636B),
+    input_text = Color(0xFF1D1E22),
+    input_border = Color(0xFF1C9BBD),
+
+    // ===== 弹窗 =====
+    dialog_bg = Color(0xFFFCFBF9),
+    dialog_text = Color(0xFF1D1E22),
+    dialog_hint = Color(0xFF62636B),
+    dialog_icon = Color(0xFF1C9BBD),
+    dialog_cancel = Color(0xFF1C9BBD),
+    dialog_clone_bg = Color(0xFF1C9BBD),
+    dialog_clone_text = Color(0xFFFFFFFF),
+    dialog_card_bg = Color(0xFFECEBE7),
+    dialog_input_bg = Color(0xFFFFFFFF),
+    dialog_input_text = Color(0xFF1D1E22),
+    dialog_input_hint = Color(0xFF62636B),
+    dialog_input_border = Color(0xFF1C9BBD),
+    dialog_input_icon = Color(0xFF1C9BBD),
+    dialog_input_icon_hint = Color(0xFF62636B),
+
+    // ===== 状态色 =====
+    danger = Color(0xFFDF4A45),
+    danger_bg = Color(0x1FDF4A45),
+    success = Color(0xFF29A847),
+    success_bg = Color(0x1F29A847),
+    warning = Color(0xFFD98300),
+    warning_bg = Color(0x1FD98300),
+    info = Color(0xFF2399B8),
+    info_bg = Color(0x1F2399B8),
+
+    // ===== 终端 =====
+    terminal_cursor = 0xFF1C9BBD.toInt(),
+    terminal_foreground = 0xFF1D1E22.toInt(),
+    terminal_background = 0xFFFAF9F6.toInt(),
+    key_button_pressed_bg = Color(0xFFE8E7E1),
+    key_button_pressed_text = Color(0xFF1D1E22),
+    key_button_normal_text = Color(0xFF62636B),
+    key_button_active_text = Color(0xFF1C9BBD),
+    terminal_tab_add_icon = Color(0xFF1D1E22),
+    terminal_tab_separator = Color(0x17000000),
+    terminal_tab_selected_bg = Color(0x00000000),
+    terminal_tab_unselected_bg = Color(0xFFF4F3EF),
+    terminal_tab_selected_icon = Color(0xFF1C9BBD),
+    terminal_tab_selected_text = Color(0xFF1D1E22),
+    terminal_tab_unselected_content = Color(0xFF62636B),
+
+    // ===== 编辑器 =====
+    editor_bg = Color(0xFFFAF9F6),
+    editor_text = Color(0xFF1D1E22),
+    editor_hint = Color(0xFF62636B),
+    editor_icon = Color(0xFF1C9BBD),
+    editor_toolbar_icon = Color(0xFF62636B),
+    editor_panel_overlay = Color(0xD1ECEBE7),
+    editor_button_bg = Color(0xFFF4F3EF),
+    editor_tab_add_icon = Color(0xFF1D1E22),
+    editor_tab_separator = Color(0x17000000),
+    editor_tab_selected_bg = Color(0x00000000),
+    editor_tab_unselected_bg = Color(0xFFF4F3EF),
+    editor_tab_selected_icon = Color(0xFF1C9BBD),
+    editor_tab_selected_text = Color(0xFF1D1E22),
+    editor_tab_unselected_content = Color(0xFF62636B),
+    editor_sidebar_selected_bg = Color(0x261C9BBD),
+    editor_divider = Color(0x1F000000),
+    editor_line_divider = Color(0x0F000000)
 )

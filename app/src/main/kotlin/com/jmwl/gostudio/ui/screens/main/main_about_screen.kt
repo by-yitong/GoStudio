@@ -2,7 +2,6 @@ package com.jmwl.gostudio.ui.screens.main
 
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,15 +17,13 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
-import androidx.compose.material.icons.filled.Campaign
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.Forum
+import androidx.compose.material.icons.filled.SystemUpdateAlt
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -43,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jmwl.gostudio.BuildConfig
 import com.jmwl.gostudio.R
+import com.jmwl.gostudio.ui.components.sub_page_top_bar
 import com.jmwl.gostudio.ui.theme.app_colors
 import com.jmwl.gostudio.ui.theme.app_theme_provider
 
@@ -52,129 +50,106 @@ fun main_about_screen(
 ) {
     val colors = app_theme_provider.colors
     val version_text = "v${BuildConfig.VERSION_NAME}-arm64-v8a"
-    val android_text = "Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})"
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 30.dp)
     ) {
-        Spacer(modifier = Modifier.height(30.dp))
+        sub_page_top_bar("关于", on_back)
 
-        Surface(
-            modifier = Modifier.size(48.dp),
-            shape = CircleShape,
-            color = colors.top_button_bg,
-            onClick = on_back
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "返回",
-                    tint = colors.top_button_icon,
-                    modifier = Modifier.size(24.dp)
+        Column(modifier = Modifier.padding(horizontal = 30.dp)) {
+            Spacer(modifier = Modifier.height(18.dp))
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Surface(
+                    modifier = Modifier.size(88.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    color = colors.card_bg
+                ) {
+                    // 软件启动图标：背景铺满 + 前景放大 1.35×（抵消前景 PNG 自带安全边距），超出部分由 Surface 圆角裁掉
+                    Box(contentAlignment = Alignment.Center) {
+                        Image(
+                            painter = painterResource(R.drawable.ic_launcher_background),
+                            contentDescription = null,
+                            modifier = Modifier.matchParentSize()
+                        )
+                        Image(
+                            painter = painterResource(R.mipmap.ic_launcher_foreground),
+                            contentDescription = "GoStudio",
+                            modifier = Modifier.size(120.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Text(
+                    text = "GoStudio",
+                    fontSize = 28.sp,
+                    lineHeight = 32.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = colors.card_text_title,
+                    textAlign = TextAlign.Center
                 )
-            }
-        }
 
-        Spacer(modifier = Modifier.height(34.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
-       Text(
-           text = "关于",
-           fontSize = 34.sp,
-           fontWeight = FontWeight.Bold,
-            color = colors.title_large
-       )
-       Spacer(modifier = Modifier.height(4.dp))
-       Text(
-            text = "Go 语言集成开发环境",
-           fontSize = 14.sp,
-           fontWeight = FontWeight.Light,
-           color = colors.subtitle
-       )
-
-        Spacer(modifier = Modifier.height(42.dp))
-
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-           Surface(
-               modifier = Modifier.size(88.dp),
-                shape = RoundedCornerShape(12.dp),
-                color = colors.card_bg
-           ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_gostudio_logo),
-                        contentDescription = "GoStudio",
-                        modifier = Modifier.size(60.dp)
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = colors.card_bg
+                ) {
+                    Text(
+                        text = version_text,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.title_highlight,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)
                     )
                 }
-            }
 
-            Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-            Text(
-                text = "GoStudio",
-                fontSize = 28.sp,
-                lineHeight = 32.sp,
-                fontWeight = FontWeight.Bold,
-                color = colors.card_text_title,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-           Surface(
-                shape = RoundedCornerShape(8.dp),
-                color = colors.card_bg
-           ) {
-               Text(
-                   text = version_text,
-                    fontSize = 12.sp,
+                Text(
+                    text = "by yitong",
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = colors.title_highlight,
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)
+                    color = colors.title_highlight
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(28.dp))
 
-            Text(
-                text = "by 小陈在肝码",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = colors.title_highlight
+            about_section_title("链接", colors)
+            about_link_group(
+                colors = colors,
+                rows = listOf(
+                    about_link_item(
+                        Icons.Default.Code,
+                        "源代码",
+                        "github.com/by-yitong/GoStudio",
+                        "https://github.com/by-yitong/GoStudio"
+                    ),
+                    about_link_item(
+                        Icons.Default.BugReport,
+                        "问题反馈",
+                        "通过 GitHub Issues 提交问题",
+                        "https://github.com/by-yitong/GoStudio/issues"
+                    ),
+                    about_link_item(
+                        Icons.Default.SystemUpdateAlt,
+                        "更新发布",
+                        "GitHub Releases 下载最新版本",
+                        "https://github.com/by-yitong/GoStudio/releases"
+                    )
+                )
             )
+
+            Spacer(modifier = Modifier.height(38.dp))
         }
-
-        Spacer(modifier = Modifier.height(28.dp))
-
-        about_section_title("设备信息", colors)
-        about_info_group(
-            rows = listOf(
-                "设备" to Build.BRAND + " " + Build.MODEL,
-                "型号" to Build.DEVICE,
-                "系统" to android_text
-            ),
-            colors = colors
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        about_section_title("链接", colors)
-        about_link_group(
-            colors = colors,
-            rows = listOf(
-                about_link_item(Icons.Default.Code, "源代码", "https://github.com", "https://github.com"),
-                about_link_item(Icons.Default.Forum, "官方群", "https://github.com", "https://github.com"),
-                about_link_item(Icons.Default.Campaign, "官方频道", "https://github.com", "https://github.com")
-            )
-        )
-
-        Spacer(modifier = Modifier.height(38.dp))
     }
 }
 
@@ -194,68 +169,6 @@ private fun about_section_title(
            .padding(bottom = 12.dp),
         textAlign = TextAlign.Start
    )
-}
-
-@Composable
-private fun about_info_group(
-    rows: List<Pair<String, String>>,
-    colors: app_colors
-) {
-    Column(
-        modifier = Modifier
-           .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-   ) {
-       rows.forEachIndexed { index, row ->
-           about_info_row(
-                label = row.first,
-                value = row.second,
-                colors = colors,
-                shape = about_group_item_shape(
-                    is_top = index == 0,
-                    is_bottom = index == rows.lastIndex
-                )
-            )
-            if (index < rows.lastIndex) {
-                Spacer(modifier = Modifier.height(1.dp))
-            }
-        }
-    }
-}
-
-@Composable
-private fun about_info_row(
-    label: String,
-    value: String,
-    colors: app_colors,
-    shape: RoundedCornerShape
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-           .clip(shape)
-            .background(colors.card_bg)
-           .heightIn(min = 48.dp)
-            .padding(horizontal = 14.dp, vertical = 7.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Text(
-            text = label,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Light,
-            color = colors.card_text_subtitle,
-            modifier = Modifier.weight(1f)
-        )
-        Text(
-            text = value,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
-            color = colors.card_text_title,
-            textAlign = TextAlign.End,
-            modifier = Modifier.weight(1.25f)
-        )
-    }
 }
 
 private data class about_link_item(

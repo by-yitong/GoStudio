@@ -1,0 +1,196 @@
+{
+  "name": "GoStudio Light",
+  "colors": {
+    "editor.background": "#FAFBFC",
+    "editor.foreground": "#242B33",
+    "editorCursor.foreground": "#1F6FEB",
+    "editor.selectionHandleBackground": "#1F6FEB",
+    "editor.selectionBackground": "#B9D7F7",
+    "editor.lineHighlightBackground": "#EFF3F7",
+    "editor.findMatchBackground": "#1F6FEB26",
+    "editor.findMatchBorder": "#1F6FEB",
+    "editor.findMatchHighlightBackground": "#E8A33D30",
+    "editor.findMatchHighlightBorder": "#B7791F",
+    "highlightedDelimitersForeground": "#B7791F",
+    "editorIndentGuide.background": "#E2E7ED",
+    "editorIndentGuide.activeBackground": "#1F6FEB66",
+    "editorSideBlockLine.foreground": "#1F6FEB",
+    "editorWhitespace.foreground": "#D3DAE2",
+    "editorLineNumber.foreground": "#9AA7B5",
+    "editorLineNumber.activeForeground": "#1F6FEB",
+    "editor.lineDivider": "#00000000",
+    "scrollbarSlider.background": "#8A99A866",
+    "scrollbarSlider.activeBackground": "#5B87C7",
+    "editor.wordHighlightBackground": "#1F6FEB1F",
+    "editor.wordHighlightStrongBackground": "#E8A33D3D",
+    "editorError.foreground": "#D73A49",
+    "editorWarning.foreground": "#B7791F",
+    "editorInfo.foreground": "#1F6FEB",
+    "editorSuggestWidget.background": "#FFFFFF",
+    "editorSuggestWidget.foreground": "#242B33",
+    "editorSuggestWidget.highlightForeground": "#1F6FEB",
+    "editorSuggestWidget.selectedBackground": "#E8F0FB",
+    "tooltipBackground": "#FFFFFF",
+    "tooltipBriefMessageColor": "#1A1D23",
+    "tooltipDetailedMessageColor": "#5F6571",
+    "tooltipActionColor": "#1F6FEB"
+  },
+  "tokenColors": [
+    {
+      "name": "注释",
+      "scope": ["comment", "punctuation.definition.comment"],
+      "settings": { "foreground": "#8A97A3", "fontStyle": "italic" }
+    },
+    {
+      "name": "文档注释",
+      "scope": ["comment.block.documentation"],
+      "settings": { "foreground": "#76858F", "fontStyle": "italic" }
+    },
+    {
+      "name": "TODO/FIXME",
+      "scope": ["comment.todo", "keyword.codetag.notation", "storage.type.class.doxygen"],
+      "settings": { "foreground": "#D9633A", "fontStyle": "bold" }
+    },
+    {
+      "name": "关键字",
+      "scope": ["keyword", "keyword.control", "keyword.control.conditional", "keyword.control.loop", "keyword.control.switch", "keyword.control.trycatch", "keyword.control.return", "keyword.control.import", "keyword.other"],
+      "settings": { "foreground": "#D1493B" }
+    },
+    {
+      "name": "声明与存储类型",
+      "scope": ["storage", "storage.type", "storage.type.primitive", "storage.type.built-in", "storage.type.class", "storage.type.struct", "storage.type.enum", "storage.type.union", "storage.type.namespace", "storage.modifier"],
+      "settings": { "foreground": "#8E44AD" }
+    },
+    {
+      "name": "限定修饰符",
+      "scope": ["storage.modifier.const", "storage.modifier.static", "storage.modifier.inline", "storage.modifier.extern", "storage.modifier.mutable", "storage.modifier.volatile", "storage.modifier.register"],
+      "settings": { "foreground": "#6C4FD8" }
+    },
+    {
+      "name": "运算符",
+      "scope": ["keyword.operator", "keyword.operator.assignment", "keyword.operator.arithmetic", "keyword.operator.bitwise", "keyword.operator.comparison", "keyword.operator.logical", "keyword.operator.pointer", "keyword.operator.sizeof", "keyword.operator.wordlike"],
+      "settings": { "foreground": "#0E87A8" }
+    },
+    {
+      "name": "字符串",
+      "scope": ["string", "string.quoted", "string.quoted.double", "string.quoted.single", "string.quoted.raw"],
+      "settings": { "foreground": "#338A3E" }
+    },
+    {
+      "name": "字符与转义",
+      "scope": ["constant.character", "constant.character.escape"],
+      "settings": { "foreground": "#B7791F" }
+    },
+    {
+      "name": "格式化占位符",
+      "scope": ["constant.other.placeholder"],
+      "settings": { "foreground": "#C95F3D" }
+    },
+    {
+      "name": "数字",
+      "scope": ["constant.numeric", "constant.numeric.integer", "constant.numeric.float", "constant.numeric.hex", "constant.numeric.binary", "constant.numeric.octal"],
+      "settings": { "foreground": "#B06E1F" }
+    },
+    {
+      "name": "语言常量",
+      "scope": ["constant.language", "constant.language.boolean", "constant.language.null"],
+      "settings": { "foreground": "#C76B29" }
+    },
+    {
+      "name": "内置变量",
+      "scope": ["variable.language", "variable.language.this", "variable.language.self"],
+      "settings": { "foreground": "#C25B4E" }
+    },
+    {
+      "name": "函数声明",
+      "scope": ["entity.name.function", "entity.name.function.definition", "meta.function.definition entity.name.function"],
+      "settings": { "foreground": "#0F8A72" }
+    },
+    {
+      "name": "函数调用",
+      "scope": ["meta.function-call", "meta.function-call entity.name.function", "support.function", "support.function.std"],
+      "settings": { "foreground": "#2B62D9" }
+    },
+    {
+      "name": "函数参数",
+      "scope": ["variable.parameter", "meta.function.parameters variable.parameter"],
+      "settings": { "foreground": "#96691A" }
+    },
+    {
+      "name": "类型名",
+      "scope": ["entity.name.type", "entity.name.type.class", "entity.name.type.struct", "entity.name.type.enum", "entity.name.type.union", "support.type", "support.type.std"],
+      "settings": { "foreground": "#108070" }
+    },
+    {
+      "name": "类/结构/枚举名",
+      "scope": ["entity.name.class", "entity.name.struct", "entity.name.enum", "entity.name.union", "support.class", "support.class.std"],
+      "settings": { "foreground": "#3567C9" }
+    },
+    {
+      "name": "命名空间",
+      "scope": ["entity.name.namespace", "entity.name.scope-resolution", "support.namespace", "punctuation.separator.scope-resolution"],
+      "settings": { "foreground": "#6C4FD8" }
+    },
+    {
+      "name": "变量",
+      "scope": ["variable", "variable.other", "variable.other.readwrite"],
+      "settings": { "foreground": "#242B33" }
+    },
+    {
+      "name": "成员变量/字段",
+      "scope": ["variable.other.member", "variable.other.property", "variable.other.field", "meta.member.access"],
+      "settings": { "foreground": "#1272AC" }
+    },
+    {
+      "name": "常量变量",
+      "scope": ["variable.other.constant", "constant.other", "constant.other.symbol"],
+      "settings": { "foreground": "#C95F3D" }
+    },
+    {
+      "name": "预处理指令",
+      "scope": ["meta.preprocessor", "keyword.control.directive", "keyword.control.import.include", "punctuation.definition.directive"],
+      "settings": { "foreground": "#8E44AD" }
+    },
+    {
+      "name": "宏名",
+      "scope": ["entity.name.function.preprocessor", "constant.other.preprocessor", "meta.preprocessor.macro entity.name.function"],
+      "settings": { "foreground": "#B7791F" }
+    },
+    {
+      "name": "头文件路径",
+      "scope": ["string.quoted.other.lt-gt.include", "string.quoted.double.include", "meta.preprocessor.include string"],
+      "settings": { "foreground": "#338A3E" }
+    },
+    {
+      "name": "模板/泛型",
+      "scope": ["meta.template", "meta.template.arguments", "entity.name.type.template", "punctuation.section.angle-brackets"],
+      "settings": { "foreground": "#6C4FD8" }
+    },
+    {
+      "name": "标点符号",
+      "scope": ["punctuation", "punctuation.terminator", "punctuation.separator"],
+      "settings": { "foreground": "#6E7B88" }
+    },
+    {
+      "name": "括号",
+      "scope": ["punctuation.section", "punctuation.section.block", "punctuation.section.parens", "punctuation.section.brackets"],
+      "settings": { "foreground": "#3D454D" }
+    },
+    {
+      "name": "属性/注解",
+      "scope": ["storage.type.attribute", "meta.attribute", "entity.other.attribute-name"],
+      "settings": { "foreground": "#B7791F" }
+    },
+    {
+      "name": "标签",
+      "scope": ["entity.name.label", "variable.other.label"],
+      "settings": { "foreground": "#C76B29" }
+    },
+
+    {
+      "name": "无效代码",
+      "scope": "invalid",
+      "settings": { "foreground": "#FFFFFF", "background": "#D73A49" }
+    }
+  ]
+}

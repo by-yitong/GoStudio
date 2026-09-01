@@ -63,6 +63,19 @@ suspend fun install_go_toolchain(
     false
 }
 
+/**
+ * 测速并把 rootfs 的 apk 源切到最快镜像。
+ *
+ * 安装页第一条 apk 命令（基础包）之前也要调用——minirootfs 自带的源指向官方
+ * dl-cdn，国内直连不稳定；不先切镜像，基础包就会在官方源上 DNS/超时失败。
+ */
+suspend fun configure_best_apk_mirror(onLog: (String) -> Unit) {
+    val ranked = MirrorSpeedTest.testAndSort()
+    val best = ranked.firstOrNull { it.latencyMs != null } ?: return
+    onLog("使用 ${best.candidate.name} 配置 apk 源...")
+    ApkMirrorConfig.applyMirror(toolchain_runtime_provider.paths().rootfs_dir, best.candidate)
+}
+
 /** 单独安装/重装 Go（go 包）。 */
 suspend fun install_go(
     onLog: (String) -> Unit,
@@ -160,7 +173,9 @@ private suspend fun apk_update_and_install_go(
     onLog("安装 Go / git（可能需要数分钟）...")
     onProgress(40)
     val apk_ok = proot_manager.execute_command_with_environment(
-        command = "apk add $GO_PACKAGES",
+        // apk fix go：包数据库标记"已装"但文件缺失时（安装中途进程被杀留下的事务残骸）
+        // apk add 视为无操作，fix 会校验并补齐缺失文件。对完好的包是无操作。
+        command = "apk add $GO_PACKAGES && apk fix go",
         working_dir = "/root",
         on_log = { onLog(it) }
     )

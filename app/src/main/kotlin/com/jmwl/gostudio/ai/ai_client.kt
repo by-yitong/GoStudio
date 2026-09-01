@@ -40,6 +40,13 @@ class ai_client(
         .writeTimeout(30, TimeUnit.SECONDS)
         .build()
 
+    /** 连接测试专用：短超时，避免坏端点把测试卡到两分钟 */
+    private val test_client = OkHttpClient.Builder()
+        .connectTimeout(10, TimeUnit.SECONDS)
+        .readTimeout(20, TimeUnit.SECONDS)
+        .callTimeout(25, TimeUnit.SECONDS)
+        .build()
+
     suspend fun stream_chat(
         messages: List<ai_message>,
         tools: List<Map<String, Any>>,
@@ -84,6 +91,58 @@ class ai_client(
             return data.mapNotNull { elem ->
                 runCatching { elem.asJsonObject.get("id")?.takeIf { !it.isJsonNull }?.asString }.getOrNull()
             }.filter { it.isNotBlank() }.sorted()
+        }
+    }
+
+    /**
+     * 连接测试（参考 OpenMinis 的 ModelQuickTestSheet）：发一条最小非流式请求，
+     * 确认「这个模型 + 这把密钥」真的能用。返回 (回复文本, 耗时毫秒)；失败抛异常。
+     */
+    fun quick_test(): Pair<String, Long> {
+        val started = System.currentTimeMillis()
+        if (settings.provider == ai_provider.ANTHROPIC) {
+            val payload = linkedMapOf<String, Any>(
+                "model" to settings.model,
+                "max_tokens" to 64,
+                "messages" to listOf(mapOf("role" to "user", "content" to "连接测试，请只回复两个字：可用"))
+            )
+            val request = Request.Builder()
+                .url(settings.base_url.trimEnd('/') + "/messages")
+                .header("x-api-key", settings.api_key)
+                .header("anthropic-version", "2023-06-01")
+                .header("Content-Type", "application/json")
+                .post(gson.toJson(payload).toRequestBody(json_media_type))
+                .build()
+            test_client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    throw RuntimeException("${response.code}: ${response.body?.string()?.take(300) ?: response.message}")
+                }
+                val json = JsonParser.parseString(response.body?.string() ?: "").asJsonObject
+                val text = json.getAsJsonArray("content")
+                    ?.mapNotNull { c -> c.asJsonObject.get("text")?.takeIf { !it.isJsonNull }?.asString }
+                    ?.joinToString("") ?: ""
+                return text.trim() to (System.currentTimeMillis() - started)
+            }
+        }
+        val payload = linkedMapOf<String, Any>(
+            "model" to settings.model,
+            "max_tokens" to 64,
+            "messages" to listOf(mapOf("role" to "user", "content" to "连接测试，请只回复两个字：可用"))
+        )
+        val request = Request.Builder()
+            .url(settings.base_url.trimEnd('/') + "/chat/completions")
+            .header("Authorization", "Bearer ${settings.api_key}")
+            .header("Content-Type", "application/json")
+            .post(gson.toJson(payload).toRequestBody(json_media_type))
+            .build()
+        test_client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                throw RuntimeException("${response.code}: ${response.body?.string()?.take(300) ?: response.message}")
+            }
+            val json = JsonParser.parseString(response.body?.string() ?: "").asJsonObject
+            val text = json.getAsJsonArray("choices")?.firstOrNull()?.asJsonObject
+                ?.getAsJsonObject("message")?.get("content")?.takeIf { !it.isJsonNull }?.asString ?: ""
+            return text.trim() to (System.currentTimeMillis() - started)
         }
     }
 

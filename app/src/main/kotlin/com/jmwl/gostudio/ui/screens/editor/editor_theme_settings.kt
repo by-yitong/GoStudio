@@ -24,7 +24,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material3.Button
@@ -39,6 +38,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -61,7 +61,9 @@ import com.jmwl.gostudio.editor.theme.editor_theme_preview_palette
 import com.jmwl.gostudio.editor.theme.editor_theme_manager
 import com.jmwl.gostudio.ui.dialogs.editor.editor_theme_color_dialog
 import com.jmwl.gostudio.ui.dialogs.editor.editor_theme_reset_dialog
+import com.jmwl.gostudio.ui.components.sub_page_top_bar
 import com.jmwl.gostudio.ui.theme.app_theme_provider
+import com.jmwl.gostudio.ui.theme.theme_manager
 
 @Composable
 fun editor_theme_settings_screen(
@@ -71,7 +73,8 @@ fun editor_theme_settings_screen(
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        containerColor = Color.Transparent
+        containerColor = Color.Transparent,
+        topBar = { sub_page_top_bar("编辑器主题", on_back) }
     ) { padding_values ->
         Column(
             modifier = Modifier
@@ -79,58 +82,7 @@ fun editor_theme_settings_screen(
                 .padding(padding_values)
                 .verticalScroll(rememberScrollState())
         ) {
-            Spacer(modifier = Modifier.height(30.dp))
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 18.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Surface(
-                    modifier = Modifier.size(35.dp),
-                    shape = CircleShape,
-                    color = colors.top_button_bg,
-                    onClick = on_back
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "返回",
-                            tint = colors.top_button_icon,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.size(35.dp))
-            }
-
-            Spacer(modifier = Modifier.height(30.dp))
-
-            Column(
-                horizontalAlignment = Alignment.Start,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 18.dp)
-            ) {
-                Text(
-                    text = "编辑器主题",
-                    fontSize = 30.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = colors.title_highlight
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "颜色设置",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Light,
-                    color = colors.subtitle
-                )
-            }
-
-            Spacer(modifier = Modifier.height(30.dp))
+            Spacer(modifier = Modifier.height(18.dp))
 
             editor_theme_color_section(
                 modifier = Modifier
@@ -149,18 +101,20 @@ internal fun editor_theme_color_section(
 ) {
     val context = LocalContext.current
     val colors = app_theme_provider.colors
-    var color_items by remember { mutableStateOf(editor_theme_manager.load_color_items(context)) }
-    var token_color_items by remember { mutableStateOf(editor_theme_manager.load_token_color_items(context)) }
-    var preview_palette by remember { mutableStateOf(editor_theme_manager.load_preview_palette(context)) }
+    val theme_type by theme_manager.theme.collectAsState()
+    val is_dark = theme_manager.resolve_is_dark(context, theme_type)
+    var color_items by remember(is_dark) { mutableStateOf(editor_theme_manager.load_color_items(context, is_dark)) }
+    var token_color_items by remember(is_dark) { mutableStateOf(editor_theme_manager.load_token_color_items(context, is_dark)) }
+    var preview_palette by remember(is_dark) { mutableStateOf(editor_theme_manager.load_preview_palette(context, is_dark)) }
     var editing_color_item by remember { mutableStateOf<editor_theme_color_item?>(null) }
     var editing_token_item by remember { mutableStateOf<editor_theme_token_color_item?>(null) }
     var reset_requested by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(is_dark) {
         editor_theme_manager.version.collect {
-            color_items = editor_theme_manager.load_color_items(context)
-            token_color_items = editor_theme_manager.load_token_color_items(context)
-            preview_palette = editor_theme_manager.load_preview_palette(context)
+            color_items = editor_theme_manager.load_color_items(context, is_dark)
+            token_color_items = editor_theme_manager.load_token_color_items(context, is_dark)
+            preview_palette = editor_theme_manager.load_preview_palette(context, is_dark)
         }
     }
 
@@ -266,11 +220,11 @@ internal fun editor_theme_color_section(
             value = item.value,
             on_dismiss = { editing_color_item = null },
             on_save = { value ->
-                val saved = editor_theme_manager.update_color(context, item.key, value)
+                val saved = editor_theme_manager.update_color(context, is_dark, item.key, value)
                 if (saved) {
-                    color_items = editor_theme_manager.load_color_items(context)
-                    token_color_items = editor_theme_manager.load_token_color_items(context)
-                    preview_palette = editor_theme_manager.load_preview_palette(context)
+                    color_items = editor_theme_manager.load_color_items(context, is_dark)
+                    token_color_items = editor_theme_manager.load_token_color_items(context, is_dark)
+                    preview_palette = editor_theme_manager.load_preview_palette(context, is_dark)
                     editing_color_item = null
                     app_toast.show(context, "颜色已保存", app_toast.LENGTH_SHORT)
                 } else {
@@ -287,10 +241,10 @@ internal fun editor_theme_color_section(
             value = item.value,
             on_dismiss = { editing_token_item = null },
             on_save = { value ->
-                val saved = editor_theme_manager.update_token_color(context, item.index, value)
+                val saved = editor_theme_manager.update_token_color(context, is_dark, item.index, value)
                 if (saved) {
-                    token_color_items = editor_theme_manager.load_token_color_items(context)
-                    preview_palette = editor_theme_manager.load_preview_palette(context)
+                    token_color_items = editor_theme_manager.load_token_color_items(context, is_dark)
+                    preview_palette = editor_theme_manager.load_preview_palette(context, is_dark)
                     editing_token_item = null
                     app_toast.show(context, "颜色已保存", app_toast.LENGTH_SHORT)
                 } else {
@@ -305,11 +259,11 @@ internal fun editor_theme_color_section(
             on_dismiss = { reset_requested = false },
             on_confirm = {
                 reset_requested = false
-                val reset = editor_theme_manager.reset_to_default(context)
+                val reset = editor_theme_manager.reset_to_default(context, is_dark)
                 if (reset) {
-                    color_items = editor_theme_manager.load_color_items(context)
-                    token_color_items = editor_theme_manager.load_token_color_items(context)
-                    preview_palette = editor_theme_manager.load_preview_palette(context)
+                    color_items = editor_theme_manager.load_color_items(context, is_dark)
+                    token_color_items = editor_theme_manager.load_token_color_items(context, is_dark)
+                    preview_palette = editor_theme_manager.load_preview_palette(context, is_dark)
                     app_toast.show(context, "编辑器颜色已恢复默认", app_toast.LENGTH_SHORT)
                 } else {
                     app_toast.show(context, "恢复默认失败", app_toast.LENGTH_SHORT)

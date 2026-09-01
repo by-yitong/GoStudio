@@ -6,11 +6,9 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.jmwl.gostudio.ui.components.sub_page_top_bar
 import com.jmwl.gostudio.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,7 +43,8 @@ fun main_theme_settings_screen(
     
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        containerColor = Color.Transparent
+        containerColor = Color.Transparent,
+        topBar = { sub_page_top_bar("主题设置", on_back) }
     ) { padding_values ->
         Column(
             modifier = Modifier
@@ -52,58 +52,7 @@ fun main_theme_settings_screen(
                 .padding(padding_values)
                 .verticalScroll(rememberScrollState())
         ) {
-            Spacer(modifier = Modifier.height(30.dp))
-            
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 18.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Surface(
-                    modifier = Modifier.size(35.dp),
-                    shape = CircleShape,
-                    color = colors.top_button_bg,
-                    onClick = on_back
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "返回",
-                            tint = colors.top_button_icon,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                }
-                
-                Spacer(modifier = Modifier.size(35.dp))
-            }
-            
-            Spacer(modifier = Modifier.height(30.dp))
-            
-            Column(
-                horizontalAlignment = Alignment.Start,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 18.dp)
-            ) {
-                Text(
-                    text = "主题",
-                    fontSize = 30.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = colors.title_highlight
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "设置",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Light,
-                    color = colors.subtitle
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(30.dp))
+            Spacer(modifier = Modifier.height(18.dp))
             
             Column(
                 modifier = Modifier

@@ -42,6 +42,7 @@ fun install_screen(
     is_extracting: Boolean,
     is_configuring: Boolean,
     current_progress: Float,
+    elapsed_seconds: Long = 0,
     on_export_logs: () -> Unit
 ) {
     val list_state = rememberLazyListState()
@@ -94,12 +95,21 @@ fun install_screen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "安装日志",
-                        fontSize = 11.sp,
-                        color = colors.card_text_subtitle,
-                        fontFamily = FontFamily.Monospace
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "安装日志",
+                            fontSize = 11.sp,
+                            color = colors.card_text_subtitle,
+                            fontFamily = FontFamily.Monospace
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = format_elapsed(elapsed_seconds),
+                            fontSize = 11.sp,
+                            color = colors.card_text_subtitle.copy(alpha = 0.7f),
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
 
                     IconButton(onClick = on_export_logs, modifier = Modifier.size(24.dp)) {
                         Icon(
@@ -144,4 +154,12 @@ fun install_screen(
             )
         }
     }
+}
+
+/** 秒数 → "mm:ss"，超过 1 小时 → "h:mm:ss"。 */
+private fun format_elapsed(seconds: Long): String {
+    val h = seconds / 3600
+    val m = (seconds % 3600) / 60
+    val s = seconds % 60
+    return if (h > 0) "%d:%02d:%02d".format(h, m, s) else "%02d:%02d".format(m, s)
 }

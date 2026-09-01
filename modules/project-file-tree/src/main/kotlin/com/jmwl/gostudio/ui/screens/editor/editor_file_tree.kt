@@ -5,7 +5,6 @@ import com.jmwl.gostudio.editor.model.editor_file_node
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
@@ -13,9 +12,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -59,26 +56,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 
-private const val FILE_TREE_SEARCH_RESULT_LIMIT = 24
-private const val FILE_TREE_SEARCH_SCAN_LIMIT = 1500
-private const val FILE_TREE_CONTENT_MAX_BYTES = 256 * 1024L
-
-private enum class file_tree_search_mode { FILE, CONTENT }
-
-private data class file_tree_search_result(
-    val name: String,
-    val path: String,
-    val detail: String,
-    val line: Int? = null,
-    val column: Int = 0
-)
-
-private data class file_tree_content_match(
-    val line: Int,
-    val column: Int,
-    val preview: String
-)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun file_tree_panel(
@@ -98,7 +75,6 @@ fun file_tree_panel(
     colors: project_file_tree_colors,
     modifier: Modifier = Modifier
 ) {
-    val focus_manager = LocalFocusManager.current
     val horizontal_scroll = rememberScrollState()
     val max_depth = nodes.maxOfOrNull { it.depth } ?: 0
     val tree_content_width = (520 + max_depth * 24).dp
@@ -108,12 +84,6 @@ fun file_tree_panel(
     var editing_name by remember { mutableStateOf("") }
     var panel_bounds by remember { mutableStateOf<Rect?>(null) }
     var rename_field_bounds by remember { mutableStateOf<Rect?>(null) }
-    var search_box_bounds by remember { mutableStateOf<Rect?>(null) }
-    var file_search_query by remember { mutableStateOf("") }
-    var file_search_mode by remember { mutableStateOf(file_tree_search_mode.FILE) }
-    var file_search_results by remember { mutableStateOf<List<file_tree_search_result>>(emptyList()) }
-    val trimmed_file_search_query = file_search_query.trim()
-
     fun cancel_rename() {
         editing_path = null
         editing_name = ""
@@ -123,19 +93,6 @@ fun file_tree_panel(
     LaunchedEffect(editing_path) {
         if (editing_path == null) {
             rename_field_bounds = null
-        }
-    }
-
-    LaunchedEffect(project_root_path, project_exists, trimmed_file_search_query, file_search_mode) {
-        if (!project_exists || trimmed_file_search_query.isBlank()) {
-            file_search_results = emptyList()
-            return@LaunchedEffect
-        }
-        file_search_results = emptyList()
-        file_search_results = withContext(Dispatchers.IO) {
-            runCatching {
-                search_file_tree(project_root_path, trimmed_file_search_query, file_search_mode)
-            }.getOrDefault(emptyList())
         }
     }
 
@@ -149,7 +106,7 @@ fun file_tree_panel(
     Box(
         modifier = modifier
             .onGloballyPositioned { panel_bounds = it.boundsInRoot() }
-            .pointerInput(editing_path, rename_field_bounds, search_box_bounds, panel_bounds) {
+            .pointerInput(editing_path, rename_field_bounds, panel_bounds) {
                 awaitPointerEventScope {
                     while (true) {
                         val event = awaitPointerEvent(PointerEventPass.Final)
@@ -165,11 +122,6 @@ fun file_tree_panel(
                             val input_bounds = rename_field_bounds
                             val clicked_rename_field = editing_path != null && input_bounds != null && input_bounds.contains(root_position)
 
-                            val search_bounds = search_box_bounds
-                            if (!clicked_rename_field && search_bounds != null && !search_bounds.contains(root_position)) {
-                                focus_manager.clearFocus()
-                            }
-
                             if (editing_path != null && !clicked_rename_field) {
                                 event.changes.forEach { it.consume() }
                                 cancel_rename()
@@ -180,25 +132,6 @@ fun file_tree_panel(
             }
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            file_tree_search_panel(
-                query = file_search_query,
-                mode = file_search_mode,
-                results = file_search_results,
-                on_query_change = { file_search_query = it },
-                on_mode_change = { file_search_mode = it },
-                on_search_box_bounds_change = { search_box_bounds = it },
-                on_result_click = { result ->
-                    val line = result.line
-                    if (line != null) {
-                        on_file_position_click(result.path, line, result.column)
-                    } else {
-                        on_file_click(result.path)
-                    }
-                },
-                colors = colors,
-                modifier = Modifier.fillMaxWidth()
-            )
-
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -300,291 +233,6 @@ fun file_tree_panel(
         }
 
     }
-}
-
-@Composable
-private fun file_tree_search_panel(
-    query: String,
-    mode: file_tree_search_mode,
-    results: List<file_tree_search_result>,
-    on_query_change: (String) -> Unit,
-    on_mode_change: (file_tree_search_mode) -> Unit,
-    on_search_box_bounds_change: (Rect?) -> Unit,
-    on_result_click: (file_tree_search_result) -> Unit,
-    colors: project_file_tree_colors,
-    modifier: Modifier = Modifier
-) {
-    val input_shape = RoundedCornerShape(8.dp)
-    var search_focused by remember { mutableStateOf(false) }
-    val next_mode = if (mode == file_tree_search_mode.FILE) file_tree_search_mode.CONTENT else file_tree_search_mode.FILE
-    val placeholder = if (mode == file_tree_search_mode.FILE) "搜索文件..." else "搜索内容..."
-
-    DisposableEffect(Unit) {
-        onDispose { on_search_box_bounds_change(null) }
-    }
-
-    Column(
-        modifier = modifier.padding(start = 10.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(34.dp)
-                .onGloballyPositioned { on_search_box_bounds_change(it.boundsInRoot()) }
-                .clip(input_shape)
-                .background(colors.editor_button_bg)
-                .then(if (search_focused) Modifier.border(1.dp, colors.editor_icon, input_shape) else Modifier)
-                .padding(start = 9.dp, end = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Default.Search,
-                contentDescription = null,
-                tint = colors.editor_hint,
-                modifier = Modifier.size(16.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Box(
-                modifier = Modifier.weight(1f),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                if (query.isBlank()) {
-                    Text(
-                        text = placeholder,
-                        color = colors.editor_hint,
-                        fontSize = 12.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-                BasicTextField(
-                    value = query,
-                    onValueChange = on_query_change,
-                    singleLine = true,
-                    textStyle = TextStyle(color = colors.editor_text, fontSize = 12.sp),
-                    cursorBrush = SolidColor(colors.editor_icon),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .onFocusChanged { search_focused = it.isFocused }
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .size(28.dp)
-                    .clip(CircleShape)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = ripple(bounded = true),
-                        onClick = { on_mode_change(next_mode) }
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.SwapHoriz,
-                    contentDescription = if (mode == file_tree_search_mode.FILE) "文件搜索" else "内容搜索",
-                    tint = if (mode == file_tree_search_mode.CONTENT) colors.editor_icon else colors.editor_hint,
-                    modifier = Modifier.size(17.dp)
-                )
-            }
-        }
-
-        if (results.isNotEmpty()) {
-            file_tree_search_results_card(
-                results = results,
-                on_result_click = on_result_click,
-                colors = colors,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-    }
-}
-
-@Composable
-private fun file_tree_search_results_card(
-    results: List<file_tree_search_result>,
-    on_result_click: (file_tree_search_result) -> Unit,
-    colors: project_file_tree_colors,
-    modifier: Modifier = Modifier
-) {
-
-    LazyColumn(
-        modifier = modifier
-            .heightIn(max = 168.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(colors.editor_button_bg)
-    ) {
-        itemsIndexed(results, key = { _, result -> result.path }) { index, result ->
-            Column(modifier = Modifier.fillMaxWidth()) {
-                if (index > 0) {
-                    HorizontalDivider(
-                        modifier = Modifier.padding(start = 34.dp, end = 10.dp),
-                        color = colors.editor_divider,
-                        thickness = 0.5.dp
-                    )
-                }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 40.dp)
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = ripple(bounded = true),
-                            onClick = { on_result_click(result) }
-                        )
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        painter = painterResource(editor_file_icon_res(result.name)),
-                        contentDescription = null,
-                        tint = Color.Unspecified,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text(
-                            text = result.name,
-                            color = colors.editor_text,
-                            fontSize = 12.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        val detail_parts = result.detail.split("\n", limit = 2)
-                        Text(
-                            text = detail_parts.first(),
-                            color = colors.editor_hint,
-                            fontSize = 10.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        detail_parts.getOrNull(1)?.let { preview ->
-                            Text(
-                                text = preview,
-                                color = colors.editor_hint,
-                                fontSize = 10.sp,
-                                lineHeight = 13.sp,
-                                maxLines = 3,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-private fun search_file_tree(
-    project_root_path: String,
-    query: String,
-    mode: file_tree_search_mode
-): List<file_tree_search_result> {
-    val root = File(project_root_path)
-    if (!root.isDirectory) return emptyList()
-    val files = collect_file_tree_search_files(root)
-    return when (mode) {
-        file_tree_search_mode.FILE -> search_file_tree_names(root, files, query)
-        file_tree_search_mode.CONTENT -> search_file_tree_content(root, files, query)
-    }
-}
-
-private fun search_file_tree_names(
-    root: File,
-    files: List<File>,
-    query: String
-): List<file_tree_search_result> {
-    return files.asSequence()
-        .filter { it.name.contains(query, ignoreCase = true) }
-        .take(FILE_TREE_SEARCH_RESULT_LIMIT)
-        .map { file ->
-            file_tree_search_result(
-                name = file.name,
-                path = file.absolutePath,
-                detail = file_tree_relative_path(root, file)
-            )
-        }
-        .toList()
-}
-
-private fun search_file_tree_content(
-    root: File,
-    files: List<File>,
-    query: String
-): List<file_tree_search_result> {
-    return files.asSequence()
-        .filter(::can_search_file_content)
-        .mapNotNull { file ->
-            find_file_tree_content_match(file, query)?.let { match ->
-                file_tree_search_result(
-                    name = file.name,
-                    path = file.absolutePath,
-                    detail = "${file_tree_relative_path(root, file)}  第${match.line + 1}行\n${match.preview}",
-                    line = match.line,
-                    column = match.column
-                )
-            }
-        }
-        .take(FILE_TREE_SEARCH_RESULT_LIMIT)
-        .toList()
-}
-
-private fun collect_file_tree_search_files(root: File): List<File> {
-    val files = mutableListOf<File>()
-
-    fun visit(dir: File) {
-        if (files.size >= FILE_TREE_SEARCH_SCAN_LIMIT) return
-        val children = dir.listFiles()
-            ?.filterNot { it.name.startsWith(".") }
-            ?.sortedWith(compareBy<File> { !it.isDirectory }.thenBy { it.name.lowercase() })
-            ?: return
-
-        for (child in children) {
-            if (files.size >= FILE_TREE_SEARCH_SCAN_LIMIT) return
-            if (child.isDirectory) {
-                visit(child)
-            } else {
-                files.add(child)
-            }
-        }
-    }
-
-    visit(root)
-    return files
-}
-
-private fun can_search_file_content(file: File): Boolean {
-    if (!file.isFile || file.length() > FILE_TREE_CONTENT_MAX_BYTES) return false
-    val name = file.name.lowercase()
-    return name.endsWith(".go") || name == "go.mod" || name == "go.sum" || name == "go.work" ||
-        name.endsWith(".txt") || name.endsWith(".md") ||
-        name.endsWith(".json") || name.endsWith(".xml") || name.endsWith(".gradle") ||
-        name.endsWith(".kt") || name.endsWith(".java") || name.endsWith(".sh") ||
-        name.endsWith(".mk")
-}
-
-private fun find_file_tree_content_match(file: File, query: String): file_tree_content_match? {
-    return runCatching {
-        file.useLines { lines ->
-            lines.withIndex()
-                .firstOrNull { indexed -> indexed.value.contains(query, ignoreCase = true) }
-                ?.let { indexed ->
-                    val column = indexed.value.indexOf(query, ignoreCase = true).coerceAtLeast(0)
-                    val preview = indexed.value.trim().replace(Regex("\\s+"), " ").take(180)
-                    file_tree_content_match(
-                        line = indexed.index,
-                        column = column,
-                        preview = preview
-                    )
-                }
-        }
-    }.getOrNull()
-}
-
-private fun file_tree_relative_path(root: File, file: File): String {
-    return runCatching {
-        root.toPath().relativize(file.toPath()).toString()
-    }.getOrDefault(file.name)
 }
 
 @Composable

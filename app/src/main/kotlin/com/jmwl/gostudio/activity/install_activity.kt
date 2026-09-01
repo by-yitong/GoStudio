@@ -13,6 +13,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.lifecycleScope
 import com.jmwl.gostudio.toolchain.proot_manager
 import com.jmwl.gostudio.toolchain.install_go_toolchain
+import com.jmwl.gostudio.toolchain.configure_best_apk_mirror
 import com.jmwl.gostudio.toolchain.toolchain_manager
 import com.jmwl.gostudio.toolchain.runtime.format_rootfs_size
 import com.jmwl.gostudio.toolchain.runtime.format_rootfs_speed
@@ -36,6 +37,8 @@ class install_activity : ComponentActivity() {
     private var is_extracting by mutableStateOf(false)
     private var is_configuring by mutableStateOf(false)
     private var current_progress by mutableFloatStateOf(0f)
+    private var elapsed_seconds by mutableStateOf(0L)
+    private var install_start_ms = 0L
 
     private val home_dir_path: File get() = File(filesDir, "home")
     private val gostudio_dir_path: File get() = File(home_dir_path, "gostudio")
@@ -67,11 +70,24 @@ class install_activity : ComponentActivity() {
                     is_extracting = is_extracting,
                     is_configuring = is_configuring,
                     current_progress = current_progress,
+                    elapsed_seconds = elapsed_seconds,
                     on_export_logs = ::export_logs
                 )
             }
         }
+        start_install_timer()
         start_download()
+    }
+
+    /** 安装耗时计时：从进入安装流程起每秒刷新，Activity 销毁时随 lifecycleScope 取消。 */
+    private fun start_install_timer() {
+        if (install_start_ms == 0L) install_start_ms = System.currentTimeMillis()
+        lifecycleScope.launch {
+            while (true) {
+                elapsed_seconds = (System.currentTimeMillis() - install_start_ms) / 1000
+                delay(1000)
+            }
+        }
     }
 
     private fun add_log(text: String) {
@@ -93,9 +109,27 @@ class install_activity : ComponentActivity() {
 
     private fun start_download() {
         lifecycleScope.launch {
-            // rootfs 已完整（安装中途进程被杀后重进此页、或路由误判）：跳过下载/解压，
-            // 直接进配置阶段。防止「清理旧目录」把装好的环境删掉重来。
-            if (withContext(Dispatchers.IO) { rootfs_dir_path.is_alpine_rootfs() }) {
+            val (rootfs_ok, configured) = withContext(Dispatchers.IO) {
+                rootfs_dir_path.is_alpine_rootfs() to
+                    File(rootfs_dir_path, ".gostudio_installed").exists()
+            }
+
+            // 环境已完整：立即进主界面，不显示安装流程。
+            // 场景：安装完成瞬间进程被杀、navigate_to_main 没执行，install_activity
+            // 残留在任务栈顶——之后从桌面点图标直接恢复此页（不经过 splash 判定），
+            // 不短路的话用户每次打开都会看到"又安装一遍"。
+            if (rootfs_ok && configured) {
+                navigate_to_main()
+                return@launch
+            }
+
+            // 提升为带可见通知的前台服务：安装期间防止 ROM 查杀导致反复中断
+            com.jmwl.gostudio.gostudio_application.instance.keep_alive_service_
+                ?.show_install_notification()
+
+            // rootfs 已解压但配置未完成（安装中途进程被杀后重进此页）：跳过下载/解压，
+            // 直接进配置阶段补装缺的部分。防止「清理旧目录」把装好的环境删掉重来。
+            if (rootfs_ok) {
                 add_log("检测到已解压的 Alpine 环境，跳过下载")
                 configure_environment()
                 return@launch
@@ -156,9 +190,10 @@ class install_activity : ComponentActivity() {
     private fun configure_environment() {
         lifecycleScope.launch {
             is_configuring = true
-            add_log("开始配置 Alpine 环境...")
+            add_log("检查环境配置状态...")
 
             try {
+                val base_flag = File(rootfs_dir_path, ".gostudio_base_packages")
                 val installed_flag = File(rootfs_dir_path, ".gostudio_installed")
 
                 suspend fun run_required_command(status: String, command: String): Boolean {
@@ -168,44 +203,54 @@ class install_activity : ComponentActivity() {
                     return success
                 }
 
-                val needs_initialization = withContext(Dispatchers.IO) {
-                    if (installed_flag.exists()) return@withContext false
+                // ── 阶段 1：基础包。独立标记，装过即跳过（续装秒过）──
+                val base_ready = withContext(Dispatchers.IO) { base_flag.exists() }
+                if (base_ready) {
+                    add_log("基础包已就绪，跳过")
+                } else {
+                    // 先测速切镜像：minirootfs 自带官方源，国内直连不稳（DNS/超时）
+                    configure_best_apk_mirror { line -> runOnUiThread { add_log(line) } }
 
-                    true
-                }
-
-                if (needs_initialization) {
                     // 基础包：bash（终端与 wrapper 生态依赖）、CA 证书（https）、tzdata（时区）。
                     // wget/tar/unzip/xz 用 busybox 自带 applet，无需安装。
                     if (!run_required_command(
                             "安装基础包（bash / ca-certificates / tzdata）...",
-                            "apk add bash ca-certificates tzdata"
+                            "apk update && apk add bash ca-certificates tzdata"
                         )
                     ) return@launch
+                    withContext(Dispatchers.IO) { base_flag.createNewFile() }
+                }
 
-                    // Go 工具链（go + gopls + git）：走带镜像测速与回退的安装流程，国内网络更稳
+                // ── 阶段 2：Go 工具链。按磁盘探测补缺，已装的部分不再重装 ──
+                toolchain_manager.invalidate_go_probe()
+                if (toolchain_manager.is_go_installed() && toolchain_manager.is_gopls_installed()) {
+                    add_log("Go 工具链已就绪，跳过")
+                    // 上次装完但写标记前被杀的情况：这里补写，下次启动 splash 直接放行
+                    if (!installed_flag.exists()) {
+                        withContext(Dispatchers.IO) { installed_flag.createNewFile() }
+                    }
+                } else {
                     add_log("安装 Go 工具链（go + gopls + git）...")
                     val go_ok = install_go_toolchain(
                         onLog = { line -> runOnUiThread { add_proot_log(line) } },
                         onProgress = { }
                     )
-                    if (!go_ok) {
-                        add_log("Go 工具链安装失败，可稍后在「开发工具」页重试")
-                    } else {
+                    if (go_ok) {
                         add_log("Go 工具链安装完成")
+                        withContext(Dispatchers.IO) { installed_flag.createNewFile() }
+                    } else {
+                        // 不写 installed 标记：下次启动回此页只补装缺的部分。
+                        // 仍放行进主界面（基础包完好，工具页可随时补装）。
+                        add_log("Go 工具链安装失败，可稍后在「开发工具」页重试")
                     }
-
-                    withContext(Dispatchers.IO) {
-                        installed_flag.createNewFile()
-                    }
-                    add_log("环境配置完成")
-                } else {
-                    add_log("环境已配置，跳过初始化")
                 }
 
                 add_log("所有安装步骤完成")
-                // 工具链刚装好，让 installed_go() 探测缓存失效
+                // 工具链状态可能变化，让 installed_go() 探测缓存失效
                 toolchain_manager.invalidate_go_probe()
+                // 安装结束，退出前台服务身份（恢复静默保活）
+                com.jmwl.gostudio.gostudio_application.instance.keep_alive_service_
+                    ?.hide_notification()
                 delay(2000)
                 navigate_to_main()
             } catch (e: Exception) {

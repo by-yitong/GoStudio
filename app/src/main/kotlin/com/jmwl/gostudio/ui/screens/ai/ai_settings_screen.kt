@@ -1,5 +1,6 @@
 package com.jmwl.gostudio.ui.screens.ai
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -25,24 +26,40 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Hub
 import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.ModelTraining
 import androidx.compose.material.icons.filled.Psychology
+import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.SmartToy
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Terminal
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.UnfoldMore
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.Waves
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -50,11 +67,14 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -69,15 +89,20 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jmwl.gostudio.ai.ai_client
 import com.jmwl.gostudio.ai.ai_provider
 import com.jmwl.gostudio.ai.ai_settings_state
-import com.jmwl.gostudio.ai.switch_provider
+import com.jmwl.gostudio.ai.provider_instance
+import com.jmwl.gostudio.ai.with_active_instance
+import com.jmwl.gostudio.ai.with_instance
+import com.jmwl.gostudio.ai.without_instance
 import com.jmwl.gostudio.ui.toast.app_toast
 import com.jmwl.gostudio.ui.theme.app_colors
+import com.jmwl.gostudio.ui.components.sub_page_top_bar
 import com.jmwl.gostudio.ui.theme.app_theme_provider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -101,63 +126,17 @@ fun ai_settings_screen(
     // 子页导航：null=主页，否则为子页标识
     var sub_page by remember { mutableStateOf<String?>(null) }
 
+    // 系统返回键：子页打开时先回 AI 主页，而不是退出整个设置路由
+    BackHandler(enabled = sub_page != null) { sub_page = null }
+
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
         ) {
-            Spacer(modifier = Modifier.height(30.dp))
-
-            // 顶部圆形返回按钮
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 18.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Surface(
-                    modifier = Modifier.size(35.dp),
-                    shape = CircleShape,
-                    color = colors.top_button_bg,
-                    onClick = on_back
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "返回",
-                            tint = colors.top_button_icon,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.size(35.dp))
-            }
-
-            Spacer(modifier = Modifier.height(30.dp))
-
-            // 大标题
-            Column(
-                horizontalAlignment = Alignment.Start,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 18.dp)
-            ) {
-                Text(
-                    text = "AI",
-                    fontSize = 30.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = colors.title_highlight
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "设置",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Light,
-                    color = colors.subtitle
-                )
-            }
+            // 顶栏标题（与返回键同行）
+            sub_page_top_bar("AI 设置", on_back)
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -171,7 +150,12 @@ fun ai_settings_screen(
                 ai_navigation_card(
                     icon = Icons.Default.SmartToy,
                     title = "模型配置",
-                    description = "${settings.provider.display_name} · ${settings.model}",
+                    description = run {
+                        val active = settings.instances.firstOrNull { it.id == settings.active_instance_id }
+                            ?: settings.instances.firstOrNull()
+                        val name = active?.label?.ifBlank { active.provider.display_name } ?: settings.provider.display_name
+                        "$name · ${settings.model}"
+                    },
                     colors = colors,
                     is_top = true,
                     is_bottom = false,
@@ -276,6 +260,31 @@ private fun ai_chevron(colors: app_colors) {
 }
 
 // ==================== 子页：模型配置 ====================
+// 交互结构逐段移植 OpenMinis Providers：按类型分组的实例列表 + Form 式分区详情页 + 三步添加向导。
+// 视觉沿用 GoStudio 主题；功能按现有能力裁剪（仅 API Key 认证，无 OAuth/文件导入）。
+
+/** 顶栏：返回 + 标题 + 尾部动作（列表页的 +、向导的 ✕） */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun om_top_bar(
+    colors: app_colors,
+    title: String,
+    on_back: () -> Unit,
+    trailing: (@Composable () -> Unit)? = null
+) {
+    TopAppBar(
+        title = {
+            Text(title, color = colors.title_large, fontSize = 20.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        },
+        navigationIcon = {
+            IconButton(onClick = on_back) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回", tint = colors.top_button_icon)
+            }
+        },
+        actions = { trailing?.invoke() },
+        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+    )
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -285,136 +294,350 @@ private fun ai_model_settings_screen(
     on_save: (ai_settings_state) -> Unit
 ) {
     val colors = app_theme_provider.colors
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val scope = rememberCoroutineScope()
     var settings by remember { mutableStateOf(initial) }
-    var key_visible by remember { mutableStateOf(false) }
-    var provider_menu_open by remember { mutableStateOf(false) }
-    var model_menu_open by remember { mutableStateOf(false) }
-    var fetching_models by remember { mutableStateOf(false) }
+    // 覆盖层：实例详情页 / 三步添加向导
+    var detail_id by remember { mutableStateOf<String?>(null) }
+    var add_open by remember { mutableStateOf(false) }
+    var pending_delete by remember { mutableStateOf<provider_instance?>(null) }
+
+    // 系统返回键：详情覆盖层打开时先关详情（向导覆盖层在 ai_add_provider_flow 内部自己处理逐步返回）
+    BackHandler(enabled = detail_id != null && !add_open) { detail_id = null }
+
+    // 变更即存（与 OpenMinis 一致：每次改动直接落盘，无底部保存条）
+    fun commit(next: ai_settings_state) {
+        settings = next
+        on_save(next)
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
         ) {
-            // 顶部栏
-            ai_sub_page_header(colors = colors, title = "模型配置", on_back = on_back)
+            om_top_bar(
+                colors = colors, title = "模型配置", on_back = on_back,
+                trailing = {
+                    IconButton(onClick = { add_open = true }) {
+                        Icon(Icons.Default.Add, contentDescription = "添加提供商", tint = colors.top_button_icon)
+                    }
+                }
+            )
+
+            if (settings.instances.isEmpty()) {
+                // 空态（对应 OpenMinis "No providers configured"）
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 56.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(Icons.Default.Key, contentDescription = null, tint = colors.subtitle.copy(alpha = 0.35f), modifier = Modifier.size(34.dp))
+                    Text("未配置提供商", fontSize = 13.sp, color = colors.subtitle)
+                    Text("添加一个提供商开始使用", fontSize = 11.sp, color = colors.subtitle.copy(alpha = 0.7f))
+                }
+            } else {
+                // 按提供商类型分组（对应 OpenMinis 按 ProviderType 分 Section）
+                ai_provider.entries.forEach { p ->
+                    val of_type = settings.instances.filter { it.provider == p }
+                    if (of_type.isEmpty()) return@forEach
+                    ai_group_title(colors = colors, title = p.display_name)
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp).clip(RoundedCornerShape(12.dp))
+                    ) {
+                        of_type.forEachIndexed { index, inst ->
+                            if (index > 0) ai_group_divider()
+                            ai_provider_instance_row(
+                                instance = inst,
+                                is_active = inst.id == settings.active_instance_id,
+                                colors = colors,
+                                on_open = { detail_id = inst.id },
+                                on_set_active = { commit(settings.with_active_instance(inst.id)) }
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Agent 能力（全局开关）
+            ai_group_title(colors = colors, title = "Agent 能力")
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp).clip(RoundedCornerShape(12.dp))
+            ) {
+                ai_switch_card(icon = Icons.Default.AutoAwesome, title = "工具调用", description = "让 AI 能读写文件、执行命令", checked = settings.enable_tools, colors = colors, is_top = true, is_bottom = false) { commit(settings.copy(enable_tools = it)) }
+                ai_group_divider()
+                ai_switch_card(icon = Icons.Default.Terminal, title = "执行命令", description = "允许 bash / go build 等命令", checked = settings.enable_bash, colors = colors, is_top = false, is_bottom = false) { commit(settings.copy(enable_bash = it)) }
+                ai_group_divider()
+                ai_switch_card(icon = Icons.Default.Edit, title = "修改文件", description = "允许写入 / 修改项目文件", checked = settings.enable_write, colors = colors, is_top = false, is_bottom = true) { commit(settings.copy(enable_write = it)) }
+            }
+
+            Spacer(modifier = Modifier.height(96.dp))
+        }
+
+        // 实例详情覆盖层
+        detail_id?.let { id ->
+            settings.instances.firstOrNull { it.id == id }?.let { inst ->
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = true,
+                    enter = androidx.compose.animation.slideInHorizontally(initialOffsetX = { it }) +
+                        androidx.compose.animation.fadeIn(),
+                    exit = androidx.compose.animation.slideOutHorizontally(targetOffsetX = { it }) +
+                        androidx.compose.animation.fadeOut()
+                ) {
+                    Box(modifier = Modifier.fillMaxSize().background(colors.editor_bg)) {
+                        ai_provider_detail_screen(
+                            instance = inst,
+                            is_active = inst.id == settings.active_instance_id,
+                            on_back = { detail_id = null },
+                            on_set_active = { commit(settings.with_active_instance(id)) },
+                            on_update = { updated -> commit(settings.with_instance(updated)) },
+                            on_delete = { pending_delete = inst }
+                        )
+                    }
+                }
+            }
+        }
+
+        // 三步添加向导覆盖层
+        androidx.compose.animation.AnimatedVisibility(
+            visible = add_open,
+            enter = androidx.compose.animation.slideInHorizontally(initialOffsetX = { it }) +
+                androidx.compose.animation.fadeIn(),
+            exit = androidx.compose.animation.slideOutHorizontally(targetOffsetX = { it }) +
+                androidx.compose.animation.fadeOut()
+        ) {
+            Box(modifier = Modifier.fillMaxSize().background(colors.editor_bg)) {
+                ai_add_provider_flow(
+                    colors = colors,
+                    existing = settings.instances,
+                    on_close = { add_open = false },
+                    on_created = { inst ->
+                        commit(settings.with_instance(inst))
+                        add_open = false
+                        detail_id = inst.id
+                    }
+                )
+            }
+        }
+    }
+
+    // 删除确认
+    pending_delete?.let { inst ->
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { pending_delete = null },
+            containerColor = colors.dialog_bg,
+            title = { Text("删除提供商", color = colors.dialog_text) },
+            text = { Text("确定删除「${inst.label.ifBlank { inst.provider.display_name }}」？密钥与模型列表将一并清除。", fontSize = 13.sp, color = colors.subtitle) },
+            confirmButton = {
+                TextButton(onClick = {
+                    commit(settings.without_instance(inst.id))
+                    pending_delete = null
+                    detail_id = null
+                }) { Text("删除", color = colors.danger) }
+            },
+            dismissButton = { TextButton(onClick = { pending_delete = null }) { Text("取消", color = colors.subtitle) } }
+        )
+    }
+}
+
+/** 实例列表行（对应 OpenMinis InstanceRow：状态点 + 名称 + 凭证摘要 + 模型数 + 停用徽标） */
+@Composable
+private fun ai_provider_instance_row(
+    instance: provider_instance,
+    is_active: Boolean,
+    colors: app_colors,
+    on_open: () -> Unit,
+    on_set_active: () -> Unit
+) {
+    val interaction_source = remember { MutableInteractionSource() }
+    val is_pressed by interaction_source.collectIsPressedAsState()
+    val background_color = if (is_pressed) colors.card_pressed else colors.card_bg
+
+    Row(
+        modifier = Modifier.fillMaxWidth().background(background_color)
+            .clickable(interactionSource = interaction_source, indication = null, onClick = on_open)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        // 状态点：绿 = 已配置且启用
+        Box(
+            modifier = Modifier.size(8.dp).clip(CircleShape).background(
+                if (instance.is_ready) colors.success else colors.card_text_subtitle.copy(alpha = 0.4f)
+            )
+        )
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                instance.label.ifBlank { instance.provider.display_name },
+                fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+                color = if (instance.enabled) colors.card_text_title else colors.card_text_subtitle,
+                maxLines = 1, overflow = TextOverflow.Ellipsis
+            )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                Text("API Key", fontSize = 10.sp, color = colors.card_text_subtitle)
+                Text("·", fontSize = 10.sp, color = colors.card_text_subtitle.copy(alpha = 0.6f))
+                Text(instance.masked_key(), fontSize = 10.sp, color = colors.card_text_subtitle, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            Text("${instance.selectable_models().size} 个模型", fontSize = 10.sp, color = colors.card_text_subtitle.copy(alpha = 0.75f))
+        }
+        if (is_active) {
+            ai_instance_pill(text = "使用中", colors = colors, active = true)
+        } else if (instance.is_ready) {
+            Box(
+                modifier = Modifier.clip(RoundedCornerShape(999.dp))
+                    .background(colors.title_highlight.copy(alpha = 0.14f))
+                    .clickable(onClick = on_set_active)
+                    .padding(horizontal = 10.dp, vertical = 4.dp)
+            ) {
+                Text("使用", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = colors.title_highlight)
+            }
+        }
+        if (!instance.enabled) {
+            ai_instance_pill(text = "已停用", colors = colors, active = false)
+        }
+        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "配置", tint = colors.card_chevron, modifier = Modifier.size(18.dp))
+    }
+}
+
+/** 小徽标（使用中 / 已停用） */
+@Composable
+private fun ai_instance_pill(text: String, colors: app_colors, active: Boolean) {
+    Box(
+        modifier = Modifier.clip(RoundedCornerShape(999.dp))
+            .background(
+                if (active) colors.success.copy(alpha = 0.16f)
+                else colors.card_text_subtitle.copy(alpha = 0.14f)
+            )
+            .padding(horizontal = 8.dp, vertical = 3.dp)
+    ) {
+        Text(text, fontSize = 9.sp, fontWeight = FontWeight.SemiBold, color = if (active) colors.success else colors.card_text_subtitle)
+    }
+}
+
+/** 实例详情页（对应 OpenMinis ProviderInstanceDetailView 的分区顺序：标签/凭证/接口/状态/模型/删除） */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ai_provider_detail_screen(
+    instance: provider_instance,
+    is_active: Boolean,
+    on_back: () -> Unit,
+    on_set_active: () -> Unit,
+    on_update: (provider_instance) -> Unit,
+    on_delete: () -> Unit
+) {
+    val colors = app_theme_provider.colors
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val scope = rememberCoroutineScope()
+    var key_visible by remember { mutableStateOf(false) }
+    var model_menu_open by remember { mutableStateOf(false) }
+    var fetching_models by remember { mutableStateOf(false) }
+    // 模型列表脚注（成功=来源 / 失败=诊断，对应 OpenMinis Models section footer）
+    var fetch_note by remember { mutableStateOf<Pair<Boolean, String>?>(null) }
+    var testing by remember { mutableStateOf(false) }
+    // 连接测试结果：(成功?, 回复或错误信息, 耗时ms)
+    var test_result by remember { mutableStateOf<Triple<Boolean, String, Long>?>(null) }
+    var add_model_open by remember { mutableStateOf(false) }
+    var add_model_input by remember { mutableStateOf("") }
+
+    fun update(transform: (provider_instance) -> provider_instance) = on_update(transform(instance))
+
+    fun temp_settings() = ai_settings_state(
+        provider = instance.provider,
+        base_url = instance.base_url,
+        model = instance.model,
+        api_key = instance.api_key
+    )
+
+    fun refresh_models() {
+        if (instance.api_key.isBlank()) {
+            app_toast.show(context, "请先填写 API Key", app_toast.LENGTH_SHORT)
+            return
+        }
+        if (instance.base_url.isBlank()) {
+            app_toast.show(context, "请先填写 Base URL", app_toast.LENGTH_SHORT)
+            return
+        }
+        fetching_models = true
+        fetch_note = null
+        scope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching { ai_client(temp_settings()).fetch_models() }
+            }
+            fetching_models = false
+            result.onSuccess { models ->
+                if (models.isEmpty()) {
+                    fetch_note = false to "端点返回了空列表，可手动添加模型 ID"
+                } else {
+                    fetch_note = true to "已从 /models 获取 ${models.size} 个模型"
+                    update { it.copy(models = models) }
+                }
+            }.onFailure { e ->
+                fetch_note = false to "获取失败: ${e.message ?: e.javaClass.simpleName}"
+            }
+        }
+    }
+
+    fun run_test() {
+        if (!instance.is_ready) {
+            app_toast.show(context, "请先填写 Base URL / 模型 / API Key", app_toast.LENGTH_SHORT)
+            return
+        }
+        testing = true
+        test_result = null
+        scope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching { ai_client(temp_settings()).quick_test() }
+            }
+            testing = false
+            result.onSuccess { (reply, ms) ->
+                test_result = Triple(true, reply.ifBlank { "(空回复)" }, ms)
+            }.onFailure { e ->
+                test_result = Triple(false, e.message ?: e.javaClass.simpleName, 0L)
+            }
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+        ) {
+            ai_sub_page_header(colors = colors, title = instance.label.ifBlank { "提供商" }, on_back = on_back)
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // 提供商
-            ai_group_title(colors = colors, title = "提供商")
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp).clip(RoundedCornerShape(12.dp))
-            ) {
-                ai_navigation_card(
-                    icon = Icons.Default.SmartToy,
-                    title = "AI 提供商",
-                    description = settings.provider.display_name,
-                    colors = colors,
-                    is_top = true, is_bottom = true,
-                    trailing = {
-                        Box {
-                            Icon(Icons.Default.ArrowDropDown, contentDescription = "选择", tint = colors.card_chevron, modifier = Modifier.size(20.dp))
-                            DropdownMenu(expanded = provider_menu_open, onDismissRequest = { provider_menu_open = false }) {
-                                ai_provider.entries.forEach { p ->
-                                    DropdownMenuItem(
-                                        text = { Text(p.display_name, color = colors.dialog_text) },
-                                        onClick = { settings = switch_provider(settings, p); provider_menu_open = false }
-                                    )
-                                }
-                            }
-                        }
-                    },
-                    on_click = { provider_menu_open = true }
-                )
+            if (!is_active) {
+                Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp)) {
+                    ai_save_button(colors = colors, label = "设为当前使用") { on_set_active() }
+                }
+                Spacer(modifier = Modifier.height(18.dp))
             }
 
-            Spacer(modifier = Modifier.height(22.dp))
-
-            // 接口
-            ai_group_title(colors = colors, title = "接口")
+            // ===== 标签 =====
+            ai_group_title(colors = colors, title = "标签")
             Column(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp).clip(RoundedCornerShape(12.dp))
             ) {
-                ai_input_card(icon = Icons.Default.Cloud, title = "Base URL", colors = colors, is_top = true, is_bottom = false) {
+                ai_input_card(icon = Icons.Default.Label, title = "实例名称", colors = colors, is_top = true, is_bottom = true) {
                     OutlinedTextField(
-                        value = settings.base_url,
-                        onValueChange = { settings = settings.copy(base_url = it) },
+                        value = instance.label,
+                        onValueChange = { text -> update { it.copy(label = text) } },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("https://api.example.com/v1", color = colors.input_hint, fontSize = 13.sp) },
+                        placeholder = { Text(instance.provider.display_name, color = colors.input_hint, fontSize = 13.sp) },
                         singleLine = true, shape = RoundedCornerShape(0.dp), colors = field_colors(colors)
                     )
                 }
-                ai_group_divider()
-                ai_input_card(icon = Icons.Default.ModelTraining, title = "模型", colors = colors, is_top = false, is_bottom = true) {
-                    OutlinedTextField(
-                        value = settings.model,
-                        onValueChange = { settings = settings.copy(model = it) },
-                        modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text(settings.provider.default_model.ifBlank { "如 glm-4.6、deepseek-chat" }, color = colors.input_hint, fontSize = 13.sp) },
-                        singleLine = true, shape = RoundedCornerShape(0.dp),
-                        trailingIcon = {
-                            if (settings.provider.supports_model_list) {
-                                Box {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        if (fetching_models) {
-                                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = colors.title_highlight)
-                                        } else {
-                                            Icon(Icons.Default.ArrowDropDown, contentDescription = "选择模型", tint = colors.subtitle,
-                                                modifier = Modifier.size(22.dp).clip(CircleShape).clickable { model_menu_open = true })
-                                        }
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Icon(Icons.Default.Refresh, contentDescription = "获取模型列表", tint = colors.title_highlight,
-                                            modifier = Modifier.size(18.dp).clip(CircleShape).clickable {
-                                                if (settings.api_key.isBlank()) { app_toast.show(context, "请先填写 API Key", app_toast.LENGTH_SHORT); return@clickable }
-                                                fetching_models = true
-                                                scope.launch {
-                                                    val result = withContext(Dispatchers.IO) { runCatching { ai_client(settings).fetch_models() } }
-                                                    fetching_models = false
-                                                    result.onSuccess { models ->
-                                                        if (models.isEmpty()) { app_toast.show(context, "未获取到模型", app_toast.LENGTH_SHORT) }
-                                                        else {
-                                                            settings = settings.copy(custom_models = settings.custom_models + (settings.base_url to models))
-                                                            model_menu_open = true
-                                                            app_toast.show(context, "已获取 ${models.size} 个模型", app_toast.LENGTH_SHORT)
-                                                        }
-                                                    }.onFailure { e -> app_toast.show(context, "获取失败: ${e.message ?: ""}", app_toast.LENGTH_LONG) }
-                                                }
-                                            })
-                                    }
-                                    val deduped = ((settings.custom_models[settings.base_url] ?: emptyList()) + settings.provider.default_models).distinct()
-                                    DropdownMenu(expanded = model_menu_open, onDismissRequest = { model_menu_open = false }) {
-                                        if (deduped.isEmpty()) {
-                                            DropdownMenuItem(text = { Text("无候选，点刷新获取", color = colors.subtitle) }, onClick = { model_menu_open = false })
-                                        } else {
-                                            deduped.forEach { m ->
-                                                DropdownMenuItem(text = { Text(m, color = colors.dialog_text) }, onClick = { settings = settings.copy(model = m); model_menu_open = false })
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        colors = field_colors(colors)
-                    )
-                }
             }
-            ai_hint_text(colors = colors, text = if (settings.provider == ai_provider.ANTHROPIC) "OpenAI 兼容格式。⚠️ Anthropic 原生格式暂不支持，请用兼容中转。" else "OpenAI 兼容格式。")
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // 认证
-            ai_group_title(colors = colors, title = "认证")
+            // ===== 凭证 =====
+            ai_group_title(colors = colors, title = "凭证")
             Column(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp).clip(RoundedCornerShape(12.dp))
             ) {
                 ai_input_card(icon = Icons.Default.Key, title = "API Key", colors = colors, is_top = true, is_bottom = true) {
                     OutlinedTextField(
-                        value = settings.api_key,
-                        onValueChange = { new_key ->
-                            settings = settings.copy(api_key = new_key, api_keys = settings.api_keys + (settings.provider to new_key))
-                        },
+                        value = instance.api_key,
+                        onValueChange = { text -> update { it.copy(api_key = text) } },
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = { Text("sk-...", color = colors.input_hint, fontSize = 13.sp) },
                         singleLine = true,
@@ -428,32 +651,515 @@ private fun ai_model_settings_screen(
                     )
                 }
             }
-            ai_hint_text(colors = colors, text = "密钥已加密存储在设备本地", success = true)
+            ai_hint_text(colors = colors, text = "密钥已加密存储在设备本地，不会离开设备", success = true)
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Agent 能力
-            ai_group_title(colors = colors, title = "Agent 能力")
+            // ===== 接口 =====
+            ai_group_title(colors = colors, title = "接口")
             Column(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp).clip(RoundedCornerShape(12.dp))
             ) {
-                ai_switch_card(icon = Icons.Default.AutoAwesome, title = "工具调用", description = "让 AI 能读写文件、执行命令", checked = settings.enable_tools, colors = colors, is_top = true, is_bottom = false) { settings = settings.copy(enable_tools = it) }
+                ai_input_card(icon = Icons.Default.Cloud, title = "Base URL", colors = colors, is_top = true, is_bottom = false) {
+                    OutlinedTextField(
+                        value = instance.base_url,
+                        onValueChange = { text -> update { it.copy(base_url = text) } },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text(instance.provider.base_url.ifBlank { "https://api.example.com/v1" }, color = colors.input_hint, fontSize = 13.sp) },
+                        singleLine = true, shape = RoundedCornerShape(0.dp), colors = field_colors(colors)
+                    )
+                }
                 ai_group_divider()
-                ai_switch_card(icon = Icons.Default.Terminal, title = "执行命令", description = "允许 bash / go build 等命令", checked = settings.enable_bash, colors = colors, is_top = false, is_bottom = false) { settings = settings.copy(enable_bash = it) }
-                ai_group_divider()
-                ai_switch_card(icon = Icons.Default.Edit, title = "修改文件", description = "允许写入 / 修改项目文件", checked = settings.enable_write, colors = colors, is_top = false, is_bottom = true) { settings = settings.copy(enable_write = it) }
+                ai_input_card(icon = Icons.Default.ModelTraining, title = "默认模型", colors = colors, is_top = false, is_bottom = true) {
+                    OutlinedTextField(
+                        value = instance.model,
+                        onValueChange = { text -> update { it.copy(model = text) } },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text(instance.provider.default_model.ifBlank { "如 glm-4.6、deepseek-chat" }, color = colors.input_hint, fontSize = 13.sp) },
+                        singleLine = true, shape = RoundedCornerShape(0.dp),
+                        trailingIcon = {
+                            if (instance.provider.supports_model_list || instance.models.isNotEmpty()) {
+                                Box {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Default.ArrowDropDown, contentDescription = "选择模型", tint = colors.subtitle,
+                                            modifier = Modifier.size(22.dp).clip(CircleShape).clickable { model_menu_open = true })
+                                        if (instance.provider.supports_model_list) {
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            if (fetching_models) {
+                                                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = colors.title_highlight)
+                                            } else {
+                                                Icon(Icons.Default.Refresh, contentDescription = "获取模型列表", tint = colors.title_highlight,
+                                                    modifier = Modifier.size(18.dp).clip(CircleShape).clickable { refresh_models() })
+                                            }
+                                        }
+                                    }
+                                    val candidates = instance.selectable_models()
+                                    DropdownMenu(expanded = model_menu_open, onDismissRequest = { model_menu_open = false }) {
+                                        if (candidates.isEmpty()) {
+                                            DropdownMenuItem(text = { Text("无候选，点刷新获取", color = colors.subtitle) }, onClick = { model_menu_open = false })
+                                        } else {
+                                            candidates.forEach { m ->
+                                                DropdownMenuItem(text = { Text(m, color = colors.dialog_text) }, onClick = {
+                                                    update { it.copy(model = m) }
+                                                    model_menu_open = false
+                                                })
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        colors = field_colors(colors)
+                    )
+                }
+            }
+            ai_hint_text(colors = colors, text = if (instance.provider == ai_provider.ANTHROPIC) "Anthropic Messages API 格式（/messages）。" else "OpenAI 兼容格式（/chat/completions）。")
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // ===== 状态 =====
+            ai_group_title(colors = colors, title = "状态")
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp).clip(RoundedCornerShape(12.dp))
+            ) {
+                ai_switch_card(icon = Icons.Default.Visibility, title = "启用", description = "停用后不出现在会话选择器中", checked = instance.enabled, colors = colors, is_top = true, is_bottom = true) { checked -> update { it.copy(enabled = checked) } }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // ===== 模型列表（行点击=设为默认；眼睛=隐藏；垃圾桶=移除；组头刷新 + 脚注诊断）=====
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(start = 22.dp, end = 18.dp, bottom = 10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "模型",
+                    fontSize = 10.sp, fontWeight = FontWeight.Bold, color = colors.title_highlight,
+                    modifier = Modifier.weight(1f)
+                )
+                Text("${instance.selectable_models().size}", fontSize = 10.sp, color = colors.subtitle)
+                Spacer(modifier = Modifier.width(10.dp))
+                if (instance.provider.supports_model_list) {
+                    Box(
+                        modifier = Modifier.size(26.dp).clip(CircleShape).background(colors.card_bg).clickable { refresh_models() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (fetching_models) {
+                            CircularProgressIndicator(modifier = Modifier.size(13.dp), strokeWidth = 2.dp, color = colors.title_highlight)
+                        } else {
+                            Icon(Icons.Default.Refresh, contentDescription = "刷新模型列表", tint = colors.title_highlight, modifier = Modifier.size(14.dp))
+                        }
+                    }
+                }
+            }
+            val candidates = instance.selectable_models()
+            if (candidates.isEmpty()) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp).clip(RoundedCornerShape(12.dp)).background(colors.card_bg)
+                ) {
+                    Box(modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp), contentAlignment = Alignment.Center) {
+                        Text("暂无模型，刷新获取或手动添加", fontSize = 11.sp, color = colors.subtitle)
+                    }
+                }
+            } else {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp).clip(RoundedCornerShape(12.dp))
+                ) {
+                    candidates.forEachIndexed { index, m ->
+                        if (index > 0) ai_group_divider()
+                        val hidden = m in instance.hidden_models
+                        val row_interaction = remember { MutableInteractionSource() }
+                        val row_pressed by row_interaction.collectIsPressedAsState()
+                        Row(
+                            modifier = Modifier.fillMaxWidth()
+                                .background(if (row_pressed) colors.card_pressed else colors.card_bg)
+                                .clickable(interactionSource = row_interaction, indication = null) { update { it.copy(model = m) } }
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    m,
+                                    fontSize = 12.sp,
+                                    fontWeight = if (m == instance.model) FontWeight.SemiBold else FontWeight.Normal,
+                                    color = when {
+                                        hidden -> colors.card_text_subtitle.copy(alpha = 0.55f)
+                                        m == instance.model -> colors.title_highlight
+                                        else -> colors.card_text_title
+                                    },
+                                    maxLines = 1, overflow = TextOverflow.Ellipsis
+                                )
+                                if (m == instance.model) {
+                                    Text("默认模型", fontSize = 9.sp, color = colors.title_highlight.copy(alpha = 0.8f))
+                                }
+                            }
+                            // 隐藏/恢复（不删除，只是不再出现在候选里）
+                            Box(
+                                modifier = Modifier.size(26.dp).clip(CircleShape).clickable {
+                                    update { it.copy(hidden_models = if (hidden) it.hidden_models - m else it.hidden_models + m) }
+                                },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    if (hidden) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = if (hidden) "恢复" else "隐藏",
+                                    tint = if (hidden) colors.subtitle.copy(alpha = 0.5f) else colors.subtitle,
+                                    modifier = Modifier.size(15.dp)
+                                )
+                            }
+                            // 移除：拉取的从缓存删除；纯预置的转为隐藏
+                            Box(
+                                modifier = Modifier.size(26.dp).clip(CircleShape).clickable {
+                                    update {
+                                        if (m in it.models) it.copy(models = it.models - m)
+                                        else it.copy(hidden_models = it.hidden_models + m)
+                                    }
+                                },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.Close, contentDescription = "移除", tint = colors.danger.copy(alpha = 0.8f), modifier = Modifier.size(15.dp))
+                            }
+                        }
+                    }
+                }
+            }
+            fetch_note?.let { (ok, note) ->
+                ai_hint_text(colors = colors, text = if (ok) "✓ $note" else "✗ $note", success = ok)
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+            Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp)) {
+                ai_add_button(colors = colors, label = "添加自定义模型") { add_model_open = true }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // ===== 连接测试（对应 OpenMinis Quick Test）=====
+            ai_group_title(colors = colors, title = "连接测试")
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp).clip(RoundedCornerShape(12.dp)).background(colors.card_bg).padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text("发送一条最小对话请求，验证该模型与密钥真实可用", fontSize = 10.sp, color = colors.card_text_subtitle)
+                if (testing) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp, color = colors.title_highlight)
+                        Text("测试中…", fontSize = 12.sp, color = colors.subtitle)
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
+                            .background(colors.title_highlight.copy(alpha = 0.14f))
+                            .clickable { run_test() }
+                            .padding(vertical = 10.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Bolt, contentDescription = null, tint = colors.title_highlight, modifier = Modifier.size(15.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("测试连接", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = colors.title_highlight)
+                    }
+                }
+                test_result?.let { (ok, message, ms) ->
+                    if (ok) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Icon(Icons.Default.Check, contentDescription = null, tint = colors.success, modifier = Modifier.size(14.dp))
+                            Text("「$message」 · ${ms}ms", fontSize = 12.sp, color = colors.success, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        }
+                    } else {
+                        Text(message, fontSize = 11.sp, color = colors.danger, maxLines = 4, overflow = TextOverflow.Ellipsis)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(22.dp))
+
+            // ===== 删除提供商 =====
+            Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp).clip(RoundedCornerShape(12.dp)).background(colors.danger.copy(alpha = 0.10f))) {
+                Text(
+                    "删除提供商",
+                    fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = colors.danger,
+                    modifier = Modifier.fillMaxWidth().clickable(onClick = on_delete).padding(vertical = 13.dp),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
             }
 
             Spacer(modifier = Modifier.height(96.dp))
         }
+    }
 
-        // 底部保存
-        Surface(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(), color = colors.editor_bg, shadowElevation = 8.dp) {
-            Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 14.dp), contentAlignment = Alignment.Center) {
-                ai_save_button(colors = colors) { on_save(settings) }
+    // 添加自定义模型
+    if (add_model_open) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { add_model_open = false },
+            containerColor = colors.dialog_bg,
+            title = { Text("添加自定义模型", color = colors.dialog_text) },
+            text = {
+                OutlinedTextField(
+                    value = add_model_input,
+                    onValueChange = { add_model_input = it },
+                    label = { Text("模型 ID") },
+                    singleLine = true,
+                    colors = field_colors(colors)
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val m = add_model_input.trim()
+                    if (m.isNotBlank()) {
+                        update { it.copy(models = (it.models + m).distinct(), hidden_models = it.hidden_models - m) }
+                    }
+                    add_model_input = ""
+                    add_model_open = false
+                }) { Text("添加", color = colors.title_highlight) }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    add_model_input = ""
+                    add_model_open = false
+                }) { Text("取消", color = colors.subtitle) }
+            }
+        )
+    }
+}
+
+/** 三步添加向导（对应 OpenMinis AddProviderView：选择提供商 → 认证方式 → 配置） */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ai_add_provider_flow(
+    colors: app_colors,
+    existing: List<provider_instance>,
+    on_close: () -> Unit,
+    on_created: (provider_instance) -> Unit
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    // 0=选择提供商 1=认证方式 2=配置
+    var step by remember { mutableStateOf(0) }
+    var picked_type by remember { mutableStateOf<ai_provider?>(null) }
+    var label_input by remember { mutableStateOf("") }
+    var label_edited by remember { mutableStateOf(false) }
+    var key_input by remember { mutableStateOf("") }
+    var key_visible by remember { mutableStateOf(false) }
+    var base_url_input by remember { mutableStateOf("") }
+    val type = picked_type
+
+    fun default_label(p: ai_provider): String {
+        val count = existing.count { it.provider == p }
+        return if (count == 0) p.display_name else "${p.display_name} ${count + 1}"
+    }
+
+    fun reset_and_back() {
+        step = 0
+        picked_type = null
+        label_input = ""
+        label_edited = false
+        key_input = ""
+        key_visible = false
+        base_url_input = ""
+    }
+
+    fun finish() {
+        val t = type ?: return
+        val inst = provider_instance(
+            id = java.util.UUID.randomUUID().toString(),
+            label = label_input.trim().ifBlank { default_label(t) },
+            provider = t,
+            base_url = base_url_input.trim().ifBlank { t.base_url },
+            model = t.default_model,
+            api_key = key_input.trim()
+        )
+        on_created(inst)
+    }
+
+    // 系统返回键与顶栏返回一致：逐步后退（第 2 步→第 1 步→第 0 步→退出向导）
+    BackHandler { if (step > 0) reset_and_back() else on_close() }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            om_top_bar(
+                colors = colors,
+                title = when {
+                    type != null -> "配置 ${type.display_name}"
+                    step == 1 -> "认证方式"
+                    else -> "添加提供商"
+                },
+                on_back = { if (step > 0) reset_and_back() else on_close() },
+                trailing = {
+                    // 与 OpenMinis 一致：✕ 只在进入流程的步骤出现（第 0 步仅保留返回/取消，避免两个关闭按钮）
+                    if (step > 0) {
+                        IconButton(onClick = on_close) {
+                            Icon(Icons.Default.Close, contentDescription = "取消", tint = colors.top_button_icon)
+                        }
+                    }
+                }
+            )
+
+            AnimatedContent(
+                targetState = step,
+                transitionSpec = {
+                    if (targetState > initialState) {
+                        (slideInHorizontally { it } + fadeIn()) togetherWith (slideOutHorizontally { -it } + fadeOut())
+                    } else {
+                        (slideInHorizontally { -it } + fadeIn()) togetherWith (slideOutHorizontally { it } + fadeOut())
+                    }
+                },
+                label = "addProviderStep"
+            ) { current_step ->
+                Column(
+                    modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                ) {
+                    when {
+                        // 第一步：选择提供商（对应 typePickerSection）
+                        current_step == 0 -> {
+                            ai_group_title(colors = colors, title = "选择提供商")
+                            Column(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp).clip(RoundedCornerShape(12.dp))
+                            ) {
+                                ai_add_provider_types.forEachIndexed { index, (p, subtitle) ->
+                                    if (index > 0) ai_group_divider()
+                                    ai_navigation_card(
+                                        icon = add_provider_icon(p),
+                                        title = p.display_name,
+                                        description = subtitle,
+                                        colors = colors,
+                                        is_top = index == 0,
+                                        is_bottom = index == ai_add_provider_types.lastIndex,
+                                        trailing = { ai_chevron(colors) },
+                                        on_click = {
+                                            picked_type = p
+                                            if (!label_edited) label_input = default_label(p)
+                                            step = 1
+                                        }
+                                    )
+                                }
+                            }
+                            ai_hint_text(colors = colors, text = "同一提供商可添加多个实例（如工作账号与个人账号）。")
+                        }
+                        // 第二步：认证方式（GoStudio 仅支持 API Key，单选项）
+                        current_step == 1 -> {
+                            val t = type
+                            ai_group_title(colors = colors, title = "认证方式")
+                            Column(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp).clip(RoundedCornerShape(12.dp))
+                            ) {
+                                ai_navigation_card(
+                                    icon = Icons.Default.Key,
+                                    title = "API Key",
+                                    description = "使用 ${t?.display_name ?: ""} 账号的 API Key 认证",
+                                    colors = colors,
+                                    is_top = true,
+                                    is_bottom = true,
+                                    trailing = { ai_chevron(colors) },
+                                    on_click = { step = 2 }
+                                )
+                            }
+                        }
+                        // 第三步：配置（对应 configureSection：标签 / API Key / API 地址 / 添加按钮）
+                        type != null -> {
+                            val t = type
+                            ai_group_title(colors = colors, title = "标签")
+                            Column(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp).clip(RoundedCornerShape(12.dp))
+                            ) {
+                                ai_input_card(icon = Icons.Default.Label, title = "提供商名称", colors = colors, is_top = true, is_bottom = true) {
+                                    OutlinedTextField(
+                                        value = label_input,
+                                        onValueChange = {
+                                            label_input = it
+                                            label_edited = true
+                                        },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        placeholder = { Text(default_label(t), color = colors.input_hint, fontSize = 13.sp) },
+                                        singleLine = true, shape = RoundedCornerShape(0.dp), colors = field_colors(colors)
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            ai_group_title(colors = colors, title = "API Key")
+                            Column(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp).clip(RoundedCornerShape(12.dp))
+                            ) {
+                                ai_input_card(icon = Icons.Default.Security, title = "密钥", colors = colors, is_top = true, is_bottom = true) {
+                                    OutlinedTextField(
+                                        value = key_input,
+                                        onValueChange = { key_input = it },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        placeholder = { Text("sk-...", color = colors.input_hint, fontSize = 13.sp) },
+                                        singleLine = true,
+                                        visualTransformation = if (key_visible) VisualTransformation.None else PasswordVisualTransformation(),
+                                        trailingIcon = {
+                                            Box(modifier = Modifier.size(28.dp).clip(CircleShape).clickable { key_visible = !key_visible }, contentAlignment = Alignment.Center) {
+                                                Icon(if (key_visible) Icons.Default.VisibilityOff else Icons.Default.Visibility, contentDescription = if (key_visible) "隐藏" else "显示", tint = colors.subtitle, modifier = Modifier.size(16.dp))
+                                            }
+                                        },
+                                        shape = RoundedCornerShape(0.dp), colors = field_colors(colors)
+                                    )
+                                }
+                            }
+                            ai_hint_text(colors = colors, text = "密钥已加密存储在设备本地，不会离开设备", success = true)
+
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            ai_group_title(colors = colors, title = "API 地址（可选）")
+                            Column(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp).clip(RoundedCornerShape(12.dp))
+                            ) {
+                                ai_input_card(icon = Icons.Default.Cloud, title = "Base URL", colors = colors, is_top = true, is_bottom = true) {
+                                    OutlinedTextField(
+                                        value = base_url_input,
+                                        onValueChange = { base_url_input = it },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        placeholder = { Text(t.base_url.ifBlank { "https://api.example.com/v1" }, color = colors.input_hint, fontSize = 13.sp) },
+                                        singleLine = true, shape = RoundedCornerShape(0.dp), colors = field_colors(colors)
+                                    )
+                                }
+                            }
+                            ai_hint_text(colors = colors, text = "留空使用默认端点，可填兼容中转地址")
+
+                            Spacer(modifier = Modifier.height(20.dp))
+
+                            Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp)) {
+                                ai_save_button(colors = colors, label = "添加提供商") {
+                                    if (key_input.trim().isBlank()) {
+                                        app_toast.show(context, "请先填写 API Key", app_toast.LENGTH_SHORT)
+                                    } else {
+                                        finish()
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(48.dp))
+                }
             }
         }
     }
+}
+
+/** 添加向导第一步每个类型的说明（对应 OpenMinis ProviderType.pickerSubtitle） */
+private val ai_add_provider_types: List<Pair<ai_provider, String>> = listOf(
+    ai_provider.ZHIPU to "智谱开放平台 BigModel · GLM 系列",
+    ai_provider.ZHIPU_CODING to "智谱编程套餐（GLM Coding Plan）专用端点",
+    ai_provider.DEEPSEEK to "DeepSeek 开放平台 · deepseek-chat / reasoner",
+    ai_provider.KIMI to "Moonshot 开放平台 · Kimi 系列",
+    ai_provider.OPENAI to "OpenAI 官方或任意兼容中转 · GPT 系列",
+    ai_provider.XAI to "xAI 开放平台 · Grok 系列",
+    ai_provider.ANTHROPIC to "Anthropic Messages API · Claude 系列",
+    ai_provider.CUSTOM to "任意 OpenAI 兼容端点 · 自填 Base URL 与模型"
+)
+
+/** 提供商类型的图标（对应 OpenMinis providerIcon，用咱们主题的中性色） */
+private fun add_provider_icon(p: ai_provider): ImageVector = when (p) {
+    ai_provider.ZHIPU -> Icons.Default.AutoAwesome
+    ai_provider.ZHIPU_CODING -> Icons.Default.Code
+    ai_provider.DEEPSEEK -> Icons.Default.Waves
+    ai_provider.KIMI -> Icons.Default.DarkMode
+    ai_provider.OPENAI -> Icons.Default.Public
+    ai_provider.XAI -> Icons.Default.Cancel
+    ai_provider.ANTHROPIC -> Icons.Default.Star
+    ai_provider.CUSTOM -> Icons.Default.Tune
 }
 
 // ==================== 子页：AI 行为 ====================
@@ -1002,23 +1708,8 @@ private fun ai_add_button(colors: app_colors, label: String = "添加", on_click
 
 @Composable
 private fun ai_sub_page_header(colors: app_colors, title: String, on_back: () -> Unit) {
-    Spacer(modifier = Modifier.height(30.dp))
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Surface(modifier = Modifier.size(35.dp), shape = CircleShape, color = colors.top_button_bg, onClick = on_back) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回", tint = colors.top_button_icon, modifier = Modifier.size(18.dp))
-            }
-        }
-        Spacer(modifier = Modifier.size(35.dp))
-    }
-    Spacer(modifier = Modifier.height(30.dp))
-    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp)) {
-        Text(title, fontSize = 30.sp, fontWeight = FontWeight.Bold, color = colors.title_highlight)
-    }
+    // 统一二级页顶栏：标题与返回键同行
+    sub_page_top_bar(title, on_back)
 }
 
 /** 单选卡片（用于思考深度/语气选择） */
