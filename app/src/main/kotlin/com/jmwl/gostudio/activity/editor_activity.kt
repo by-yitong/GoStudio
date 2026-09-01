@@ -386,6 +386,13 @@ class editor_activity : ComponentActivity() {
             ai_project_prompts_dir = ai_project_prompts_dir,
             ai_open_trigger = ai_open_trigger,
             sidebar_log_open_trigger = sidebar_log_open_trigger,
+            editor_content_provider = { editor.text?.toString() ?: "" },
+            on_editor_content_change = { new_content ->
+                val text = editor.text
+                if (text != null) {
+                    text.replace(0, text.length, new_content)
+                }
+            },
             ai_settings_visible = show_ai_settings || ai_settings_exiting
         )
 
@@ -548,12 +555,16 @@ class editor_activity : ComponentActivity() {
             state.editor_settings.gopls_signature_help != settings.gopls_signature_help ||
             state.editor_settings.gopls_document_highlight != settings.gopls_document_highlight ||
             state.editor_settings.gopls_formatting != settings.gopls_formatting ||
-            state.editor_settings.gopls_hover != settings.gopls_hover ||
-            state.editor_settings.gopls_translate_documentation != settings.gopls_translate_documentation ||
-            state.editor_settings.gopls_translation_endpoint.trim() != settings.gopls_translation_endpoint.trim() ||
-            state.editor_settings.gopls_translation_api_key != settings.gopls_translation_api_key
+            state.editor_settings.gopls_hover != settings.gopls_hover
         state.editor_settings = settings
         save_editor_settings(this, settings)
+        gopls_project?.update_translation_settings(
+            gopls_translation_settings(
+                enabled = settings.gopls_translate_documentation,
+                endpoint = settings.gopls_translation_endpoint,
+                backend_api_key = settings.gopls_translation_api_key
+            )
+        )
         if (gopls_settings_changed) {
             reset_gopls_project()
         }

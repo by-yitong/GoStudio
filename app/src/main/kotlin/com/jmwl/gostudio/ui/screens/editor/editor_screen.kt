@@ -15,6 +15,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
@@ -143,6 +144,10 @@ internal fun editor_screen(
     ai_open_trigger: Int = 0,
     /** 递增触发器：外部想让左侧日志栏打开时把这个值 +1（构建/打包前自动弹出） */
     sidebar_log_open_trigger: Int = 0,
+    /** 获取当前编辑器文本（用于布局预览渲染） */
+    editor_content_provider: () -> String = { "" },
+    /** 预览中修改属性后写回编辑器 */
+    on_editor_content_change: (String) -> Unit = {},
     /** AI 设置覆盖层打开或正在退出时，禁用 AI 页自身返回处理 */
     ai_settings_visible: Boolean = false
 ) {
@@ -151,6 +156,8 @@ internal fun editor_screen(
     var drawer_width by remember { mutableStateOf(300.dp) }
     var selected_tool by remember { mutableStateOf(editor_sidebar_tool.FILE) }
     var search_visible by remember { mutableStateOf(false) }
+    var layout_preview_visible by remember { mutableStateOf(false) }
+    val is_layout_xml = selected_tab_path?.endsWith("layout.xml") == true
     var search_query by remember { mutableStateOf("") }
     var search_replace_text by remember { mutableStateOf("") }
     var search_expanded by remember { mutableStateOf(false) }
@@ -330,6 +337,36 @@ internal fun editor_screen(
                             on_focus_change = { focused -> editor_focused = focused }
                         )
 
+                        // layout.xml 可视化预览入口
+                        if (is_layout_xml && !layout_preview_visible) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(12.dp)
+                                    .background(
+                                        color = colors.editor_panel_overlay,
+                                        shape = androidx.compose.foundation.shape.RoundedCornerShape(50)
+                                    )
+                                    .clickable { layout_preview_visible = true }
+                                    .padding(horizontal = 14.dp, vertical = 7.dp)
+                            ) {
+                                Text(
+                                    text = "预览",
+                                    fontSize = 12.sp,
+                                    color = colors.editor_icon
+                                )
+                            }
+                        }
+
+                        if (is_layout_xml && layout_preview_visible) {
+                            editor_layout_preview(
+                                xml_content = editor_content_provider(),
+                                on_close = { layout_preview_visible = false },
+                                on_content_change = on_editor_content_change,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+
                         long_press_menu?.let { menu ->
                             Box(
                                 modifier = Modifier
@@ -488,7 +525,7 @@ internal fun editor_screen(
             }
 
             // 符号栏悬浮在底部（键盘上方），不打断上面的布局
-                if (show_symbol_bar) {
+            if (show_symbol_bar) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
@@ -498,14 +535,14 @@ internal fun editor_screen(
                         on_insert = on_insert_symbol
                     )
                 }
-
-                editor_definition_overlay(
-                    can_goto_definition_flow = can_goto_definition_flow,
-                    goto_definition_running = goto_definition_running,
-                    on_goto_definition = on_goto_definition,
-                    bottom_padding = if (show_symbol_bar) 54.dp else 10.dp
-                )
             }
+
+            editor_definition_overlay(
+                can_goto_definition_flow = can_goto_definition_flow,
+                goto_definition_running = goto_definition_running,
+                on_goto_definition = on_goto_definition,
+                bottom_padding = if (show_symbol_bar) 54.dp else 10.dp
+            )
         }
 
         // 左缘右滑：跟手拉出左侧抽屉
@@ -791,6 +828,8 @@ private fun BoxScope.editor_definition_overlay(
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
+                .imePadding()
+                .navigationBarsPadding()
                 .padding(bottom = bottom_padding)
         ) {
             goto_definition_chip(
