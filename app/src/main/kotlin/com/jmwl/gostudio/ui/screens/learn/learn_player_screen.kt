@@ -347,7 +347,9 @@ private fun interactive_step(
 
 private fun create_lesson_editor(context: Context, starter_code: String): CodeEditor {
     return CodeEditor(context).apply {
-        val language = gostudio_application.instance.create_textmate_language("main.go")
+        val language = runCatching { learn_go_language() }
+            .getOrNull()
+            ?: gostudio_application.instance.create_textmate_language("main.go")
         language?.let(::setEditorLanguage)
         apply_editor_colors(context, this)
         setText(normalize_lesson_code(starter_code))
