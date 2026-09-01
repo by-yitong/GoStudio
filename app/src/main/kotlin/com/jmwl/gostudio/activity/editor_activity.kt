@@ -176,7 +176,12 @@ class editor_activity : ComponentActivity() {
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode != RESULT_OK) return@registerForActivityResult
-        refresh_files_after_ai_edit(listOf(File(project_dir, "layout.xml").absolutePath))
+        refresh_files_after_ai_edit(
+            listOf(
+                File(project_dir, "layout.xml").absolutePath,
+                File(project_dir, "images").absolutePath
+            )
+        )
         val data = result.data ?: return@registerForActivityResult
         val component_id = data.getStringExtra(
             com.jmwl.gostudio.designer.layout_designer_activity.EXTRA_EVENT_COMPONENT_ID
@@ -1287,7 +1292,8 @@ class editor_activity : ComponentActivity() {
                     app_name = app_config.app_name.ifBlank { project_dir.name },
                     package_name = app_config.package_name,
                     version_name = app_config.version_name,
-                    icon_file = icon_file
+                    icon_file = icon_file,
+                    image_dir = File(project_dir, "images")
                 )
             }
             output_panel_state.task_running = false

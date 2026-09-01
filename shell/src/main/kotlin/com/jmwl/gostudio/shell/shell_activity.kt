@@ -65,6 +65,7 @@ class shell_activity : AppCompatActivity() {
         if (!binary_file.isFile) assets.open("app/app.bin").use { input ->
             binary_file.outputStream().use { input.copyTo(it) }
         }
+        copy_asset_dir("app/images", File(filesDir, "images"))
         binary_file.setExecutable(true, false)
 
         // 2. 渲染布局
@@ -107,6 +108,18 @@ class shell_activity : AppCompatActivity() {
         bridge?.send_lifecycle("destroy")
         Handler(Looper.getMainLooper()).postDelayed({ bridge?.stop() }, 150)
         super.onDestroy()
+    }
+
+    private fun copy_asset_dir(asset_path: String, target_dir: File) {
+        if (!target_dir.isDirectory) target_dir.mkdirs() else return
+        assets.list(asset_path)?.forEach { name ->
+            val source = "$asset_path/$name"
+            val target = File(target_dir, name)
+            if (target.isFile) return@forEach
+            assets.open(source).use { input ->
+                target.outputStream().use { output -> input.copyTo(output) }
+            }
+        }
     }
 
     private fun wire_click_events() {

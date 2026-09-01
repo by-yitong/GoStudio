@@ -1,6 +1,7 @@
 package com.jmwl.gostudio.runtime
 
 import android.content.Context
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.util.TypedValue
 import android.util.Xml
@@ -63,8 +64,11 @@ import java.lang.reflect.Method
  */
 class runtime_layout_loader(private val context: Context) {
 
-    /** 加载结果：根视图 + 按 id 索引的控件表。 */
-    fun load(file: File): Result {
+    /** 加载结果：根视图 + 按 id 索引的控件表。base_dir 用于解析 images/xxx 这类项目相对资源。 */
+    private var base_dir: File? = null
+
+    fun load(file: File, project_dir: File? = null): Result {
+        base_dir = project_dir?.absoluteFile ?: file.parentFile
         val parser = Xml.newPullParser().apply { setInput(file.inputStream(), null) }
         var event = parser.eventType
         var root: View? = null
@@ -326,6 +330,17 @@ class runtime_layout_loader(private val context: Context) {
                     raw.toFloatOrNull()?.let { text_view.textSize = it }
                 }
             }
+            "src" -> set_local_image(view, raw)
+            "scaleType" -> (view as? ImageView)?.scaleType = when (raw) {
+                "center" -> ImageView.ScaleType.CENTER
+                "centerCrop" -> ImageView.ScaleType.CENTER_CROP
+                "centerInside" -> ImageView.ScaleType.CENTER_INSIDE
+                "fitCenter" -> ImageView.ScaleType.FIT_CENTER
+                "fitEnd" -> ImageView.ScaleType.FIT_END
+                "fitStart" -> ImageView.ScaleType.FIT_START
+                "fitXY" -> ImageView.ScaleType.FIT_XY
+                else -> ImageView.ScaleType.FIT_CENTER
+            }
             "textColor" -> parse_color(raw)?.let { (view as? TextView)?.setTextColor(it) }
             "textColorHint" -> parse_color(raw)?.let { (view as? TextView)?.setHintTextColor(it) }
             "gravity" -> {
@@ -435,6 +450,16 @@ class runtime_layout_loader(private val context: Context) {
     }
 
     /** android.R.attr.xxx 之类的资源引用，先不支持资源引用，返回 0。 */
+    /** 支持 src="images/a.png"；也支持绝对路径。 */
+    private fun set_local_image(view: View, raw: String) {
+        val image_view = view as? ImageView ?: return
+        val raw_file = File(raw.removePrefix("./"))
+        val image_file = if (raw_file.isAbsolute) raw_file else File(base_dir ?: context.filesDir, raw_file.path)
+        if (!image_file.isFile) return
+        val bitmap = BitmapFactory.decodeFile(image_file.absolutePath) ?: return
+        image_view.setImageBitmap(bitmap)
+    }
+
     private fun android_resource(raw: String): Int = 0
 
     data class Result(val root: View, val views: Map<String, View>)

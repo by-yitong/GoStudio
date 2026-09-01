@@ -12,6 +12,7 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -67,6 +68,7 @@ class layout_designer_activity : androidx.activity.ComponentActivity() {
             MaterialTheme {
                 designer_screen(
                     initial_xml = initial,
+                    project_dir = File(project_dir),
                     on_save = { xml ->
                         layout_file.writeText(xml)
                         setResult(RESULT_OK, Intent().putExtra(EXTRA_SAVED, true))
@@ -160,8 +162,8 @@ private val COMMON_ATTRS = listOf(
 private val TEXT_ATTRS = listOf("text", "hint", "textSize", "textColor", "textColorHint", "gravity", "singleLine", "maxLines")
 private val LAYOUT_ONLY_ATTRS = listOf("orientation", "gravity", "columnCount", "rowCount")
 private val TAG_ATTRS = mapOf(
-    "ImageView" to listOf("src"),
-    "ImageButton" to listOf("src"),
+    "ImageView" to listOf("src", "scaleType"),
+    "ImageButton" to listOf("src", "scaleType"),
     "CheckBox" to listOf("checked", "text"),
     "RadioButton" to listOf("checked", "text"),
     "Switch" to listOf("checked", "text"),
@@ -204,7 +206,7 @@ private val ATTR_CN = mapOf(
     "layout_marginLeft" to "左边距", "layout_marginRight" to "右边距",
     "layout_gravity" to "位置", "gravity" to "内容对齐", "orientation" to "方向",
     "padding" to "内边距", "visibility" to "可见性", "enabled" to "可用",
-    "singleLine" to "单行", "maxLines" to "最大行数", "src" to "图片资源",
+    "singleLine" to "单行", "maxLines" to "最大行数", "src" to "图片", "scaleType" to "缩放方式",
     "checked" to "选中", "textOn" to "开启文本", "textOff" to "关闭文本",
     "max" to "最大值", "progress" to "当前值", "numStars" to "星星数",
     "rating" to "评分", "stepSize" to "步长", "columnCount" to "列数",
@@ -220,7 +222,7 @@ private val ATTR_CN = mapOf(
     "flipInterval" to "切换间隔"
 )
 
-private enum class property_kind { TEXT, MULTILINE_TEXT, SINGLE_CHOICE, MULTI_CHOICE, BOOLEAN, NUMBER, DIMENSION, COLOR, SIZE }
+private enum class property_kind { TEXT, MULTILINE_TEXT, SINGLE_CHOICE, MULTI_CHOICE, BOOLEAN, NUMBER, DIMENSION, COLOR, SIZE, IMAGE }
 
 private data class property_spec(
     val kind: property_kind,
@@ -258,6 +260,11 @@ private fun property_spec_for(attr: String): property_spec = when (attr) {
     "textSize" -> property_spec(property_kind.DIMENSION, min = 8f, max = 72f, unit = "sp")
     "background", "textColor", "textColorHint" -> property_spec(property_kind.COLOR)
     "text", "hint", "textOn", "textOff" -> property_spec(property_kind.MULTILINE_TEXT)
+    "src" -> property_spec(property_kind.IMAGE)
+    "scaleType" -> property_spec(
+        property_kind.SINGLE_CHOICE,
+        listOf("fitCenter", "center", "centerCrop", "centerInside", "fitStart", "fitEnd", "fitXY")
+    )
     "format12Hour", "format24Hour" -> property_spec(property_kind.TEXT)
     else -> property_spec(property_kind.TEXT)
 }
@@ -268,10 +275,14 @@ private fun property_display(attr: String, value: String): String {
         property_kind.BOOLEAN -> if (value.equals("true", true) || value == "1") "是" else "否"
         property_kind.SINGLE_CHOICE -> when (value) {
             "vertical" -> "垂直"; "horizontal" -> "水平"
+            "fitCenter" -> "完整显示居中"; "center" -> "原图居中"
+            "centerCrop" -> "裁剪填满"; "centerInside" -> "完整显示"
+            "fitStart" -> "靠上/左适配"; "fitEnd" -> "靠下/右适配"; "fitXY" -> "拉伸填满"
             "wrap_content" -> "自适应内容"; "match_parent" -> "填满父容器"
             "visible" -> "可见"; "invisible" -> "不可见"; "gone" -> "移除占位"
             else -> value
         }
+        property_kind.IMAGE -> value.substringAfterLast('/')
         property_kind.MULTI_CHOICE -> value.split("|", ",", " ").filter { it.isNotBlank() }.joinToString(" / ") {
             when (it) { "top" -> "顶部"; "bottom" -> "底部"; "left" -> "左侧"; "right" -> "右侧";
                 "center" -> "居中"; "center_vertical" -> "垂直居中"; "center_horizontal" -> "水平居中"; else -> it }
@@ -460,6 +471,7 @@ private fun find_node(root: d_node, target: d_node): d_node? {
 @Composable
 private fun designer_screen(
     initial_xml: String,
+    project_dir: File,
     on_save: (String) -> Unit,
     on_open_event: (String, String, String, String) -> Unit
 ) {
@@ -513,6 +525,7 @@ private fun designer_screen(
             // 中间：实时预览（全屏，点选控件后自动弹右抽屉）
             RealtimePreview(
                 xml = xml,
+                project_dir = project_dir,
                 revision = preview_revision,
                 on_select = { id ->
                     selected = find_by_id(tree, id)
@@ -682,6 +695,7 @@ private fun designer_screen(
                                 rebuild_from_tree()
                             }
                         },
+                        project_dir = project_dir,
                         on_open_event = { component_id, event_type ->
                             selected?.tag?.let { tag ->
                                 on_open_event(serialize(tree), component_id, event_type, tag)
@@ -864,7 +878,13 @@ private fun AddList(tags: List<String>, on_add: (String) -> Unit) {
 /* 左抽屉：组件列表 */
 /* 中间：实时预览（原生渲染 + 点选） */
 @Composable
-private fun RealtimePreview(xml: String, revision: Int, on_select: (String) -> Unit, modifier: Modifier = Modifier) {
+private fun RealtimePreview(
+    xml: String,
+    project_dir: File,
+    revision: Int,
+    on_select: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
     val context = LocalContext.current
     var result by remember { mutableStateOf<runtime_layout_loader.Result?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -878,7 +898,7 @@ private fun RealtimePreview(xml: String, revision: Int, on_select: (String) -> U
             runCatching {
                 val tmp = File.createTempFile("design", ".xml", context.cacheDir)
                 tmp.writeText(xml)
-                val r = runtime_layout_loader(context).load(tmp)
+                val r = runtime_layout_loader(context).load(tmp, project_dir)
                 tmp.delete()
                 r
             }
@@ -932,6 +952,7 @@ private fun RealtimePreview(xml: String, revision: Int, on_select: (String) -> U
 private fun PropertyDrawer(
     node: d_node?,
     is_root: Boolean,
+    project_dir: File,
     on_change: () -> Unit,
     on_delete: () -> Unit,
     on_open_event: (String, String) -> Unit,
@@ -1038,6 +1059,7 @@ private fun PropertyDrawer(
             PropertyEditDialog(
                 node = node,
                 attr = attr,
+                project_dir = project_dir,
                 on_confirm = { newValue ->
                     if (newValue.isBlank()) node.attrs.remove(attr) else node.attrs[attr] = newValue
                     editing_attr = null
@@ -1160,6 +1182,7 @@ private fun PropertyRow(
 private fun PropertyEditDialog(
     node: d_node,
     attr: String,
+    project_dir: File,
     on_confirm: (String) -> Unit,
     on_dismiss: () -> Unit
 ) {
@@ -1268,6 +1291,28 @@ private fun PropertyEditDialog(
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
+                    property_kind.IMAGE -> {
+                        val context = LocalContext.current
+                        val image_launcher = rememberLauncherForActivityResult(
+                            ActivityResultContracts.GetContent()
+                        ) { uri ->
+                            if (uri != null) {
+                                val saved = copy_selected_image(context, uri, project_dir)
+                                if (saved != null) text = saved
+                            }
+                        }
+                        OutlinedTextField(
+                            value = text,
+                            onValueChange = { text = it },
+                            singleLine = true,
+                            label = { Text("项目相对路径，如 images/logo.png") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        TextButton(onClick = { image_launcher.launch("image/*") }) {
+                            Text("从相册 / 文件选择", color = app_theme_provider.colors.editor_icon)
+                        }
+                    }
                     property_kind.COLOR -> {
                         OutlinedTextField(
                             value = text,
@@ -1329,6 +1374,23 @@ private fun format_number(value: Float): String =
         val one_decimal = (value * 10f).roundToInt() / 10f
         one_decimal.toString()
     }
+
+private fun copy_selected_image(context: android.content.Context, uri: android.net.Uri, project_dir: File): String? {
+    val dir = File(project_dir, "images").apply { mkdirs() }
+    val extension = when (context.contentResolver.getType(uri)?.lowercase()) {
+        "image/png" -> "png"
+        "image/webp" -> "webp"
+        "image/gif" -> "gif"
+        else -> "jpg"
+    }
+    val target = File(dir, "image_${System.currentTimeMillis()}.$extension")
+    return runCatching {
+        context.contentResolver.openInputStream(uri)?.use { input ->
+            target.outputStream().use { output -> input.copyTo(output) }
+        } ?: return null
+        "images/${target.name}"
+    }.getOrNull()
+}
 
 private fun parse_preview_color(value: String): androidx.compose.ui.graphics.Color =
     runCatching { androidx.compose.ui.graphics.Color(android.graphics.Color.parseColor(value)) }

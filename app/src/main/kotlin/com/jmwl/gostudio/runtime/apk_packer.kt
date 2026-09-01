@@ -30,7 +30,8 @@ object apk_packer {
         app_name: String = "App",
         package_name: String = "",
         version_name: String = "",
-        icon_file: File? = null
+        icon_file: File? = null,
+        image_dir: File? = null
     ): Result<File> = runCatching {
         val work_dir = File(context.cacheDir, "apkpack").apply { mkdirs() }
 
@@ -42,7 +43,7 @@ object apk_packer {
 
         // 2. 注入
         val injected = File(work_dir, "injected.apk")
-        inject(template, injected, layout_file, binary_file)
+        inject(template, injected, layout_file, binary_file, image_dir)
 
         // 3. 改写 Manifest（名称/包名/版本）
         val rewritten = File(work_dir, "rewritten.apk")
@@ -62,7 +63,13 @@ object apk_packer {
     }
 
     /** 重写 ZIP：复制原条目（跳过旧签名），再追加两个 assets 条目。 */
-    private fun inject(template: File, output: File, layout_file: File, binary_file: File) {
+    private fun inject(
+        template: File,
+        output: File,
+        layout_file: File,
+        binary_file: File,
+        image_dir: File?
+    ) {
         ZipFile(template).use { zf ->
             ZipOutputStream(FileOutputStream(output)).use { zos ->
                 val entries = zf.entries()
@@ -86,6 +93,12 @@ object apk_packer {
                 }
                 add_entry(zos, "assets/app/layout.xml", layout_file)
                 add_entry(zos, "assets/app/app.bin", binary_file)
+                if (image_dir?.isDirectory == true) {
+                    image_dir.walkTopDown().filter { it.isFile }.forEach { file ->
+                        val relative = file.relativeTo(image_dir).path
+                        add_entry(zos, "assets/app/images/$relative", file)
+                    }
+                }
             }
         }
     }
