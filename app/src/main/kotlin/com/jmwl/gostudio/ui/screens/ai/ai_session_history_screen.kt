@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -61,7 +62,7 @@ fun ai_session_history_screen(
     var rename_target by remember { mutableStateOf<ai_session_meta?>(null) }
     var delete_target by remember { mutableStateOf<ai_session_meta?>(null) }
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    Column(modifier = Modifier.fillMaxSize().statusBarsPadding().padding(16.dp)) {
         // 顶部栏
         Row(
             modifier = Modifier.fillMaxWidth(),

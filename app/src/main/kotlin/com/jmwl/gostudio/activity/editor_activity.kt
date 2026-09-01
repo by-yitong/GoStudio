@@ -10,6 +10,9 @@ import com.jmwl.gostudio.editor.tabs.pinned_tab_paths
 import com.jmwl.gostudio.editor.tabs.pinned_tabs
 import com.jmwl.gostudio.editor.tabs.remaining_tabs_after_close_others
 import com.jmwl.gostudio.editor.settings.*
+import com.jmwl.gostudio.editor.settings.editor_session_tab
+import com.jmwl.gostudio.editor.settings.load_editor_session
+import com.jmwl.gostudio.editor.settings.save_editor_session
 import com.jmwl.gostudio.editor.model.*
 import com.jmwl.gostudio.editor.core.*
 
@@ -27,6 +30,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,6 +40,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.lifecycleScope
 import com.jmwl.gostudio.core.logging.logger_manager
@@ -196,6 +201,11 @@ class editor_activity : ComponentActivity() {
         initialize_project()
     }
 
+    override fun onStop() {
+        super.onStop()
+        persist_editor_session()
+    }
+
     override fun onResume() {
         super.onResume()
         // 从全局设置改完编辑器配置返回后，重载让设置即时生效
@@ -207,6 +217,7 @@ class editor_activity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        persist_editor_session()
         ai_agent?.shutdown() // 清理 MCP server 进程
         block_hint_job?.cancel()
         go_build_job?.cancel()
@@ -244,6 +255,13 @@ class editor_activity : ComponentActivity() {
     private fun editor_activity_content() {
         val colors = app_theme_provider.colors
         val goto_running by goto_in_progress.collectAsState()
+        val ai_settings_visibility = remember { MutableTransitionState(false) }
+        LaunchedEffect(show_ai_settings) {
+            if (ai_settings_visibility.targetState != show_ai_settings) {
+                ai_settings_visibility.targetState = show_ai_settings
+            }
+        }
+        val ai_settings_exiting = ai_settings_visibility.currentState && !ai_settings_visibility.targetState
 
         BackHandler(enabled = true) {
             when {
@@ -361,11 +379,12 @@ class editor_activity : ComponentActivity() {
             on_ai_session_model_change = { p, m -> _session_override = p to m },
             ai_global_prompts_dir = ai_global_prompts_dir,
             ai_project_prompts_dir = ai_project_prompts_dir,
-            ai_open_trigger = ai_open_trigger
+            ai_open_trigger = ai_open_trigger,
+            ai_settings_visible = show_ai_settings || ai_settings_exiting
         )
 
         AnimatedVisibility(
-            visible = show_ai_settings,
+            visibleState = ai_settings_visibility,
             enter = slideInHorizontally(initialOffsetX = { it }) + fadeIn(),
             exit = slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
         ) {
@@ -386,8 +405,9 @@ class editor_activity : ComponentActivity() {
             }
         }
 
-        BackHandler(enabled = show_ai_settings) {
-            show_ai_settings = false
+        // 设置页退出动画期间继续拦截返回键，避免第二次返回把下层 AI 页一起关掉。
+        BackHandler(enabled = show_ai_settings || ai_settings_exiting) {
+            if (show_ai_settings) show_ai_settings = false
         }
 
         // 诊断详情弹层（问题页签点击条目打开）
@@ -592,7 +612,7 @@ class editor_activity : ComponentActivity() {
                 }
 
                 prewarm_textmate_languages()
-                restore_pinned_tabs()
+                restore_editor_session()
             }
         }
     }
@@ -755,6 +775,7 @@ class editor_activity : ComponentActivity() {
         val index = find_tab_index(file_path)
         if (index >= 0) {
             attach_editor_tab(index)
+            persist_editor_session()
         }
     }
 
@@ -867,7 +888,7 @@ class editor_activity : ComponentActivity() {
 
     /**
      * 构建当前 Go 项目：执行 `go build`（按项目配置拼接 -tags/-ldflags/-trimpath/-p），
-     * 输出到项目根的 bin/ 目录。结果流式写入输出面板。
+     * 按配置的运行入口编译，输出到项目根的 bin/ 目录。结果流式写入输出面板。
      */
     private fun build_go_project() {
         if (detected_project_info.kind != project_kind.GO) {
@@ -907,7 +928,7 @@ class editor_activity : ComponentActivity() {
                 // 使 go build 进程能 cd 成功，且路径与文件系统一致。
                 val out_flag = " -o ${shell_quote(File(bin_dir, project_dir.name).absolutePath)}"
                 proot_manager.execute_command_with_environment(
-                    command = build_go_build_command(build) + out_flag + " .",
+                    command = build_go_build_command(build) + out_flag + " " + shell_quote(build.run_entry),
                     working_dir = project_dir.absolutePath,
                     extra_environment = project_environment.environment,
                     on_log = { line -> output_panel_state.append_output(line, output_level_for_line(line)) }
@@ -931,7 +952,7 @@ class editor_activity : ComponentActivity() {
     }
 
     /**
-     * 运行当前 Go 项目：打开独立终端页面，在 PTY 会话中执行 `go run .`，
+     * 运行当前 Go 项目：打开独立终端页面，按项目配置的入口执行 `go run`，
      * 程序需要标准输入时可直接在终端里交互输入。
      */
     private fun run_go_project() {
@@ -957,7 +978,7 @@ class editor_activity : ComponentActivity() {
             val build = project_manager.read_project_build_config(project_dir.absolutePath)
             startActivity(
                 Intent(this@editor_activity, terminal_activity::class.java)
-                    .putExtra(terminal_activity.EXTRA_RUN_COMMAND, build_go_run_command(build) + " .")
+                    .putExtra(terminal_activity.EXTRA_RUN_COMMAND, build_go_run_command(build) + " " + shell_quote(build.run_entry))
                     .putExtra(terminal_activity.EXTRA_RUN_TITLE, "go run")
                     .putExtra(terminal_activity.EXTRA_RUN_WORKING_DIR, project_dir.absolutePath)
                     .putStringArrayListExtra(
@@ -1093,6 +1114,7 @@ class editor_activity : ComponentActivity() {
         val existing_index = find_tab_index(File(file_path).absolutePath)
         if (existing_index >= 0) {
             attach_editor_tab(existing_index, capture_current = false)
+            persist_editor_session()
             return
         }
 
@@ -1152,6 +1174,7 @@ class editor_activity : ComponentActivity() {
         if (existing_index >= 0) {
             attach_editor_tab(existing_index)
             move_cursor_to(line, column)
+            persist_editor_session()
             return
         }
 
@@ -1186,6 +1209,7 @@ class editor_activity : ComponentActivity() {
         state.open_tabs.add(tab)
         reorder_tabs_keep_active()
         attach_editor_tab(find_tab_index(tab.file_path), capture_current = false)
+        persist_editor_session()
         return tab
     }
 
@@ -1203,6 +1227,44 @@ class editor_activity : ComponentActivity() {
             tab.cursor_column = safe_column
         }
         editor.requestFocus()
+    }
+
+    private suspend fun restore_editor_session() {
+        val session = load_editor_session(this, project_dir) ?: run {
+            restore_pinned_tabs()
+            return
+        }
+        if (session.tabs.isEmpty()) return
+
+        state.loading = true
+        val loaded_files = withContext(Dispatchers.IO) {
+            load_pinned_project_files(project_dir, session.tabs.map { it.file_path })
+        }.associateBy { it.file.absolutePath }
+        state.loading = false
+
+        session.tabs.forEach { saved_tab ->
+            val loaded_file = loaded_files[saved_tab.file_path] ?: return@forEach
+            val tab = create_open_tab(loaded_file).apply {
+                pinned = saved_tab.pinned
+                cursor_line = saved_tab.cursor_line
+                cursor_column = saved_tab.cursor_column
+            }
+            if (find_tab_index(tab.file_path) < 0) {
+                prepare_tab_editor(tab)
+                state.open_tabs.add(tab)
+            }
+        }
+
+        reorder_tabs_keep_active()
+        val active_index = session.active_path
+            ?.let { find_tab_index(it) }
+            ?.takeIf { it >= 0 }
+            ?: 0
+        if (state.open_tabs.isNotEmpty()) {
+            attach_editor_tab(active_index, capture_current = false)
+        }
+        save_pinned_tabs()
+        persist_editor_session()
     }
 
     private suspend fun restore_pinned_tabs() {
@@ -1227,6 +1289,7 @@ class editor_activity : ComponentActivity() {
             attach_editor_tab(0, capture_current = false)
         }
         save_pinned_tabs()
+        persist_editor_session()
     }
 
     private fun save_pinned_tabs() {
@@ -1234,6 +1297,24 @@ class editor_activity : ComponentActivity() {
             context = this,
             project_dir = project_dir,
             paths = pinned_tab_paths(state.open_tabs)
+        )
+    }
+
+    private fun persist_editor_session() {
+        if (!::project_dir.isInitialized) return
+        capture_active_tab_state()
+        save_editor_session(
+            context = this,
+            project_dir = project_dir,
+            tabs = state.open_tabs.map { tab ->
+                editor_session_tab(
+                    file_path = tab.file_path,
+                    cursor_line = tab.cursor_line,
+                    cursor_column = tab.cursor_column,
+                    pinned = tab.pinned
+                )
+            },
+            active_path = state.current_file_path
         )
     }
 
@@ -1325,6 +1406,7 @@ class editor_activity : ComponentActivity() {
         tab.pinned = !tab.pinned
         reorder_tabs_keep_active()
         save_pinned_tabs()
+        persist_editor_session()
     }
 
     private fun close_tab(file_path: String) {
@@ -1352,6 +1434,7 @@ class editor_activity : ComponentActivity() {
             state.selected_tab_index = find_tab_index(active_path)
         }
         release_tab_editor(closing_tab)
+        persist_editor_session()
     }
 
     private fun close_other_tabs(keep_file_path: String) {
@@ -1365,6 +1448,7 @@ class editor_activity : ComponentActivity() {
         reorder_tabs_keep_active()
         val next_index = find_tab_index(keep_file_path).takeIf { it >= 0 } ?: 0
         attach_editor_tab(next_index, capture_current = false)
+        persist_editor_session()
     }
 
     private fun close_all_tabs() {
@@ -1382,6 +1466,7 @@ class editor_activity : ComponentActivity() {
 
         val next_index = find_tab_index(active_path).takeIf { it >= 0 } ?: 0
         attach_editor_tab(next_index, capture_current = false)
+        persist_editor_session()
     }
 
     private fun reorder_tabs_keep_active() {

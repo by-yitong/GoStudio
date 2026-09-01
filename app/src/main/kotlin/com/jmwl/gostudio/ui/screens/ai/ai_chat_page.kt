@@ -10,6 +10,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -17,7 +18,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.*
@@ -28,7 +31,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
@@ -71,6 +76,7 @@ fun ai_chat_page(
     global_prompts_dir: java.io.File? = null,
     project_prompts_dir: java.io.File? = null,
     suggestion_prompts: List<String> = default_suggestion_prompts,
+    back_handler_enabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val colors = app_theme_provider.colors
@@ -101,7 +107,7 @@ fun ai_chat_page(
     }
 
     // 返回键：先关抽屉，再关页面
-    androidx.activity.compose.BackHandler(enabled = true) {
+    androidx.activity.compose.BackHandler(enabled = back_handler_enabled) {
         when {
             drawer_open -> drawer_open = false
             else -> on_close()
@@ -209,13 +215,12 @@ fun ai_chat_page(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(colors.editor_bg)
-            .statusBarsPadding()
+            .background(colors.gradient_start)
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            // 顶栏：会话抽屉入口 + 模型选择 + 设置 + 关闭
+        Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
+            // 顶栏：会话抽屉入口 + 模型选择（参考图：菜单靠左，模型名紧随其后）
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 2.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = {
@@ -225,7 +230,7 @@ fun ai_chat_page(
                     Icon(
                         imageVector = Icons.Default.Menu,
                         contentDescription = "最近会话",
-                        tint = colors.top_button_icon
+                        tint = colors.title_large
                     )
                 }
                 ai_model_selector(
@@ -237,36 +242,29 @@ fun ai_chat_page(
                     on_open_settings = on_open_settings,
                     modifier = Modifier.weight(1f)
                 )
-                IconButton(onClick = on_open_settings, modifier = Modifier.size(36.dp)) {
-                    Icon(Icons.Default.Settings, contentDescription = "AI 设置", tint = colors.top_button_icon, modifier = Modifier.size(19.dp))
+                IconButton(onClick = on_open_settings, modifier = Modifier.size(38.dp)) {
+                    Icon(Icons.Default.Settings, contentDescription = "AI 设置", tint = colors.title_large, modifier = Modifier.size(21.dp))
                 }
-                IconButton(onClick = on_close, modifier = Modifier.size(36.dp)) {
-                    Icon(Icons.Default.Close, contentDescription = "关闭", tint = colors.top_button_icon, modifier = Modifier.size(20.dp))
+                IconButton(onClick = on_close, modifier = Modifier.size(38.dp)) {
+                    Icon(Icons.Default.Close, contentDescription = "关闭", tint = colors.title_large, modifier = Modifier.size(21.dp))
                 }
             }
-
-            HorizontalDivider(color = colors.input_border.copy(alpha = 0.3f))
 
             // 消息流
             if (agent.messages.isEmpty()) {
                 Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp),
                         modifier = Modifier.padding(horizontal = 16.dp)
                     ) {
-                        Icon(Icons.Outlined.AutoAwesome, contentDescription = null, tint = colors.subtitle.copy(alpha = 0.5f), modifier = Modifier.size(40.dp))
-                        Text("问点什么呢？", fontSize = 14.sp, color = colors.subtitle)
-                        Text("可以问我 Go 编程问题、解释代码、修复错误", fontSize = 11.sp, color = colors.subtitle.copy(alpha = 0.7f))
-                        androidx.compose.foundation.layout.FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp),
-                            modifier = Modifier.padding(top = 8.dp)
-                        ) {
-                            suggestion_prompts.take(6).forEach { prompt ->
-                                ai_suggestion_chip(prompt) { input = prompt }
-                            }
-                        }
+                        // 参考图：居中大字问候
+                        Text(
+                            text = "你想探索什么？",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = colors.title_large
+                        )
                     }
                 }
             } else {
@@ -338,70 +336,83 @@ fun ai_chat_page(
                 }
             }
 
-            // 输入区：+ 号（附件） | 输入框 | 发送/停止
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(8.dp).imePadding().navigationBarsPadding(),
-                verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            // 输入区：单一圆角胶囊（参考图：+ 在内、无边框输入、发送键内嵌右侧）
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp, vertical = 8.dp)
+                    .imePadding()
+                    .navigationBarsPadding(),
+                shape = RoundedCornerShape(26.dp),
+                color = colors.card_bg,
+                border = BorderStroke(1.dp, colors.input_border.copy(alpha = 0.5f)),
+                shadowElevation = 2.dp
             ) {
-                // + 号：选择上传文件/图片
-                Box {
-                    FilledIconButton(
-                        onClick = { plus_menu_open = true },
-                        modifier = Modifier.size(44.dp),
-                        shape = RoundedCornerShape(22.dp),
-                        colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = colors.card_bg,
-                            contentColor = colors.top_button_icon
-                        )
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = "添加附件", modifier = Modifier.size(22.dp))
+                Row(
+                    modifier = Modifier.padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    // + 号：选择上传文件/图片
+                    Box {
+                        FilledIconButton(
+                            onClick = { plus_menu_open = true },
+                            modifier = Modifier.size(38.dp),
+                            shape = CircleShape,
+                            colors = IconButtonDefaults.filledIconButtonColors(
+                                containerColor = colors.editor_bg,
+                                contentColor = colors.top_button_icon
+                            )
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = "添加附件", modifier = Modifier.size(20.dp))
+                        }
+                        DropdownMenu(
+                            expanded = plus_menu_open,
+                            onDismissRequest = { plus_menu_open = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("上传文件", color = colors.dialog_text, fontSize = 13.sp) },
+                                leadingIcon = { Icon(Icons.Default.InsertDriveFile, contentDescription = null, tint = colors.subtitle, modifier = Modifier.size(18.dp)) },
+                                onClick = {
+                                    plus_menu_open = false
+                                    file_picker.launch("*/*")
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("上传图片", color = colors.dialog_text, fontSize = 13.sp) },
+                                leadingIcon = { Icon(Icons.Default.Image, contentDescription = null, tint = colors.subtitle, modifier = Modifier.size(18.dp)) },
+                                onClick = {
+                                    plus_menu_open = false
+                                    image_picker.launch("image/*")
+                                }
+                            )
+                        }
                     }
-                    DropdownMenu(
-                        expanded = plus_menu_open,
-                        onDismissRequest = { plus_menu_open = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("上传文件", color = colors.dialog_text, fontSize = 13.sp) },
-                            leadingIcon = { Icon(Icons.Default.InsertDriveFile, contentDescription = null, tint = colors.subtitle, modifier = Modifier.size(18.dp)) },
-                            onClick = {
-                                plus_menu_open = false
-                                file_picker.launch("*/*")
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("上传图片", color = colors.dialog_text, fontSize = 13.sp) },
-                            leadingIcon = { Icon(Icons.Default.Image, contentDescription = null, tint = colors.subtitle, modifier = Modifier.size(18.dp)) },
-                            onClick = {
-                                plus_menu_open = false
-                                image_picker.launch("image/*")
-                            }
-                        )
-                    }
-                }
 
                 // 输入框 + 自动补全浮层（Box 锚点）
-                Box(modifier = Modifier.weight(1f)) {
-                    OutlinedTextField(
+                Box(modifier = Modifier.weight(1f).heightIn(min = 38.dp)) {
+                    if (input.isEmpty()) {
+                        Text(
+                            text = "有什么我能帮您的吗？",
+                            fontSize = 14.sp,
+                            color = colors.input_hint,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier
+                                .matchParentSize()
+                                .wrapContentHeight(Alignment.CenterVertically)
+                                .padding(start = 8.dp)
+                        )
+                    }
+                    BasicTextField(
                         value = input,
                         onValueChange = {
                             input = it
                             cursor_pos = it.length
                         },
-                        modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("输入问题…  用 @ 引用文件，/ 调用命令", fontSize = 12.sp, color = colors.input_hint) },
-                        minLines = 1,
-                        maxLines = 4,
-                        shape = RoundedCornerShape(20.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = colors.input_text,
-                            unfocusedTextColor = colors.input_text,
-                            focusedBorderColor = colors.title_highlight,
-                            unfocusedBorderColor = colors.input_border,
-                            cursorColor = colors.title_highlight,
-                            focusedContainerColor = colors.card_bg,
-                            unfocusedContainerColor = colors.card_bg
-                        )
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 10.dp),
+                        textStyle = TextStyle(fontSize = 14.sp, color = colors.input_text),
+                        cursorBrush = SolidColor(colors.title_highlight),
+                        maxLines = 4
                     )
                     ai_input_completion_overlay(
                         text = input,
@@ -419,8 +430,8 @@ fun ai_chat_page(
                 if (is_running) {
                     FilledIconButton(
                         onClick = { agent.cancel() },
-                        modifier = Modifier.size(44.dp),
-                        shape = RoundedCornerShape(22.dp),
+                        modifier = Modifier.size(38.dp),
+                        shape = CircleShape,
                         colors = IconButtonDefaults.filledIconButtonColors(containerColor = colors.danger)
                     ) {
                         Icon(Icons.Default.Stop, contentDescription = "停止", tint = colors.dialog_clone_text, modifier = Modifier.size(20.dp))
@@ -440,18 +451,19 @@ fun ai_chat_page(
                                 cursor_pos = 0
                             }
                         },
-                        modifier = Modifier.size(44.dp),
-                        shape = RoundedCornerShape(22.dp),
+                        modifier = Modifier.size(38.dp),
+                        shape = CircleShape,
                         enabled = input.isNotBlank() || attachments.isNotEmpty(),
                         colors = IconButtonDefaults.filledIconButtonColors(
                             containerColor = colors.title_highlight,
                             disabledContainerColor = colors.title_highlight.copy(alpha = 0.3f)
                         )
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "发送", tint = colors.dialog_clone_text, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.ArrowUpward, contentDescription = "发送", tint = colors.dialog_clone_text, modifier = Modifier.size(20.dp))
                     }
                 }
             }
+        }
         }
 
         // 左侧抽屉遮罩
@@ -474,7 +486,7 @@ fun ai_chat_page(
                     .fillMaxHeight()
                     .width(drawer_width)
                     .offset { IntOffset(drawer_offset_px, 0) },
-                color = colors.editor_bg,
+                color = colors.gradient_start,
                 tonalElevation = 0.dp,
                 shadowElevation = 8.dp
             ) {

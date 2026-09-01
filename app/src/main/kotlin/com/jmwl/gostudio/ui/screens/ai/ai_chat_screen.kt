@@ -43,7 +43,7 @@ fun ai_chat_screen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         },
-        containerColor = colors.gradient_start.copy(alpha = 0.03f)
+        containerColor = colors.gradient_start
     ) { padding ->
         ai_chat_panel(
             agent = agent,

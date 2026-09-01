@@ -63,45 +63,25 @@ fun ai_model_selector(
                 .padding(horizontal = 8.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Outlined.AutoAwesome, contentDescription = null, tint = colors.title_highlight, modifier = Modifier.size(16.dp))
-            Spacer(modifier = Modifier.width(6.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                if (has_any_configured) {
-                    Text(
-                        text = current_provider.display_name,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = colors.title_large,
-                        maxLines = 1,
-                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = current_model,
-                        fontSize = 10.sp,
-                        color = colors.subtitle,
-                        maxLines = 1,
-                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                    )
-                } else {
-                    Text(
-                        text = "未配置",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = colors.danger,
-                        maxLines = 1
-                    )
-                    Text(
-                        text = "点击设置 AI 提供商",
-                        fontSize = 10.sp,
-                        color = colors.subtitle,
-                        maxLines = 1
-                    )
-                }
-            }
+            // 参考图：单行粗体模型名 + 下拉箭头
+            Text(
+                text = when {
+                    !has_any_configured -> "未配置 AI"
+                    current_model.isNotBlank() -> current_model
+                    else -> current_provider.display_name
+                },
+                fontSize = 17.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (has_any_configured) colors.title_large else colors.danger,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false)
+            )
             if (has_any_configured) {
-                Icon(Icons.Default.ArrowDropDown, contentDescription = "切换", tint = colors.subtitle, modifier = Modifier.size(18.dp))
+                Icon(Icons.Default.ArrowDropDown, contentDescription = "切换模型", tint = colors.subtitle, modifier = Modifier.size(20.dp))
             } else {
-                Icon(Icons.Default.Settings, contentDescription = "去设置", tint = colors.subtitle, modifier = Modifier.size(14.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+                Icon(Icons.Default.Settings, contentDescription = "去设置", tint = colors.subtitle, modifier = Modifier.size(15.dp))
             }
         }
         DropdownMenu(

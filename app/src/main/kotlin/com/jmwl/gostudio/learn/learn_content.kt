@@ -103,9 +103,8 @@ object learn_content {
     val accent_next = 0xFF00A8A0L
     val accent_conc = 0xFFE0533DL
 
-    val tracks: List<learn_track> = listOf(
-        go_basics(), go_next(), go_concurrency()
-    )
+    val tracks: List<learn_track> =
+        listOf(go_basics(), go_next(), go_concurrency()) + practical_learn_tracks()
 
     fun find_lesson(lesson_id: String): Pair<learn_track, learn_lesson>? {
         for (track in tracks) for (lesson in track.lessons) {

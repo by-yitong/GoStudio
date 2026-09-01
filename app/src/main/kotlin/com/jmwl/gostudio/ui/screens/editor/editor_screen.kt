@@ -16,6 +16,7 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -36,6 +37,7 @@ import androidx.compose.ui.unit.sp
 import com.jmwl.gostudio.ui.theme.app_theme_provider
 import com.jmwl.gostudio.ui.theme.motion
 import com.jmwl.gostudio.ui.dialogs.editor.editor_create_entry_dialog
+import kotlinx.coroutines.launch
 import io.github.rosemoe.sora.event.InterceptTarget
 import io.github.rosemoe.sora.event.EventReceiver
 import io.github.rosemoe.sora.event.LongPressEvent
@@ -136,7 +138,9 @@ internal fun editor_screen(
     ai_global_prompts_dir: java.io.File? = null,
     ai_project_prompts_dir: java.io.File? = null,
     /** 递增触发器：外部想让 AI 弹窗打开时把这个值 +1 */
-    ai_open_trigger: Int = 0
+    ai_open_trigger: Int = 0,
+    /** AI 设置覆盖层打开或正在退出时，禁用 AI 页自身返回处理 */
+    ai_settings_visible: Boolean = false
 ) {
     val colors = app_theme_provider.colors
     var drawer_open by remember { mutableStateOf(false) }
@@ -162,9 +166,14 @@ internal fun editor_screen(
     var long_press_menu by remember { mutableStateOf<editor_long_press_menu?>(null) }
     val terminal_state = remember_editor_terminal_state()
     val drawer_progress = remember { Animatable(0f) }
+    val coroutine_scope = rememberCoroutineScope()
+    var drawer_edge_dragging by remember { mutableStateOf(false) }
+    var ai_edge_swipe_distance by remember { mutableStateOf(0f) }
     val safe_project_name = project_name.ifBlank { "项目" }
     val density = LocalDensity.current
     val drawer_width_px = with(density) { drawer_width.toPx() }
+    val edge_swipe_zone_px = with(density) { 20.dp.toPx() }
+    val ai_open_threshold_px = with(density) { 64.dp.toPx() }
     val drawer_progress_value = drawer_progress.value
     val editor_offset_px = (drawer_width_px * drawer_progress_value).roundToInt()
     val sidebar_offset_px = (-(drawer_width_px * (1f - drawer_progress_value))).roundToInt()
@@ -487,6 +496,72 @@ internal fun editor_screen(
             }
         }
 
+        // 左缘右滑：跟手拉出左侧抽屉
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .fillMaxHeight()
+                .width(20.dp)
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onDragEnd = {
+                            if (drawer_edge_dragging) {
+                                drawer_edge_dragging = false
+                                if (drawer_progress.value > 0.35f) {
+                                    drawer_open = true
+                                } else if (!drawer_open) {
+                                    coroutine_scope.launch {
+                                        drawer_progress.animateTo(0f, tween(motion.SLOW, easing = motion.quiet))
+                                    }
+                                }
+                            }
+                        },
+                        onDragCancel = {
+                            if (drawer_edge_dragging) {
+                                drawer_edge_dragging = false
+                                if (drawer_progress.value > 0.35f) {
+                                    drawer_open = true
+                                } else if (!drawer_open) {
+                                    coroutine_scope.launch {
+                                        drawer_progress.animateTo(0f, tween(motion.SLOW, easing = motion.quiet))
+                                    }
+                                }
+                            }
+                        }
+                    ) { change, drag_amount ->
+                        change.consume()
+                        if (!drawer_open && !show_ai_page) {
+                            drawer_edge_dragging = true
+                            val next = (drawer_progress.value + drag_amount / drawer_width_px)
+                                .coerceIn(0f, 1f)
+                            coroutine_scope.launch { drawer_progress.snapTo(next) }
+                        }
+                    }
+                }
+        )
+
+        // 右缘左滑：打开 AI 聊天窗口
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .fillMaxHeight()
+                .width(20.dp)
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onDragStart = { ai_edge_swipe_distance = 0f }
+                    ) { change, drag_amount ->
+                        change.consume()
+                        if (!show_ai_page && !drawer_open) {
+                            ai_edge_swipe_distance += drag_amount
+                            if (ai_edge_swipe_distance <= -ai_open_threshold_px) {
+                                ai_edge_swipe_distance = 0f
+                                show_ai_page = true
+                            }
+                        }
+                    }
+                }
+        )
+
         if (drawer_open || drawer_progress_value > 0f) {
             editor_sidebar(
                 drawer_width = drawer_width,
@@ -580,7 +655,7 @@ internal fun editor_screen(
                     agent = agent,
                     on_close = { show_ai_page = false },
                     on_open_settings = {
-                        show_ai_page = false
+                        // 保持 AI 页面在下层：设置页关闭后返回这里，而不是退出到工作区
                         on_open_ai_settings()
                     },
                     current_provider = ai_current_provider,
@@ -591,6 +666,7 @@ internal fun editor_screen(
                     project_dir = java.io.File(project_root_path),
                     global_prompts_dir = ai_global_prompts_dir,
                     project_prompts_dir = ai_project_prompts_dir,
+                    back_handler_enabled = !ai_settings_visible,
                     modifier = Modifier.fillMaxSize()
                 )
             } else {

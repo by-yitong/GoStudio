@@ -157,16 +157,6 @@ fun ai_chat_panel(
                     Icon(Icons.Outlined.AutoAwesome, contentDescription = null, tint = colors.subtitle.copy(alpha = 0.5f), modifier = Modifier.size(40.dp))
                     Text("问点什么呢？", fontSize = 14.sp, color = colors.subtitle)
                     Text("可以问我 Go 编程问题、解释代码、修复错误", fontSize = 11.sp, color = colors.subtitle.copy(alpha = 0.7f))
-                    // 快捷建议 chips
-                    androidx.compose.foundation.layout.FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier.padding(top = 8.dp)
-                    ) {
-                        suggestion_prompts.take(6).forEach { prompt ->
-                            ai_suggestion_chip(prompt) { input = prompt }
-                        }
-                    }
                 }
             }
         } else {
@@ -285,7 +275,7 @@ fun ai_chat_panel(
                         disabledContainerColor = colors.title_highlight.copy(alpha = 0.3f)
                     )
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "发送", tint = colors.dialog_clone_text, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Default.ArrowUpward, contentDescription = "发送", tint = colors.dialog_clone_text, modifier = Modifier.size(20.dp))
                 }
             }
         }

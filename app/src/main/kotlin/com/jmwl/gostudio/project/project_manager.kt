@@ -179,18 +179,22 @@ object project_manager {
     /**
      * 创建 Go 项目文件（go.mod + main.go）。
      *
-     * @param template_id 模板：hello(默认)/http/cli/webapi
+     * @param template_id 模板：hello(默认)/http-request/http/cli/webapi/database/gin/gorm
      * Go 项目仅 go.mod + main.go 即可 go run。
      */
     private fun create_go_project(dir: File, name: String, template_id: String) {
-        File(dir, "go.mod").writeText("module $name\n\ngo 1.21\n")
         val mainGo = when (template_id) {
+            "http-request" -> go_http_request_template()
             "http" -> go_http_template(name)
             "cli" -> go_cli_template(name)
             "webapi" -> go_webapi_template(name)
+            "database" -> go_database_template(name)
+            "gin" -> go_gin_template(name)
+            "gorm" -> go_gorm_template(name)
             else -> go_hello_template(name)
         }
         File(dir, "main.go").writeText(mainGo)
+        File(dir, "go.mod").writeText(go_mod_content(name, template_id))
     }
 
     /** Hello World 模板 */
@@ -201,6 +205,239 @@ import "fmt"
 
 func main() {
 	fmt.Println("Hello from $name!")
+}
+""".trimIndent() + "\n"
+
+    /** 数据库模板（database/sql + 纯 Go SQLite 驱动） */
+    private fun go_database_template(name: String): String = """
+package main
+
+import (
+	"database/sql"
+	"fmt"
+	_ "modernc.org/sqlite"
+)
+
+func main() {
+	db, err := sql.Open("sqlite", "./$name.db")
+	if err != nil {
+		fmt.Println("打开数据库失败:", err)
+		return
+	}
+	defer db.Close()
+
+	_, err = db.Exec(`
+		CREATE TABLE IF NOT EXISTS users (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			name TEXT NOT NULL,
+			age INTEGER NOT NULL
+		)
+	`)
+	if err != nil {
+		fmt.Println("建表失败:", err)
+		return
+	}
+
+	result, err := db.Exec("INSERT INTO users (name, age) VALUES (?, ?)", "Alice", 20)
+	if err != nil {
+		fmt.Println("插入失败:", err)
+		return
+	}
+	id, _ := result.LastInsertId()
+	fmt.Println("新建用户 ID:", id)
+
+	rows, err := db.Query("SELECT id, name, age FROM users")
+	if err != nil {
+		fmt.Println("查询失败:", err)
+		return
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var user struct {
+			ID   int64
+			Name string
+			Age  int64
+		}
+		if err := rows.Scan(&user.ID, &user.Name, &user.Age); err != nil {
+			fmt.Println("读取失败:", err)
+			return
+		}
+		fmt.Printf("%d %s %d\n", user.ID, user.Name, user.Age)
+	}
+}
+""".trimIndent() + "\n"
+
+    /** Gin 框架模板 */
+    private fun go_gin_template(name: String): String = """
+package main
+
+import (
+	"fmt"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+)
+
+type createUserRequest struct {
+	Name string `json:"name" binding:"required"`
+	Age  int    `json:"age" binding:"gte=0"`
+}
+
+func main() {
+	r := gin.Default()
+
+	r.GET("/", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Hello from $name!",
+		})
+	})
+
+	r.GET("/users/:id", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"id": c.Param("id"),
+		})
+	})
+
+	r.POST("/users", func(c *gin.Context) {
+		var req createUserRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusCreated, req)
+	})
+
+	fmt.Println("Gin server starting on :8080...")
+	if err := r.Run(":8080"); err != nil {
+		fmt.Println("启动失败:", err)
+	}
+}
+""".trimIndent() + "\n"
+
+    /** GORM 框架模板（纯 Go SQLite 驱动） */
+    private fun go_gorm_template(name: String): String = """
+package main
+
+import (
+	"fmt"
+
+	"github.com/glebarez/sqlite"
+	"gorm.io/gorm"
+)
+
+type User struct {
+	ID   uint   `gorm:"primaryKey"`
+	Name string `gorm:"size:64;not null"`
+	Age  int
+}
+
+func main() {
+	db, err := gorm.Open(sqlite.Open("$name.db"), &gorm.Config{})
+	if err != nil {
+		fmt.Println("连接数据库失败:", err)
+		return
+	}
+
+	if err := db.AutoMigrate(&User{}); err != nil {
+		fmt.Println("迁移失败:", err)
+		return
+	}
+
+	user := User{Name: "Alice", Age: 20}
+	if err := db.Create(&user).Error; err != nil {
+		fmt.Println("创建失败:", err)
+		return
+	}
+
+	if err := db.Model(&user).Updates(map[string]any{"age": 21}).Error; err != nil {
+		fmt.Println("更新失败:", err)
+		return
+	}
+
+	var users []User
+	if err := db.Limit(10).Find(&users).Error; err != nil {
+		fmt.Println("查询失败:", err)
+		return
+	}
+
+	for _, item := range users {
+		fmt.Printf("%d %s %d\n", item.ID, item.Name, item.Age)
+	}
+}
+""".trimIndent() + "\n"
+
+    /** 依赖型模板在 go.mod 中声明直接依赖，首次运行前需 go mod tidy 生成 go.sum。 */
+    private fun go_mod_content(name: String, template_id: String): String {
+        val base = "module $name\n\ngo 1.21\n"
+        val dependencies = when (template_id) {
+            "database" -> listOf("modernc.org/sqlite v1.33.1")
+            "gin" -> listOf("github.com/gin-gonic/gin v1.10.0")
+            "gorm" -> listOf(
+                "github.com/glebarez/sqlite v1.11.0",
+                "gorm.io/gorm v1.25.12"
+            )
+            else -> return base
+        }
+        val requires = dependencies.joinToString("\n") { "\t$it" }
+        return "$base\nrequire (\n$requires\n)\n"
+    }
+
+    /** HTTP 请求模板：请求天气 API 并解析 JSON。 */
+    private fun go_http_request_template(): String = """
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+)
+
+type weatherResponse struct {
+	City  string    `json:"city"`
+	Today weatherDay `json:"1"`
+}
+
+type weatherDay struct {
+	Date    string `json:"date"`
+	Weather string `json:"weather"`
+	High    string `json:"high"`
+	Low     string `json:"low"`
+}
+
+func main() {
+	query := url.Values{}
+	query.Set("dz", "北京")
+	query.Set("return", "json")
+
+	api := "https://api.tangdouz.com/tq.php?" + query.Encode()
+	resp, err := http.Get(api)
+	if err != nil {
+		fmt.Println("请求失败:", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		fmt.Println("接口返回状态:", resp.StatusCode)
+		return
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("读取响应失败:", err)
+		return
+	}
+
+	var weather weatherResponse
+	if err := json.Unmarshal(body, &weather); err != nil {
+		fmt.Println("解析 JSON 失败:", err)
+		return
+	}
+
+	fmt.Printf("%s %s：%s，%s ~ %s\n", weather.City, weather.Today.Date, weather.Today.Weather, weather.Today.Low, weather.Today.High)
 }
 """.trimIndent() + "\n"
 
@@ -385,6 +622,7 @@ func main() {
         val parallel_jobs = build.parallel_jobs.coerceIn(0, 8)
         val build_tags = build.build_tags.orEmpty().trim()
         val ldflags = build.ldflags.orEmpty().trim()
+        val run_entry = normalize_go_run_entry(build.run_entry)
         return project_build_config(
             goos = goos,
             goarch = goarch,
@@ -392,8 +630,16 @@ func main() {
             build_tags = build_tags,
             ldflags = ldflags,
             trimpath = build.trimpath,
-            parallel_jobs = parallel_jobs
+            parallel_jobs = parallel_jobs,
+            run_entry = run_entry
         )
+    }
+
+    private fun normalize_go_run_entry(value: String): String {
+        val trimmed = value.trim().replace(File.separatorChar, '/')
+        if (trimmed.isBlank() || trimmed == ".") return "."
+        if (trimmed.startsWith("/") || trimmed.startsWith("../") || trimmed.contains("/../") || trimmed == "..") return "."
+        return "./" + trimmed.removePrefix("./")
     }
 
     fun get_project_last_opened(path: String): String {
@@ -637,7 +883,8 @@ data class project_build_config(
     val build_tags: String = "",
     val ldflags: String = "",
     val trimpath: Boolean = false,
-    val parallel_jobs: Int = 0
+    val parallel_jobs: Int = 0,
+    val run_entry: String = "."
 )
 
 data class project_ide_config(

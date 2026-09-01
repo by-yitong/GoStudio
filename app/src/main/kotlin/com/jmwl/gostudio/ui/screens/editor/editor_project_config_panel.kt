@@ -122,6 +122,15 @@ fun editor_project_config_panel(
             )
         }
 
+        project_config_group_title("运行入口")
+        project_config_extra_args_card(
+            value = config.build.run_entry,
+            title = "Run Entry",
+            subtitle = "main 包目录或 main.go 文件，支持 ./cmd/app",
+            placeholder = "./cmd/app",
+            on_change = { entry -> config = config.copy(build = config.build.copy(run_entry = entry)) }
+        )
+
         project_config_group_title("构建选项")
         Column(
             modifier = Modifier.fillMaxWidth(),

@@ -5,9 +5,13 @@ import android.widget.FrameLayout
 import com.jmwl.gostudio.editor.core.R
 import com.jmwl.gostudio.editor.model.editor_tab_item
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -26,6 +30,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
@@ -40,6 +45,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.jmwl.gostudio.ui.theme.app_theme_provider
 import io.github.rosemoe.sora.widget.CodeEditor
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun editor_tabs_bar(
     tabs: List<editor_tab_item>,
@@ -53,199 +59,207 @@ fun editor_tabs_bar(
     on_close_all_tabs: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-
     val colors = app_theme_provider.colors
-    Row(
+    val outline = MaterialTheme.colorScheme.outlineVariant
+
+    Column(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 34.dp, max = 34.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .background(colors.editor_bg)
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxHeight()
-                .width(38.dp)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = ripple(bounded = true),
-                    onClick = on_toggle_toolbar
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = if (toolbar_visible) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                contentDescription = if (toolbar_visible) "隐藏工具栏" else "显示工具栏",
-                tint = colors.editor_tab_add_icon,
-                modifier = Modifier.size(20.dp)
-            )
-        }
-
         Row(
             modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight()
-                .horizontalScroll(rememberScrollState()),
+                .fillMaxWidth()
+                .height(40.dp)
+                .padding(vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            if (tabs.isEmpty()) {
-                Text(
-                    text = "未打开任何文件",
-                    color = colors.editor_tab_unselected_content,
-                    fontSize = 12.sp,
-                    modifier = Modifier.padding(horizontal = 12.dp)
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(38.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = on_toggle_toolbar
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = if (toolbar_visible) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                    contentDescription = if (toolbar_visible) "隐藏工具栏" else "显示工具栏",
+                    tint = colors.editor_tab_add_icon,
+                    modifier = Modifier.size(20.dp)
                 )
             }
 
-            tabs.forEachIndexed { index, tab ->
-                val selected = tab.path == selected_tab_path
-                val icon_color = if (selected) colors.editor_tab_selected_icon else colors.editor_tab_unselected_content
-                val text_color = if (selected) colors.editor_tab_selected_text else colors.editor_tab_unselected_content
-                val can_close_tab = !tab.pinned
-                val has_closable_others = tabs.any { it.path != tab.path && !it.pinned }
-                var menu_expanded by remember(tab.path) { mutableStateOf(false) }
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                if (tabs.isEmpty()) {
+                    Text(
+                        text = "未打开任何文件",
+                        color = colors.editor_tab_unselected_content,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(horizontal = 4.dp)
+                    )
+                }
 
-                Box(
-                    modifier = Modifier
-                        .widthIn(min = 104.dp, max = 240.dp)
-                        .fillMaxHeight()
-                        .background(if (selected) colors.editor_tab_selected_bg else colors.editor_tab_unselected_bg)
-                        .drawWithContent {
-                            drawContent()
-                            if (selected) {
-                                val indicator_height = 2.dp.toPx()
-                                drawLine(
-                                    color = colors.editor_tab_selected_icon,
-                                    start = Offset(0f, indicator_height / 2f),
-                                    end = Offset(size.width, indicator_height / 2f),
-                                    strokeWidth = indicator_height
+                tabs.forEach { tab ->
+                    val selected = tab.path == selected_tab_path
+                    val text_color = if (selected) colors.editor_tab_selected_text else colors.editor_tab_unselected_content
+                    val card_shape = RoundedCornerShape(11.dp)
+                    val card_border = if (selected) {
+                        BorderStroke(1.dp, colors.title_highlight.copy(alpha = 0.48f))
+                    } else {
+                        BorderStroke(1.dp, outline.copy(alpha = 0.38f))
+                    }
+                    var menu_expanded by remember(tab.path) { mutableStateOf(false) }
+
+                    Box {
+                        Row(
+                            modifier = Modifier
+                                .widthIn(min = 112.dp, max = 230.dp)
+                                .height(32.dp)
+                                .background(
+                                    color = if (selected) colors.editor_tab_selected_bg else Color.Transparent,
+                                    shape = card_shape
                                 )
-                            }
-                            if (!selected && index < tabs.lastIndex) {
-                                val stroke_width = 1.dp.toPx()
-                                val separator_height = 16.dp.toPx()
-                                val x = size.width - stroke_width / 2f
-                                val y = (size.height - separator_height) / 2f
-                                drawLine(
-                                    color = colors.editor_tab_separator,
-                                    start = Offset(x, y),
-                                    end = Offset(x, y + separator_height),
-                                    strokeWidth = stroke_width
+                                .border(card_border, card_shape)
+                                .clip(card_shape)
+                                .combinedClickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                    onClick = {
+                                        if (!selected) on_select_tab(tab.path)
+                                    },
+                                    onLongClick = { menu_expanded = true }
                                 )
-                            }
-                        }
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
+                                .padding(start = 10.dp, end = 5.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            if (!selected) {
-                                on_select_tab(tab.path)
+                            if (tab.pinned) {
+                                Icon(
+                                    imageVector = Icons.Default.PushPin,
+                                    contentDescription = "已置顶",
+                                    tint = colors.editor_icon,
+                                    modifier = Modifier.size(12.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
                             }
-                        },
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .align(Alignment.CenterStart)
-                            .padding(start = 8.dp, end = 34.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        if (tab.pinned) {
+
                             Icon(
-                                imageVector = Icons.Default.PushPin,
-                                contentDescription = "已置顶",
-                                tint = colors.editor_icon,
-                                modifier = Modifier.size(13.dp)
+                                painter = painterResource(editor_file_icon_res(tab.title)),
+                                contentDescription = null,
+                                tint = Color.Unspecified,
+                                modifier = Modifier.size(14.dp)
                             )
-                        }
 
-                        Icon(
-                            painter = painterResource(editor_file_icon_res(tab.title)),
-                            contentDescription = null,
-                            tint = Color.Unspecified,
-                            modifier = Modifier
-                                .padding(start = if (tab.pinned) 4.dp else 0.dp)
-                                .size(14.dp)
-                        )
+                            Text(
+                                text = tab.title,
+                                fontSize = 12.sp,
+                                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                                color = text_color,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier
+                                    .padding(start = 6.dp)
+                                    .weight(1f, fill = false)
+                                    .widthIn(max = 128.dp)
+                            )
 
-                        Text(
-                            text = tab.title,
-                            fontSize = 12.sp,
-                            color = text_color,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier
-                                .padding(start = 4.dp)
-                                .widthIn(max = 150.dp)
-                        )
+                            if (tab.has_changes) {
+                                Box(
+                                    modifier = Modifier
+                                        .padding(start = 7.dp)
+                                        .size(6.dp)
+                                        .clip(CircleShape)
+                                        .background(colors.editor_tab_selected_icon)
+                                )
+                            }
 
-                        if (tab.has_changes) {
                             Box(
                                 modifier = Modifier
-                                    .padding(start = 8.dp)
-                                    .size(4.dp)
-                                    .clip(CircleShape)
-                                    .background(colors.editor_tab_selected_icon)
-                            )
-                        }
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.CenterEnd)
-                            .padding(end = 2.dp)
-                    ) {
-                        IconButton(
-                            onClick = { menu_expanded = true },
-                            modifier = Modifier.size(28.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.MoreVert,
-                                contentDescription = "标签菜单",
-                                tint = colors.editor_tab_unselected_content,
-                                modifier = Modifier.size(16.dp)
-                            )
+                                    .padding(start = 3.dp)
+                                    .size(24.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null,
+                                        enabled = !tab.pinned
+                                    ) { on_close_tab(tab.path) },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "关闭 ${tab.title}",
+                                    tint = if (tab.pinned) colors.editor_tab_unselected_content.copy(alpha = 0.35f) else colors.editor_tab_unselected_content,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
                         }
 
-                        DropdownMenu(
+                        editor_dropdown_menu(
                             expanded = menu_expanded,
-                            onDismissRequest = { menu_expanded = false }
+                            on_dismiss_request = { menu_expanded = false }
                         ) {
-                            DropdownMenuItem(
-                                text = { Text(if (tab.pinned) "取消置顶" else "置顶") },
-                                onClick = {
-                                    menu_expanded = false
-                                    on_pin_tab(tab.path)
-                                }
-                            )
-                            HorizontalDivider()
-                            DropdownMenuItem(
-                                text = { Text("关闭当前") },
-                                enabled = can_close_tab,
-                                onClick = {
-                                    menu_expanded = false
-                                    on_close_tab(tab.path)
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("关闭其他") },
-                                enabled = has_closable_others,
-                                onClick = {
-                                    menu_expanded = false
-                                    on_close_other_tabs(tab.path)
-                                }
-                            )
+                            editor_menu_item(
+                                icon = Icons.Default.PushPin,
+                                label = if (tab.pinned) "取消置顶" else "置顶"
+                            ) {
+                                menu_expanded = false
+                                on_pin_tab(tab.path)
+                            }
+                            editor_menu_divider()
+                            editor_menu_item(
+                                icon = Icons.Default.Close,
+                                label = "关闭当前",
+                                enabled = !tab.pinned
+                            ) {
+                                menu_expanded = false
+                                on_close_tab(tab.path)
+                            }
+                            editor_menu_item(
+                                icon = Icons.Default.Close,
+                                label = "关闭其他",
+                                enabled = tabs.any { it.path != tab.path && !it.pinned }
+                            ) {
+                                menu_expanded = false
+                                on_close_other_tabs(tab.path)
+                            }
+                            editor_menu_item(
+                                icon = Icons.Default.Close,
+                                label = "关闭全部",
+                                enabled = tabs.any { !it.pinned }
+                            ) {
+                                menu_expanded = false
+                                on_close_all_tabs()
+                            }
                         }
                     }
                 }
             }
         }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(outline.copy(alpha = 0.45f))
+        )
     }
 }
 
 /**
- * 工作区顶栏（对齐 CodeAssist EditorTopBar compact 版式）：
- * 左侧迷你屏抽屉切换图标（随抽屉开度实时动画）· 项目名 · 保存 · 运行 · AI · 更多菜单。
- * 项目配置、只读收纳进「更多」下拉菜单；搜索、格式化保留在编辑器右上角。
+ * 工作区顶栏：抽屉切换 · 项目名 · 保存 · 直接运行 · AI · 更多菜单。
+ * 构建/测试等次级任务收纳在更多菜单；菜单视觉对齐 CodeAssist 的圆角浮层。
  */
 @Composable
 fun editor_top_bar(
@@ -267,7 +281,6 @@ fun editor_top_bar(
 ) {
     val colors = app_theme_provider.colors
     val accent = MaterialTheme.colorScheme.primary
-    var run_menu_open by remember { mutableStateOf(false) }
     var more_menu_open by remember { mutableStateOf(false) }
 
     Surface(
@@ -287,7 +300,6 @@ fun editor_top_bar(
                 on_click = on_toggle_drawer
             )
 
-            // 项目名占据弹性中部，超长截断，右侧按钮簇不被挤压
             Text(
                 text = project_name,
                 color = colors.editor_text,
@@ -300,7 +312,6 @@ fun editor_top_bar(
                     .padding(horizontal = 6.dp)
             )
 
-            // 保存：有未保存改动时点亮主色
             editor_top_bar_icon_button(
                 icon = Icons.Default.Save,
                 content_description = "保存",
@@ -308,7 +319,6 @@ fun editor_top_bar(
                 on_click = on_save
             )
 
-            // 运行/构建/测试 收进下拉菜单（参考 CodeAssist RunControl）；任务运行中显示停止按钮
             if (build_running) {
                 editor_top_bar_icon_button(
                     icon = Icons.Default.Stop,
@@ -317,34 +327,12 @@ fun editor_top_bar(
                     on_click = on_build
                 )
             } else {
-                Box {
-                    editor_top_bar_icon_button(
-                        icon = Icons.Default.PlayArrow,
-                        content_description = "运行菜单",
-                        tint = accent,
-                        on_click = { run_menu_open = true }
-                    )
-                    DropdownMenu(
-                        expanded = run_menu_open,
-                        onDismissRequest = { run_menu_open = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("运行 (go run)") },
-                            leadingIcon = { Icon(Icons.Default.PlayArrow, null, Modifier.size(16.dp), tint = accent) },
-                            onClick = { run_menu_open = false; on_run() }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("构建 (go build)") },
-                            leadingIcon = { Icon(Icons.Default.Build, null, Modifier.size(16.dp), tint = colors.editor_toolbar_icon) },
-                            onClick = { run_menu_open = false; on_build() }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("测试 (go test)") },
-                            leadingIcon = { Icon(Icons.Default.Science, null, Modifier.size(16.dp), tint = colors.editor_icon) },
-                            onClick = { run_menu_open = false; on_test() }
-                        )
-                    }
-                }
+                editor_top_bar_icon_button(
+                    icon = Icons.Default.PlayArrow,
+                    content_description = "运行",
+                    tint = accent,
+                    on_click = on_run
+                )
             }
 
             editor_top_bar_icon_button(
@@ -361,33 +349,115 @@ fun editor_top_bar(
                     tint = colors.editor_toolbar_icon,
                     on_click = { more_menu_open = true }
                 )
-                DropdownMenu(
+                editor_dropdown_menu(
                     expanded = more_menu_open,
-                    onDismissRequest = { more_menu_open = false }
+                    on_dismiss_request = { more_menu_open = false }
                 ) {
-                    HorizontalDivider()
-                    DropdownMenuItem(
-                        text = { Text("项目配置") },
-                        leadingIcon = { Icon(Icons.Default.Tune, null, Modifier.size(16.dp), tint = colors.editor_toolbar_icon) },
-                        onClick = { more_menu_open = false; on_open_project_config() }
-                    )
-                    if (has_open_file) {
-                        DropdownMenuItem(
-                            text = { Text(if (read_only) "退出只读" else "只读模式") },
-                            leadingIcon = {
-                                Icon(
-                                    if (read_only) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                    null, Modifier.size(16.dp),
-                                    tint = if (read_only) accent else colors.editor_toolbar_icon
-                                )
-                            },
-                            onClick = { more_menu_open = false; on_toggle_read_only() }
-                        )
+                    if (!build_running) {
+                        editor_menu_item(
+                            icon = Icons.Default.Build,
+                            label = "构建 (go build)"
+                        ) {
+                            more_menu_open = false
+                            on_build()
+                        }
+                        editor_menu_item(
+                            icon = Icons.Default.Science,
+                            label = "测试 (go test ./...)"
+                        ) {
+                            more_menu_open = false
+                            on_test()
+                        }
+                        editor_menu_divider()
+                    }
+                    editor_menu_item(
+                        icon = Icons.Default.Settings,
+                        label = "项目配置"
+                    ) {
+                        more_menu_open = false
+                        on_open_project_config()
+                    }
+                    editor_menu_item(
+                        icon = if (read_only) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                        label = if (read_only) "退出只读模式" else "切换只读模式",
+                        active = read_only
+                    ) {
+                        more_menu_open = false
+                        on_toggle_read_only()
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun editor_dropdown_menu(
+    expanded: Boolean,
+    on_dismiss_request: () -> Unit,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    DropdownMenu(
+        expanded = expanded,
+        onDismissRequest = on_dismiss_request,
+        offset = DpOffset(0.dp, 6.dp),
+        shape = RoundedCornerShape(16.dp),
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        tonalElevation = 0.dp,
+        shadowElevation = 14.dp,
+        modifier = Modifier.border(
+            BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
+            RoundedCornerShape(16.dp)
+        ),
+        content = content
+    )
+}
+
+@Composable
+private fun editor_menu_item(
+    icon: ImageVector,
+    label: String,
+    active: Boolean = false,
+    enabled: Boolean = true,
+    on_click: () -> Unit
+) {
+    val menu_text = MaterialTheme.colorScheme.onSurface
+    val text_color = when {
+        !enabled -> MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
+        active -> MaterialTheme.colorScheme.primary
+        else -> menu_text
+    }
+    val icon_tint = when {
+        !enabled -> MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
+        active -> MaterialTheme.colorScheme.primary
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    DropdownMenuItem(
+        text = {
+            Text(
+                text = label,
+                color = text_color,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium
+            )
+        },
+        leadingIcon = {
+            Icon(icon, null, Modifier.size(16.dp), tint = icon_tint)
+        },
+        enabled = enabled,
+        onClick = on_click
+    )
+}
+
+@Composable
+private fun editor_menu_divider() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .height(1.dp)
+            .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f))
+    )
 }
 
 @Composable
