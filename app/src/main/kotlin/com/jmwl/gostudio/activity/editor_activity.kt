@@ -761,11 +761,30 @@ class editor_activity : ComponentActivity() {
             if (tab != null) {
                 runCatching {
                     val new_content = file.readText()
-                    val cursor = tab.editor?.cursor
-                    tab.document.replace(0, tab.document.length, new_content)
-                    cursor?.let { /* 保持光标位置 */ }
+                    val tab_editor = tab.editor
+                    if (tab_editor == null) {
+                        tab.document.replace(0, tab.document.length, new_content)
+                    } else {
+                        // 编辑器与 tab.document 不是同一个 Content 实例，
+                        // 外部工具（可视化设计器/AI）改盘后必须同步刷新当前编辑器。
+                        val cursor_line = tab_editor.cursor.leftLine
+                        val cursor_column = tab_editor.cursor.leftColumn
+                        with_applying_editor_content {
+                            tab_lifecycle.set_content(tab_editor, new_content)
+                        }
+                        val safe_line = cursor_line.coerceIn(0, (tab_editor.text.lineCount - 1).coerceAtLeast(0))
+                        tab_editor.setSelection(
+                            safe_line,
+                            cursor_column.coerceIn(0, tab_editor.text.getColumnCount(safe_line))
+                        )
+                    }
                     tab.content = new_content
                     tab.has_changes = false
+                    if (tab == active_tab()) {
+                        state.content = new_content
+                        state.has_changes = false
+                        state.status_text = relative_project_path(project_dir, file)
+                    }
                 }
             }
         }
