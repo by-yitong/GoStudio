@@ -149,6 +149,8 @@ internal fun editor_screen(
     /** 预览中修改属性后写回编辑器 */
     on_editor_content_change: (String) -> Unit = {},
     on_open_designer: () -> Unit = {},
+    layout_components_provider: () -> List<editor_layout_component> = { emptyList() },
+    on_insert_generated_code: (String) -> Unit = {},
     /** AI 设置覆盖层打开或正在退出时，禁用 AI 页自身返回处理 */
     ai_settings_visible: Boolean = false
 ) {
@@ -170,6 +172,8 @@ internal fun editor_screen(
     var create_dialog_request by remember { mutableStateOf<editor_create_dialog_request?>(null) }
     var show_ai_page by remember { mutableStateOf(false) }
     var show_project_config by remember { mutableStateOf(false) }
+    var show_code_generator by remember { mutableStateOf(false) }
+    var code_generator_components by remember { mutableStateOf<List<editor_layout_component>>(emptyList()) }
     // 外部触发打开 AI 页面（编辑器选区 AI 动作）
     LaunchedEffect(ai_open_trigger) {
         if (ai_open_trigger > 0) show_ai_page = true
@@ -308,7 +312,12 @@ internal fun editor_screen(
                             build_stopping = output_panel_state.task_stopping,
                             on_toggle_read_only = on_toggle_read_only,
                             on_open_ai = { show_ai_page = true },
-                            on_open_project_config = { show_project_config = true }
+                            on_open_project_config = { show_project_config = true },
+                            is_app_project = is_app_project,
+                            on_generate_code = {
+                                code_generator_components = layout_components_provider()
+                                show_code_generator = true
+                            }
                         )
                     }
                     // 文件标签栏保持在顶部
@@ -781,6 +790,14 @@ internal fun editor_screen(
                     modifier = Modifier.fillMaxSize()
                 )
             }
+        }
+
+        if (show_code_generator) {
+            editor_code_generator_dialog(
+                components = code_generator_components,
+                on_insert = on_insert_generated_code,
+                on_dismiss = { show_code_generator = false }
+            )
         }
     }
 }

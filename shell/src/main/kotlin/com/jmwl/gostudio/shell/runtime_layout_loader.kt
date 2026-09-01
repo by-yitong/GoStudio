@@ -8,23 +8,42 @@ import org.xmlpull.v1.XmlPullParser
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AutoCompleteTextView
 import android.widget.Button
+import android.widget.CalendarView
 import android.widget.CheckBox
+import android.widget.Chronometer
+import android.widget.DatePicker
 import android.widget.EditText
 import android.widget.FrameLayout
+import android.widget.GridLayout
+import android.widget.GridView
 import android.widget.HorizontalScrollView
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.ListView
+import android.widget.NumberPicker
 import android.widget.ProgressBar
 import android.widget.RadioButton
+import android.widget.RadioGroup
 import android.widget.RatingBar
 import android.widget.RelativeLayout
 import android.widget.ScrollView
 import android.widget.SeekBar
 import android.widget.Space
+import android.widget.Spinner
 import android.widget.Switch
+import android.widget.TableLayout
+import android.widget.TableRow
+import android.widget.TextClock
 import android.widget.TextView
+import android.widget.TimePicker
+import android.widget.ToggleButton
+import android.widget.VideoView
+import android.widget.ViewFlipper
+import android.webkit.WebView
+import androidx.core.widget.NestedScrollView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textview.MaterialTextView
 import java.io.File
@@ -66,25 +85,46 @@ class runtime_layout_loader(private val context: Context) {
 
     // ---- 控件注册表：元素名 -> 构造 ----
     private val view_factories: Map<String, (Context) -> View> = mapOf(
+        // 布局
         "LinearLayout" to { LinearLayout(it) },
         "FrameLayout" to { FrameLayout(it) },
         "RelativeLayout" to { RelativeLayout(it) },
+        "GridLayout" to { GridLayout(it) },
+        "TableLayout" to { TableLayout(it) },
+        "TableRow" to { TableRow(it) },
+        "RadioGroup" to { RadioGroup(it) },
         "ScrollView" to { ScrollView(it) },
         "HorizontalScrollView" to { HorizontalScrollView(it) },
+        "NestedScrollView" to { NestedScrollView(it) },
+        "ViewFlipper" to { ViewFlipper(it) },
+        // 基础控件
         "TextView" to { MaterialTextView(it) },
         "Button" to { MaterialButton(it) },
         "EditText" to { EditText(it) },
+        "AutoCompleteTextView" to { AutoCompleteTextView(it) },
         "ImageView" to { ImageView(it) },
         "ImageButton" to { ImageButton(it) },
         "CheckBox" to { CheckBox(it) },
         "RadioButton" to { RadioButton(it) },
         "Switch" to { Switch(it) },
-        "ToggleButton" to { android.widget.ToggleButton(it) },
+        "ToggleButton" to { ToggleButton(it) },
         "ProgressBar" to { ProgressBar(it) },
         "SeekBar" to { SeekBar(it) },
         "RatingBar" to { RatingBar(it) },
         "Space" to { Space(it) },
-        "View" to { View(it) }
+        "View" to { View(it) },
+        // 选择/展示控件
+        "Spinner" to { Spinner(it) },
+        "ListView" to { ListView(it) },
+        "GridView" to { GridView(it) },
+        "DatePicker" to { DatePicker(it) },
+        "TimePicker" to { TimePicker(it) },
+        "CalendarView" to { CalendarView(it) },
+        "NumberPicker" to { NumberPicker(it) },
+        "Chronometer" to { Chronometer(it) },
+        "TextClock" to { TextClock(it) },
+        "VideoView" to { VideoView(it) },
+        "WebView" to { WebView(it) }
     )
 
     private fun build_view(
@@ -106,6 +146,9 @@ class runtime_layout_loader(private val context: Context) {
         // 创建与父容器匹配的 LayoutParams（与 AndroLua 相同：默认 wrap_content，根节点 match_parent）
         val default_size = if (is_root) ViewGroup.LayoutParams.MATCH_PARENT else ViewGroup.LayoutParams.WRAP_CONTENT
         val params: ViewGroup.LayoutParams = when (parent) {
+            is GridLayout -> GridLayout.LayoutParams()
+            is TableRow -> TableRow.LayoutParams(default_size, default_size)
+            is TableLayout -> TableLayout.LayoutParams(default_size, default_size)
             is LinearLayout -> LinearLayout.LayoutParams(default_size, default_size)
             is FrameLayout -> FrameLayout.LayoutParams(default_size, default_size)
             is RelativeLayout -> RelativeLayout.LayoutParams(default_size, default_size)
@@ -115,7 +158,7 @@ class runtime_layout_loader(private val context: Context) {
         // 先处理 layout_* 属性（需要写进 params）
         val layout_prefix = "layout_"
         attrs.filterKeys { it.startsWith(layout_prefix) }.forEach { (key, raw) ->
-            apply_layout_attribute(params, key, raw, is_root)
+            apply_layout_attribute(params, key, raw, is_root, attrs)
         }
 
         // id 注册
@@ -149,12 +192,53 @@ class runtime_layout_loader(private val context: Context) {
     }
 
     // ---- layout_* 属性 ----
-    private fun apply_layout_attribute(params: ViewGroup.LayoutParams, key: String, raw: String, is_root: Boolean) {
+    private fun apply_layout_attribute(
+        params: ViewGroup.LayoutParams,
+        key: String,
+        raw: String,
+        is_root: Boolean,
+        attrs: Map<String, String>
+    ) {
         when (key) {
             "layout_width" -> params.width = dimension_or_size(raw, default = ViewGroup.LayoutParams.WRAP_CONTENT, is_root = is_root)
             "layout_height" -> params.height = dimension_or_size(raw, default = ViewGroup.LayoutParams.WRAP_CONTENT, is_root = is_root)
             "layout_weight" -> (params as? LinearLayout.LayoutParams)?.weight = raw.toFloatOrNull() ?: 1f
-            "layout_gravity" -> (params as? LinearLayout.LayoutParams)?.gravity = gravity(raw)
+            "layout_gravity" -> when (params) {
+                is LinearLayout.LayoutParams -> params.gravity = gravity(raw)
+                is FrameLayout.LayoutParams -> params.gravity = gravity(raw)
+            }
+            "layout_row" -> (params as? GridLayout.LayoutParams)?.rowSpec = grid_spec(raw, attrs["layout_rowSpan"])
+            "layout_column" -> when (params) {
+                is GridLayout.LayoutParams -> params.columnSpec = grid_spec(raw, attrs["layout_columnSpan"])
+                is TableRow.LayoutParams -> params.column = raw.toIntOrNull() ?: 0
+            }
+            "layout_rowSpan" -> attrs["layout_row"]?.let { row ->
+                (params as? GridLayout.LayoutParams)?.rowSpec = grid_spec(row, raw)
+            }
+            "layout_columnSpan" -> attrs["layout_column"]?.let { column ->
+                (params as? GridLayout.LayoutParams)?.columnSpec = grid_spec(column, raw)
+            }
+            "layout_centerInParent" -> if (boolean(raw)) {
+                (params as? RelativeLayout.LayoutParams)?.addRule(RelativeLayout.CENTER_IN_PARENT)
+            }
+            "layout_centerHorizontal" -> if (boolean(raw)) {
+                (params as? RelativeLayout.LayoutParams)?.addRule(RelativeLayout.CENTER_HORIZONTAL)
+            }
+            "layout_centerVertical" -> if (boolean(raw)) {
+                (params as? RelativeLayout.LayoutParams)?.addRule(RelativeLayout.CENTER_VERTICAL)
+            }
+            "layout_alignParentTop" -> if (boolean(raw)) {
+                (params as? RelativeLayout.LayoutParams)?.addRule(RelativeLayout.ALIGN_PARENT_TOP)
+            }
+            "layout_alignParentBottom" -> if (boolean(raw)) {
+                (params as? RelativeLayout.LayoutParams)?.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
+            }
+            "layout_alignParentLeft" -> if (boolean(raw)) {
+                (params as? RelativeLayout.LayoutParams)?.addRule(RelativeLayout.ALIGN_PARENT_LEFT)
+            }
+            "layout_alignParentRight" -> if (boolean(raw)) {
+                (params as? RelativeLayout.LayoutParams)?.addRule(RelativeLayout.ALIGN_PARENT_RIGHT)
+            }
             "layout_margin" -> set_margins(params, raw, raw, raw, raw)
             "layout_marginLeft", "layout_marginStart" -> set_margins(params, left = raw)
             "layout_marginTop" -> set_margins(params, top = raw)
@@ -169,6 +253,11 @@ class runtime_layout_loader(private val context: Context) {
         val px = dimension(raw)
         return if (px != null) px else default
     }
+
+    private fun grid_spec(position: String?, span: String?): GridLayout.Spec =
+        GridLayout.spec(position?.toIntOrNull() ?: GridLayout.UNDEFINED, span?.toIntOrNull() ?: 1)
+
+    private fun boolean(raw: String): Boolean = raw.equals("true", ignoreCase = true) || raw == "1"
 
     private fun set_margins(
         params: ViewGroup.LayoutParams,
@@ -204,7 +293,10 @@ class runtime_layout_loader(private val context: Context) {
                 "padding", "paddingLeft", "paddingTop", "paddingRight", "paddingBottom" -> {}
                 "text", "hint", "textSize", "textColor", "textColorHint", "gravity",
                 "orientation", "visibility", "enabled", "singleLine", "lines", "maxLines",
-                "inputType", "scaleType", "src", "ellipsize", "textStyle", "layout_weight" -> {
+                "inputType", "scaleType", "src", "ellipsize", "textStyle", "layout_weight",
+                "checked", "max", "progress", "numStars", "rating", "stepSize",
+                "numColumns", "autoStart", "flipInterval", "minValue", "maxValue", "value",
+                "format12Hour", "format24Hour" -> {
                     apply_known_attribute(view, key, raw)
                 }
                 else -> {
@@ -218,6 +310,12 @@ class runtime_layout_loader(private val context: Context) {
         when (key) {
             "text" -> (view as? TextView)?.text = raw
             "hint" -> (view as? TextView)?.hint = raw
+            "inputType" -> (view as? TextView)?.inputType = input_type(raw)
+            "numColumns" -> (view as? GridView)?.numColumns = raw.toIntOrNull() ?: 2
+            "flipInterval" -> (view as? ViewFlipper)?.flipInterval = raw.toIntOrNull() ?: 3000
+            "minValue" -> (view as? NumberPicker)?.minValue = raw.toIntOrNull() ?: 0
+            "maxValue" -> (view as? NumberPicker)?.maxValue = raw.toIntOrNull() ?: 0
+            "value" -> (view as? NumberPicker)?.value = raw.toIntOrNull() ?: 0
             "textSize" -> {
                 val text_view = view as? TextView
                 val px = dimension(raw)
@@ -272,6 +370,16 @@ class runtime_layout_loader(private val context: Context) {
                 raw == "true"
             else -> null
         }
+    }
+
+    private fun input_type(raw: String): Int = when (raw) {
+        "text" -> android.text.InputType.TYPE_CLASS_TEXT
+        "textMultiLine" -> android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
+        "textPassword" -> android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+        "number" -> android.text.InputType.TYPE_CLASS_NUMBER
+        "numberDecimal" -> android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
+        "phone" -> android.text.InputType.TYPE_CLASS_PHONE
+        else -> android.text.InputType.TYPE_CLASS_TEXT
     }
 
     // ---- 值解析（对应 AndroLua 的 checkValue / toint 表）----

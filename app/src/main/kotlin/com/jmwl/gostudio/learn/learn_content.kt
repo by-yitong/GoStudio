@@ -104,7 +104,7 @@ object learn_content {
     val accent_conc = 0xFFE0533DL
 
     val tracks: List<learn_track> =
-        listOf(go_basics(), go_next(), go_concurrency()) + practical_learn_tracks()
+        listOf(go_basics(), go_next(), go_concurrency()) + gostudio_learn_tracks() + practical_learn_tracks()
 
     fun find_lesson(lesson_id: String): Pair<learn_track, learn_lesson>? {
         for (track in tracks) for (lesson in track.lessons) {

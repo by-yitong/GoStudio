@@ -1,18 +1,33 @@
 package com.jmwl.gostudio.shell
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.EditText
+import android.widget.CompoundButton
+import android.widget.DatePicker
 import android.widget.FrameLayout
-import android.widget.ImageButton
+import android.widget.RatingBar
 import android.widget.ScrollView
+import android.widget.SeekBar
 import android.widget.TextView
+import android.widget.TimePicker
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import org.json.JSONObject
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.FutureTask
@@ -63,18 +78,69 @@ class shell_activity : AppCompatActivity() {
         )
         bridge = b
         b.start(binary_file.absolutePath, handler = this)
+        b.send_lifecycle("create")
+        b.send_lifecycle("start")
         append_log("已启动")
     }
 
+    override fun onResume() {
+        super.onResume()
+        bridge?.send_lifecycle("resume")
+    }
+
+    override fun onPause() {
+        bridge?.send_lifecycle("pause")
+        super.onPause()
+    }
+
+    override fun onStop() {
+        bridge?.send_lifecycle("stop")
+        super.onStop()
+    }
+
     override fun onDestroy() {
-        bridge?.stop()
+        bridge?.send_lifecycle("destroy")
+        Handler(Looper.getMainLooper()).postDelayed({ bridge?.stop() }, 150)
         super.onDestroy()
     }
 
     private fun wire_click_events() {
         views_by_id.forEach { (id, view) ->
-            if (view is Button || view is ImageButton || view is EditText || view.isClickable) {
-                view.setOnClickListener { bridge?.send_click(id) }
+            view.setOnClickListener { bridge?.send_event(id, "click") }
+            view.setOnLongClickListener {
+                bridge?.send_event(id, "long_click")
+                true
+            }
+
+            when (view) {
+                is TextView -> view.addTextChangedListener(object : TextWatcher {
+                    override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+                    override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
+                    override fun afterTextChanged(s: Editable?) {
+                        bridge?.send_event(id, "text_change", text = s?.toString() ?: "")
+                    }
+                })
+                is CompoundButton -> view.setOnCheckedChangeListener { _, checked ->
+                    bridge?.send_event(id, "checked_change", checked = checked)
+                }
+                is SeekBar -> view.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                    override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                        if (fromUser) bridge?.send_event(id, "progress_change", number = progress.toDouble())
+                    }
+                    override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+                    override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+                })
+                is RatingBar -> view.setOnRatingBarChangeListener { _, rating, fromUser ->
+                    if (fromUser) bridge?.send_event(id, "rating_change", number = rating.toDouble())
+                }
+                is DatePicker -> view.init(
+                    view.year, view.month, view.dayOfMonth
+                ) { _, year, month, day ->
+                    bridge?.send_event(id, "date_change", text = "%04d-%02d-%02d".format(year, month + 1, day))
+                }
+                is TimePicker -> view.setOnTimeChangedListener { _, hour, minute ->
+                    bridge?.send_event(id, "time_change", text = "%02d:%02d".format(hour, minute))
+                }
             }
         }
     }
@@ -132,6 +198,73 @@ class shell_activity : AppCompatActivity() {
     }
 
     fun on_quit() = finish()
+
+    fun on_system_call(action: String, msg: JSONObject): String {
+        return when (action) {
+            "toast" -> {
+                Toast.makeText(
+                    this,
+                    msg.optString("text"),
+                    if (msg.optInt("duration") == 1) Toast.LENGTH_LONG else Toast.LENGTH_SHORT
+                ).show()
+                ""
+            }
+            "vibrate" -> {
+                val duration = msg.optInt("duration", 200).coerceIn(0, 10_000)
+                val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    (getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator
+                } else {
+                    @Suppress("DEPRECATION")
+                    getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    vibrator.vibrate(VibrationEffect.createOneShot(duration.toLong(), VibrationEffect.DEFAULT_AMPLITUDE))
+                } else {
+                    @Suppress("DEPRECATION")
+                    vibrator.vibrate(duration.toLong())
+                }
+                ""
+            }
+            "clipboard_set" -> {
+                val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                clipboard.setPrimaryClip(ClipData.newPlainText("App", msg.optString("text")))
+                ""
+            }
+            "clipboard_get" -> {
+                val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                clipboard.primaryClip?.getItemAt(0)?.coerceToText(this)?.toString() ?: ""
+            }
+            "open_url" -> {
+                val uri = Uri.parse(msg.optString("text"))
+                check(uri.scheme == "http" || uri.scheme == "https") { "仅支持 http/https 链接" }
+                startActivity(Intent(Intent.ACTION_VIEW, uri))
+                ""
+            }
+            "share" -> {
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TITLE, msg.optString("title"))
+                    putExtra(Intent.EXTRA_TEXT, msg.optString("text"))
+                }
+                startActivity(Intent.createChooser(intent, msg.optString("title", "分享")))
+                ""
+            }
+            "device_info" -> {
+                JSONObject()
+                    .put("manufacturer", Build.MANUFACTURER)
+                    .put("model", Build.MODEL)
+                    .put("android", Build.VERSION.RELEASE ?: "")
+                    .put("sdk", Build.VERSION.SDK_INT)
+                    .put("package_name", packageName)
+                    .put("version_name", packageManager.getPackageInfo(packageName, 0).versionName ?: "")
+                    .put("width", resources.displayMetrics.widthPixels)
+                    .put("height", resources.displayMetrics.heightPixels)
+                    .put("density", resources.displayMetrics.density.toDouble())
+                    .toString()
+            }
+            else -> error("不支持的系统 API: $action")
+        }
+    }
 }
 
 /**
@@ -191,8 +324,20 @@ class standalone_bridge(
         }.apply { isDaemon = true; start() }
     }
 
-    fun send_click(vid: String) {
-        send(org.json.JSONObject().put("op", "click").put("vid", vid))
+    fun send_event(id: String, event: String, text: String = "", number: Double = 0.0, checked: Boolean = false) {
+        send(
+            org.json.JSONObject()
+                .put("op", "event")
+                .put("vid", id)
+                .put("event", event)
+                .put("text", text)
+                .put("number", number)
+                .put("boolean", checked)
+        )
+    }
+
+    fun send_lifecycle(event: String) {
+        send_event("", event)
     }
 
     fun stop() {
@@ -220,6 +365,13 @@ class standalone_bridge(
             "log" -> {
                 main_handler.post { on_ui_log(msg.optString("text")) }
                 send_ack(msg.optLong("seq"))
+            }
+            "system" -> {
+                val action = msg.optString("action")
+                val task = FutureTask { handler.on_system_call(action, msg) }
+                main_handler.post(task)
+                val result = runCatching { task.get(5, TimeUnit.SECONDS) }.getOrNull()
+                send_ack(msg.optLong("seq"), ok = result != null, text = result)
             }
             "quit" -> {
                 send_ack(msg.optLong("seq"))

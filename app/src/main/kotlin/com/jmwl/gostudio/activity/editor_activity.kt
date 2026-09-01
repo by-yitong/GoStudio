@@ -790,6 +790,92 @@ class editor_activity : ComponentActivity() {
         open_file(file_path)
     }
 
+    /** 读取 layout.xml 里的带 id 组件，供「生成代码」弹窗使用。 */
+    private fun layout_components_for_generator(): List<editor_layout_component> {
+        val layout_file = File(project_dir, "layout.xml")
+        if (!layout_file.isFile) return emptyList()
+        val layout_text = state.open_tabs.firstOrNull { it.file_path == layout_file.absolutePath }
+            ?.document?.toString() ?: layout_file.readText()
+        val result = mutableListOf<editor_layout_component>()
+        val component_names = mapOf(
+            "TextView" to "文本", "EditText" to "输入框", "AutoCompleteTextView" to "自动补全输入框",
+            "Button" to "按钮", "ImageView" to "图片", "ImageButton" to "图片按钮",
+            "CheckBox" to "复选框", "RadioButton" to "单选框", "Switch" to "开关",
+            "ToggleButton" to "开关按钮", "ProgressBar" to "进度条", "SeekBar" to "拖动条",
+            "RatingBar" to "评分条", "Spinner" to "下拉框", "ListView" to "列表",
+            "GridView" to "网格列表", "DatePicker" to "日期选择器", "TimePicker" to "时间选择器",
+            "CalendarView" to "日历", "NumberPicker" to "数字选择器", "Chronometer" to "计时器",
+            "TextClock" to "文本时钟", "VideoView" to "视频", "WebView" to "网页",
+            "View" to "占位视图", "Space" to "空白占位"
+        )
+        try {
+            val parser = android.util.Xml.newPullParser()
+            parser.setInput(layout_text.reader())
+            var event = parser.eventType
+            while (event != org.xmlpull.v1.XmlPullParser.END_DOCUMENT) {
+                if (event == org.xmlpull.v1.XmlPullParser.START_TAG) {
+                    val id = (0 until parser.attributeCount)
+                        .firstOrNull { parser.getAttributeName(it) == "id" }
+                        ?.let { parser.getAttributeValue(it) }
+                    if (!id.isNullOrBlank()) {
+                        result += editor_layout_component(
+                            id = id,
+                            tag = parser.name,
+                            title = "${component_names[parser.name] ?: parser.name} #$id"
+                        )
+                    }
+                }
+                event = parser.next()
+            }
+        } catch (_: Exception) {
+            return emptyList()
+        }
+        return result
+    }
+
+    /** 把生成代码插入到运行入口；若未打开则先打开 main.go。 */
+    private fun insert_generated_code(code: String) {
+        lifecycleScope.launch {
+            val build = project_manager.read_project_build_config(project_dir.absolutePath)
+            val entry = File(project_dir, build.run_entry).canonicalFile
+            val target = if (entry.isFile) entry else File(project_dir, "main.go").canonicalFile
+            if (state.current_file_path != target.absolutePath) {
+                val index = find_tab_index(target.absolutePath)
+                if (index >= 0) {
+                    attach_editor_tab(index)
+                } else {
+                    val loaded = withContext(Dispatchers.IO) {
+                        load_project_file(project_dir, target.absolutePath)
+                    }.getOrElse { error ->
+                        app_toast.show(this@editor_activity, "打开 main.go 失败: ${error.message}", app_toast.LENGTH_LONG)
+                        return@launch
+                    }
+                    open_loaded_file_tab(loaded)
+                }
+            }
+            if (state.read_only) {
+                app_toast.show(this@editor_activity, "只读模式不能插入代码", app_toast.LENGTH_SHORT)
+                return@launch
+            }
+            val text = editor.text
+            val run_line = (0 until text.lineCount).firstOrNull { line ->
+                text.getLineString(line).trim() == "app.Run()"
+            }
+            if (run_line != null) {
+                val indent = text.getLineString(run_line).takeWhile { it == ' ' || it == '\t' }
+                val snippet = code.trim().prependIndent(indent)
+                text.beginBatchEdit()
+                text.insert(run_line, 0, snippet + "\n")
+                text.endBatchEdit()
+                editor.setSelection(run_line + snippet.split('\n').size, 0)
+            } else {
+                editor.commitText(code, false, true)
+            }
+            update_history_state()
+            app_toast.show(this@editor_activity, "代码已插入", app_toast.LENGTH_SHORT)
+        }
+    }
+
     /** 打开独立布局设计器（编辑当前项目的 layout.xml）。 */
     private fun open_layout_designer() {
         lifecycleScope.launch { save_dirty_open_files(show_toast = false) }
@@ -938,6 +1024,7 @@ class editor_activity : ComponentActivity() {
             output_panel_state.append_output("错误: $message", editor_output_line_level.ERROR)
             return
         }
+        upgrade_app_ui_runtime_sdk_if_needed()
 
         go_build_job = lifecycleScope.launch {
             output_panel_state.selected_tab = editor_output_tab.Output
@@ -1043,11 +1130,11 @@ class editor_activity : ComponentActivity() {
             app_toast.show(this, project_environment.missing.joinToString("；"), app_toast.LENGTH_LONG)
             return
         }
+        upgrade_app_ui_runtime_sdk_if_needed()
         if (go_build_job?.isActive == true || go_run_job?.isActive == true) {
             app_toast.show(this, "任务正在运行中", app_toast.LENGTH_SHORT)
             return
         }
-
         go_build_job = lifecycleScope.launch {
             output_panel_state.selected_tab = editor_output_tab.Output
             output_panel_state.clear_output()
@@ -1141,6 +1228,17 @@ class editor_activity : ComponentActivity() {
         }
     }
 
+    /** 旧项目缺少生命周期 / 系统 API SDK 时，自动升级内置 gostudio 桥接包。 */
+    private fun upgrade_app_ui_runtime_sdk_if_needed() {
+        if (!File(project_dir, "layout.xml").isFile) return
+        val sdk_file = File(project_dir, "gostudio/gostudio.go")
+        if (sdk_file.isFile && sdk_file.readText().contains("func (a *App) OnCreate")) return
+        sdk_file.parentFile?.mkdirs()
+        gostudio_application.instance.assets.open("templates/app-ui/gostudio/gostudio.go").use { input ->
+            sdk_file.outputStream().use { input.copyTo(it) }
+        }
+    }
+
     /**
      * 构建并运行 AndLua 式 App 项目：go build 产出二进制后，
      * 打开宿主运行界面（layout.xml 渲染 + Go 逻辑进程通过 JSON 行协议驱动界面）。
@@ -1158,6 +1256,7 @@ class editor_activity : ComponentActivity() {
             app_toast.show(this, "任务正在运行中", app_toast.LENGTH_SHORT)
             return
         }
+        upgrade_app_ui_runtime_sdk_if_needed()
 
         go_build_job = lifecycleScope.launch {
             output_panel_state.selected_tab = editor_output_tab.Output

@@ -278,7 +278,9 @@ fun editor_top_bar(
     build_stopping: Boolean,
     on_toggle_read_only: () -> Unit = {},
     on_open_ai: () -> Unit = {},
-    on_open_project_config: () -> Unit = {}
+    on_open_project_config: () -> Unit = {},
+    is_app_project: Boolean = false,
+    on_generate_code: () -> Unit = {}
 ) {
     val colors = app_theme_provider.colors
     val accent = MaterialTheme.colorScheme.primary
@@ -375,6 +377,15 @@ fun editor_top_bar(
                         ) {
                             more_menu_open = false
                             on_pack()
+                        }
+                        if (is_app_project) {
+                            editor_menu_item(
+                                icon = Icons.Default.AutoFixHigh,
+                                label = "生成代码"
+                            ) {
+                                more_menu_open = false
+                                on_generate_code()
+                            }
                         }
                         editor_menu_divider()
                     }

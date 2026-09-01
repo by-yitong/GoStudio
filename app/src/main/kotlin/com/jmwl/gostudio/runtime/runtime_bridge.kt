@@ -29,6 +29,7 @@ class runtime_bridge(
     interface protocol_handler {
         fun on_set_text(vid: String, text: String)
         fun on_get_text(vid: String): String
+        fun on_system_call(action: String, msg: JSONObject): String
         fun on_quit()
     }
 
@@ -90,8 +91,20 @@ class runtime_bridge(
         }.apply { isDaemon = true; start() }
     }
 
-    fun send_click(vid: String) {
-        send(JSONObject().put("op", "click").put("vid", vid))
+    fun send_event(id: String, event: String, text: String = "", number: Double = 0.0, checked: Boolean = false) {
+        send(
+            JSONObject()
+                .put("op", "event")
+                .put("vid", id)
+                .put("event", event)
+                .put("text", text)
+                .put("number", number)
+                .put("boolean", checked)
+        )
+    }
+
+    fun send_lifecycle(event: String) {
+        send_event("", event)
     }
 
     fun stop() {
@@ -122,6 +135,11 @@ class runtime_bridge(
             "log" -> {
                 log_ui(msg.optString("text"))
                 send_ack(msg.optLong("seq"))
+            }
+            "system" -> {
+                val action = msg.optString("action")
+                val result = fetch_on_main { handler.on_system_call(action, msg) }
+                send_ack(msg.optLong("seq"), ok = result != null, text = result)
             }
             "quit" -> {
                 send_ack(msg.optLong("seq"))
