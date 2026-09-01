@@ -37,7 +37,12 @@ class learn_go_language : TextMateLanguage(
             val prefix = dot_match.groupValues[2]
             val members = package_members[receiver].orEmpty()
             publisher.addItems(
-                members.filter { it.label.startsWith(prefix, ignoreCase = true) }
+                members
+                    .filter { it.first.startsWith(prefix, ignoreCase = true) }
+                    .map { (label, detail) ->
+                        SimpleCompletionItem(label, detail, prefix.length, label)
+                            .kind(CompletionItemKind.Function)
+                    }
             )
             return
         }
@@ -94,8 +99,6 @@ class learn_go_language : TextMateLanguage(
             )
         )
 
-        private fun member(label: String, detail: String) =
-            SimpleCompletionItem(label, detail, 0, label)
-                .kind(CompletionItemKind.Function)
+        private fun member(label: String, detail: String) = label to detail
     }
 }
