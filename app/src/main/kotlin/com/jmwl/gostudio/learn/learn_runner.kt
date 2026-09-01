@@ -55,19 +55,23 @@ object learn_runner {
         if (!is_go_available()) {
             return exercise_result(false, false, "", "Go 工具链未安装，请先到「开发工具」页安装")
         }
-        var stdout = StringBuilder()
-        val exit_ok = run_in_scratch(code) { line, _ -> stdout.appendLine(line) }
+        val raw_output = StringBuilder()
+        val program_output = mutableListOf<String>()
+        val exit_ok = run_in_scratch(code) { line, _ ->
+            raw_output.appendLine(line)
+            extract_program_output(line)?.let(program_output::add)
+        }
         if (!exit_ok) {
-            val first_error = stdout.toString().lineSequence().firstOrNull { it.contains("error", ignoreCase = true) }
+            val first_error = raw_output.toString().lineSequence().firstOrNull { it.contains("error", ignoreCase = true) }
             return exercise_result(
                 passed = false,
                 compiled = false,
-                output = stdout.toString().trimEnd(),
+                output = raw_output.toString().trimEnd(),
                 message = "代码没有通过编译，看看下面的错误再试一次。" + (first_error?.let { "\n$it" } ?: "")
             )
         }
 
-        val actual = normalize(stdout.toString(), check.case_sensitive)
+        val actual = normalize(program_output.joinToString("\n"), check.case_sensitive)
         val output_ok = when {
             check.expected_output != null -> actual == normalize(check.expected_output, check.case_sensitive)
             check.must_contain.isNotEmpty() -> check.must_contain.all { actual.contains(normalize(it, check.case_sensitive)) }
@@ -84,7 +88,7 @@ object learn_runner {
             else ->
                 "输出对了，但练习要求你真的用上 ${missing.joinToString("、") { "`$it`" }} —— 不能只把答案打印出来哦。"
         }
-        return exercise_result(passed, true, stdout.toString().trimEnd(), message)
+        return exercise_result(passed, true, program_output.joinToString("\n").trimEnd(), message)
     }
 
     /**
@@ -115,6 +119,20 @@ object learn_runner {
     private fun normalize(s: String, case_sensitive: Boolean): String {
         val t = s.replace("\r\n", "\n").lines().joinToString("\n") { it.trimEnd() }.trim()
         return if (case_sensitive) t else t.lowercase()
+    }
+
+    /**
+     * proot shell 会给进程输出加 `[OUT] --` 前缀，登录 shell 还会输出欢迎语。
+     * 判题只关心学习者程序的 stdout，因此在这里还原并过滤外壳产生的行。
+     */
+    private fun extract_program_output(line: String): String? {
+        val trimmed = line.trimStart()
+        if (!trimmed.startsWith("[OUT] ")) return null
+
+        var output = trimmed.removePrefix("[OUT] ")
+        if (output.startsWith("-- ")) output = output.removePrefix("-- ")
+        if (output.equals("Welcome To GoStudio Terminal", ignoreCase = true)) return null
+        return output
     }
 }
 
