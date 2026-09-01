@@ -15,6 +15,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -205,6 +206,7 @@ private fun designer_screen(
     var preview_revision by remember { mutableIntStateOf(0) }
     var left_open by remember { mutableStateOf(true) }
     var right_open by remember { mutableStateOf(false) }
+    var clipboard by remember { mutableStateOf<d_node?>(null) }
     val context = LocalContext.current
     val colors = app_theme_provider.colors
 
@@ -321,6 +323,40 @@ private fun designer_screen(
                             tree = tree.deep_copy().also { selected = find_node(it, node) }
                             rebuild_from_tree()
                         },
+                        on_copy = { node -> clipboard = node.deep_copy() },
+                        on_paste = { container ->
+                            clipboard?.let { clip ->
+                                val copy = clip.deep_copy()
+                                // 重置复制的 id 避免冲突
+                                if (copy.attrs.containsKey("id")) {
+                                    copy.attrs["id"] = next_id(tree, copy.tag)
+                                }
+                                copy.parent = container
+                                container.children.add(copy)
+                                tree = tree.deep_copy().also { selected = find_node(it, copy) }
+                                rebuild_from_tree()
+                            }
+                        },
+                        on_delete = { node ->
+                            remove_node(tree, node)
+                            if (selected === node) selected = null
+                            tree = tree.deep_copy()
+                            rebuild_from_tree()
+                        },
+                        on_move = { node, direction ->
+                            val parent = node.parent
+                            if (parent != null) {
+                                val index = parent.children.indexOf(node)
+                            val new_index = index + direction
+                            if (new_index in parent.children.indices) {
+                                parent.children.removeAt(index)
+                                parent.children.add(new_index, node)
+                                tree = tree.deep_copy().also { selected = find_node(it, node) }
+                                rebuild_from_tree()
+                                }
+                            }
+                        },
+                        clipboard_node = clipboard,
                         modifier = Modifier.width(220.dp).fillMaxHeight()
                     )
                 }
@@ -369,6 +405,11 @@ private fun ComponentTree(
     selected: d_node?,
     on_select: (d_node) -> Unit,
     on_add: (String) -> Unit,
+    on_copy: (d_node) -> Unit,
+    on_paste: (d_node) -> Unit,
+    on_delete: (d_node) -> Unit,
+    on_move: (d_node, Int) -> Unit,
+    clipboard_node: d_node?,
     modifier: Modifier = Modifier
 ) {
     Column(modifier.verticalScroll(rememberScrollState()).padding(vertical = 8.dp)) {
@@ -380,47 +421,95 @@ private fun ComponentTree(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
         )
         // 树形列表
-        TreeRow(node = root, depth = 0, selected = selected, on_select = on_select)
+        TreeRow(root, 0, selected, on_select, on_copy, on_paste, on_delete, on_move, clipboard_node != null, clipboard_node?.tag)
         // 折叠卡片：组件 / 布局
         Spacer(Modifier.height(10.dp))
-        ExpandableCard(title = "组件", modifier = Modifier.padding(horizontal = 10.dp)) {
+        ExpandableCard(title = "添加组件", modifier = Modifier.padding(horizontal = 10.dp)) {
             AddGrid(tags = WIDGET_TAGS, on_add = on_add)
         }
         Spacer(Modifier.height(6.dp))
-        ExpandableCard(title = "布局", modifier = Modifier.padding(horizontal = 10.dp)) {
+        ExpandableCard(title = "添加布局", modifier = Modifier.padding(horizontal = 10.dp)) {
             AddGrid(tags = LAYOUT_TAGS, on_add = on_add)
         }
     }
 }
 
 @Composable
-private fun TreeRow(node: d_node, depth: Int, selected: d_node?, on_select: (d_node) -> Unit) {
+private fun TreeRow(
+    node: d_node,
+    depth: Int,
+    selected: d_node?,
+    on_select: (d_node) -> Unit,
+    on_copy: (d_node) -> Unit,
+    on_paste: (d_node) -> Unit,
+    on_delete: (d_node) -> Unit,
+    on_move: (d_node, Int) -> Unit,
+    has_clipboard: Boolean,
+    clipboard_tag: String?
+) {
     val is_sel = node === selected
+    val is_root = depth == 0
     val colors = app_theme_provider.colors
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { on_select(node) }
-            .background(if (is_sel) colors.editor_icon.copy(alpha = 0.15f) else androidx.compose.ui.graphics.Color.Transparent)
-            .padding(start = (12 + depth * 16).dp, top = 6.dp, bottom = 6.dp, end = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        if (node.is_container) {
-            Text("▾ ", fontSize = 10.sp, color = colors.editor_hint)
-        } else {
-            Text("· ", fontSize = 10.sp, color = colors.editor_hint)
+    var menu_open by remember { mutableStateOf(false) }
+
+    Box {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .combinedClickable(
+                    onClick = { on_select(node) },
+                    onLongClick = { menu_open = true }
+                )
+                .background(if (is_sel) colors.editor_icon.copy(alpha = 0.15f) else androidx.compose.ui.graphics.Color.Transparent)
+                .padding(start = (12 + depth * 16).dp, top = 6.dp, bottom = 6.dp, end = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (node.is_container) {
+                Text("▾ ", fontSize = 10.sp, color = colors.editor_hint)
+            } else {
+                Text("· ", fontSize = 10.sp, color = colors.editor_hint)
+            }
+            Text(
+                tag_cn(node.tag),
+                fontSize = 12.sp,
+                color = if (is_sel) colors.editor_icon else colors.editor_text,
+                fontWeight = if (is_sel) FontWeight.Bold else FontWeight.Normal
+            )
+            node.id.takeIf { it.isNotBlank() }?.let {
+                Text("  #$it", fontSize = 10.sp, color = colors.editor_hint)
+            }
         }
-        Text(
-            tag_cn(node.tag),
-            fontSize = 12.sp,
-            color = if (is_sel) colors.editor_icon else colors.editor_text,
-            fontWeight = if (is_sel) FontWeight.Bold else FontWeight.Normal
-        )
-        node.id.takeIf { it.isNotBlank() }?.let {
-            Text("  #$it", fontSize = 10.sp, color = colors.editor_hint)
+
+        DropdownMenu(expanded = menu_open, onDismissRequest = { menu_open = false }) {
+            DropdownMenuItem(
+                text = { Text("复制", fontSize = 13.sp) },
+                onClick = { on_copy(node); menu_open = false }
+            )
+            if (!is_root) {
+                DropdownMenuItem(
+                    text = { Text("删除", fontSize = 13.sp, color = androidx.compose.ui.graphics.Color(0xFFFF6B6B)) },
+                    onClick = { on_delete(node); menu_open = false }
+                )
+                DropdownMenuItem(
+                    text = { Text("上移", fontSize = 13.sp) },
+                    onClick = { on_move(node, -1); menu_open = false }
+                )
+                DropdownMenuItem(
+                    text = { Text("下移", fontSize = 13.sp) },
+                    onClick = { on_move(node, 1); menu_open = false }
+                )
+            }
+            if (node.is_container && has_clipboard) {
+                DropdownMenuItem(
+                    text = { Text("粘贴${clipboard_tag?.let { " (${tag_cn(it)})" } ?: ""}", fontSize = 13.sp) },
+                    onClick = { on_paste(node); menu_open = false }
+                )
+            }
         }
     }
-    node.children.forEach { child -> TreeRow(child, depth + 1, selected, on_select) }
+    node.children.forEach { child ->
+        TreeRow(child, depth + 1, selected, on_select, on_copy, on_paste, on_delete, on_move, has_clipboard, clipboard_tag)
+    }
 }
 
 /* 折叠卡片（固定高度内容区可滚动） */
