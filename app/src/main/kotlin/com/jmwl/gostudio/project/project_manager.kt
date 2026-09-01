@@ -220,11 +220,10 @@ object project_manager {
         val sdk_dir = File(dir, "gostudio")
         sdk_dir.mkdirs()
         val assets = gostudio_application.instance.assets
-        listOf("go.mod", "gostudio.go").forEach { file_name ->
-            assets.open("templates/app-ui/gostudio/$file_name").use { input ->
-                File(sdk_dir, file_name).outputStream().use { output ->
-                    input.copyTo(output)
-                }
+        val asset_dir = "templates/app-ui/gostudio"
+        assets.list(asset_dir)?.forEach { file_name ->
+            assets.open("$asset_dir/$file_name").use { input ->
+                File(sdk_dir, file_name).outputStream().use { output -> input.copyTo(output) }
             }
         }
     }

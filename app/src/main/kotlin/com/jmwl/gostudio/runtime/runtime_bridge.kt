@@ -30,6 +30,9 @@ class runtime_bridge(
         fun on_set_text(vid: String, text: String)
         fun on_set_image(vid: String, url: String)
         fun on_get_text(vid: String): String
+        fun on_set_property(vid: String, name: String, value: org.json.JSONObject): String
+        fun on_get_property(vid: String, name: String): String
+        fun on_invoke(vid: String, action: String, value: org.json.JSONObject): String
         fun on_system_call(action: String, msg: JSONObject): String
         fun on_quit()
     }
@@ -137,6 +140,24 @@ class runtime_bridge(
                 val url = msg.optString("text")
                 post_to_main { handler.on_set_image(vid, url) }
                 send_ack(msg.optLong("seq"))
+            }
+            "set_property" -> {
+                val vid = msg.optString("vid")
+                val name = msg.optString("action")
+                val result = fetch_on_main { handler.on_set_property(vid, name, msg) }
+                send_ack(msg.optLong("seq"), ok = result != null, text = result ?: "error")
+            }
+            "get_property" -> {
+                val vid = msg.optString("vid")
+                val name = msg.optString("action")
+                val result = fetch_on_main { handler.on_get_property(vid, name) }
+                send_ack(msg.optLong("seq"), ok = result != null, text = result ?: "error")
+            }
+            "invoke" -> {
+                val vid = msg.optString("vid")
+                val action = msg.optString("action")
+                val result = fetch_on_main { handler.on_invoke(vid, action, msg) }
+                send_ack(msg.optLong("seq"), ok = result != null, text = result ?: "error")
             }
             "get_text" -> {
                 val vid = msg.optString("vid")

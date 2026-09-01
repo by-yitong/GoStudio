@@ -21,6 +21,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.CompoundButton
+import android.widget.AbsListView
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import android.widget.CalendarView
+import android.widget.Chronometer
 import android.widget.DatePicker
 import android.widget.FrameLayout
 import android.widget.ImageView
@@ -28,9 +33,16 @@ import android.widget.LinearLayout
 import android.widget.RatingBar
 import android.widget.ScrollView
 import android.widget.SeekBar
+import android.widget.NumberPicker
+import android.widget.ProgressBar
+import android.widget.Spinner
+import android.widget.TextClock
 import android.widget.TextView
 import android.widget.TimePicker
+import android.widget.VideoView
+import android.widget.ViewFlipper
 import android.widget.Toast
+import android.webkit.WebView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import org.json.JSONObject
@@ -40,6 +52,8 @@ import com.jmwl.gostudio.toolchain.toolchain_runtime_provider
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
+import java.text.SimpleDateFormat
+import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -171,6 +185,31 @@ class runtime_host_activity : AppCompatActivity(), runtime_bridge.protocol_handl
                 is TimePicker -> view.setOnTimeChangedListener { _, hour, minute ->
                     bridge?.send_event(id, "time_change", text = "%02d:%02d".format(hour, minute))
                 }
+                is AbsListView -> view.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
+                    bridge?.send_event(
+                        id,
+                        "item_click",
+                        text = view.adapter?.getItem(position)?.toString() ?: "",
+                        number = position.toDouble()
+                    )
+                }
+                is Spinner -> {
+                    var selection_ready = false
+                    view.post { selection_ready = true }
+                    view.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                        override fun onItemSelected(parent: AdapterView<*>?, selected: View?, position: Int, row_id: Long) {
+                            if (selection_ready) {
+                                bridge?.send_event(
+                                    id,
+                                    "item_click",
+                                    text = parent?.getItemAtPosition(position)?.toString() ?: "",
+                                    number = position.toDouble()
+                                )
+                            }
+                        }
+                        override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+                    }
+                }
             }
         }
     }
@@ -296,6 +335,172 @@ class runtime_host_activity : AppCompatActivity(), runtime_bridge.protocol_handl
         val view = views_by_id[vid] as? TextView
             ?: run { append_log("警告: get_text 找不到控件 \"$vid\""); return "" }
         return view.text?.toString() ?: ""
+    }
+
+    override fun on_set_property(vid: String, name: String, value: JSONObject): String {
+        val view = views_by_id[vid] ?: error("找不到控件 \"$vid\"")
+        val raw = value.opt("value")
+        when (name) {
+            "visibility" -> view.visibility = when (raw?.toString()) {
+                "visible" -> View.VISIBLE
+                "invisible" -> View.INVISIBLE
+                "gone" -> View.GONE
+                else -> error("无效 visibility: $raw")
+            }
+            "enabled" -> view.isEnabled = raw as? Boolean ?: error("enabled 需要 bool")
+            "selected" -> view.isSelected = raw as? Boolean ?: error("selected 需要 bool")
+            "alpha" -> view.alpha = (raw as? Number)?.toFloat() ?: error("alpha 需要 number")
+            "background" -> view.setBackgroundColor(Color.parseColor(raw?.toString()))
+            "text" -> (view as? TextView)?.text = raw?.toString() ?: error("控件不是文本组件")
+            "hint" -> (view as? TextView)?.hint = raw?.toString() ?: error("控件不是文本组件")
+            "text_size" -> (view as? TextView)?.textSize = (raw as? Number)?.toFloat() ?: error("字号需要 number")
+            "checked" -> (view as? CompoundButton)?.isChecked = raw as? Boolean ?: error("控件不是可选组件")
+            "progress" -> (view as? ProgressBar)?.progress = (raw as? Number)?.toInt() ?: error("进度需要 number")
+            "max" -> (view as? ProgressBar)?.max = (raw as? Number)?.toInt() ?: error("最大值需要 number")
+            "rating" -> (view as? RatingBar)?.rating = (raw as? Number)?.toFloat() ?: error("评分需要 number")
+            "num_stars" -> (view as? RatingBar)?.numStars = (raw as? Number)?.toInt() ?: error("星星数需要 number")
+            "selection" -> when (view) {
+                is Spinner -> view.setSelection((raw as? Number)?.toInt() ?: error("下标需要 number"))
+                is NumberPicker -> view.value = (raw as? Number)?.toInt() ?: error("数值需要 number")
+                else -> error("组件不支持 selection")
+            }
+            "scale_type" -> (view as? ImageView)?.scaleType = when (raw?.toString()) {
+                "center" -> ImageView.ScaleType.CENTER
+                "centerCrop" -> ImageView.ScaleType.CENTER_CROP
+                "centerInside" -> ImageView.ScaleType.CENTER_INSIDE
+                "fitCenter" -> ImageView.ScaleType.FIT_CENTER
+                "fitEnd" -> ImageView.ScaleType.FIT_END
+                "fitStart" -> ImageView.ScaleType.FIT_START
+                "fitXY" -> ImageView.ScaleType.FIT_XY
+                else -> error("无效 scaleType: $raw")
+            }
+            "orientation" -> when (view) {
+                is LinearLayout -> view.orientation = if (raw?.toString() == "vertical") LinearLayout.VERTICAL else LinearLayout.HORIZONTAL
+                else -> error("组件不支持 orientation")
+            }
+            "value" -> (view as? NumberPicker)?.value = (raw as? Number)?.toInt() ?: error("数值需要 number")
+            "format" -> when (view) {
+                is Chronometer -> view.format = raw?.toString()
+                is TextClock -> view.format24Hour = raw?.toString()
+                else -> error("组件不支持 format")
+            }
+            "video" -> (view as? VideoView)?.setVideoURI(Uri.parse(raw?.toString()))
+            "url" -> (view as? WebView)?.loadUrl(raw?.toString() ?: error("URL 不能为空"))
+            "date" -> set_widget_date(view, raw?.toString() ?: error("日期不能为空"))
+            "time" -> {
+                val parts = (raw?.toString() ?: error("时间不能为空")).split(":")
+                val picker = view as? TimePicker ?: error("组件不是时间选择器")
+                picker.hour = parts[0].toIntOrNull() ?: error("时间格式错误")
+                picker.minute = parts.getOrNull(1)?.toIntOrNull() ?: error("时间格式错误")
+            }
+            else -> error("不支持的属性: $name")
+        }
+        return "ok"
+    }
+
+    override fun on_get_property(vid: String, name: String): String {
+        val view = views_by_id[vid] ?: error("找不到控件 \"$vid\"")
+        return when (name) {
+            "text" -> (view as? TextView)?.text?.toString() ?: error("控件不是文本组件")
+            "hint" -> (view as? TextView)?.hint?.toString() ?: error("控件不是文本组件")
+            "checked" -> (view as? CompoundButton)?.isChecked?.toString() ?: error("组件不是可选组件")
+            "progress" -> (view as? ProgressBar)?.progress?.toString() ?: error("组件不是进度组件")
+            "max" -> (view as? ProgressBar)?.max?.toString() ?: error("组件不是进度组件")
+            "rating" -> (view as? RatingBar)?.rating?.toString() ?: error("组件不是评分组件")
+            "selection" -> when (view) {
+                is Spinner -> view.selectedItemPosition.toString()
+                is NumberPicker -> view.value.toString()
+                else -> error("组件不支持 selection")
+            }
+            "enabled" -> view.isEnabled.toString()
+            "selected" -> view.isSelected.toString()
+            "alpha" -> view.alpha.toString()
+            "visibility" -> when (view.visibility) {
+                View.VISIBLE -> "visible"
+                View.INVISIBLE -> "invisible"
+                else -> "gone"
+            }
+            "value" -> (view as? NumberPicker)?.value?.toString() ?: error("组件不是数字选择器")
+            "date" -> get_widget_date(view)
+            "time" -> (view as? TimePicker)?.let { "%02d:%02d".format(it.hour, it.minute) } ?: error("组件不是时间选择器")
+            else -> error("不支持的属性: $name")
+        }
+    }
+
+    override fun on_invoke(vid: String, action: String, value: JSONObject): String {
+        val view = views_by_id[vid] ?: error("找不到控件 \"$vid\"")
+        when (action) {
+            "toggle" -> (view as? CompoundButton)?.toggle() ?: error("组件不支持 toggle")
+            "set_padding" -> {
+                val values = value.optJSONArray("value") ?: error("padding 参数错误")
+                view.setPadding(
+                    values.optInt(0), values.optInt(1), values.optInt(2), values.optInt(3)
+                )
+            }
+            "start" -> when (view) {
+                is Chronometer -> view.start()
+                is VideoView -> view.start()
+                is ViewFlipper -> view.startFlipping()
+                else -> error("组件不支持 start")
+            }
+            "stop" -> when (view) {
+                is Chronometer -> view.stop()
+                is VideoView -> view.stopPlayback()
+                is ViewFlipper -> view.stopFlipping()
+                else -> error("组件不支持 stop")
+            }
+            "pause" -> (view as? VideoView)?.pause() ?: error("组件不是视频")
+            "reload" -> (view as? WebView)?.reload() ?: error("组件不是 WebView")
+            "go_back" -> (view as? WebView)?.takeIf { it.canGoBack() }?.goBack() ?: error("网页不能后退")
+            "go_forward" -> (view as? WebView)?.takeIf { it.canGoForward() }?.goForward() ?: error("网页不能前进")
+            "show_next" -> (view as? ViewFlipper)?.showNext() ?: error("组件不是 ViewFlipper")
+            "show_previous" -> (view as? ViewFlipper)?.showPrevious() ?: error("组件不是 ViewFlipper")
+            "set_range" -> {
+                val values = value.optJSONArray("value") ?: error("range 参数错误")
+                val picker = view as? NumberPicker ?: error("组件不是数字选择器")
+                picker.minValue = values.optInt(0)
+                picker.maxValue = values.optInt(1)
+            }
+            "set_items" -> {
+                val array = value.optJSONArray("value") ?: error("items 参数错误")
+                val items = mutableListOf<String>()
+                repeat(array.length()) { index -> items += array.optString(index) }
+                when (view) {
+                    is Spinner -> view.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, items).apply {
+                        setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                    }
+                    is AbsListView -> view.adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, items)
+                    else -> error("组件不支持数据源")
+                }
+            }
+            else -> error("不支持的操作: $action")
+        }
+        return "ok"
+    }
+
+    private fun set_widget_date(view: View, date: String) {
+        val parsed = SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(date) ?: error("日期格式错误")
+        val calendar = java.util.Calendar.getInstance().apply { time = parsed }
+        when (view) {
+            is DatePicker -> view.updateDate(
+                calendar.get(java.util.Calendar.YEAR),
+                calendar.get(java.util.Calendar.MONTH),
+                calendar.get(java.util.Calendar.DAY_OF_MONTH)
+            )
+            is CalendarView -> view.date = parsed.time
+            else -> error("组件不是日期组件")
+        }
+    }
+
+    private fun get_widget_date(view: View): String {
+        val time = when (view) {
+            is DatePicker -> java.util.Calendar.getInstance().apply {
+                set(view.year, view.month, view.dayOfMonth)
+            }.time
+            is CalendarView -> java.util.Date(view.date)
+            else -> error("组件不是日期组件")
+        }
+        return SimpleDateFormat("yyyy-MM-dd", Locale.US).format(time)
     }
 
     override fun on_system_call(action: String, msg: JSONObject): String {

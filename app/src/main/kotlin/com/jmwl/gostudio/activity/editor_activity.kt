@@ -1342,10 +1342,17 @@ class editor_activity : ComponentActivity() {
     private fun upgrade_app_ui_runtime_sdk_if_needed() {
         if (!File(project_dir, "layout.xml").isFile) return
         val sdk_file = File(project_dir, "gostudio/gostudio.go")
-        if (sdk_file.isFile && sdk_file.readText().contains("func (v *Image) SetSrc")) return
-        sdk_file.parentFile?.mkdirs()
-        gostudio_application.instance.assets.open("templates/app-ui/gostudio/gostudio.go").use { input ->
-            sdk_file.outputStream().use { input.copyTo(it) }
+        if (File(sdk_file.parentFile, "view.go").isFile &&
+            File(sdk_file.parentFile, "image.go").isFile &&
+            File(sdk_file.parentFile, "collection.go").isFile
+        ) return
+        val sdk_dir = sdk_file.parentFile ?: File(project_dir, "gostudio")
+        sdk_dir.mkdirs()
+        val asset_dir = "templates/app-ui/gostudio"
+        gostudio_application.instance.assets.list(asset_dir)?.forEach { file_name ->
+            gostudio_application.instance.assets.open("$asset_dir/$file_name").use { input ->
+                File(sdk_dir, file_name).outputStream().use { output -> input.copyTo(output) }
+            }
         }
     }
 
