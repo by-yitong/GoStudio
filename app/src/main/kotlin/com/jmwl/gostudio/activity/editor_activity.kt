@@ -340,6 +340,7 @@ class editor_activity : ComponentActivity() {
             on_build = { handle_build_button_click() },
             on_run = { run_go_project() },
             on_test = { run_go_tests() },
+            on_pack = { pack_app_ui_project() },
             on_save = { request_save_file() },
             on_format = { format_current_file() },
             on_toggle_read_only = { toggle_read_only() },
@@ -991,6 +992,88 @@ class editor_activity : ComponentActivity() {
                         terminal_activity.EXTRA_RUN_ENVIRONMENT,
                         ArrayList(project_environment.environment.map { (key, value) -> "$key=$value" })
                     )
+            )
+        }
+    }
+
+    /**
+     * 打包独立 APK：构建 → 注入壳模板 → apksig 签名 → 保存到项目 bin/ 目录。
+     */
+    private fun pack_app_ui_project() {
+        if (detected_project_info.kind != project_kind.GO) {
+            app_toast.show(this, "当前项目不是 Go 项目", app_toast.LENGTH_SHORT)
+            return
+        }
+        if (!File(project_dir, "layout.xml").isFile) {
+            app_toast.show(this, "不是 App 界面项目（缺少 layout.xml）", app_toast.LENGTH_SHORT)
+            return
+        }
+        val project_environment = toolchain_manager.project_environment(project_dir.absolutePath)
+        if (project_environment.missing.isNotEmpty()) {
+            app_toast.show(this, project_environment.missing.joinToString("；"), app_toast.LENGTH_LONG)
+            return
+        }
+        if (go_build_job?.isActive == true || go_run_job?.isActive == true) {
+            app_toast.show(this, "任务正在运行中", app_toast.LENGTH_SHORT)
+            return
+        }
+
+        go_build_job = lifecycleScope.launch {
+            output_panel_state.selected_tab = editor_output_tab.Output
+            output_panel_state.clear_output()
+            output_panel_state.task_running = true
+            output_panel_state.task_stopping = false
+            if (!save_dirty_open_files(show_toast = false)) {
+                output_panel_state.append_output("打包取消，文件保存失败", editor_output_line_level.ERROR)
+                output_panel_state.task_running = false
+                return@launch
+            }
+
+            // 1. 编译
+            val build = project_manager.read_project_build_config(project_dir.absolutePath)
+            val bin_dir = File(project_dir, "bin")
+            bin_dir.mkdirs()
+            val binary = File(bin_dir, project_dir.name)
+            val build_ok = try {
+                proot_manager.execute_command_with_environment(
+                    command = build_go_build_command(build) + " -o " + shell_quote(binary.absolutePath) + " " + shell_quote(build.run_entry),
+                    working_dir = project_dir.absolutePath,
+                    extra_environment = project_environment.environment,
+                    on_log = { line -> output_panel_state.append_output(line, output_level_for_line(line)) }
+                )
+            } catch (_: CancellationException) {
+                output_panel_state.append_output("打包已停止", editor_output_line_level.WARNING)
+                return@launch
+            }
+
+            if (!build_ok) {
+                output_panel_state.append_output("构建失败，打包终止", editor_output_line_level.ERROR)
+                app_toast.show(this@editor_activity, "构建失败", app_toast.LENGTH_LONG)
+                return@launch
+            }
+
+            // 2. 注入 + 签名（后台执行）
+            val output_apk = File(bin_dir, project_dir.name + ".apk")
+            val result = withContext(Dispatchers.IO) {
+                com.jmwl.gostudio.runtime.apk_packer.pack(
+                    context = this@editor_activity,
+                    layout_file = File(project_dir, "layout.xml"),
+                    binary_file = binary,
+                    output_apk = output_apk
+                )
+            }
+            output_panel_state.task_running = false
+            output_panel_state.task_stopping = false
+
+            result.fold(
+                onSuccess = {
+                    output_panel_state.append_output("打包完成: ${output_apk.absolutePath} (${output_apk.length() / 1024 / 1024}MB)", editor_output_line_level.SUCCESS)
+                    app_toast.show(this@editor_activity, "已打包到 bin/${output_apk.name}", app_toast.LENGTH_LONG)
+                },
+                onFailure = { e ->
+                    output_panel_state.append_output("打包失败: ${e.message}", editor_output_line_level.ERROR)
+                    app_toast.show(this@editor_activity, "打包失败", app_toast.LENGTH_LONG)
+                }
             )
         }
     }

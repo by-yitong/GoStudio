@@ -273,6 +273,7 @@ fun editor_top_bar(
     on_build: () -> Unit,
     on_run: () -> Unit,
     on_test: () -> Unit = {},
+    on_pack: () -> Unit = {},
     build_running: Boolean,
     build_stopping: Boolean,
     on_toggle_read_only: () -> Unit = {},
@@ -367,6 +368,13 @@ fun editor_top_bar(
                         ) {
                             more_menu_open = false
                             on_test()
+                        }
+                        editor_menu_item(
+                            icon = Icons.Default.Archive,
+                            label = "打包 APK"
+                        ) {
+                            more_menu_open = false
+                            on_pack()
                         }
                         editor_menu_divider()
                     }
