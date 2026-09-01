@@ -1,5 +1,6 @@
 package com.jmwl.gostudio.project
 
+import com.jmwl.gostudio.gostudio_application
 import com.jmwl.gostudio.toolchain.toolchain_runtime_provider
 import com.jmwl.gostudio.toolchain.toolchain_manager
 
@@ -184,6 +185,7 @@ object project_manager {
      */
     private fun create_go_project(dir: File, name: String, template_id: String) {
         val mainGo = when (template_id) {
+            "app-ui" -> go_app_ui_template()
             "http-request" -> go_http_request_template()
             "http" -> go_http_template(name)
             "cli" -> go_cli_template(name)
@@ -195,7 +197,78 @@ object project_manager {
         }
         File(dir, "main.go").writeText(mainGo)
         File(dir, "go.mod").writeText(go_mod_content(name, template_id))
+        if (template_id == "app-ui") {
+            File(dir, "layout.xml").writeText(app_ui_layout_template())
+            create_app_ui_runtime(dir)
+        }
     }
+
+    /**
+     * App 界面模板：复制内置的 gostudio SDK（纯 Go，无第三方依赖）到项目内，
+     * go.mod 通过 replace 本地引用，离线可用。
+     */
+    private fun create_app_ui_runtime(dir: File) {
+        val sdk_dir = File(dir, "gostudio")
+        sdk_dir.mkdirs()
+        val assets = gostudio_application.instance.assets
+        listOf("go.mod", "gostudio.go").forEach { file_name ->
+            assets.open("templates/app-ui/gostudio/$file_name").use { input ->
+                File(sdk_dir, file_name).outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+        }
+    }
+
+    /** App 界面模板：AndLua 式 XML 布局 + Go 逻辑，宿主内直接运行 */
+    private fun go_app_ui_template(): String = """
+package main
+
+import (
+	"gostudio"
+)
+
+func main() {
+	app := gostudio.Start()
+
+	app.OnClick("btn", func() {
+		name, err := app.GetText("input")
+		if err != nil {
+			app.Log("读取输入失败: ", err)
+			return
+		}
+		if name == "" {
+			name = "GoStudio"
+		}
+		app.SetText("tv", "你好，"+name+"！")
+	})
+
+	app.Run()
+}
+""".trimIndent() + "\n"
+
+    /** App 界面模板的布局文件（AndLua 语法） */
+    private fun app_ui_layout_template(): String = """
+<LinearLayout orientation="vertical" gravity="center" padding="24dp">
+
+    <TextView
+        id="tv"
+        text="你好，GoStudio！"
+        textSize="24sp"
+        layout_marginBottom="24dp"/>
+
+    <EditText
+        id="input"
+        hint="输入你的名字"
+        layout_width="match_parent"/>
+
+    <Button
+        id="btn"
+        text="打招呼"
+        layout_marginTop="16dp"/>
+
+</LinearLayout>
+""".trimIndent() + "\n"
 
     /** Hello World 模板 */
     private fun go_hello_template(name: String): String = """
@@ -370,6 +443,9 @@ func main() {
     /** 依赖型模板在 go.mod 中声明直接依赖，首次运行前需 go mod tidy 生成 go.sum。 */
     private fun go_mod_content(name: String, template_id: String): String {
         val base = "module $name\n\ngo 1.21\n"
+        if (template_id == "app-ui") {
+            return base + "\nrequire gostudio v0.0.0\n\nreplace gostudio => ./gostudio\n"
+        }
         val dependencies = when (template_id) {
             "database" -> listOf("modernc.org/sqlite v1.33.1")
             "gin" -> listOf("github.com/gin-gonic/gin v1.10.0")

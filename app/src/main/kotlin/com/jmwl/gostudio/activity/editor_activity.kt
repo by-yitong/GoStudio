@@ -44,6 +44,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.lifecycleScope
 import com.jmwl.gostudio.core.logging.logger_manager
+import com.jmwl.gostudio.runtime.runtime_host_activity
 import com.jmwl.gostudio.toolchain.proot_manager
 import com.jmwl.gostudio.toolchain.toolchain_manager
 import com.jmwl.gostudio.toolchain.toolchain_runtime_provider
@@ -960,6 +961,11 @@ class editor_activity : ComponentActivity() {
             app_toast.show(this, "当前项目不是 Go 项目", app_toast.LENGTH_SHORT)
             return
         }
+        // AndLua 式 App 项目：layout.xml + Go 逻辑，构建后在宿主界面内运行
+        if (File(project_dir, "layout.xml").isFile) {
+            build_and_run_app_ui_project()
+            return
+        }
 
         val project_environment = toolchain_manager.project_environment(project_dir.absolutePath)
         if (project_environment.missing.isNotEmpty()) {
@@ -986,6 +992,67 @@ class editor_activity : ComponentActivity() {
                         ArrayList(project_environment.environment.map { (key, value) -> "$key=$value" })
                     )
             )
+        }
+    }
+
+    /**
+     * 构建并运行 AndLua 式 App 项目：go build 产出二进制后，
+     * 打开宿主运行界面（layout.xml 渲染 + Go 逻辑进程通过 JSON 行协议驱动界面）。
+     */
+    private fun build_and_run_app_ui_project() {
+        val project_environment = toolchain_manager.project_environment(project_dir.absolutePath)
+        if (project_environment.missing.isNotEmpty()) {
+            val message = project_environment.missing.joinToString("；")
+            app_toast.show(this, message, app_toast.LENGTH_LONG)
+            output_panel_state.append_output("错误: $message", editor_output_line_level.ERROR)
+            return
+        }
+        if (go_build_job?.isActive == true || go_run_job?.isActive == true) {
+            app_toast.show(this, "任务正在运行中", app_toast.LENGTH_SHORT)
+            return
+        }
+
+        go_build_job = lifecycleScope.launch {
+            output_panel_state.selected_tab = editor_output_tab.Output
+            output_panel_state.clear_output()
+            output_panel_state.task_running = true
+            output_panel_state.task_stopping = false
+            if (!save_dirty_open_files(show_toast = false)) {
+                output_panel_state.append_output("运行取消，文件保存失败", editor_output_line_level.ERROR)
+                output_panel_state.task_running = false
+                output_panel_state.task_stopping = false
+                return@launch
+            }
+
+            val success = try {
+                val build = project_manager.read_project_build_config(project_dir.absolutePath)
+                val bin_dir = File(project_dir, "bin")
+                bin_dir.mkdirs()
+                val output = File(bin_dir, project_dir.name).absolutePath
+                proot_manager.execute_command_with_environment(
+                    command = build_go_build_command(build) + " -o " + shell_quote(output) + " " + shell_quote(build.run_entry),
+                    working_dir = project_dir.absolutePath,
+                    extra_environment = project_environment.environment,
+                    on_log = { line -> output_panel_state.append_output(line, output_level_for_line(line)) }
+                )
+            } catch (_: CancellationException) {
+                output_panel_state.append_output("运行已停止", editor_output_line_level.WARNING)
+                return@launch
+            } finally {
+                output_panel_state.task_running = false
+                output_panel_state.task_stopping = false
+            }
+
+            if (success) {
+                output_panel_state.append_output("启动宿主运行: ${project_dir.name}", editor_output_line_level.SUCCESS)
+                startActivity(
+                    Intent(this@editor_activity, runtime_host_activity::class.java)
+                        .putExtra(runtime_host_activity.EXTRA_PROJECT_DIR, project_dir.absolutePath)
+                )
+            } else {
+                output_panel_state.append_output("构建失败", editor_output_line_level.ERROR)
+                app_toast.show(this@editor_activity, "构建失败", app_toast.LENGTH_LONG)
+            }
         }
     }
 

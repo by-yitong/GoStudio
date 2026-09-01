@@ -7,6 +7,7 @@ GoStudio 是一款运行在 Android 上的 Go 语言集成开发环境，目标�
 ### 功能特性
 
 - 创建 Go 项目，内置多种项目模板（Hello World、HTTP 服务器、CLI 工具、Web API，以及 Gin/GORM/Cobra/Echo 等常用框架模板）
+- AndLua 式 App 运行：XML 布局 + Go 逻辑，构建后在 GoStudio 宿主界面内直接运行，无需打包 APK
 - 基于 go.mod 的模块化项目结构与依赖管理
 - 基于 proot + Ubuntu rootfs 的 Go 工具链运行环境（内置 golang/gopls）
 - gopls 语言服务，支持补全、参数提示、符号高亮、诊断、悬浮提示、跳转定义和格式化
@@ -88,6 +89,7 @@ GoStudio is an Android IDE focused on local Go language development on mobile de
 ### Features
 
 - Go project creation with multiple built-in templates (Hello World, HTTP server, CLI tool, Web API, plus Gin/GORM/Cobra/Echo framework templates)
+- AndLua-style app running: XML layouts + Go logic, built once and executed directly inside the GoStudio host UI without repackaging an APK
 - go.mod-based modular project structure and dependency management
 - proot + Ubuntu rootfs based Go toolchain runtime (golang/gopls bundled)
 - gopls language server support for completion, signature help, symbol highlight, diagnostics, hover, go-to-definition, and formatting
