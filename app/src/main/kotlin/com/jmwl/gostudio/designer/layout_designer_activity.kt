@@ -582,6 +582,8 @@ private fun PropertyDrawer(
                 onValueChange = {
                     value = it
                     if (it.isBlank()) node.attrs.remove(attr) else node.attrs[attr] = it
+                    // 输入即生效：立即刷新预览
+                    on_change()
                 },
                 label = { Text(ATTR_CN[attr] ?: attr, fontSize = 9.sp) },
                 singleLine = true,
@@ -589,10 +591,6 @@ private fun PropertyDrawer(
                 shape = RoundedCornerShape(8.dp),
                 textStyle = androidx.compose.ui.text.TextStyle(fontSize = 12.sp)
             )
-        }
-        Spacer(Modifier.height(8.dp))
-        Button(onClick = on_change, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp)) {
-            Text("应用", fontSize = 12.sp)
         }
     }
 }
