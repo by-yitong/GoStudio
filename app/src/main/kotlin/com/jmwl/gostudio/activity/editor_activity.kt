@@ -387,6 +387,7 @@ class editor_activity : ComponentActivity() {
             ai_open_trigger = ai_open_trigger,
             sidebar_log_open_trigger = sidebar_log_open_trigger,
             editor_content_provider = { editor.text?.toString() ?: "" },
+            on_open_designer = ::open_layout_designer,
             on_editor_content_change = { new_content ->
                 val text = editor.text
                 if (text != null) {
@@ -787,6 +788,15 @@ class editor_activity : ComponentActivity() {
 
     private fun request_open_file(file_path: String) {
         open_file(file_path)
+    }
+
+    /** 打开独立布局设计器（编辑当前项目的 layout.xml）。 */
+    private fun open_layout_designer() {
+        lifecycleScope.launch { save_dirty_open_files(show_toast = false) }
+        startActivity(
+            android.content.Intent(this, com.jmwl.gostudio.designer.layout_designer_activity::class.java)
+                .putExtra(com.jmwl.gostudio.designer.layout_designer_activity.EXTRA_PROJECT_DIR, project_dir.absolutePath)
+        )
     }
 
     private fun request_select_tab(file_path: String) {

@@ -148,6 +148,7 @@ internal fun editor_screen(
     editor_content_provider: () -> String = { "" },
     /** 预览中修改属性后写回编辑器 */
     on_editor_content_change: (String) -> Unit = {},
+    on_open_designer: () -> Unit = {},
     /** AI 设置覆盖层打开或正在退出时，禁用 AI 页自身返回处理 */
     ai_settings_visible: Boolean = false
 ) {
@@ -337,12 +338,25 @@ internal fun editor_screen(
                             on_focus_change = { focused -> editor_focused = focused }
                         )
 
-                        // layout.xml 可视化预览入口
+                        // 独立设计器入口 + 内嵌预览入口
                         if (is_layout_xml && !layout_preview_visible) {
+                            Row(
+                                modifier = Modifier.align(Alignment.TopEnd).padding(12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
                             Box(
                                 modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .padding(12.dp)
+                                    .clickable { on_open_designer() }
+                                    .background(
+                                        color = colors.editor_icon.copy(alpha = 0.15f),
+                                        shape = androidx.compose.foundation.shape.RoundedCornerShape(50)
+                                    )
+                                    .padding(horizontal = 14.dp, vertical = 7.dp)
+                            ) {
+                                Text("设计器", fontSize = 12.sp, color = colors.editor_icon, fontWeight = FontWeight.Medium)
+                            }
+                            Box(
+                                modifier = Modifier
                                     .background(
                                         color = colors.editor_panel_overlay,
                                         shape = androidx.compose.foundation.shape.RoundedCornerShape(50)
@@ -355,6 +369,7 @@ internal fun editor_screen(
                                     fontSize = 12.sp,
                                     color = colors.editor_icon
                                 )
+                            }
                             }
                         }
 
@@ -520,21 +535,16 @@ internal fun editor_screen(
                     }
                 }
 
-                // 底部只留导航条安全距离
-                Spacer(modifier = Modifier.navigationBarsPadding())
-            }
-
-            // 符号栏悬浮在底部（键盘上方），不打断上面的布局
-            if (show_symbol_bar) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                ) {
+                // 符号栏作为编辑器布局的一部分，让 CodeEditor 的可用高度同步收缩。
+                // 这样自动补全弹窗只会出现在编辑器区域内，不会压到键盘上方的符号输入区。
+                if (show_symbol_bar) {
                     editor_symbol_bar(
                         on_insert = on_insert_symbol
                     )
                 }
+
+                // 底部只留导航条安全距离
+                Spacer(modifier = Modifier.navigationBarsPadding())
             }
 
             editor_definition_overlay(
