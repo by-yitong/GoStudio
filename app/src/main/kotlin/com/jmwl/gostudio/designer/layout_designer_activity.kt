@@ -448,6 +448,9 @@ private fun RealtimePreview(xml: String, revision: Int, on_select: (String) -> U
     var result by remember { mutableStateOf<runtime_layout_loader.Result?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
 
+    // 选中高亮色（半透明青蓝，与工作区强调色一致）
+    val highlight = 0x335CCFE6.toInt()
+
     LaunchedEffect(xml, revision) {
         error = null
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
@@ -466,6 +469,7 @@ private fun RealtimePreview(xml: String, revision: Int, on_select: (String) -> U
             Text("解析错误: $it", color = MaterialTheme.colorScheme.error, fontSize = 11.sp, modifier = Modifier.align(Alignment.TopCenter).padding(8.dp))
         }
         result?.let { r ->
+            var selected_id by remember { mutableStateOf<String?>(null) }
             AndroidView(
                 factory = { ctx ->
                     val frame = FrameLayout(ctx)
@@ -477,7 +481,23 @@ private fun RealtimePreview(xml: String, revision: Int, on_select: (String) -> U
                     (r.root.parent as? ViewGroup)?.removeView(r.root)
                     frame.addView(r.root, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
                     r.views.forEach { (id, view) ->
-                        view.setOnClickListener { on_select(id) }
+                        // 所有可点控件：点击=选中高亮，不触发输入/长按
+                        view.isFocusable = false
+                        view.isFocusableInTouchMode = false
+                        view.isLongClickable = false
+                        if (view is android.widget.EditText) {
+                            view.isCursorVisible = false
+                            view.setInputType(android.text.InputType.TYPE_NULL)
+                            view.keyListener = null
+                        }
+                        view.setOnClickListener {
+                            // 清除旧高亮
+                            r.views[selected_id]?.setBackgroundColor(0x00000000)
+                            // 设置新高亮
+                            view.setBackgroundColor(highlight)
+                            selected_id = id
+                            on_select(id)
+                        }
                     }
                 },
                 modifier = Modifier.fillMaxSize()
