@@ -48,7 +48,9 @@ fun new_project_dialog(
     on_dismiss: () -> Unit,
     on_create: (
         project_name: String,
-        template_id: String
+        template_id: String,
+        app_name: String,
+        app_package: String
     ) -> Unit
 ) {
     val scope = rememberCoroutineScope()
@@ -58,6 +60,9 @@ fun new_project_dialog(
     )
     var current_step by remember { mutableIntStateOf(0) }
     var selected_template by remember { mutableStateOf("hello") }
+    var app_name by remember { mutableStateOf("") }
+    var app_package by remember { mutableStateOf("") }
+    val is_app_template = selected_template == "app-ui"
 
     val templates = listOf(
         template_item("app-ui", "App 界面", Icons.Default.Smartphone, "AndLua 式布局 + Go 逻辑，直接在宿主内运行"),
@@ -307,6 +312,43 @@ fun new_project_dialog(
 
                             Spacer(modifier = Modifier.height(10.dp))
 
+                            if (is_app_template) {
+                                Spacer(modifier = Modifier.height(14.dp))
+                                Text(
+                                    text = "App 名称",
+                                    fontSize = 13.sp,
+                                    color = colors.dialog_hint,
+                                    modifier = Modifier.padding(start = 4.dp)
+                                )
+                                Spacer(modifier = Modifier.height(6.dp))
+                                OutlinedTextField(
+                                    value = app_name,
+                                    onValueChange = { app_name = it },
+                                    placeholder = { Text(project_name.ifBlank { "MyApp" }) },
+                                    singleLine = true,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(14.dp),
+                                    colors = text_field_colors
+                                )
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Text(
+                                    text = "包名",
+                                    fontSize = 13.sp,
+                                    color = colors.dialog_hint,
+                                    modifier = Modifier.padding(start = 4.dp)
+                                )
+                                Spacer(modifier = Modifier.height(6.dp))
+                                OutlinedTextField(
+                                    value = app_package,
+                                    onValueChange = { app_package = it },
+                                    placeholder = { Text("com.gs.$project_name".filter { it.isLetterOrDigit() || it == '.' }.lowercase()) },
+                                    singleLine = true,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(14.dp),
+                                    colors = text_field_colors
+                                )
+                            }
+
                             Text(
                                 text = "项目保存在应用内部存储（proot 可直接访问，构建/补全更稳定）",
                                 fontSize = 11.sp,
@@ -320,7 +362,9 @@ fun new_project_dialog(
                                 onClick = {
                                     on_create(
                                         project_name,
-                                        selected_template
+                                        selected_template,
+                                        app_name,
+                                        app_package
                                     )
                                     on_dismiss()
                                 },

@@ -166,12 +166,16 @@ class main_activity : ComponentActivity() {
 
     private fun create_project(
         project_name: String,
-        template_id: String
+        template_id: String,
+        app_name: String,
+        app_package: String
     ) {
         lifecycleScope.launch {
             val result = project_manager.create_project(
                 name = project_name,
-                template_id = template_id
+                template_id = template_id,
+                app_name = app_name,
+                package_name = app_package
             )
             result.onSuccess { project_dir ->
                 project_manager.add_recent_project(project_dir.absolutePath)

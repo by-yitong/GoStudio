@@ -115,7 +115,7 @@ fun main_navigation(
     on_terminal: () -> Unit,
     on_project_click: (recent_project) -> Unit,
     on_project_remove: (recent_project) -> Unit,
-    on_create_project: (String, String) -> Unit,
+    on_create_project: (String, String, String, String) -> Unit,
     on_open_project: (String) -> Unit,
     on_toolchain_trigger_change: (toolchain_trigger?) -> Unit,
     on_custom_toolchain_dialog_change: (toolchain_custom_install_request?) -> Unit,
@@ -396,9 +396,9 @@ fun main_navigation(
     if (show_new_project_dialog) {
         new_project_dialog(
             on_dismiss = { show_new_project_dialog = false },
-            on_create = { project_name, template_id ->
+            on_create = { project_name, template_id, app_name, app_package ->
                 show_new_project_dialog = false
-                on_create_project(project_name, template_id)
+                on_create_project(project_name, template_id, app_name, app_package)
             }
         )
     }

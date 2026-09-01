@@ -52,7 +52,9 @@ object project_manager {
 
     suspend fun create_project(
         name: String,
-        template_id: String
+        template_id: String,
+        app_name: String = "",
+        package_name: String = ""
     ): Result<File> = withContext(Dispatchers.IO) {
         try {
             val project_name = name.trim()
@@ -75,12 +77,19 @@ object project_manager {
 
             // IDE 配置：读取 go.mod 中的 go 版本，记录到项目配置
             val go_version = read_go_version_from_mod(project_dir)
+            val app_config = if (template_id == "app-ui") {
+                project_app_config(
+                    app_name = app_name.trim().ifBlank { project_name },
+                    package_name = package_name.trim().ifBlank { "com.gs.$project_name" }
+                )
+            } else project_app_config()
             write_project_config(
                 dir = project_dir,
                 name = project_name,
                 go_version = go_version,
                 template_id = template_id,
-                build = project_build_config()
+                build = project_build_config(),
+                app = app_config
             )
             Result.success(project_dir)
         } catch (e: Exception) {
@@ -635,7 +644,8 @@ func main() {
         name: String,
         go_version: String,
         template_id: String,
-        build: project_build_config = project_build_config()
+        build: project_build_config = project_build_config(),
+        app: project_app_config = project_app_config()
     ) {
         val normalized_build = normalize_project_build_config(build)
         val config = project_config(
@@ -643,7 +653,8 @@ func main() {
             go_version = go_version,
             template = template_id,
             created = System.currentTimeMillis(),
-            build = normalized_build
+            build = normalized_build,
+            app = app
         )
         project_config_file(dir).apply {
             parentFile?.mkdirs()
