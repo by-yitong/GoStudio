@@ -220,7 +220,6 @@ private fun designer_screen(
                 revision = preview_revision,
                 on_select = { id ->
                     selected = find_by_id(tree, id)
-                    right_open = true
                 },
                 modifier = Modifier.fillMaxSize()
             )
@@ -280,6 +279,25 @@ private fun designer_screen(
                 }
             }
 
+            // 抽屉互斥：打开左关右
+            LaunchedEffect(left_open) { if (left_open) right_open = false }
+            LaunchedEffect(right_open) { if (right_open) left_open = false }
+
+            // 点击抽屉外区域关闭抽屉（透明遮罩浮在预览上，位于抽屉下层）
+            if (left_open || right_open) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+                        ) {
+                            left_open = false
+                            right_open = false
+                        }
+                )
+            }
+
             // 左抽屉：组件树（从 XML 解析的层级结构，点击选中）
             androidx.compose.animation.AnimatedVisibility(
                 visible = left_open,
@@ -293,7 +311,6 @@ private fun designer_screen(
                         selected = selected,
                         on_select = { node ->
                             selected = node
-                            right_open = true
                         },
                         on_add = { tag ->
                             val target = selected?.takeIf { it.is_container } ?: tree
