@@ -368,6 +368,8 @@ private fun create_lesson_editor(context: Context, starter_code: String): CodeEd
             file_path = "main.go",
             current_language = language
         )
+        // 学习页是代码输入场景：阻止输入法做普通文本的自动标点/空格调整
+        props.disallowSuggestions = true
         setUndoEnabled(true)
     }
 }
