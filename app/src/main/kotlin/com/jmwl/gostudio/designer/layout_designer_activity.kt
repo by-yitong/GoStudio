@@ -11,6 +11,7 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -399,12 +400,43 @@ private fun designer_screen(
     var left_open by remember { mutableStateOf(true) }
     var right_open by remember { mutableStateOf(false) }
     var clipboard by remember { mutableStateOf<d_node?>(null) }
+    var has_unsaved_changes by remember { mutableStateOf(false) }
+    var show_exit_confirm by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val colors = app_theme_provider.colors
 
     fun rebuild_from_tree() {
         xml = serialize(tree)
         preview_revision++
+        has_unsaved_changes = true
+    }
+
+    BackHandler(enabled = has_unsaved_changes && !show_exit_confirm) {
+        show_exit_confirm = true
+    }
+
+    if (show_exit_confirm) {
+        AlertDialog(
+            onDismissRequest = { show_exit_confirm = false },
+            title = { Text("保存修改", fontSize = 15.sp, fontWeight = FontWeight.Bold) },
+            text = { Text("布局尚未保存，要保存后退出吗？", fontSize = 13.sp) },
+            confirmButton = {
+                TextButton(onClick = {
+                    show_exit_confirm = false
+                    on_save(serialize(tree))
+                }) { Text("保存", color = colors.editor_icon) }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    show_exit_confirm = false
+                    has_unsaved_changes = false
+                    (context as? Activity)?.finish()
+                }) { Text("丢弃", color = androidx.compose.ui.graphics.Color(0xFFFF6B6B)) }
+            },
+            containerColor = colors.editor_bg,
+            titleContentColor = colors.editor_text,
+            textContentColor = colors.editor_hint
+        )
     }
 
     Box(Modifier.fillMaxSize()) {
@@ -444,7 +476,10 @@ private fun designer_screen(
                 Spacer(Modifier.weight(1f))
                 // 保存
                 Surface(
-                    onClick = { on_save(serialize(tree)) },
+                    onClick = {
+                        has_unsaved_changes = false
+                        on_save(serialize(tree))
+                    },
                     shape = RoundedCornerShape(50),
                     color = colors.editor_bg.copy(alpha = 0.85f),
                     shadowElevation = 4.dp

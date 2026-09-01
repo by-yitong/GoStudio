@@ -144,10 +144,6 @@ internal fun editor_screen(
     ai_open_trigger: Int = 0,
     /** 递增触发器：外部想让左侧日志栏打开时把这个值 +1（构建/打包前自动弹出） */
     sidebar_log_open_trigger: Int = 0,
-    /** 获取当前编辑器文本（用于布局预览渲染） */
-    editor_content_provider: () -> String = { "" },
-    /** 预览中修改属性后写回编辑器 */
-    on_editor_content_change: (String) -> Unit = {},
     on_open_designer: () -> Unit = {},
     layout_components_provider: () -> List<editor_layout_component> = { emptyList() },
     on_insert_generated_code: (String) -> Unit = {},
@@ -159,7 +155,6 @@ internal fun editor_screen(
     var drawer_width by remember { mutableStateOf(300.dp) }
     var selected_tool by remember { mutableStateOf(editor_sidebar_tool.FILE) }
     var search_visible by remember { mutableStateOf(false) }
-    var layout_preview_visible by remember { mutableStateOf(false) }
     val is_layout_xml = selected_tab_path?.endsWith("layout.xml") == true
     var search_query by remember { mutableStateOf("") }
     var search_replace_text by remember { mutableStateOf("") }
@@ -306,6 +301,8 @@ internal fun editor_screen(
                             drawer_fraction = { drawer_progress.value },
                             on_build = on_build,
                             on_run = on_run,
+                            is_layout_xml = is_layout_xml,
+                            on_open_designer = on_open_designer,
                             on_test = on_test,
                             on_pack = on_pack,
                             build_running = output_panel_state.task_running,
@@ -346,50 +343,6 @@ internal fun editor_screen(
                             modifier = Modifier.fillMaxSize(),
                             on_focus_change = { focused -> editor_focused = focused }
                         )
-
-                        // 独立设计器入口 + 内嵌预览入口
-                        if (is_layout_xml && !layout_preview_visible) {
-                            Row(
-                                modifier = Modifier.align(Alignment.TopEnd).padding(12.dp),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                            Box(
-                                modifier = Modifier
-                                    .clickable { on_open_designer() }
-                                    .background(
-                                        color = colors.editor_icon.copy(alpha = 0.15f),
-                                        shape = androidx.compose.foundation.shape.RoundedCornerShape(50)
-                                    )
-                                    .padding(horizontal = 14.dp, vertical = 7.dp)
-                            ) {
-                                Text("设计器", fontSize = 12.sp, color = colors.editor_icon, fontWeight = FontWeight.Medium)
-                            }
-                            Box(
-                                modifier = Modifier
-                                    .background(
-                                        color = colors.editor_panel_overlay,
-                                        shape = androidx.compose.foundation.shape.RoundedCornerShape(50)
-                                    )
-                                    .clickable { layout_preview_visible = true }
-                                    .padding(horizontal = 14.dp, vertical = 7.dp)
-                            ) {
-                                Text(
-                                    text = "预览",
-                                    fontSize = 12.sp,
-                                    color = colors.editor_icon
-                                )
-                            }
-                            }
-                        }
-
-                        if (is_layout_xml && layout_preview_visible) {
-                            editor_layout_preview(
-                                xml_content = editor_content_provider(),
-                                on_close = { layout_preview_visible = false },
-                                on_content_change = on_editor_content_change,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
 
                         long_press_menu?.let { menu ->
                             Box(

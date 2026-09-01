@@ -272,6 +272,8 @@ fun editor_top_bar(
     drawer_fraction: () -> Float = { 0f },
     on_build: () -> Unit,
     on_run: () -> Unit,
+    is_layout_xml: Boolean = false,
+    on_open_designer: () -> Unit = {},
     on_test: () -> Unit = {},
     on_pack: () -> Unit = {},
     build_running: Boolean,
@@ -335,6 +337,15 @@ fun editor_top_bar(
                     content_description = "运行",
                     tint = accent,
                     on_click = on_run
+                )
+            }
+
+            if (is_layout_xml) {
+                editor_top_bar_icon_button(
+                    icon = Icons.Default.DesignServices,
+                    content_description = "可视化编辑",
+                    tint = colors.editor_toolbar_icon,
+                    on_click = on_open_designer
                 )
             }
 

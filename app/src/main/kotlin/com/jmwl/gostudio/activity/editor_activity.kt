@@ -386,14 +386,7 @@ class editor_activity : ComponentActivity() {
             ai_project_prompts_dir = ai_project_prompts_dir,
             ai_open_trigger = ai_open_trigger,
             sidebar_log_open_trigger = sidebar_log_open_trigger,
-            editor_content_provider = { editor.text?.toString() ?: "" },
             on_open_designer = ::open_layout_designer,
-            on_editor_content_change = { new_content ->
-                val text = editor.text
-                if (text != null) {
-                    text.replace(0, text.length, new_content)
-                }
-            },
             ai_settings_visible = show_ai_settings || ai_settings_exiting
         )
 
