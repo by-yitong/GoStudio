@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AccountTree
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -37,9 +38,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardOptions
 import com.jmwl.gostudio.runtime.runtime_layout_loader
 import com.jmwl.gostudio.ui.theme.app_theme_provider
 import java.io.File
+import kotlin.math.roundToInt
 
 /**
  * AndLua 式布局设计器（独立页面）：
@@ -199,6 +203,66 @@ private val ATTR_CN = mapOf(
     "autoStart" to "自动开始", "format12Hour" to "12小时格式", "format24Hour" to "24小时格式",
     "flipInterval" to "切换间隔"
 )
+
+private enum class property_kind { TEXT, MULTILINE_TEXT, SINGLE_CHOICE, MULTI_CHOICE, BOOLEAN, NUMBER, DIMENSION, COLOR, SIZE }
+
+private data class property_spec(
+    val kind: property_kind,
+    val options: List<String> = emptyList(),
+    val min: Float = 0f,
+    val max: Float = 100f,
+    val step: Float = 1f,
+    val unit: String = "dp"
+)
+
+private val SIZE_OPTIONS = listOf("wrap_content", "match_parent")
+private val GRAVITY_OPTIONS = listOf("top", "bottom", "left", "right", "center", "center_vertical", "center_horizontal")
+
+/** 属性编辑器类型：枚举用单选/多选，数值用滑杆，尺寸/颜色/文本分别适配。 */
+private fun property_spec_for(attr: String): property_spec = when (attr) {
+    "orientation" -> property_spec(property_kind.SINGLE_CHOICE, listOf("vertical", "horizontal"))
+    "layout_width", "layout_height" -> property_spec(property_kind.SIZE, SIZE_OPTIONS)
+    "gravity", "layout_gravity" -> property_spec(property_kind.MULTI_CHOICE, GRAVITY_OPTIONS)
+    "visibility" -> property_spec(property_kind.SINGLE_CHOICE, listOf("visible", "invisible", "gone"))
+    "enabled", "singleLine", "checked", "spinnersShown", "calendarViewShown", "countDown",
+    "autoStart", "layout_centerInParent", "layout_centerHorizontal", "layout_centerVertical",
+    "layout_alignParentTop", "layout_alignParentBottom", "layout_alignParentLeft", "layout_alignParentRight"
+        -> property_spec(property_kind.BOOLEAN, listOf("false", "true"))
+    "maxLines" -> property_spec(property_kind.NUMBER, min = 1f, max = 30f, step = 1f)
+    "numStars" -> property_spec(property_kind.NUMBER, min = 1f, max = 10f, step = 1f)
+    "columnCount", "rowCount", "layout_row", "layout_column", "layout_rowSpan", "layout_columnSpan"
+        -> property_spec(property_kind.NUMBER, min = 0f, max = 12f, step = 1f)
+    "flipInterval" -> property_spec(property_kind.NUMBER, min = 100f, max = 10000f, step = 100f)
+    "max", "progress", "minValue", "maxValue", "value" -> property_spec(property_kind.NUMBER, min = 0f, max = 1000f, step = 1f)
+    "rating" -> property_spec(property_kind.NUMBER, min = 0f, max = 5f, step = 0.5f)
+    "stepSize" -> property_spec(property_kind.NUMBER, min = 0.1f, max = 1f, step = 0.1f)
+    "layout_weight" -> property_spec(property_kind.NUMBER, min = 0f, max = 10f, step = 0.5f)
+    "padding", "layout_margin", "layout_marginTop", "layout_marginBottom", "layout_marginLeft", "layout_marginRight"
+        -> property_spec(property_kind.DIMENSION, max = 128f)
+    "textSize" -> property_spec(property_kind.DIMENSION, min = 8f, max = 72f, unit = "sp")
+    "background", "textColor", "textColorHint" -> property_spec(property_kind.COLOR)
+    "text", "hint", "textOn", "textOff" -> property_spec(property_kind.MULTILINE_TEXT)
+    "format12Hour", "format24Hour" -> property_spec(property_kind.TEXT)
+    else -> property_spec(property_kind.TEXT)
+}
+
+private fun property_display(attr: String, value: String): String {
+    if (value.isBlank()) return "未设置"
+    return when (property_spec_for(attr).kind) {
+        property_kind.BOOLEAN -> if (value.equals("true", true) || value == "1") "是" else "否"
+        property_kind.SINGLE_CHOICE -> when (value) {
+            "vertical" -> "垂直"; "horizontal" -> "水平"
+            "wrap_content" -> "自适应内容"; "match_parent" -> "填满父容器"
+            "visible" -> "可见"; "invisible" -> "不可见"; "gone" -> "移除占位"
+            else -> value
+        }
+        property_kind.MULTI_CHOICE -> value.split("|", ",", " ").filter { it.isNotBlank() }.joinToString(" / ") {
+            when (it) { "top" -> "顶部"; "bottom" -> "底部"; "left" -> "左侧"; "right" -> "右侧";
+                "center" -> "居中"; "center_vertical" -> "垂直居中"; "center_horizontal" -> "水平居中"; else -> it }
+        }
+        else -> value
+    }
+}
 private fun tag_cn(tag: String) = TAG_CN[tag] ?: tag
 
 /** 按控件类型和父容器返回属性字段，避免给普通按钮显示无意义的日期/列表属性。 */
@@ -553,11 +617,11 @@ private fun ComponentTree(
         // 折叠卡片：组件 / 布局
         Spacer(Modifier.height(10.dp))
         ExpandableCard(title = "添加组件", modifier = Modifier.padding(horizontal = 10.dp)) {
-            AddGrid(tags = WIDGET_TAGS, on_add = on_add)
+            AddList(tags = WIDGET_TAGS, on_add = on_add)
         }
         Spacer(Modifier.height(6.dp))
         ExpandableCard(title = "添加布局", modifier = Modifier.padding(horizontal = 10.dp)) {
-            AddGrid(tags = LAYOUT_TAGS, on_add = on_add)
+            AddList(tags = LAYOUT_TAGS, on_add = on_add)
         }
     }
 }
@@ -666,28 +730,23 @@ private fun ExpandableCard(title: String, modifier: Modifier = Modifier, content
     }
 }
 
-/* 添加网格（两列） */
+/* 添加列表：单行展示，空间更紧凑 */
 @Composable
-private fun AddGrid(tags: List<String>, on_add: (String) -> Unit) {
+private fun AddList(tags: List<String>, on_add: (String) -> Unit) {
     val colors = app_theme_provider.colors
-    tags.chunked(2).forEach { row ->
-        Row(Modifier.fillMaxWidth().padding(horizontal = 2.dp, vertical = 2.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            row.forEach { tag ->
-                Surface(
-                    onClick = { on_add(tag) },
-                    shape = RoundedCornerShape(8.dp),
-                    color = colors.editor_button_bg.copy(alpha = 0.6f),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(
-                        tag_cn(tag),
-                        fontSize = 11.sp,
-                        color = colors.editor_text,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)
-                    )
-                }
-            }
-            if (row.size == 1) Spacer(Modifier.weight(1f))
+    tags.forEach { tag ->
+        Surface(
+            onClick = { on_add(tag) },
+            shape = RoundedCornerShape(8.dp),
+            color = colors.editor_button_bg.copy(alpha = 0.6f),
+            modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)
+        ) {
+            Text(
+                tag_cn(tag),
+                fontSize = 11.sp,
+                color = colors.editor_text,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 9.dp)
+            )
         }
     }
 }
@@ -767,6 +826,7 @@ private fun PropertyDrawer(
     on_delete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val colors = app_theme_provider.colors
     val defined_attrs = attrs_for(node?.tag ?: "", node?.parent?.tag)
     val attr_list = defined_attrs + node?.attrs?.keys.orEmpty().filter { it !in defined_attrs }
 
@@ -812,22 +872,242 @@ private fun PropertyDrawer(
             }
         }
         Spacer(Modifier.height(10.dp))
+        var editing_attr by remember(node) { mutableStateOf<String?>(null) }
         attr_list.forEach { attr ->
-            var value by remember(node, attr) { mutableStateOf(node.attrs[attr] ?: "") }
-            OutlinedTextField(
-                value = value,
-                onValueChange = {
-                    value = it
-                    if (it.isBlank()) node.attrs.remove(attr) else node.attrs[attr] = it
-                    // 输入即生效：立即刷新预览
+            val value = node.attrs[attr] ?: ""
+            Surface(
+                onClick = { editing_attr = attr },
+                shape = RoundedCornerShape(8.dp),
+                color = colors.editor_button_bg.copy(alpha = 0.45f),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)
+            ) {
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 9.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        ATTR_CN[attr] ?: attr,
+                        fontSize = 11.sp,
+                        color = colors.editor_text,
+                        modifier = Modifier.weight(1f)
+                    )
+                    if (property_spec_for(attr).kind == property_kind.COLOR && value.isNotBlank()) {
+                        Box(
+                            Modifier
+                                .size(12.dp)
+                                .background(parse_preview_color(value), RoundedCornerShape(3.dp))
+                        )
+                        Spacer(Modifier.width(6.dp))
+                    }
+                    Text(
+                        property_display(attr, value),
+                        fontSize = 10.sp,
+                        color = if (value.isBlank()) colors.editor_hint else colors.editor_icon,
+                        maxLines = 1
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Icon(
+                        Icons.Default.ChevronRight,
+                        contentDescription = "修改",
+                        tint = colors.editor_hint,
+                        modifier = Modifier.size(13.dp)
+                    )
+                }
+            }
+        }
+
+        editing_attr?.let { attr ->
+            PropertyEditDialog(
+                node = node,
+                attr = attr,
+                on_confirm = { newValue ->
+                    if (newValue.isBlank()) node.attrs.remove(attr) else node.attrs[attr] = newValue
+                    editing_attr = null
+                    // 确认后立即刷新 XML 与预览
                     on_change()
                 },
-                label = { Text(ATTR_CN[attr] ?: attr, fontSize = 9.sp) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
-                shape = RoundedCornerShape(8.dp),
-                textStyle = androidx.compose.ui.text.TextStyle(fontSize = 12.sp)
+                on_dismiss = { editing_attr = null }
             )
         }
     }
 }
+
+
+/* 属性弹窗：按属性类型提供单选、多选、开关、滑杆、颜色与文本编辑 */
+@Composable
+private fun PropertyEditDialog(
+    node: d_node,
+    attr: String,
+    on_confirm: (String) -> Unit,
+    on_dismiss: () -> Unit
+) {
+    val spec = property_spec_for(attr)
+    val initial = node.attrs[attr] ?: ""
+    var text by remember(attr, node) { mutableStateOf(initial) }
+    var flags by remember(attr, node) {
+        mutableStateOf(initial.split("|", ",", " ").filter { it.isNotBlank() })
+    }
+    var number by remember(attr, node) {
+        mutableFloatStateOf(initial.toFloatOrNull() ?: spec.min)
+    }
+    var checked by remember(attr, node) { mutableStateOf(initial.equals("true", true) || initial == "1") }
+
+    AlertDialog(
+        onDismissRequest = on_dismiss,
+        title = { Text(ATTR_CN[attr] ?: attr, fontSize = 15.sp, fontWeight = FontWeight.Bold) },
+        text = {
+            Column(Modifier.fillMaxWidth()) {
+                when (spec.kind) {
+                    property_kind.SIZE -> {
+                        var custom by remember(attr, node) { mutableStateOf(initial.isNotBlank() && initial !in SIZE_OPTIONS) }
+                        spec.options.forEach { option ->
+                            Row(
+                                Modifier.fillMaxWidth().clickable { custom = false; text = option }.padding(vertical = 5.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(selected = !custom && text == option, onClick = { custom = false; text = option })
+                                Text(property_display(attr, option), fontSize = 13.sp)
+                            }
+                        }
+                        Row(
+                            Modifier.fillMaxWidth().clickable { custom = true; if (text in SIZE_OPTIONS) text = "" }.padding(vertical = 5.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(selected = custom, onClick = { custom = true; if (text in SIZE_OPTIONS) text = "" })
+                            Text("自定义尺寸", fontSize = 13.sp)
+                        }
+                        OutlinedTextField(
+                            value = text,
+                            onValueChange = { text = it },
+                            enabled = custom,
+                            singleLine = true,
+                            label = { Text("如 96dp") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                    property_kind.SINGLE_CHOICE -> spec.options.forEach { option ->
+                        Row(
+                            Modifier.fillMaxWidth().clickable { text = option }.padding(vertical = 5.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(selected = text == option, onClick = { text = option })
+                            Text(property_display(attr, option), fontSize = 13.sp)
+                        }
+                    }
+                    property_kind.MULTI_CHOICE -> {
+                        Text("可多选，组合后作用于布局", fontSize = 10.sp, color = app_theme_provider.colors.editor_hint)
+                        spec.options.forEach { option ->
+                            val checked_now = option in flags
+                            Row(
+                                Modifier.fillMaxWidth().clickable {
+                                    flags = if (checked_now) flags - option else flags + option
+                                    text = flags.joinToString("|")
+                                }.padding(vertical = 3.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Checkbox(
+                                    checked = checked_now,
+                                    onCheckedChange = {
+                                        flags = if (it) flags + option else flags - option
+                                        text = flags.joinToString("|")
+                                    }
+                                )
+                                Text(property_display(attr, option), fontSize = 13.sp)
+                            }
+                        }
+                    }
+                    property_kind.BOOLEAN -> Row(verticalAlignment = Alignment.CenterVertically) {
+                        Switch(checked = checked, onCheckedChange = { checked = it; text = it.toString() })
+                        Spacer(Modifier.width(8.dp))
+                        Text(if (checked) "开启" else "关闭", fontSize = 13.sp)
+                    }
+                    property_kind.NUMBER, property_kind.DIMENSION -> {
+                        if (spec.kind == property_kind.NUMBER) {
+                            Slider(
+                                value = number,
+                                onValueChange = { number = (it / spec.step).roundToInt() * spec.step },
+                                valueRange = spec.min..spec.max,
+                                steps = if (spec.step >= (spec.max - spec.min)) 0 else (((spec.max - spec.min) / spec.step).toInt() - 2).coerceAtLeast(0)
+                            )
+                            Text("当前：${format_number(number)}", fontSize = 11.sp, color = app_theme_provider.colors.editor_hint)
+                            Spacer(Modifier.height(8.dp))
+                        }
+                        OutlinedTextField(
+                            value = if (spec.kind == property_kind.NUMBER) {
+                                format_number(number)
+                            } else text,
+                            onValueChange = {
+                                text = it
+                                it.toFloatOrNull()?.let { v -> number = v.coerceIn(spec.min, spec.max) }
+                            },
+                            singleLine = true,
+                            label = { Text(if (spec.kind == property_kind.DIMENSION) "如 16${spec.unit}" else "数值") },
+                            keyboardOptions = if (spec.kind == property_kind.NUMBER) KeyboardOptions(keyboardType = KeyboardType.Number) else KeyboardOptions.Default,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                    property_kind.COLOR -> {
+                        OutlinedTextField(
+                            value = text,
+                            onValueChange = { text = it },
+                            singleLine = true,
+                            label = { Text("颜色值，如 #5CCFE6") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            listOf("#1B1C1F", "#FFFFFF", "#5CCFE6", "#FF6B6B", "#66BB6A", "#FFCA28").forEach { color ->
+                                Box(
+                                    Modifier
+                                        .size(28.dp)
+                                        .background(parse_preview_color(color), RoundedCornerShape(6.dp))
+                                        .clickable { text = color }
+                                )
+                            }
+                        }
+                    }
+                    property_kind.MULTILINE_TEXT -> OutlinedTextField(
+                        value = text,
+                        onValueChange = { text = it },
+                        label = { Text("内容") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    property_kind.TEXT -> OutlinedTextField(
+                        value = text,
+                        onValueChange = { text = it },
+                        singleLine = true,
+                        label = { Text("内容") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Row {
+                TextButton(onClick = { on_confirm("") }) { Text("清除", color = app_theme_provider.colors.editor_hint) }
+                TextButton(onClick = {
+                    val result = when (spec.kind) {
+                        property_kind.BOOLEAN -> checked.toString()
+                        property_kind.NUMBER -> format_number(number)
+                        else -> text
+                    }
+                    on_confirm(result)
+                }) { Text("确定", color = app_theme_provider.colors.editor_icon) }
+            }
+        },
+        dismissButton = { TextButton(onClick = on_dismiss) { Text("取消") } },
+        containerColor = app_theme_provider.colors.editor_bg,
+        titleContentColor = app_theme_provider.colors.editor_text,
+        textContentColor = app_theme_provider.colors.editor_text
+    )
+}
+
+private fun format_number(value: Float): String =
+    if (value % 1f == 0f) value.roundToInt().toString() else {
+        val one_decimal = (value * 10f).roundToInt() / 10f
+        one_decimal.toString()
+    }
+
+private fun parse_preview_color(value: String): androidx.compose.ui.graphics.Color =
+    runCatching { androidx.compose.ui.graphics.Color(android.graphics.Color.parseColor(value)) }
+        .getOrDefault(androidx.compose.ui.graphics.Color(0xFF5CCFE6.toInt()))
