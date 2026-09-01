@@ -92,6 +92,7 @@ internal fun editor_screen(
     terminal_extra_environment: Map<String, String>,
     on_toggle_toolbar: () -> Unit,
     on_project_config_apply: (project_ide_config, () -> Unit) -> Unit,
+    is_app_project: Boolean = false,
     on_select_tab: (String) -> Unit,
     on_pin_tab: (String) -> Unit,
     on_close_tab: (String) -> Unit,
@@ -728,6 +729,7 @@ internal fun editor_screen(
                 }
                 editor_project_config_panel(
                     project_root_path = project_root_path,
+                    is_app_project = is_app_project,
                     on_apply = on_project_config_apply,
                     modifier = Modifier.fillMaxSize()
                 )

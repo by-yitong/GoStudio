@@ -39,6 +39,7 @@ import com.jmwl.gostudio.ui.theme.app_theme_provider
 @Composable
 fun editor_project_config_panel(
     project_root_path: String,
+    is_app_project: Boolean = false,
     on_apply: (project_ide_config, () -> Unit) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -67,6 +68,43 @@ fun editor_project_config_panel(
             color = colors.title_highlight,
             modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
         )
+
+        if (is_app_project) {
+            project_config_group_title("App 信息")
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(1.dp)
+            ) {
+                project_config_extra_args_card(
+                    value = config.app.app_name,
+                    title = "应用名称",
+                    subtitle = "安装后显示的名称",
+                    placeholder = "My App",
+                    on_change = { v -> config = config.copy(app = config.app.copy(app_name = v)) }
+                )
+                project_config_extra_args_card(
+                    value = config.app.package_name,
+                    title = "包名",
+                    subtitle = "如 com.example.myapp",
+                    placeholder = "com.example.myapp",
+                    on_change = { v -> config = config.copy(app = config.app.copy(package_name = v)) }
+                )
+                project_config_extra_args_card(
+                    value = config.app.version_name,
+                    title = "版本名",
+                    subtitle = "如 1.0.0",
+                    placeholder = "1.0.0",
+                    on_change = { v -> config = config.copy(app = config.app.copy(version_name = v)) }
+                )
+                project_config_extra_args_card(
+                    value = config.app.icon_path,
+                    title = "图标",
+                    subtitle = "PNG 路径（相对项目根目录），替换打包后的应用图标",
+                    placeholder = "icon.png",
+                    on_change = { v -> config = config.copy(app = config.app.copy(icon_path = v)) }
+                )
+            }
+        }
 
         project_config_group_title("Go 工具链")
         Column(

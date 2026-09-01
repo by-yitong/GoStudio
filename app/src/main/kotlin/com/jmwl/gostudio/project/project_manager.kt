@@ -661,7 +661,8 @@ func main() {
             val config = json.fromJson(config_file.readText(), project_config::class.java)
             project_ide_config(
                 go_version = config?.go_version.orEmpty(),
-                build = normalize_project_build_config(config?.build ?: project_build_config())
+                build = normalize_project_build_config(config?.build ?: project_build_config()),
+                app = config?.app ?: project_app_config()
             )
         } catch (_: Exception) {
             project_ide_config()
@@ -681,7 +682,13 @@ func main() {
                 ?: throw IllegalStateException("项目配置文件损坏")
             val normalized_build = normalize_project_build_config(ide_config.build)
             config_file.writeText(
-                json.toJson(config.copy(go_version = ide_config.go_version, build = normalized_build)) + "\n"
+                json.toJson(
+                    config.copy(
+                        go_version = ide_config.go_version,
+                        build = normalized_build,
+                        app = ide_config.app
+                    )
+                ) + "\n"
             )
         }
     }
@@ -958,9 +965,17 @@ data class project_build_config(
     val run_entry: String = "."
 )
 
+data class project_app_config(
+    val app_name: String = "",
+    val package_name: String = "",
+    val version_name: String = "1.0",
+    val icon_path: String = "icon.png"
+)
+
 data class project_ide_config(
     val go_version: String = "",
-    val build: project_build_config = project_build_config()
+    val build: project_build_config = project_build_config(),
+    val app: project_app_config = project_app_config()
 )
 
 private data class project_config(
@@ -968,7 +983,8 @@ private data class project_config(
     val go_version: String = "",
     val template: String = "",
     val created: Long = 0L,
-    val build: project_build_config = project_build_config()
+    val build: project_build_config = project_build_config(),
+    val app: project_app_config = project_app_config()
 )
 
 data class recent_project_info(

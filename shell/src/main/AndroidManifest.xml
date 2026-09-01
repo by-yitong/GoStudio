@@ -1,11 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.jmwl.gostudio.shell"
+    android:versionCode="1"
+    android:versionName="1.0">
     <application
-        android:label="@string/app_name"
+        android:label="App"
         android:icon="@mipmap/ic_launcher"
         android:theme="@style/Theme.Material3.DayNight.NoActionBar">
+        <!-- activity 必须用全限定名：打包时会替换 package，相对名会解析错 -->
         <activity
-            android:name=".shell_activity"
+            android:name="com.jmwl.gostudio.shell.shell_activity"
             android:exported="true"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>

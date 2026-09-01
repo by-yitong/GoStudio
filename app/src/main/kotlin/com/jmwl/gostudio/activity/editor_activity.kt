@@ -56,6 +56,7 @@ import com.jmwl.gostudio.project.project_kind
 import com.jmwl.gostudio.project.project_manager
 import com.jmwl.gostudio.lsp.gopls.gopls_lsp_config
 import com.jmwl.gostudio.lsp.gopls.gopls_lsp_project
+import com.jmwl.gostudio.lsp.gopls.translation.gopls_translation_settings
 import com.jmwl.gostudio.lsp.gopls.apply_code_action
 import com.jmwl.gostudio.lsp.gopls.current_diagnostics
 import com.jmwl.gostudio.lsp.gopls.request_code_actions
@@ -333,6 +334,7 @@ class editor_activity : ComponentActivity() {
             },
             on_toggle_toolbar = { state.toolbar_visible = !state.toolbar_visible },
             on_project_config_apply = { config, on_saved -> apply_project_config(config, on_saved) },
+            is_app_project = File(project_dir, "layout.xml").isFile,
             on_select_tab = { path -> request_select_tab(path) },
             on_pin_tab = { path -> toggle_pin_tab(path) },
             on_close_tab = { path -> request_close_tab(path) },
@@ -546,7 +548,10 @@ class editor_activity : ComponentActivity() {
             state.editor_settings.gopls_signature_help != settings.gopls_signature_help ||
             state.editor_settings.gopls_document_highlight != settings.gopls_document_highlight ||
             state.editor_settings.gopls_formatting != settings.gopls_formatting ||
-            state.editor_settings.gopls_hover != settings.gopls_hover
+            state.editor_settings.gopls_hover != settings.gopls_hover ||
+            state.editor_settings.gopls_translate_documentation != settings.gopls_translate_documentation ||
+            state.editor_settings.gopls_translation_endpoint.trim() != settings.gopls_translation_endpoint.trim() ||
+            state.editor_settings.gopls_translation_api_key != settings.gopls_translation_api_key
         state.editor_settings = settings
         save_editor_settings(this, settings)
         if (gopls_settings_changed) {
@@ -1056,14 +1061,21 @@ class editor_activity : ComponentActivity() {
                 return@launch
             }
 
-            // 2. 注入 + 签名（后台执行）
+            // 2. 注入 + 改写 App 信息 + 签名（后台执行）
+            val ide_config = project_manager.read_project_ide_config(project_dir.absolutePath)
+            val app_config = ide_config.app
+            val icon_file = app_config.icon_path.takeIf { it.isNotBlank() }?.let { File(project_dir, it) }
             val output_apk = File(bin_dir, project_dir.name + ".apk")
             val result = withContext(Dispatchers.IO) {
                 com.jmwl.gostudio.runtime.apk_packer.pack(
                     context = this@editor_activity,
                     layout_file = File(project_dir, "layout.xml"),
                     binary_file = binary,
-                    output_apk = output_apk
+                    output_apk = output_apk,
+                    app_name = app_config.app_name.ifBlank { project_dir.name },
+                    package_name = app_config.package_name,
+                    version_name = app_config.version_name,
+                    icon_file = icon_file
                 )
             }
             output_panel_state.task_running = false
@@ -1730,6 +1742,11 @@ class editor_activity : ComponentActivity() {
         val lsp_project = gopls_project ?: gopls_lsp_project(
             project_dir = project_dir,
             disabled_features = disabled_features,
+            translation_settings = gopls_translation_settings(
+                enabled = state.editor_settings.gopls_translate_documentation,
+                endpoint = state.editor_settings.gopls_translation_endpoint,
+                backend_api_key = state.editor_settings.gopls_translation_api_key
+            ),
             config_factory = { working_dir ->
                 gopls_lsp_config(
                     runtime_paths = toolchain_runtime_provider.paths(),

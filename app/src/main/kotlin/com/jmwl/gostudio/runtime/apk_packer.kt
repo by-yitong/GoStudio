@@ -26,7 +26,11 @@ object apk_packer {
         context: Context,
         layout_file: File,
         binary_file: File,
-        output_apk: File
+        output_apk: File,
+        app_name: String = "App",
+        package_name: String = "",
+        version_name: String = "",
+        icon_file: File? = null
     ): Result<File> = runCatching {
         val work_dir = File(context.cacheDir, "apkpack").apply { mkdirs() }
 
@@ -40,9 +44,20 @@ object apk_packer {
         val injected = File(work_dir, "injected.apk")
         inject(template, injected, layout_file, binary_file)
 
-        // 3. 签名（直接写 output_apk）
+        // 3. 改写 Manifest（名称/包名/版本）
+        val rewritten = File(work_dir, "rewritten.apk")
+        rewrite_manifest(injected, rewritten, app_name, package_name, version_name)
+
+        // 4. 替换图标
+        val with_icon = if (icon_file != null && icon_file.isFile) {
+            val iconed = File(work_dir, "iconed.apk")
+            replace_icons(rewritten, iconed, icon_file)
+            iconed
+        } else rewritten
+
+        // 5. 签名（直接写 output_apk）
         output_apk.parentFile?.mkdirs()
-        sign(context, injected, output_apk)
+        sign(context, with_icon, output_apk)
         output_apk
     }
 
@@ -79,6 +94,70 @@ object apk_packer {
         zos.putNextEntry(ZipEntry(name).apply { time = FIXED_TIME })
         file.inputStream().use { it.copyTo(zos) }
         zos.closeEntry()
+    }
+
+    /** 重写 AndroidManifest.xml 中的 label/package/versionName 字符串。 */
+    private fun rewrite_manifest(input: File, output: File, app_name: String, package_name: String, version_name: String) {
+        // 先解出 manifest，改字符串池，再整包重写
+        val rewritten_apk = File(output.parentFile, "manifest-only.apk")
+        ZipFile(input).use { zf ->
+            val manifest_entry = zf.getEntry("AndroidManifest.xml")
+            val manifest_bytes = zf.getInputStream(manifest_entry).readBytes()
+            val replacements = buildMap {
+                put("App", app_name)
+                if (package_name.isNotBlank()) put("com.jmwl.gostudio.shell", package_name)
+                if (version_name.isNotBlank()) put("1.0", version_name)
+            }
+            val new_manifest = binary_manifest_editor.replace_strings(manifest_bytes, replacements)
+
+            ZipOutputStream(FileOutputStream(rewritten_apk)).use { zos ->
+                val entries = zf.entries()
+                while (entries.hasMoreElements()) {
+                    val entry = entries.nextElement()
+                    val copy = ZipEntry(entry.name).apply {
+                        time = entry.time
+                        if (entry.method == ZipEntry.STORED) {
+                            method = ZipEntry.STORED
+                            size = if (entry.name == "AndroidManifest.xml") new_manifest.size.toLong() else entry.size
+                            crc = if (entry.name == "AndroidManifest.xml") java.util.zip.CRC32().apply { update(new_manifest) }.value else entry.crc
+                        }
+                    }
+                    zos.putNextEntry(copy)
+                    if (entry.name == "AndroidManifest.xml") zos.write(new_manifest)
+                    else zf.getInputStream(entry).copyTo(zos)
+                    zos.closeEntry()
+                }
+            }
+        }
+        rewritten_apk.copyTo(output, overwrite = true)
+    }
+
+    /** 用同一张 PNG 替换壳内全部启动图标（ic_launcher / ic_launcher_round）。 */
+    private fun replace_icons(input: File, output: File, icon: File) {
+        val icon_bytes = icon.readBytes()
+        val icon_crc = java.util.zip.CRC32().apply { update(icon_bytes) }
+        ZipFile(input).use { zf ->
+            ZipOutputStream(FileOutputStream(output)).use { zos ->
+                val entries = zf.entries()
+                while (entries.hasMoreElements()) {
+                    val entry = entries.nextElement()
+                    val is_launcher_icon = entry.name.startsWith("res/mipmap-") &&
+                        (entry.name.endsWith("ic_launcher.png") || entry.name.endsWith("ic_launcher_round.png"))
+                    val copy = ZipEntry(entry.name).apply {
+                        time = FIXED_TIME
+                        if (entry.method == ZipEntry.STORED) {
+                            method = ZipEntry.STORED
+                            size = if (is_launcher_icon) icon_bytes.size.toLong() else entry.size
+                            crc = if (is_launcher_icon) icon_crc.value else entry.crc
+                        }
+                    }
+                    zos.putNextEntry(copy)
+                    if (is_launcher_icon) zos.write(icon_bytes)
+                    else zf.getInputStream(entry).copyTo(zos)
+                    zos.closeEntry()
+                }
+            }
+        }
     }
 
     /** v1+v2 签名，输出到目标文件。 */
