@@ -22,6 +22,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AccountTree
+import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -50,12 +53,15 @@ class layout_designer_activity : androidx.activity.ComponentActivity() {
         val layout_file = File(project_dir, "layout.xml")
         val initial = if (layout_file.isFile) layout_file.readText() else DEFAULT_LAYOUT
 
+        // 状态栏颜色与工作区背景一致
+        window.statusBarColor = android.graphics.Color.parseColor("#1B1C1F")
+        window.navigationBarColor = android.graphics.Color.parseColor("#1B1C1F")
+
         setContent {
             MaterialTheme {
                 designer_screen(
                     initial_xml = initial,
-                    on_back = { finish() },
-                    on_save = { xml ->
+                                        on_save = { xml ->
                         layout_file.writeText(xml)
                         setResult(RESULT_OK, Intent().putExtra(EXTRA_SAVED, true))
                         finish()
@@ -95,7 +101,21 @@ private class d_node(
 }
 
 private val CONTAINERS = setOf("LinearLayout", "FrameLayout", "RelativeLayout", "ScrollView", "HorizontalScrollView")
-private val PALETTE = listOf("TextView", "EditText", "Button", "ImageView", "CheckBox", "Switch", "LinearLayout", "ScrollView")
+private val WIDGET_TAGS = listOf("TextView", "EditText", "Button", "ImageView", "CheckBox", "Switch")
+private val LAYOUT_TAGS = listOf("LinearLayout", "FrameLayout", "RelativeLayout", "ScrollView", "HorizontalScrollView")
+private val TAG_CN = mapOf(
+    "LinearLayout" to "线性布局", "FrameLayout" to "帧布局", "RelativeLayout" to "相对布局",
+    "ScrollView" to "滚动视图", "HorizontalScrollView" to "横向滚动",
+    "TextView" to "文本", "EditText" to "输入框", "Button" to "按钮",
+    "ImageView" to "图片", "CheckBox" to "复选框", "Switch" to "开关"
+)
+private val ATTR_CN = mapOf(
+    "id" to "ID", "text" to "文本", "hint" to "提示", "textSize" to "字号",
+    "textColor" to "文字颜色", "background" to "背景", "layout_width" to "宽度",
+    "layout_height" to "高度", "layout_marginTop" to "上边距", "layout_marginBottom" to "下边距",
+    "layout_gravity" to "位置", "gravity" to "内容对齐", "orientation" to "方向", "padding" to "内边距"
+)
+private fun tag_cn(tag: String) = TAG_CN[tag] ?: tag
 
 private fun parse_xml(xml: String): d_node {
     val parser = android.util.Xml.newPullParser()
@@ -177,7 +197,6 @@ private fun find_node(root: d_node, target: d_node): d_node? {
 @Composable
 private fun designer_screen(
     initial_xml: String,
-    on_back: () -> Unit,
     on_save: (String) -> Unit
 ) {
     var xml by remember { mutableStateOf(initial_xml) }
@@ -196,17 +215,36 @@ private fun designer_screen(
 
     Scaffold(
         topBar = {
-            Surface(shadowElevation = 2.dp, color = colors.editor_bg) {
-                Row(Modifier.fillMaxWidth().height(48.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = on_back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回") }
-                    TextButton(onClick = { left_open = !left_open }) {
-                        Text("组件", fontSize = 12.sp, color = if (left_open) colors.editor_icon else colors.editor_hint)
+            Surface(color = colors.editor_bg) {
+                Row(
+                    Modifier.fillMaxWidth().height(44.dp).padding(horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = { left_open = !left_open }, modifier = Modifier.size(36.dp)) {
+                        Icon(
+                            Icons.Default.AccountTree,
+                            contentDescription = "组件树",
+                            tint = if (left_open) colors.editor_icon else colors.editor_hint,
+                            modifier = Modifier.size(19.dp)
+                        )
                     }
-                    Text("布局设计器", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = colors.editor_text, modifier = Modifier.weight(1f))
-                    TextButton(onClick = { right_open = !right_open }) {
-                        Text("属性", fontSize = 12.sp, color = if (right_open) colors.editor_icon else colors.editor_hint)
+                    Spacer(Modifier.weight(1f))
+                    IconButton(onClick = { on_save(serialize(tree)) }, modifier = Modifier.size(36.dp)) {
+                        Icon(
+                            Icons.Default.Save,
+                            contentDescription = "保存",
+                            tint = colors.editor_icon,
+                            modifier = Modifier.size(19.dp)
+                        )
                     }
-                    TextButton(onClick = { on_save(serialize(tree)) }) { Text("保存", color = colors.editor_icon) }
+                    IconButton(onClick = { right_open = !right_open }, modifier = Modifier.size(36.dp)) {
+                        Icon(
+                            Icons.Default.Tune,
+                            contentDescription = "属性",
+                            tint = if (right_open) colors.editor_icon else colors.editor_hint,
+                            modifier = Modifier.size(19.dp)
+                        )
+                    }
                 }
             }
         }
@@ -308,35 +346,14 @@ private fun ComponentTree(
         )
         // 树形列表
         TreeRow(node = root, depth = 0, selected = selected, on_select = on_select)
-        // 添加组件
-        Spacer(Modifier.height(12.dp))
-        Text(
-            "添加组件",
-            fontSize = 10.sp,
-            fontWeight = FontWeight.Bold,
-            color = app_theme_provider.colors.editor_hint,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
-        )
-        // 两列流式排列
-        PALETTE.chunked(2).forEach { row ->
-            Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 2.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                row.forEach { tag ->
-                    Surface(
-                        onClick = { on_add(tag) },
-                        shape = RoundedCornerShape(8.dp),
-                        color = app_theme_provider.colors.editor_button_bg,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text(
-                            tag,
-                            fontSize = 11.sp,
-                            color = app_theme_provider.colors.editor_text,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 7.dp)
-                        )
-                    }
-                }
-                if (row.size == 1) Spacer(Modifier.weight(1f))
-            }
+        // 折叠卡片：组件 / 布局
+        Spacer(Modifier.height(10.dp))
+        ExpandableCard(title = "组件", modifier = Modifier.padding(horizontal = 10.dp)) {
+            AddGrid(tags = WIDGET_TAGS, on_add = on_add)
+        }
+        Spacer(Modifier.height(6.dp))
+        ExpandableCard(title = "布局", modifier = Modifier.padding(horizontal = 10.dp)) {
+            AddGrid(tags = LAYOUT_TAGS, on_add = on_add)
         }
     }
 }
@@ -359,7 +376,7 @@ private fun TreeRow(node: d_node, depth: Int, selected: d_node?, on_select: (d_n
             Text("· ", fontSize = 10.sp, color = colors.editor_hint)
         }
         Text(
-            node.tag,
+            tag_cn(node.tag),
             fontSize = 12.sp,
             color = if (is_sel) colors.editor_icon else colors.editor_text,
             fontWeight = if (is_sel) FontWeight.Bold else FontWeight.Normal
@@ -371,29 +388,59 @@ private fun TreeRow(node: d_node, depth: Int, selected: d_node?, on_select: (d_n
     node.children.forEach { child -> TreeRow(child, depth + 1, selected, on_select) }
 }
 
-/* 左抽屉：组件列表 */
+/* 折叠卡片（固定高度内容区可滚动） */
 @Composable
-private fun ComponentPalette(on_add: (String) -> Unit, modifier: Modifier = Modifier) {
-    Column(modifier.verticalScroll(rememberScrollState()).padding(8.dp)) {
-        Text("组件", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-        Spacer(Modifier.height(8.dp))
-        PALETTE.forEach { tag ->
-            Surface(
-                onClick = { on_add(tag) },
-                shape = RoundedCornerShape(8.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)
+private fun ExpandableCard(title: String, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    val colors = app_theme_provider.colors
+    Column(modifier) {
+        Surface(
+            onClick = { expanded = !expanded },
+            shape = RoundedCornerShape(10.dp),
+            color = colors.editor_button_bg
+        ) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(title, fontSize = 12.sp, color = colors.editor_text, modifier = Modifier.weight(1f))
+                Text(if (expanded) "▾" else "▸", fontSize = 12.sp, color = colors.editor_hint)
+            }
+        }
+        androidx.compose.animation.AnimatedVisibility(visible = expanded) {
+            Column(
+                Modifier.fillMaxWidth().height(180.dp).verticalScroll(rememberScrollState()).padding(top = 4.dp)
             ) {
-                Row(Modifier.padding(horizontal = 10.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Add, null, Modifier.size(14.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(tag, fontSize = 12.sp)
-                }
+                content()
             }
         }
     }
 }
 
+/* 添加网格（两列） */
+@Composable
+private fun AddGrid(tags: List<String>, on_add: (String) -> Unit) {
+    val colors = app_theme_provider.colors
+    tags.chunked(2).forEach { row ->
+        Row(Modifier.fillMaxWidth().padding(horizontal = 2.dp, vertical = 2.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            row.forEach { tag ->
+                Surface(
+                    onClick = { on_add(tag) },
+                    shape = RoundedCornerShape(8.dp),
+                    color = colors.editor_button_bg.copy(alpha = 0.6f),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        tag_cn(tag),
+                        fontSize = 11.sp,
+                        color = colors.editor_text,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)
+                    )
+                }
+            }
+            if (row.size == 1) Spacer(Modifier.weight(1f))
+        }
+    }
+}
+
+/* 左抽屉：组件列表 */
 /* 中间：实时预览（原生渲染 + 点选） */
 @Composable
 private fun RealtimePreview(xml: String, revision: Int, on_select: (String) -> Unit, modifier: Modifier = Modifier) {
@@ -481,7 +528,7 @@ private fun PropertyDrawer(
                     value = it
                     if (it.isBlank()) node.attrs.remove(attr) else node.attrs[attr] = it
                 },
-                label = { Text(attr, fontSize = 9.sp) },
+                label = { Text(ATTR_CN[attr] ?: attr, fontSize = 9.sp) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
                 shape = RoundedCornerShape(8.dp),
