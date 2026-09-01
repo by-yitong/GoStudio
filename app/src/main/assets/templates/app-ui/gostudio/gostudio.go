@@ -291,6 +291,9 @@ func (v *View) GetText() (string, error) { return v.app.GetText(v.id) }
 // SetImage 设置网络图片，支持 http/https URL。
 func (v *Image) SetImage(url string) error { return v.app.SetImage(v.id, url) }
 
+// SetSrc 是 SetImage 的别名，语义对应 layout.xml 的 src 属性。
+func (v *Image) SetSrc(url string) error { return v.SetImage(url) }
+
 // Quit 请求宿主关闭当前运行界面。
 func (a *App) Quit() error {
 	return a.call(message{Op: "quit"})
