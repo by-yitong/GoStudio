@@ -126,6 +126,7 @@ class editor_activity : ComponentActivity() {
     private var ai_project_prompts_dir: java.io.File? = null
     /** AI 弹窗打开触发器（编辑器选区 AI 动作时 +1） */
     private var ai_open_trigger by mutableStateOf(0)
+    private var sidebar_log_open_trigger by mutableStateOf(0)
     /** AI 文件变更通知器（工具改文件后刷新编辑器） */
     private var ai_file_change_notifier: com.jmwl.gostudio.ai.ai_file_change_notifier? = null
     /** AI 设置页覆盖层开关 */
@@ -382,6 +383,7 @@ class editor_activity : ComponentActivity() {
             ai_global_prompts_dir = ai_global_prompts_dir,
             ai_project_prompts_dir = ai_project_prompts_dir,
             ai_open_trigger = ai_open_trigger,
+            sidebar_log_open_trigger = sidebar_log_open_trigger,
             ai_settings_visible = show_ai_settings || ai_settings_exiting
         )
 
@@ -893,6 +895,7 @@ class editor_activity : ComponentActivity() {
      * 按配置的运行入口编译，输出到项目根的 bin/ 目录。结果流式写入输出面板。
      */
     private fun build_go_project() {
+        sidebar_log_open_trigger++
         if (detected_project_info.kind != project_kind.GO) {
             app_toast.show(this, "当前项目不是 Go 项目", app_toast.LENGTH_SHORT)
             return
@@ -1000,6 +1003,7 @@ class editor_activity : ComponentActivity() {
      * 打包独立 APK：构建 → 注入壳模板 → apksig 签名 → 保存到项目 bin/ 目录。
      */
     private fun pack_app_ui_project() {
+        sidebar_log_open_trigger++
         if (detected_project_info.kind != project_kind.GO) {
             app_toast.show(this, "当前项目不是 Go 项目", app_toast.LENGTH_SHORT)
             return
@@ -1068,7 +1072,8 @@ class editor_activity : ComponentActivity() {
             result.fold(
                 onSuccess = {
                     output_panel_state.append_output("打包完成: ${output_apk.absolutePath} (${output_apk.length() / 1024 / 1024}MB)", editor_output_line_level.SUCCESS)
-                    app_toast.show(this@editor_activity, "已打包到 bin/${output_apk.name}", app_toast.LENGTH_LONG)
+                    app_toast.show(this@editor_activity, "打包完成，正在安装…", app_toast.LENGTH_SHORT)
+                    install_packed_apk(output_apk)
                 },
                 onFailure = { e ->
                     output_panel_state.append_output("打包失败: ${e.message}", editor_output_line_level.ERROR)
@@ -1078,11 +1083,37 @@ class editor_activity : ComponentActivity() {
         }
     }
 
+    /** 打包完成后自动调起系统安装器（复用应用内更新的 FileProvider 目录）。 */
+    private fun install_packed_apk(apk_file: File) {
+        runCatching {
+            val update_dir = File(filesDir, "update").apply { mkdirs() }
+            val install_copy = File(update_dir, "pack-${apk_file.name}")
+            apk_file.copyTo(install_copy, overwrite = true)
+
+            val uri = androidx.core.content.FileProvider.getUriForFile(
+                this, "$packageName.file_provider", install_copy
+            )
+            startActivity(
+                android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                    addFlags(
+                        android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                        android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+                    )
+                    setDataAndType(uri, "application/vnd.android.package-archive")
+                }
+            )
+        }.onFailure { e ->
+            output_panel_state.append_output("调起安装失败: ${e.message}", editor_output_line_level.ERROR)
+            app_toast.show(this, "APK 已保存到 bin/${apk_file.name}", app_toast.LENGTH_LONG)
+        }
+    }
+
     /**
      * 构建并运行 AndLua 式 App 项目：go build 产出二进制后，
      * 打开宿主运行界面（layout.xml 渲染 + Go 逻辑进程通过 JSON 行协议驱动界面）。
      */
     private fun build_and_run_app_ui_project() {
+        sidebar_log_open_trigger++
         val project_environment = toolchain_manager.project_environment(project_dir.absolutePath)
         if (project_environment.missing.isNotEmpty()) {
             val message = project_environment.missing.joinToString("；")

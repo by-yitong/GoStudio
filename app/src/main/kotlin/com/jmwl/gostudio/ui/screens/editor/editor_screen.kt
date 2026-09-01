@@ -140,6 +140,8 @@ internal fun editor_screen(
     ai_project_prompts_dir: java.io.File? = null,
     /** 递增触发器：外部想让 AI 弹窗打开时把这个值 +1 */
     ai_open_trigger: Int = 0,
+    /** 递增触发器：外部想让左侧日志栏打开时把这个值 +1（构建/打包前自动弹出） */
+    sidebar_log_open_trigger: Int = 0,
     /** AI 设置覆盖层打开或正在退出时，禁用 AI 页自身返回处理 */
     ai_settings_visible: Boolean = false
 ) {
@@ -194,6 +196,13 @@ internal fun editor_screen(
 
     // 抽屉打开时返回键先关闭抽屉
     BackHandler(enabled = drawer_open) { drawer_open = false }
+
+    LaunchedEffect(sidebar_log_open_trigger) {
+        if (sidebar_log_open_trigger > 0) {
+            selected_tool = editor_sidebar_tool.LOG
+            drawer_open = true
+        }
+    }
 
     // AI 页面打开时返回键先关闭页面
     BackHandler(enabled = show_ai_page) { show_ai_page = false }
