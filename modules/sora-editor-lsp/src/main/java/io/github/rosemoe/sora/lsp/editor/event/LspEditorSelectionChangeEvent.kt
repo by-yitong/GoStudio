@@ -46,8 +46,15 @@ class LspEditorSelectionChangeEvent(private val editor: LspEditor) :
         val isInCompletion = originEditor.getComponent<EditorAutoCompletion>().isShowing
         if (isInCompletion) return
 
-        // 输入字符时交给 ContentChangeEvent 处理，这里只处理纯光标移动（点击、方向键移动）
-        if (causedByTextModification) return
+        // 输入字符时交给 ContentChangeEvent 处理；IME 输入过程中的选区变化也不能触发文档悬浮。
+        // 文档提示只响应明确的光标定位：点击、鼠标定位、物理键盘/代码控制移动。
+        val canRequestHover = when (event.cause) {
+            SelectionChangeEvent.CAUSE_TAP,
+            SelectionChangeEvent.CAUSE_MOUSE_INPUT,
+            SelectionChangeEvent.CAUSE_KEYBOARD_OR_CODE -> true
+            else -> false
+        }
+        if (causedByTextModification || !canRequestHover) return
 
         val text = editor.editor?.text ?: return
         val cursorIndex = event.left.index

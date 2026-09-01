@@ -27,4 +27,5 @@ dependencies {
     api(platform(libs.androidx.compose.bom))
     api("androidx.compose.runtime:runtime")
     api(project(":modules:sora-editor"))
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
 }

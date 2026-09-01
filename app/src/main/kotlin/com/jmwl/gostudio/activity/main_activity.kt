@@ -25,6 +25,7 @@ import com.jmwl.gostudio.ui.screens.main.recent_project
 import com.jmwl.gostudio.ui.screens.main.toolchain_action
 import com.jmwl.gostudio.ui.screens.main.toolchain_custom_install_request
 import com.jmwl.gostudio.ui.screens.main.toolchain_trigger
+import com.jmwl.gostudio.ui.theme.app_theme_preset
 import com.jmwl.gostudio.ui.theme.app_theme_provider
 import com.jmwl.gostudio.ui.theme.app_theme_type
 import com.jmwl.gostudio.ui.theme.theme_manager
@@ -37,6 +38,8 @@ class main_activity : ComponentActivity() {
     private var recent_projects by mutableStateOf<List<recent_project>>(emptyList())
     private var toolchain_status by mutableStateOf(main_tools_install_status())
     private var current_theme by mutableStateOf(app_theme_type.SYSTEM)
+    private var current_theme_preset by mutableStateOf(app_theme_preset.CLASSIC_TEAL)
+    private var custom_theme_accent by mutableStateOf(0xFF7C9EFF.toInt())
     private var scale_value by mutableStateOf(1f)
     private var toolchain_tasks by mutableStateOf<List<toolchain_trigger>>(emptyList())
     private var custom_toolchain_dialog by mutableStateOf<toolchain_custom_install_request?>(null)
@@ -65,6 +68,8 @@ class main_activity : ComponentActivity() {
                     recent_projects = recent_projects,
                     toolchain_status = toolchain_status,
                     current_theme = current_theme,
+                    current_theme_preset = current_theme_preset,
+                    custom_theme_accent = custom_theme_accent,
                     scale_value = scale_value,
                     toolchain_tasks = toolchain_tasks,
                     custom_toolchain_dialog = custom_toolchain_dialog,
@@ -83,6 +88,8 @@ class main_activity : ComponentActivity() {
                     },
                     on_custom_toolchain_dialog_change = { custom_toolchain_dialog = it },
                     on_theme_change = ::set_theme,
+                    on_theme_preset_change = ::set_theme_preset,
+                    on_custom_theme_accent_change = ::set_custom_theme_accent,
                     on_scale_change = ::set_scale,
                     on_run_toolchain_task = ::run_toolchain_task,
                     on_toolchain_task_success = ::on_toolchain_task_success
@@ -101,6 +108,8 @@ class main_activity : ComponentActivity() {
             reload_recent_projects()
             refresh_toolchain_status()
             current_theme = theme_manager.theme.value
+            current_theme_preset = theme_manager.preset.value
+            custom_theme_accent = theme_manager.custom_accent.value
             scale_value = theme_manager.scale.value
         }
     }
@@ -128,6 +137,18 @@ class main_activity : ComponentActivity() {
     private fun set_theme(theme: app_theme_type) {
         theme_manager.set_theme(this, theme)
         current_theme = theme
+    }
+
+
+    private fun set_theme_preset(preset: app_theme_preset) {
+        theme_manager.set_preset(this, preset)
+        current_theme_preset = preset
+    }
+
+    private fun set_custom_theme_accent(argb: Int) {
+        theme_manager.set_custom_accent(this, argb)
+        current_theme_preset = app_theme_preset.CUSTOM
+        custom_theme_accent = argb or 0xFF000000.toInt()
     }
 
     private fun set_scale(scale: Float) {

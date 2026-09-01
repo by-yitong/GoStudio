@@ -274,8 +274,7 @@ private fun file_tree_row(
     on_click: () -> Unit,
     on_long_press: () -> Unit
 ) {
-    val file_icon_res = editor_file_icon_res(node.name)
-    val icon_tint = if (node.is_directory) colors.editor_icon else colors.editor_hint
+    val file_icon = editor_file_icon(node.name)
     val indent_width = if (node.depth > 0) (node.depth * 24).dp else 8.dp
     val icon_gap = 8.dp
     val icon_slot_width = if (node.is_directory) 41.dp else 34.dp
@@ -396,9 +395,9 @@ private fun file_tree_row(
                 )
             } else {
                 Icon(
-                    painter = painterResource(file_icon_res),
+                    imageVector = file_icon.icon,
                     contentDescription = null,
-                    tint = Color.Unspecified,
+                    tint = file_icon.tint,
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
                         .size(icon_size)

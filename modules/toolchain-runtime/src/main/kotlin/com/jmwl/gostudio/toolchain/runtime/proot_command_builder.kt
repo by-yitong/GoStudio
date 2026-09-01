@@ -56,12 +56,12 @@ class proot_command_builder(
     }
 
     /**
-     * guest 内 shell 选择：优先 /bin/bash（安装环境时会 apk add bash，终端与
-     * .bashrc 生态都依赖它）；rootfs 未装 bash 时退回 busybox /bin/sh。
+     * 非交互命令 shell：不加载 .profile/.bashrc。
+     * 这些文件会输出欢迎横幅，污染 git/go 等工具的 stdout；工具环境已通过 env -i 显式传入。
      */
-    private fun login_shell(): List<String> {
+    private fun command_shell(): List<String> {
         return if (java.io.File(paths.rootfs_dir, "bin/bash").isFile) {
-            listOf("/bin/bash", "-l")
+            listOf("/bin/bash", "--noprofile", "--norc")
         } else {
             listOf("/bin/sh")
         }
@@ -79,7 +79,7 @@ class proot_command_builder(
         return listOf(paths.proot_file.absolutePath) +
             base_args(working_dir, include_gostudio_mount, extra_mounts) +
             clean_shell_env_args(extra_environment = extra_environment) +
-            login_shell() +
+            command_shell() +
             listOf(
                 "-c",
                 wrapper,

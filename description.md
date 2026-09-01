@@ -1,6 +1,5 @@
 ## User request
 
-使用 Hallmark 技能审查当前 App 的 UI,并基于审查结果设计一套全新的 UI。
+![default.jpeg](https://multica.ai/api/attachments/01a05cd5-029b-79f1-8dd4-f8cab20db73f/download)
 
-- 调用 hallmark 技能对现有 App UI 进行审查(audit)
-- 根据审查发现,产出新的一套 UI 设计
+学习页面的代码编辑器显示有问题，不知道是不是代码格式搞错了

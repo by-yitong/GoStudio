@@ -5,7 +5,9 @@ import com.jmwl.gostudio.editor.core.is_go_file
 import com.jmwl.gostudio.editor.core.go_completion_keywords
 
 import android.content.Context
+import android.text.InputType
 import io.github.rosemoe.sora.langs.textmate.TextMateLanguage
+import io.github.rosemoe.sora.text.Content
 import io.github.rosemoe.sora.text.ContentLine
 import io.github.rosemoe.sora.widget.CodeEditor
 import io.github.rosemoe.sora.widget.SymbolPairMatch
@@ -53,6 +55,10 @@ internal fun apply_editor_behavior_settings(
     editor.setNonPrintablePaintingFlags(non_printable_flags)
     editor.setTabWidth(tab_size)
     editor.props.symbolPairAutoCompletion = true
+    // 代码编辑器必须保留用户原始输入，禁止输入法自动调整标点前后的空格。
+    editor.inputType = InputType.TYPE_CLASS_TEXT or
+        InputType.TYPE_TEXT_FLAG_MULTI_LINE or
+        InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
     apply_editor_symbol_pairs(editor, file_path)
     editor.getComponent<EditorAutoCompletion>().setEnabled(settings.auto_completion)
     current_language?.let { language ->
@@ -64,6 +70,38 @@ internal fun apply_editor_behavior_settings(
 
 private fun apply_editor_symbol_pairs(editor: CodeEditor, file_path: String?) {
     editor.props.overrideSymbolPairs.removeAllPairs()
+
+    // vivo 等输入法会自行补全括号右半边；编辑器再补一次会得到 “())”。
+    // 因此括号类由输入法/符号栏负责，编辑器只负责引号类自动补全。
+    editor.props.overrideSymbolPairs.putPair(
+        '(',
+        SymbolPairMatch.SymbolPair.EMPTY_SYMBOL_PAIR
+    )
+    editor.props.overrideSymbolPairs.putPair(
+        '{',
+        SymbolPairMatch.SymbolPair.EMPTY_SYMBOL_PAIR
+    )
+    editor.props.overrideSymbolPairs.putPair(
+        '[',
+        SymbolPairMatch.SymbolPair.EMPTY_SYMBOL_PAIR
+    )
+    editor.props.overrideSymbolPairs.putPair(
+        '"',
+        SymbolPairMatch.SymbolPair("\"", "\"", object : SymbolPairMatch.SymbolPair.SymbolPairEx {
+            override fun shouldDoAutoSurround(content: Content): Boolean {
+                return content.cursor.isSelected
+            }
+        })
+    )
+    editor.props.overrideSymbolPairs.putPair(
+        '\'',
+        SymbolPairMatch.SymbolPair("'", "'", object : SymbolPairMatch.SymbolPair.SymbolPairEx {
+            override fun shouldDoAutoSurround(content: Content): Boolean {
+                return content.cursor.isSelected
+            }
+        })
+    )
+
     if (!is_go_file(file_path)) return
 
     editor.props.overrideSymbolPairs.putPair(

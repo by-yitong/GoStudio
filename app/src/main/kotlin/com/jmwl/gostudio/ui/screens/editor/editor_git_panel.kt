@@ -90,7 +90,7 @@ internal fun editor_git_panel(
         scope.launch {
             diff_text = com.jmwl.gostudio.toolchain.git_manager.diff(
                 project_root_path,
-                java.io.File(project_root_path, path).absolutePath,
+                path,
                 cached
             )
             diff_loading = false

@@ -32,9 +32,38 @@ data class git_status_result(
 object git_manager {
 
     private const val COMMAND_TIMEOUT_MS = 15_000L
+    private const val LOG_TAG = "git_manager"
 
     /** git 是否可用（rootfs 内已安装）。 */
     fun is_git_available(): Boolean = toolchain_manager.is_git_installed()
+
+    /**
+     * proot_shell_runner 会给 stdout/stderr 加 “[OUT] -- ” / “[ERR] -- ” 前缀。
+     * git 面板需要原始 git 输出；这里统一去掉前缀，避免把仓库误判成“非 git 仓库”。
+     */
+    private fun normalize_output(output: String): String = output
+        .lines()
+        .mapNotNull { raw ->
+            val line = raw.trimStart('\r')
+            when {
+                line.startsWith("[OUT] -- ") -> line.removePrefix("[OUT] -- ")
+                line.startsWith("[ERR] -- ") -> line.removePrefix("[ERR] -- ")
+                line.startsWith("[OUT] ") -> line.removePrefix("[OUT] ")
+                line.startsWith("[ERR] ") -> line.removePrefix("[ERR] ")
+                else -> line
+            }.takeUnless { it.isBlank() || it == "Welcome To GoStudio Terminal" }
+        }
+        .joinToString("\n")
+        .trim()
+
+    private fun log_command(args: String, ok: Boolean, output: String) {
+        val summary = output.lineSequence().take(20).joinToString("\n")
+        if (ok) {
+            android.util.Log.i(LOG_TAG, "git $args => exit 0\n$summary")
+        } else {
+            android.util.Log.w(LOG_TAG, "git $args => failed\n$summary")
+        }
+    }
 
     private suspend fun run_git(
         project_root: String,
@@ -52,22 +81,52 @@ object git_manager {
                 on_log = { line -> output.appendLine(line) }
             )
         } ?: false
-        return exit_ok to output.toString()
+        val clean_output = normalize_output(output.toString())
+        log_command(args, exit_ok, clean_output)
+        return exit_ok to clean_output
     }
 
     /** 项目根是否已是 git 仓库。 */
     suspend fun is_repository(project_root: String): Boolean {
         val (ok, out) = run_git(project_root, "rev-parse --is-inside-work-tree", timeout_ms = 8_000L)
-        return ok && out.trim() == "true"
+        return ok && out.lineSequence().any { it.trim().equals("true", ignoreCase = true) }
     }
 
-    suspend fun init_repository(project_root: String): Boolean =
-        run_git(project_root, "init").first
+    suspend fun init_repository(project_root: String): Boolean {
+        val (init_ok, init_out) = run_git(project_root, "init")
+        if (!init_ok) return false
+        return ensure_local_identity(project_root, init_out)
+    }
+
+    /** 本地仓库没有身份配置时提交会失败；默认补一个仅作用于当前仓库的身份。 */
+    private suspend fun ensure_local_identity(
+        project_root: String,
+        previous_output: String = ""
+    ): Boolean {
+        val (name_ok, name) = run_git(project_root, "config --default ${shell_quote("")} --get user.name", timeout_ms = 8_000L)
+        val (email_ok, email) = run_git(project_root, "config --default ${shell_quote("")} --get user.email", timeout_ms = 8_000L)
+        if (name_ok && name.isNotBlank() && email_ok && email.isNotBlank()) return true
+
+        if (!name_ok || name.isBlank()) {
+            val ok = run_git(project_root, "config user.name GoStudio", timeout_ms = 8_000L).first
+            if (!ok) return false
+        }
+        if (!email_ok || email.isBlank()) {
+            val ok = run_git(project_root, "config user.email gostudio@local", timeout_ms = 8_000L).first
+            if (!ok) return false
+        }
+        android.util.Log.d(LOG_TAG, "git identity configured for $project_root; init=$previous_output")
+        return true
+    }
 
     /** 本地分支名，当前分支排在首位。 */
     suspend fun branches(project_root: String): List<String> {
-        val (ok, out) = run_git(project_root, "for-each-ref --format=%(refname:short) refs/heads")
-        return if (!ok) emptyList() else out.lines().map { it.trim() }.filter { it.isNotEmpty() }
+        val (ok, out) = run_git(project_root, "for-each-ref --format=${shell_quote("%(refname:short)")} refs/heads")
+        return if (!ok) {
+            emptyList()
+        } else {
+            out.lines().map { it.trim() }.filter { it.isNotEmpty() && it != "Welcome To GoStudio Terminal" }
+        }
     }
 
     suspend fun checkout(project_root: String, branch: String): Boolean =
@@ -137,23 +196,37 @@ object git_manager {
     /** 全部暂存并提交。 */
     suspend fun commit_all(project_root: String, message: String): Boolean {
         if (message.isBlank()) return false
+        if (!ensure_local_identity(project_root)) return false
         val (add_ok, add_out) = run_git(project_root, "add -A")
         if (!add_ok) {
-            android.util.Log.w("git_manager", "git add failed: $add_out")
+            android.util.Log.w(LOG_TAG, "git add failed: $add_out")
             return false
         }
-        return run_git(
+        val (commit_ok, commit_out) = run_git(
             project_root,
             "commit -m ${shell_quote(message.trim())}",
             timeout_ms = 20_000L
-        ).first
+        )
+        if (!commit_ok) {
+            android.util.Log.w(LOG_TAG, "git commit failed: $commit_out")
+            return false
+        }
+        return true
     }
 
     suspend fun stage(project_root: String, paths: List<String>): Boolean =
         run_git(project_root, "add -- ${quote_paths(paths)}").first
 
-    suspend fun unstage(project_root: String, paths: List<String>): Boolean =
-        run_git(project_root, "reset HEAD -- ${quote_paths(paths)}").first
+    suspend fun unstage(project_root: String, paths: List<String>): Boolean {
+        val quoted = quote_paths(paths)
+        val has_head = run_git(
+            project_root,
+            "rev-parse --verify --quiet HEAD",
+            timeout_ms = 8_000L
+        ).first
+        val args = if (has_head) "reset HEAD -- $quoted" else "rm --cached -- $quoted"
+        return run_git(project_root, args).first
+    }
 
     suspend fun discard(project_root: String, paths: List<String>): Boolean =
         run_git(project_root, "checkout -- ${quote_paths(paths)}").first

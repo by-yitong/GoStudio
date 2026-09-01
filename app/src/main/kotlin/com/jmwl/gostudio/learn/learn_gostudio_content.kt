@@ -26,7 +26,7 @@ internal fun gostudio_learn_tracks(): List<learn_track> = listOf(
                                 - `layout.xml`：声明界面结构与属性，语法与 AndLua 一致；
                                 - `main.go`：编写业务逻辑；
                                 - `gostudio/`：内置 App SDK，导入名是 `appsdk`，负责与原生界面通信。
-                                """
+                                """.trimIndent()
                             ),
                             learn_block.code(
                                 """
@@ -43,7 +43,7 @@ internal fun gostudio_learn_tracks(): List<learn_track> = listOf(
                             learn_block.text(
                                 """
                                 点击「运行」时，GoStudio 会先编译 Go 二进制，再在宿主 App 内渲染布局并启动逻辑进程。打包 APK 时，同样的布局和二进制会被注入独立壳应用。
-                                """
+                                """.trimIndent()
                             )
                         )
                     )
@@ -78,7 +78,7 @@ internal fun gostudio_learn_tracks(): List<learn_track> = listOf(
                             learn_block.text(
                                 """
                                 文本类组件支持 `text_change`；复选、单选、开关支持 `checked_change`；拖动条支持 `progress_change`；日期与时间选择器也各有变化事件。
-                                """
+                                """.trimIndent()
                             )
                         )
                     )

@@ -1,5 +1,7 @@
 package com.jmwl.gostudio.editor.model
 
+import com.jmwl.gostudio.editor.config.gostudio_backend_config
+
 data class editor_tab_item(
     val path: String,
     val title: String,
@@ -27,6 +29,9 @@ data class editor_settings_state(
     val gopls_document_highlight: Boolean = true,
     val gopls_formatting: Boolean = true,
     val gopls_hover: Boolean = true,
+    val gopls_translate_documentation: Boolean = true,
+    val gopls_translation_endpoint: String = gostudio_backend_config.TRANSLATION_BASE_URL,
+    val gopls_translation_api_key: String = gostudio_backend_config.TRANSLATION_BACKEND_KEY,
     val font_ligatures: Boolean = true,
     val font_size: Float = 14f,
     val tab_size: Int = 4,

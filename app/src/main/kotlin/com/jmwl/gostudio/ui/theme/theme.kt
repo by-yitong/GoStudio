@@ -6,11 +6,12 @@ import android.content.res.Configuration
 import android.os.Build
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalContext
@@ -84,9 +85,32 @@ enum class app_theme_type {
     SYSTEM
 }
 
+/**
+ * 全局 UI 主题预设。预设只改变色系，深浅仍由 app_theme_type 控制；
+ * CUSTOM 使用用户输入的种子色，并按深浅模式自动校准可读性。
+ */
+enum class app_theme_preset(
+    val display_name: String,
+    val dark_accent: Color,
+    val light_accent: Color
+) {
+    CLASSIC_TEAL("经典青", Color(0xFF5CCFE6), Color(0xFF1787A6)),
+    OCEAN_BLUE("深海蓝", Color(0xFF7AB5FF), Color(0xFF1668D8)),
+    VIOLET_NIGHT("星夜紫", Color(0xFFB7A3FF), Color(0xFF6741D9)),
+    FOREST_GREEN("森林绿", Color(0xFF77DD9A), Color(0xFF178A57)),
+    SUNSET_ORANGE("暖阳橙", Color(0xFFFFA65B), Color(0xFFC25E11)),
+    CUSTOM("自定义", Color(0xFF8EA2FF), Color(0xFF4C5FD7))
+}
+
 object theme_manager {
     private val _theme = MutableStateFlow(app_theme_type.DARK)
     val theme: StateFlow<app_theme_type> = _theme.asStateFlow()
+
+    private val _preset = MutableStateFlow(app_theme_preset.CLASSIC_TEAL)
+    val preset: StateFlow<app_theme_preset> = _preset.asStateFlow()
+
+    private val _custom_accent = MutableStateFlow(0xFF7C9EFF.toInt())
+    val custom_accent: StateFlow<Int> = _custom_accent.asStateFlow()
 
     fun resolve_is_dark(context: Context, type: app_theme_type): Boolean {
         return when (type) {
@@ -105,15 +129,22 @@ object theme_manager {
     val scale: StateFlow<Float> = _scale.asStateFlow()
     
     private const val THEME_KEY = "theme_type"
+    private const val PRESET_KEY = "theme_preset"
+    private const val CUSTOM_ACCENT_KEY = "custom_theme_accent"
     private const val SCALE_KEY = "app_scale"
     private const val PREFS = "app_settings"
     
     fun init(context: Context) {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val ordinal = prefs.getInt(THEME_KEY, app_theme_type.SYSTEM.ordinal)
-        _theme.value = app_theme_type.values()[ordinal]
-        val saved_scale = prefs.getFloat(SCALE_KEY, 1f)
-        _scale.value = saved_scale
+        val theme_ordinal = prefs.getInt(THEME_KEY, app_theme_type.SYSTEM.ordinal)
+        _theme.value = app_theme_type.values().getOrNull(theme_ordinal) ?: app_theme_type.SYSTEM
+
+        val preset_name = prefs.getString(PRESET_KEY, app_theme_preset.CLASSIC_TEAL.name)
+        _preset.value = app_theme_preset.values().firstOrNull { it.name == preset_name }
+            ?: app_theme_preset.CLASSIC_TEAL
+
+        _custom_accent.value = prefs.getInt(CUSTOM_ACCENT_KEY, 0xFF7C9EFF.toInt())
+        _scale.value = prefs.getFloat(SCALE_KEY, 1f)
     }
     
     fun set_theme(context: Context, type: app_theme_type) {
@@ -121,6 +152,25 @@ object theme_manager {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit()
             .putInt(THEME_KEY, type.ordinal)
+            .apply()
+    }
+
+    fun set_preset(context: Context, preset: app_theme_preset) {
+        _preset.value = preset
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .putString(PRESET_KEY, preset.name)
+            .apply()
+    }
+
+    fun set_custom_accent(context: Context, argb: Int) {
+        val color = argb or 0xFF000000.toInt()
+        _preset.value = app_theme_preset.CUSTOM
+        _custom_accent.value = color
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .putString(PRESET_KEY, app_theme_preset.CUSTOM.name)
+            .putInt(CUSTOM_ACCENT_KEY, color)
             .apply()
     }
     
@@ -135,6 +185,115 @@ object theme_manager {
             .putFloat(SCALE_KEY, scale)
             .apply()
     }
+}
+
+/** 支持 #RGB/#RRGGBB/#AARRGGBB；界面统一保存为不透明 ARGB。 */
+fun parse_app_theme_color(value: String): Color? {
+    val normalized = value.trim().removePrefix("#")
+    if (!normalized.matches(Regex("^[0-9A-Fa-f]+$"))) return null
+    val argb = when (normalized.length) {
+        3 -> "FF" + normalized.map { it.toString() + it }.joinToString("")
+        6 -> "FF$normalized"
+        8 -> normalized
+        else -> return null
+    }
+    return runCatching { Color(android.graphics.Color.parseColor("#$argb")) }.getOrNull()
+}
+
+fun format_app_theme_color(argb: Int): String =
+    "#%06X".format(argb and 0xFFFFFF)
+
+private fun rgb_only(color: Color): Int = color.toArgb() and 0xFFFFFF
+private fun with_alpha(rgb: Int, alpha: Float): Color =
+    Color(((alpha * 255f + 0.5f).toInt().coerceIn(0, 255) shl 24) or (rgb and 0xFFFFFF))
+
+private fun readable_on(color: Color): Color =
+    if (color.luminance() > 0.58f) Color(0xFF15161A) else Color(0xFFFFFFFF)
+
+/** 自定义种子色按深浅模式微调，避免深底太暗、浅底太刺眼。 */
+private fun normalized_accent(color: Color, dark_theme: Boolean): Color {
+    val luminance = color.luminance()
+    return when {
+        dark_theme && luminance < 0.20f -> lerp(color, Color.White, 0.28f)
+        !dark_theme && luminance > 0.78f -> lerp(color, Color.Black, 0.24f)
+        !dark_theme && luminance < 0.16f -> lerp(color, Color.White, 0.22f)
+        else -> color
+    }
+}
+
+private fun remap_accent(color: Color, old_accent: Color, new_accent: Color): Color {
+    return if (rgb_only(color) == rgb_only(old_accent)) {
+        with_alpha(new_accent.toArgb(), color.alpha)
+    } else {
+        color
+    }
+}
+
+/** 在保留原层次和透明度的前提下，把整套 UI 色重映射到当前主题。 */
+private fun themed_app_colors(base: app_colors, accent: Color, dark_theme: Boolean): app_colors {
+    val old_accent = if (dark_theme) Color(0xFF5CCFE6) else Color(0xFF1C9BBD)
+    val remap = { color: Color -> remap_accent(color, old_accent, accent) }
+    val bg = lerp(base.gradient_start, accent, if (dark_theme) 0.07f else 0.05f)
+    val surface = lerp(base.card_bg, accent, if (dark_theme) 0.08f else 0.06f)
+    val surface_pressed = lerp(base.card_pressed, accent, if (dark_theme) 0.10f else 0.08f)
+    val surface_2 = lerp(base.top_button_bg, accent, if (dark_theme) 0.10f else 0.08f)
+    val editor_bg = lerp(base.editor_bg, accent, if (dark_theme) 0.07f else 0.05f)
+
+    return base.copy(
+        gradient_start = bg,
+        gradient_middle = bg,
+        gradient_end = bg,
+        title_highlight = accent,
+        card_bg = surface,
+        card_pressed = surface_pressed,
+        card_icon_bg = accent,
+        top_button_bg = surface_2,
+        search_button_active = accent,
+        search_button_bg_active = remap(base.search_button_bg_active),
+        input_border = accent,
+        dialog_bg = lerp(base.dialog_bg, accent, if (dark_theme) 0.09f else 0.07f),
+        dialog_icon = accent,
+        dialog_cancel = accent,
+        dialog_clone_bg = accent,
+        dialog_clone_text = readable_on(accent),
+        dialog_card_bg = bg,
+        dialog_input_bg = surface,
+        dialog_input_border = accent,
+        dialog_input_icon = accent,
+        terminal_cursor = accent.toArgb(),
+        key_button_pressed_bg = surface_pressed,
+        key_button_active_text = accent,
+        terminal_tab_unselected_bg = surface_2,
+        terminal_tab_selected_icon = accent,
+        editor_bg = editor_bg,
+        editor_icon = accent,
+        editor_panel_overlay = with_alpha(bg.toArgb(), base.editor_panel_overlay.alpha),
+        editor_button_bg = surface_2,
+        editor_tab_unselected_bg = surface_2,
+        editor_tab_selected_icon = accent,
+        editor_sidebar_selected_bg = remap(base.editor_sidebar_selected_bg)
+    )
+}
+
+private fun themed_material_scheme(dark_theme: Boolean, accent: Color): androidx.compose.material3.ColorScheme {
+    val base = if (dark_theme) dark_color_scheme else light_color_scheme
+    val background = lerp(base.background, accent, if (dark_theme) 0.07f else 0.05f)
+    val surface = lerp(base.surface, accent, if (dark_theme) 0.08f else 0.06f)
+    val container = lerp(accent, background, if (dark_theme) 0.78f else 0.84f)
+    return base.copy(
+        primary = accent,
+        onPrimary = readable_on(accent),
+        primaryContainer = container,
+        onPrimaryContainer = if (dark_theme) lerp(accent, Color.White, 0.25f) else lerp(accent, Color.Black, 0.38f),
+        secondary = lerp(base.secondary, accent, 0.08f),
+        background = background,
+        surface = surface,
+        surfaceVariant = lerp(base.surfaceVariant, accent, 0.06f),
+        surfaceContainer = lerp(base.surfaceContainer, accent, if (dark_theme) 0.08f else 0.06f),
+        surfaceContainerHigh = lerp(base.surfaceContainerHigh, accent, if (dark_theme) 0.10f else 0.08f),
+        surfaceContainerHighest = lerp(base.surfaceContainerHighest, accent, if (dark_theme) 0.12f else 0.10f),
+        outline = lerp(base.outline, accent, 0.12f)
+    )
 }
 
 val local_app_theme_color = compositionLocalOf { light_app_colors }
@@ -154,12 +313,23 @@ fun app_theme_provider(
     val scale_value by theme_manager.scale.collectAsState()
     
     val is_dark_theme = theme_manager.resolve_is_dark(context, theme)
+    val preset by theme_manager.preset.collectAsState()
+    val custom_accent by theme_manager.custom_accent.collectAsState()
+    val seed = if (preset == app_theme_preset.CUSTOM) {
+        Color(custom_accent)
+    } else if (is_dark_theme) {
+        preset.dark_accent
+    } else {
+        preset.light_accent
+    }
+    val accent = normalized_accent(seed, is_dark_theme)
     
     setup_system_bars(is_dark_theme)
     
     val scaled_density = LocalDensity.current.density * scale_value
-    val app_colors = if (is_dark_theme) dark_app_colors else light_app_colors
-    val material_scheme = if (is_dark_theme) dark_color_scheme else light_color_scheme
+    val base_colors = if (is_dark_theme) dark_app_colors else light_app_colors
+    val app_colors = themed_app_colors(base_colors, accent, is_dark_theme)
+    val material_scheme = themed_material_scheme(is_dark_theme, accent)
     
     CompositionLocalProvider(
         local_app_theme_color provides app_colors

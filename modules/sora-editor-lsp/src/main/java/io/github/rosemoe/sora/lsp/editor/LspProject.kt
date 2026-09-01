@@ -28,6 +28,7 @@ import io.github.rosemoe.sora.lsp.client.languageserver.ShutdownReason
 import io.github.rosemoe.sora.lsp.client.languageserver.serverdefinition.LanguageServerDefinition
 import io.github.rosemoe.sora.lsp.client.languageserver.wrapper.LanguageServerWrapper
 import io.github.rosemoe.sora.lsp.editor.diagnostics.DiagnosticsContainer
+import io.github.rosemoe.sora.lsp.editor.documentation.LspDocumentationTranslator
 import io.github.rosemoe.sora.lsp.events.EventEmitter
 import io.github.rosemoe.sora.lsp.events.code.CodeActionEvent
 import io.github.rosemoe.sora.lsp.events.color.DocumentColorEvent
@@ -58,6 +59,7 @@ import java.util.concurrent.ForkJoinPool
 
 class LspProject(
     projectPath: String,
+    val documentationTranslator: LspDocumentationTranslator = LspDocumentationTranslator.NOOP,
 ) {
 
     val projectUri = FileUri(projectPath)

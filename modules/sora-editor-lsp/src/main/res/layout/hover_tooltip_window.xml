@@ -10,6 +10,46 @@
     android:paddingVertical="6dp"
     android:paddingHorizontal="8dp">
 
+    <LinearLayout
+        android:id="@+id/hover_loading_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="4dp"
+        android:paddingVertical="2dp"
+        android:visibility="gone">
+
+        <ProgressBar
+            android:id="@+id/hover_loading_progress"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:indeterminate="true" />
+
+        <TextView
+            android:id="@+id/hover_loading_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="7dp"
+            android:text="正在获取提示..."
+            android:textSize="13sp"
+            style="?android:textAppearanceSmall" />
+
+        <TextView
+            android:id="@+id/hover_loading_close"
+            android:layout_width="21dp"
+            android:layout_height="21dp"
+            android:layout_marginStart="6dp"
+            android:layout_gravity="center_vertical"
+            android:gravity="center"
+            android:text="×"
+            android:textSize="12sp"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="关闭提示" />
+    </LinearLayout>
+
     <ScrollView
         android:id="@+id/hover_scroll_container"
         android:layout_width="match_parent"

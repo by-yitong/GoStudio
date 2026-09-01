@@ -35,7 +35,6 @@ import io.github.rosemoe.sora.lsp.events.diagnostics.queryDocumentDiagnostics
 import io.github.rosemoe.sora.lsp.events.document.documentChange
 import io.github.rosemoe.sora.lsp.events.highlight.DocumentHighlightEvent
 import io.github.rosemoe.sora.lsp.events.highlight.documentHighlight
-import io.github.rosemoe.sora.lsp.events.hover.hover
 import io.github.rosemoe.sora.lsp.events.signature.signatureHelp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -60,8 +59,6 @@ class LspEditorContentChangeEvent(private val editor: LspEditor) :
             } else {
                 editor.eventManager.emitAsync(EventType.signatureHelp, event.changeStart)
             }
-
-            editor.eventManager.emitAsync(EventType.hover, event.changeStart)
 
             editor.eventManager.emitAsync(EventType.documentHighlight) {
                 put(

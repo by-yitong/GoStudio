@@ -14,6 +14,45 @@ internal data class editor_settings_switch_group(
     val items: List<editor_settings_switch_item>
 )
 
+
+internal data class editor_settings_text_item(
+    val title: String,
+    val description: String,
+    val value: String,
+    val placeholder: String,
+    val secret: Boolean = false,
+    val update: (String) -> editor_settings_state
+)
+
+internal data class editor_settings_text_group(
+    val title: String,
+    val items: List<editor_settings_text_item>
+)
+
+internal fun editor_settings_text_groups(settings: editor_settings_state): List<editor_settings_text_group> {
+    return listOf(
+        editor_settings_text_group(
+            title = "中文函数提示",
+            items = listOf(
+                editor_settings_text_item(
+                    title = "后端地址",
+                    description = "例如 http://192.168.1.10:8080",
+                    value = settings.gopls_translation_endpoint,
+                    placeholder = "http://192.168.1.10:8080",
+                    update = { value -> settings.copy(gopls_translation_endpoint = value) }
+                ),
+                editor_settings_text_item(
+                    title = "后端密钥",
+                    description = "未启用后端鉴权时可留空",
+                    value = settings.gopls_translation_api_key,
+                    placeholder = "可选",
+                    secret = true,
+                    update = { value -> settings.copy(gopls_translation_api_key = value) }
+                )
+            )
+        )
+    )
+}
 internal fun editor_settings_switch_groups(settings: editor_settings_state): List<editor_settings_switch_group> {
     return listOf(
         editor_settings_switch_group(
@@ -158,6 +197,12 @@ internal fun editor_settings_switch_groups(settings: editor_settings_state): Lis
                     description = "显示类型和文档",
                     checked = settings.gopls_hover,
                     update = { value -> settings.copy(gopls_hover = value) }
+                ),
+                editor_settings_switch_item(
+                    title = "中文文档翻译",
+                    description = "通过自建后端翻译函数说明",
+                    checked = settings.gopls_translate_documentation,
+                    update = { value -> settings.copy(gopls_translate_documentation = value) }
                 )
             )
         )

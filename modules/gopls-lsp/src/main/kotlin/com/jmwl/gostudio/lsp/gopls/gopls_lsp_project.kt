@@ -4,6 +4,8 @@ import io.github.rosemoe.sora.lsp.client.languageserver.LspFeature
 import io.github.rosemoe.sora.lsp.editor.LspEditor
 import io.github.rosemoe.sora.lsp.editor.LspLanguage
 import io.github.rosemoe.sora.lsp.editor.LspProject
+import com.jmwl.gostudio.lsp.gopls.translation.gopls_documentation_translator
+import com.jmwl.gostudio.lsp.gopls.translation.gopls_translation_settings
 import io.github.rosemoe.sora.widget.CodeEditor
 import java.io.File
 
@@ -17,11 +19,21 @@ import java.io.File
 class gopls_lsp_project(
     val project_dir: File,
     private val config_factory: (working_dir: String) -> gopls_lsp_config,
-    private val disabled_features: Set<LspFeature> = emptySet()
+    private val disabled_features: Set<LspFeature> = emptySet(),
+    translation_settings: gopls_translation_settings = gopls_translation_settings()
 ) {
-    val project: LspProject = LspProject(project_dir.absolutePath).apply {
+    private val documentation_translator = gopls_documentation_translator(translation_settings)
+
+    val project: LspProject = LspProject(
+        projectPath = project_dir.absolutePath,
+        documentationTranslator = documentation_translator
+    ).apply {
         addServerDefinitions(create_gopls_language_server_definitions(config_factory, disabled_features))
         init()
+    }
+
+    fun update_translation_settings(settings: gopls_translation_settings) {
+        documentation_translator.update_settings(settings)
     }
 
     fun get_or_create_editor(file: File, editor: CodeEditor): LspEditor {

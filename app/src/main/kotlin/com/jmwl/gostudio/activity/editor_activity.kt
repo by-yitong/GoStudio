@@ -19,6 +19,7 @@ import com.jmwl.gostudio.editor.core.*
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import com.jmwl.gostudio.ui.dialogs.editor.editor_create_file_template
 import com.jmwl.gostudio.ui.toast.app_toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -79,6 +80,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -90,6 +92,7 @@ class editor_activity : ComponentActivity() {
     private val output_panel_state = editor_output_panel_state()
     private lateinit var detected_project_info: detected_project
     private var applying_editor_content = false
+    private var editor_recovery_job: Job? = null
     private var current_textmate_scope: String? = null
     private var block_hint_job: Job? = null
     private var go_build_job: Job? = null
@@ -229,6 +232,12 @@ class editor_activity : ComponentActivity() {
         initialize_project()
     }
 
+    override fun onPause() {
+        super.onPause()
+        editor_recovery_job?.cancel()
+        flush_editor_recovery_drafts()
+    }
+
     override fun onStop() {
         super.onStop()
         persist_editor_session()
@@ -245,6 +254,8 @@ class editor_activity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        editor_recovery_job?.cancel()
+        flush_editor_recovery_drafts()
         persist_editor_session()
         ai_agent?.shutdown() // 清理 MCP server 进程
         block_hint_job?.cancel()
@@ -383,7 +394,7 @@ class editor_activity : ComponentActivity() {
             on_replace_all = { replacement -> replace_all_matches(replacement) },
             on_clear_search = { clear_search() },
             on_insert_symbol = { symbol -> insert_symbol(symbol) },
-            on_create_file = { parent_path, name -> create_project_file(parent_path, name) },
+            on_create_file = { parent_path, name, template -> create_project_file(parent_path, name, template) },
             on_create_folder = { parent_path, name -> create_project_folder(parent_path, name) },
             on_refresh_files = { path -> refresh_file_tree(path) },
             on_rename_file_tree_node = { path, new_name -> rename_project_entry(path, new_name) },
@@ -520,8 +531,10 @@ class editor_activity : ComponentActivity() {
 
     private fun handle_editor_content_changed() {
         if (!applying_editor_content) {
+            capture_active_tab_state()
             active_tab()?.has_changes = true
             state.has_changes = true
+            schedule_editor_recovery_persist()
         }
         update_history_state()
         schedule_block_end_hints_update()
@@ -976,8 +989,10 @@ class editor_activity : ComponentActivity() {
             text.beginBatchEdit()
             text.insert(insert_line, 0, snippet + "\n")
             text.endBatchEdit()
+            capture_active_tab_state()
             active_tab()?.has_changes = true
             state.has_changes = true
+            schedule_editor_recovery_persist()
             update_history_state()
             move_cursor_to(insert_line, indent.length)
             app_toast.show(this@editor_activity, "已生成并跳转事件", app_toast.LENGTH_SHORT)
@@ -1587,7 +1602,10 @@ class editor_activity : ComponentActivity() {
     }
 
     private fun discard_pending_action() {
-        active_tab()?.has_changes = false
+        active_tab()?.let { tab ->
+            remove_editor_recovery_draft(this, project_dir, tab.file_path)
+            tab.has_changes = false
+        }
         state.has_changes = false
         state.show_unsaved_dialog = false
         run_pending_action()
@@ -1689,14 +1707,69 @@ class editor_activity : ComponentActivity() {
         }
     }
 
-    private fun create_open_tab(loaded_file: editor_loaded_file): editor_open_tab {
+    private fun create_open_tab(
+        loaded_file: editor_loaded_file,
+        initial_content: String = loaded_file.content
+    ): editor_open_tab {
         val file = loaded_file.file
         return editor_open_tab(
             initial_file_path = file.absolutePath,
             initial_file_name = file.name,
             initial_status_text = relative_project_path(project_dir, file),
-            initial_content = loaded_file.content
+            initial_content = initial_content
         )
+    }
+
+    private fun schedule_editor_recovery_persist() {
+        if (!::project_dir.isInitialized) return
+        val drafts = editor_recovery_snapshot()
+        if (drafts.isEmpty()) return
+
+        editor_recovery_job?.cancel()
+        editor_recovery_job = lifecycleScope.launch {
+            withContext(NonCancellable + Dispatchers.IO) {
+                drafts.forEach { (file_path, content) ->
+                    save_editor_recovery_draft(
+                        context = this@editor_activity,
+                        project_dir = project_dir,
+                        file_path = file_path,
+                        content = content
+                    ).onFailure { error ->
+                        logger_manager.e(
+                            tag = "editor_recovery",
+                            msg = "保存未保存代码恢复草稿失败: ${error.message}",
+                            tr = error
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private fun flush_editor_recovery_drafts() {
+        if (!::project_dir.isInitialized) return
+        capture_active_tab_state()
+        editor_recovery_snapshot().forEach { (file_path, content) ->
+            save_editor_recovery_draft(
+                context = this,
+                project_dir = project_dir,
+                file_path = file_path,
+                content = content
+            ).onFailure { error ->
+                logger_manager.e(
+                    tag = "editor_recovery",
+                    msg = "写入未保存代码恢复草稿失败: ${error.message}",
+                    tr = error
+                )
+            }
+        }
+    }
+
+    private fun editor_recovery_snapshot(): List<Pair<String, String>> {
+        capture_active_tab_state()
+        return state.open_tabs
+            .filter { tab -> tab.has_changes }
+            .map { tab -> tab.file_path to tab.content }
     }
 
     private suspend fun open_loaded_file_tab(loaded_file: editor_loaded_file): editor_open_tab {
@@ -1733,17 +1806,34 @@ class editor_activity : ComponentActivity() {
         if (session.tabs.isEmpty()) return
 
         state.loading = true
-        val loaded_files = withContext(Dispatchers.IO) {
-            load_pinned_project_files(project_dir, session.tabs.map { it.file_path })
-        }.associateBy { it.file.absolutePath }
+        val saved_tabs = withContext(Dispatchers.IO) {
+            val loaded_files = load_pinned_project_files(project_dir, session.tabs.map { it.file_path })
+                .associateBy { it.file.absolutePath }
+            session.tabs.map { saved_tab ->
+                Triple(
+                    saved_tab,
+                    loaded_files[saved_tab.file_path],
+                    loaded_files[saved_tab.file_path]?.let {
+                        load_editor_recovery_draft(this@editor_activity, project_dir, saved_tab.file_path)
+                    }
+                )
+            }
+        }
         state.loading = false
 
-        session.tabs.forEach { saved_tab ->
-            val loaded_file = loaded_files[saved_tab.file_path] ?: return@forEach
-            val tab = create_open_tab(loaded_file).apply {
+        saved_tabs.forEach { (saved_tab, loaded_file, recovered_content) ->
+            if (loaded_file == null) return@forEach
+            val tab = create_open_tab(
+                loaded_file = loaded_file,
+                initial_content = recovered_content ?: loaded_file.content
+            ).apply {
                 pinned = saved_tab.pinned
                 cursor_line = saved_tab.cursor_line
                 cursor_column = saved_tab.cursor_column
+                if (recovered_content != null) {
+                    has_changes = true
+                    status_text = "未保存（已恢复）"
+                }
             }
             if (find_tab_index(tab.file_path) < 0) {
                 prepare_tab_editor(tab)
@@ -1828,6 +1918,7 @@ class editor_activity : ComponentActivity() {
                 tab.content = content
                 tab.has_changes = false
                 tab.status_text = relative_project_path(project_dir, File(tab.file_path))
+                remove_editor_recovery_draft(this, project_dir, tab.file_path)
             }.onFailure { error ->
                 app_toast.show(this, "保存失败: ${error.message}", app_toast.LENGTH_LONG)
                 return false
@@ -1870,6 +1961,8 @@ class editor_activity : ComponentActivity() {
             state.content = content
             state.has_changes = false
             state.status_text = "已保存 ${File(file_path).name}"
+            remove_editor_recovery_draft(this, project_dir, file_path)
+            persist_editor_session()
             update_history_state()
             refresh_file_tree()
             if (show_toast) {
@@ -2379,21 +2472,36 @@ class editor_activity : ComponentActivity() {
         }
     }
 
-    private fun create_project_file(parent_path: String, name: String) {
-        create_project_entry(parent_path = parent_path, name = name, directory = false)
+    private fun create_project_file(
+        parent_path: String,
+        name: String,
+        template: editor_create_file_template
+    ) {
+        create_project_entry(
+            parent_path = parent_path,
+            name = name,
+            directory = false,
+            template_id = template.id
+        )
     }
 
     private fun create_project_folder(parent_path: String, name: String) {
         create_project_entry(parent_path = parent_path, name = name, directory = true)
     }
 
-    private fun create_project_entry(parent_path: String, name: String, directory: Boolean) {
+    private fun create_project_entry(
+        parent_path: String,
+        name: String,
+        directory: Boolean,
+        template_id: String = "PLAIN"
+    ) {
         lifecycleScope.launch {
             val result = project_manager.create_project_entry(
                 project_path = project_dir.absolutePath,
                 parent_path = parent_path,
                 name = name,
-                directory = directory
+                directory = directory,
+                template_id = template_id
             )
 
             result.onSuccess { target ->
@@ -2483,6 +2591,10 @@ class editor_activity : ComponentActivity() {
     private fun sync_tabs_after_rename(old_path: String, new_path: String) {
         state.open_tabs.forEach { tab ->
             if (is_same_or_child_path(tab.file_path, old_path)) {
+                val old_tab_path = tab.file_path
+                if (tab.has_changes) {
+                    rename_editor_recovery_draft(this, project_dir, old_tab_path, replace_path_prefix(old_tab_path, old_path, new_path))
+                }
                 val updated_path = replace_path_prefix(tab.file_path, old_path, new_path)
                 tab.file_path = updated_path
                 tab.file_name = File(updated_path).name
@@ -2608,8 +2720,15 @@ class editor_activity : ComponentActivity() {
         val commit_text = resolve_editor_symbol_commit_text(symbol)
         if (commit_text == "\t") {
             editor.indentOrCommitTab()
+        } else if (symbol in setOf("()", "{}", "[]", "\"\"", "''")) {
+            // 符号栏成对插入，并让光标停在中间；IME 的括号自动补全已关闭，避免出现重复右括号。
+            editor.commitText(symbol, false, false)
+            editor.setSelection(
+                editor.cursor.leftLine,
+                editor.cursor.leftColumn - symbol.length / 2
+            )
         } else {
-            editor.commitText(commit_text, false, true)
+            editor.commitText(commit_text, false, false)
         }
         update_history_state()
     }

@@ -18,6 +18,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -35,6 +37,7 @@ fun editor_settings_panel(
 ) {
     val colors = app_theme_provider.colors
     val switch_groups = editor_settings_switch_groups(settings)
+    val text_groups = editor_settings_text_groups(settings)
 
     Column(
         modifier = modifier
@@ -121,6 +124,27 @@ fun editor_settings_panel(
                     if (index < group.items.lastIndex) {
                         editor_settings_group_divider()
                     }
+                }
+            }
+        }
+
+        text_groups.forEach { group ->
+            editor_settings_group_title(group.title)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp)),
+                verticalArrangement = Arrangement.spacedBy(1.dp)
+            ) {
+                group.items.forEach { item ->
+                    editor_settings_text_card(
+                        title = item.title,
+                        description = item.description,
+                        value = item.value,
+                        placeholder = item.placeholder,
+                        secret = item.secret,
+                        on_value_change = item.update
+                    )
                 }
             }
         }
@@ -271,6 +295,79 @@ private fun editor_settings_expandable_options_card(
 }
 
 @Composable
+private fun editor_settings_text_card(
+    title: String,
+    description: String,
+    value: String,
+    placeholder: String,
+    secret: Boolean,
+    on_value_change: (String) -> editor_settings_state
+) {
+    val colors = app_theme_provider.colors
+    var secret_visible by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(0.dp),
+        colors = CardDefaults.cardColors(containerColor = colors.card_bg),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 9.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = title,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = colors.card_text_title
+                )
+                Text(
+                    text = description,
+                    fontSize = 10.sp,
+                    lineHeight = 12.sp,
+                    fontWeight = FontWeight.Light,
+                    color = colors.card_text_subtitle
+                )
+            }
+            OutlinedTextField(
+                value = value,
+                onValueChange = { next_value -> on_value_change(next_value) },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = {
+                    Text(text = placeholder, fontSize = 12.sp)
+                },
+                singleLine = true,
+                visualTransformation = if (secret && !secret_visible) {
+                    PasswordVisualTransformation()
+                } else {
+                    VisualTransformation.None
+                },
+                trailingIcon = {
+                    if (secret) {
+                        IconButton(onClick = { secret_visible = !secret_visible }) {
+                            Icon(
+                                imageVector = if (secret_visible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                contentDescription = if (secret_visible) "隐藏密钥" else "显示密钥",
+                                tint = colors.card_text_subtitle,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                },
+                textStyle = androidx.compose.ui.text.TextStyle(
+                    fontSize = 12.sp,
+                    color = colors.card_text_title
+                )
+            )
+        }
+    }
+}
+
+@Composable
 private fun editor_settings_slider_card(
     icon: ImageVector,
     title: String,
@@ -330,7 +427,7 @@ private fun editor_settings_slider_card(
 
             Slider(
                 value = value,
-                onValueChange = on_value_change,
+                onValueChange = { next_value -> on_value_change(next_value) },
                 valueRange = value_range,
                 steps = steps,
                 modifier = Modifier.fillMaxWidth(),

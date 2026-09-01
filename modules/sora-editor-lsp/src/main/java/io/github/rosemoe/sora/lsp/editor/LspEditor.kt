@@ -346,6 +346,10 @@ class LspEditor(
         uiDelegate.showSignatureHelp(signatureHelp)
     }
 
+    fun showHoverLoading() {
+        uiDelegate.showHoverLoading()
+    }
+
     fun showHover(hover: Hover?) {
         uiDelegate.showHover(hover)
     }

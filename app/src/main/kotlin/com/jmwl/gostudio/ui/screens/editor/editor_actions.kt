@@ -201,7 +201,7 @@ fun editor_symbol_bar(
             "TAB", ":=", "func", "if", "for", "range", "return",
             "import", "package", "type", "struct", "interface",
             "chan", "<-", "go", "defer", "...", "make", "nil",
-            "()", "{}", "[]", "\"\"", "''", ";", ":", "=", ",", "."
+            "()", "{}", "[]", "\"\"", "''", "_", ";", ":", "!=", "=", ",", "."
         )
     }
     val first_row_symbols = remember(symbols) { symbols.take(10) }

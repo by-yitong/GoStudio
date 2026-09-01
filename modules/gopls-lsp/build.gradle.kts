@@ -28,6 +28,7 @@ dependencies {
     implementation(project(":modules:toolchain-runtime"))
     implementation(project(":modules:sora-editor"))
     implementation("org.eclipse.lsp4j:org.eclipse.lsp4j:1.0.0")
+    implementation("com.google.code.gson:gson:2.11.0")
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
 }

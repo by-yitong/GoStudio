@@ -71,7 +71,8 @@ class SignatureHelpEvent : AsyncEventListener() {
                 future.await()
         }
 
-        editor.showSignatureHelp(signatureHelp)
+        val translatedSignatureHelp = editor.project.documentationTranslator.translateSignatureHelp(signatureHelp)
+        editor.showSignatureHelp(translatedSignatureHelp)
     }
 
     override fun dispose() {

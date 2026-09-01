@@ -53,6 +53,10 @@ class HoverEvent : AsyncEventListener() {
         val editor = context.get<LspEditor>("lsp-editor")
         val position = context.getByClass<CharPosition>() ?: return@withContext
 
+        if (editor.project.documentationTranslator.isLoadingEnabled) {
+            editor.showHoverLoading()
+        }
+
         val requestManager = editor.requestManager
 
         val hoverParams = HoverParams(
@@ -70,7 +74,8 @@ class HoverEvent : AsyncEventListener() {
             hover = future.await()
         }
 
-        editor.showHover(hover)
+        val translatedHover = editor.project.documentationTranslator.translateHover(hover)
+        editor.showHover(translatedHover)
     }
 
     override fun dispose() {

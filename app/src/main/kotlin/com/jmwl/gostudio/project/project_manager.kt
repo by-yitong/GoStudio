@@ -101,13 +101,15 @@ object project_manager {
         project_path: String,
         parent_path: String,
         name: String,
-        directory: Boolean
+        directory: Boolean,
+        template_id: String = "PLAIN"
     ): Result<File> = withContext(Dispatchers.IO) {
         runCatching {
             val entry_name = normalize_project_entry_name(name)
             require(entry_name.isNotBlank()) { "名称不能为空" }
 
-            val root_path = File(project_path).canonicalFile.toPath()
+            val root = File(project_path).canonicalFile
+            val root_path = root.toPath()
             val parent_dir = File(parent_path).canonicalFile
             val parent_dir_path = parent_dir.toPath()
             require(parent_dir.exists() && parent_dir.isDirectory && parent_dir_path.startsWith(root_path)) {
@@ -128,6 +130,12 @@ object project_manager {
                 if (!target.createNewFile()) {
                     throw IllegalStateException("无法创建文件")
                 }
+                create_project_entry_content(
+                    template_id = template_id,
+                    target = target,
+                    parent_dir = parent_dir,
+                    project_root = root
+                )?.let { target.writeText(it) }
             }
             target
         }
@@ -180,6 +188,81 @@ object project_manager {
             require(deleted) { "删除失败" }
             source_path to parent_path
         }
+    }
+
+    private fun create_project_entry_content(
+        template_id: String,
+        target: File,
+        parent_dir: File,
+        project_root: File
+    ): String? {
+        return when (template_id) {
+            "GO_SOURCE" -> "package ${go_package_name(parent_dir, project_root)}\n"
+            "GO_TEST" -> go_test_file_content(target, parent_dir, project_root)
+            "GO_MOD" -> go_mod_file_content(parent_dir, project_root)
+            "GO_WORK" -> "go ${go_version(project_root)}\n\nuse .\n"
+            else -> null
+        }
+    }
+
+    private fun go_test_file_content(target: File, parent_dir: File, project_root: File): String {
+        val test_name = target.name
+            .removeSuffix("_test.go")
+            .removeSuffix(".go")
+            .split(Regex("[^A-Za-z0-9]+"))
+            .filter { it.isNotBlank() }
+            .joinToString("") { part ->
+                part.replaceFirstChar { it.uppercaseChar() }
+            }
+            .ifBlank { "Example" }
+        return """package ${go_package_name(parent_dir, project_root)}
+
+import "testing"
+
+func Test$test_name(t *testing.T) {
+    t.Log("write your test here")
+}
+"""
+    }
+
+    private fun go_mod_file_content(parent_dir: File, project_root: File): String {
+        val root_module = File(project_root, "go.mod")
+            .takeIf { it.isFile }
+            ?.readText()
+            ?.let { Regex("(?m)^\\s*module\\s+(\\S+)").find(it)?.groupValues?.getOrNull(1) }
+        val module_base = root_module ?: go_identifier(project_root.name.ifBlank { "example" })
+        val relative_dir = project_root.toPath().relativize(parent_dir.toPath())
+        val module_path = if (relative_dir.nameCount == 0) {
+            module_base
+        } else {
+            val relative_module = relative_dir.joinToString("/") { path -> go_identifier(path.toString()) }
+            "$module_base/$relative_module"
+        }
+        return "module $module_path\ngo ${go_version(project_root)}\n"
+    }
+
+    private fun go_version(project_root: File): String {
+        return File(project_root, "go.mod")
+            .takeIf { it.isFile }
+            ?.readText()
+            ?.let { Regex("(?m)^\\s*go\\s+([0-9]+(?:\\.[0-9]+)*(?:[A-Za-z0-9.]+)?)").find(it)?.groupValues?.getOrNull(1) }
+            ?: "1.22"
+    }
+
+    private fun go_package_name(directory: File, project_root: File): String {
+        val sibling_package = directory
+            .listFiles { file -> file.isFile && file.extension.equals("go", ignoreCase = true) }
+            ?.firstOrNull()
+            ?.readText()
+            ?.let { Regex("(?m)^\\s*package\\s+([A-Za-z_][A-Za-z0-9_]*)").find(it)?.groupValues?.getOrNull(1) }
+        if (sibling_package != null) return sibling_package
+        if (directory.canonicalPath == project_root.canonicalPath) return "main"
+        return go_identifier(directory.name.ifBlank { "main" })
+    }
+
+    private fun go_identifier(value: String): String {
+        val identifier = value.replace(Regex("[^A-Za-z0-9_]"), "_").lowercase().ifBlank { "main" }
+        return if (identifier.first().isDigit()) "_$identifier" else identifier
     }
 
     private fun normalize_project_entry_name(name: String): String {

@@ -36,6 +36,7 @@ open class HoverWindow(
     protected val eventManager = editor.createSubEventManager()
     private var hover: Hover? = null
     private var pendingHover: Hover? = null
+    private var showingLoading = false
     private val showRunnable = Runnable {
         val nextHover = pendingHover
         pendingHover = null
@@ -114,15 +115,32 @@ open class HoverWindow(
     open fun show(hover: Hover) {
         editor.removeCallbacks(showRunnable)
         pendingHover = null
+
+        // A loading tooltip is already visible, so replace it immediately instead
+        // of applying the normal one-second stabilization delay again.
+        if (showingLoading) {
+            performShow(hover)
+            return
+        }
+
         dismiss()
         pendingHover = hover
         editor.postDelayedInLifecycle(showRunnable, HOVER_TOOLTIP_SHOW_TIMEOUT)
+    }
+
+    fun showLoading() {
+        dismiss()
+        showingLoading = true
+        layout.renderLoading()
+        updateWindowSizeAndLocation()
+        super.show()
     }
 
     override fun dismiss() {
         editor.removeCallbacks(showRunnable)
         pendingHover = null
         cancelRenderJobs()
+        showingLoading = false
         super.dismiss()
     }
 
@@ -184,6 +202,7 @@ open class HoverWindow(
     }
 
     private fun performShow(hover: Hover) {
+        showingLoading = false
         val isInCompletion = editor.getComponent<EditorAutoCompletion>().isShowing
         val isInDiagnostic = editor.getComponent<EditorDiagnosticTooltipWindow>().isShowing
 

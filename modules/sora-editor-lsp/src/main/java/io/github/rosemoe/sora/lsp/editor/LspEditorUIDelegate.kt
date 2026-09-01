@@ -222,6 +222,16 @@ internal class LspEditorUIDelegate(private val editor: LspEditor) {
         editorInstance.post { window.show(signatureHelp) }
     }
 
+    fun showHoverLoading() {
+        val window = hoverWindow ?: return
+        val editorInstance = currentEditorRef.get() ?: return
+        if (isShowSignatureHelp) {
+            editorInstance.post { window.dismiss() }
+            return
+        }
+        editorInstance.post { window.showLoading() }
+    }
+
     fun showHover(hover: Hover?) {
         val window = hoverWindow ?: return
         val editorInstance = currentEditorRef.get() ?: return

@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.sp
 import com.jmwl.gostudio.ui.theme.app_theme_provider
 import com.jmwl.gostudio.ui.theme.motion
 import com.jmwl.gostudio.ui.dialogs.editor.editor_create_entry_dialog
+import com.jmwl.gostudio.ui.dialogs.editor.editor_create_file_template
 import kotlinx.coroutines.launch
 import io.github.rosemoe.sora.event.InterceptTarget
 import io.github.rosemoe.sora.event.EventReceiver
@@ -115,7 +116,7 @@ internal fun editor_screen(
     on_replace_all: (String) -> Unit,
     on_clear_search: () -> Unit,
     on_insert_symbol: (String) -> Unit,
-    on_create_file: (String, String) -> Unit,
+    on_create_file: (String, String, editor_create_file_template) -> Unit,
     on_create_folder: (String, String) -> Unit,
     on_refresh_files: (String) -> Unit,
     on_rename_file_tree_node: (String, String) -> Unit,
@@ -654,12 +655,12 @@ internal fun editor_screen(
         create_dialog_request?.let { request ->
             editor_create_entry_dialog(
                 is_folder = request.type == editor_create_dialog_type.FOLDER,
-                on_confirm = { name ->
+                on_confirm = { name, template ->
                     create_dialog_request = null
                     if (request.type == editor_create_dialog_type.FOLDER) {
                         on_create_folder(request.parent_path, name)
                     } else {
-                        on_create_file(request.parent_path, name)
+                        on_create_file(request.parent_path, name, template)
                     }
                 },
                 on_dismiss = { create_dialog_request = null }

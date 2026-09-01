@@ -155,10 +155,11 @@ fun editor_tabs_bar(
                                 Spacer(modifier = Modifier.width(4.dp))
                             }
 
+                            val tab_icon = editor_file_icon(tab.title)
                             Icon(
-                                painter = painterResource(editor_file_icon_res(tab.title)),
+                                imageVector = tab_icon.icon,
                                 contentDescription = null,
-                                tint = Color.Unspecified,
+                                tint = tab_icon.tint,
                                 modifier = Modifier.size(14.dp)
                             )
 

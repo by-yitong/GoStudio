@@ -25,3 +25,9 @@ build/
 # 备份 / 临时
 *.tar
 _*/
+
+# 本地辅助仓库 / 过程产物
+/OpenMinis/
+/.zcode/
+/.hallmark/
+/attachments/

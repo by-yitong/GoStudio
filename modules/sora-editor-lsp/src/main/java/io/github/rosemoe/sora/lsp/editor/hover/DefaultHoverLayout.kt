@@ -1,5 +1,6 @@
 package io.github.rosemoe.sora.lsp.editor.hover
 
+import android.content.res.ColorStateList
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.text.method.LinkMovementMethod
@@ -20,6 +21,10 @@ class DefaultHoverLayout : HoverLayout {
     private lateinit var root: View
     private lateinit var container: ScrollView
     private lateinit var hoverTextView: TextView
+    private lateinit var loadingContainer: View
+    private lateinit var loadingProgress: android.widget.ProgressBar
+    private lateinit var loadingText: TextView
+    private lateinit var loadingClose: TextView
     private var textColor: Int = 0
     private var highlightColor: Int = 0
     private var codeTypeface: Typeface = Typeface.MONOSPACE
@@ -36,6 +41,11 @@ class DefaultHoverLayout : HoverLayout {
         root = inflater.inflate(R.layout.hover_tooltip_window, null, false)
         container = root.findViewById(R.id.hover_scroll_container)
         hoverTextView = root.findViewById(R.id.hover_text)
+        loadingContainer = root.findViewById(R.id.hover_loading_container)
+        loadingProgress = root.findViewById(R.id.hover_loading_progress)
+        loadingText = root.findViewById(R.id.hover_loading_text)
+        loadingClose = root.findViewById(R.id.hover_loading_close)
+        loadingClose.setOnClickListener { window.dismiss() }
         hoverTextView.movementMethod = LinkMovementMethod()
         baselineHoverTextSize = hoverTextView.textSize
         latestEditorTextSize?.let { applyEditorScale(it) }
@@ -48,6 +58,17 @@ class DefaultHoverLayout : HoverLayout {
         highlightColor = colorScheme.getColor(EditorColorScheme.HOVER_TEXT_HIGHLIGHTED)
         codeTypeface = typeface
         hoverTextView.setTextColor(textColor)
+        loadingText.setTextColor(textColor)
+        loadingClose.setTextColor(highlightColor)
+        loadingClose.background = GradientDrawable().apply {
+            shape = GradientDrawable.OVAL
+            setColor((highlightColor and 0x00FFFFFF) or 0x22000000)
+            setStroke(
+                (editor.dpUnit * 0.75f).coerceAtLeast(1f).toInt(),
+                (highlightColor and 0x00FFFFFF) or 0x38000000
+            )
+        }
+        loadingProgress.indeterminateTintList = ColorStateList.valueOf(highlightColor)
 
         val drawable = GradientDrawable().apply {
             cornerRadius = editor.dpUnit * 8
@@ -58,7 +79,17 @@ class DefaultHoverLayout : HoverLayout {
         root.background = drawable
     }
 
+    override fun renderLoading() {
+        asyncRenderJob?.cancel()
+        asyncRenderJob = null
+        hoverTextView.text = ""
+        loadingContainer.visibility = View.VISIBLE
+        container.visibility = View.GONE
+    }
+
     override fun renderHover(hover: Hover) {
+        loadingContainer.visibility = View.GONE
+        container.visibility = View.VISIBLE
         val hoverText = buildHoverText(hover)
         hoverTextView.text = SimpleMarkdownRenderer.render(
             markdown = hoverText,

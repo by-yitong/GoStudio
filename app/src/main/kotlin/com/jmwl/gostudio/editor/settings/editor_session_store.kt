@@ -76,7 +76,7 @@ internal fun save_editor_session(
     context.getSharedPreferences(editor_session_prefs_name, Context.MODE_PRIVATE)
         .edit()
         .putString(editor_session_key(project_dir), root.toString())
-        .apply()
+        .commit()
 }
 
 private fun editor_session_key(project_dir: File): String {

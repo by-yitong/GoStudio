@@ -58,6 +58,7 @@ import com.jmwl.gostudio.ui.screens.ai.ai_chat_screen
 import com.jmwl.gostudio.ui.screens.ai.ai_settings_screen
 import com.jmwl.gostudio.ui.screens.editor.editor_settings_screen
 import com.jmwl.gostudio.ui.screens.editor.editor_theme_settings_screen
+import com.jmwl.gostudio.ui.theme.app_theme_preset
 import com.jmwl.gostudio.ui.theme.app_theme_provider
 import com.jmwl.gostudio.ui.theme.app_theme_type
 import com.jmwl.gostudio.ui.theme.motion
@@ -108,6 +109,8 @@ fun main_navigation(
     recent_projects: List<recent_project>,
     toolchain_status: main_tools_install_status,
     current_theme: app_theme_type,
+    current_theme_preset: app_theme_preset,
+    custom_theme_accent: Int,
     scale_value: Float,
     toolchain_tasks: List<toolchain_trigger>,
     custom_toolchain_dialog: toolchain_custom_install_request?,
@@ -120,6 +123,8 @@ fun main_navigation(
     on_toolchain_trigger_change: (toolchain_trigger?) -> Unit,
     on_custom_toolchain_dialog_change: (toolchain_custom_install_request?) -> Unit,
     on_theme_change: (app_theme_type) -> Unit,
+    on_theme_preset_change: (app_theme_preset) -> Unit,
+    on_custom_theme_accent_change: (Int) -> Unit,
     on_scale_change: (Float) -> Unit,
     on_run_toolchain_task: suspend (toolchain_trigger, (String) -> Unit, (Int) -> Unit) -> Boolean,
     on_toolchain_task_success: (toolchain_trigger) -> Unit
@@ -294,8 +299,12 @@ fun main_navigation(
             composable("theme_settings") {
                 main_theme_settings_screen(
                     current_theme = current_theme,
+                    current_preset = current_theme_preset,
+                    custom_accent = custom_theme_accent,
                     scale_value = scale_value,
                     on_theme_change = on_theme_change,
+                    on_preset_change = on_theme_preset_change,
+                    on_custom_accent_change = on_custom_theme_accent_change,
                     on_scale_change = on_scale_change,
                     on_back = { nav_controller.popBackStack() }
                 )
