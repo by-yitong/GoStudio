@@ -1,14 +1,27 @@
 package com.jmwl.gostudio.ui.screens.learn
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -18,6 +31,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.jmwl.gostudio.ui.screens.ai.highlight_code
+import com.jmwl.gostudio.ui.toast.app_toast
 import com.jmwl.gostudio.learn.learn_block
 import com.jmwl.gostudio.learn.normalize_lesson_code
 import com.jmwl.gostudio.ui.theme.app_theme_provider
@@ -84,21 +99,68 @@ internal fun inline_markup(md: String): AnnotatedString = buildAnnotatedString {
 @Composable
 internal fun learn_code_sample(src: String, modifier: Modifier = Modifier) {
     val colors = app_theme_provider.colors
-    Box(
+    val context = LocalContext.current
+    val code = normalize_lesson_code(src).trimEnd()
+    var copied by remember(src) { mutableStateOf(false) }
+
+    Column(
         modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(10.dp))
             .background(colors.editor_bg)
-            .horizontalScroll(rememberScrollState())
-            .padding(12.dp)
+            .border(1.dp, colors.editor_divider, RoundedCornerShape(10.dp))
     ) {
-        Text(
-            text = normalize_lesson_code(src).trimEnd(),
-            color = colors.editor_text,
-            fontFamily = FontFamily.Monospace,
-            fontSize = 13.sp,
-            lineHeight = 19.sp
-        )
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .background(colors.editor_hint.copy(alpha = 0.10f))
+                .padding(horizontal = 8.dp, vertical = 2.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                shape = RoundedCornerShape(4.dp),
+                color = colors.title_highlight.copy(alpha = 0.16f)
+            ) {
+                Text(
+                    text = "Go",
+                    fontSize = 9.sp,
+                    fontFamily = FontFamily.Monospace,
+                    color = colors.title_highlight,
+                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                )
+            }
+            Spacer(Modifier.weight(1f))
+            IconButton(
+                onClick = {
+                    val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
+                        as android.content.ClipboardManager
+                    clipboard.setPrimaryClip(android.content.ClipData.newPlainText("GoStudio 代码", code))
+                    copied = true
+                    app_toast.show(context, "已复制", app_toast.LENGTH_SHORT)
+                },
+                modifier = Modifier.size(26.dp)
+            ) {
+                Icon(
+                    imageVector = if (copied) Icons.Default.Check else Icons.Default.ContentCopy,
+                    contentDescription = "复制代码",
+                    tint = if (copied) colors.success else colors.subtitle,
+                    modifier = Modifier.size(15.dp)
+                )
+            }
+        }
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(12.dp)
+        ) {
+            Text(
+                text = highlight_code(code, "go", colors),
+                fontFamily = FontFamily.Monospace,
+                fontSize = 13.sp,
+                lineHeight = 19.sp
+            )
+        }
     }
 }
 
