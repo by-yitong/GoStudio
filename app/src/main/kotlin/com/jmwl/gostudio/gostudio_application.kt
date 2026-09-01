@@ -37,7 +37,6 @@ class gostudio_application : Application() {
         logger_manager.errors_only = true
 
         val create_dirs = listOf(
-            File(android.os.Environment.getExternalStorageDirectory(), "GoStudioProjects"),
             File(filesDir, "home"),
             File(filesDir, "home/gostudio/proot-tmps"),
             File(filesDir, "home/gostudio/alpine-rootfs")
