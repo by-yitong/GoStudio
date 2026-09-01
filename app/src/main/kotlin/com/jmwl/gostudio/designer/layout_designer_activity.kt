@@ -213,43 +213,7 @@ private fun designer_screen(
         preview_revision++
     }
 
-    Scaffold(
-        topBar = {
-            Surface(color = colors.editor_bg) {
-                Row(
-                    Modifier.fillMaxWidth().height(44.dp).padding(horizontal = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = { left_open = !left_open }, modifier = Modifier.size(36.dp)) {
-                        Icon(
-                            Icons.Default.AccountTree,
-                            contentDescription = "组件树",
-                            tint = if (left_open) colors.editor_icon else colors.editor_hint,
-                            modifier = Modifier.size(19.dp)
-                        )
-                    }
-                    Spacer(Modifier.weight(1f))
-                    IconButton(onClick = { on_save(serialize(tree)) }, modifier = Modifier.size(36.dp)) {
-                        Icon(
-                            Icons.Default.Save,
-                            contentDescription = "保存",
-                            tint = colors.editor_icon,
-                            modifier = Modifier.size(19.dp)
-                        )
-                    }
-                    IconButton(onClick = { right_open = !right_open }, modifier = Modifier.size(36.dp)) {
-                        Icon(
-                            Icons.Default.Tune,
-                            contentDescription = "属性",
-                            tint = if (right_open) colors.editor_icon else colors.editor_hint,
-                            modifier = Modifier.size(19.dp)
-                        )
-                    }
-                }
-            }
-        }
-    ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding)) {
+    Box(Modifier.fillMaxSize()) {
             // 中间：实时预览（全屏，点选控件后自动弹右抽屉）
             RealtimePreview(
                 xml = xml,
@@ -260,6 +224,61 @@ private fun designer_screen(
                 },
                 modifier = Modifier.fillMaxSize()
             )
+
+            // 悬浮顶栏：组件树 / 保存 / 属性（半透明圆角按钮悬浮在预览上）
+            Row(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // 组件树
+                Surface(
+                    onClick = { left_open = !left_open },
+                    shape = RoundedCornerShape(50),
+                    color = colors.editor_bg.copy(alpha = 0.85f),
+                    shadowElevation = 4.dp
+                ) {
+                    Icon(
+                        Icons.Default.AccountTree,
+                        contentDescription = "组件树",
+                        tint = if (left_open) colors.editor_icon else colors.editor_hint,
+                        modifier = Modifier.padding(10.dp).size(19.dp)
+                    )
+                }
+                Spacer(Modifier.weight(1f))
+                // 保存
+                Surface(
+                    onClick = { on_save(serialize(tree)) },
+                    shape = RoundedCornerShape(50),
+                    color = colors.editor_bg.copy(alpha = 0.85f),
+                    shadowElevation = 4.dp
+                ) {
+                    Icon(
+                        Icons.Default.Save,
+                        contentDescription = "保存",
+                        tint = colors.editor_icon,
+                        modifier = Modifier.padding(10.dp).size(19.dp)
+                    )
+                }
+                Spacer(Modifier.width(10.dp))
+                // 属性
+                Surface(
+                    onClick = { right_open = !right_open },
+                    shape = RoundedCornerShape(50),
+                    color = colors.editor_bg.copy(alpha = 0.85f),
+                    shadowElevation = 4.dp
+                ) {
+                    Icon(
+                        Icons.Default.Tune,
+                        contentDescription = "属性",
+                        tint = if (right_open) colors.editor_icon else colors.editor_hint,
+                        modifier = Modifier.padding(10.dp).size(19.dp)
+                    )
+                }
+            }
 
             // 左抽屉：组件树（从 XML 解析的层级结构，点击选中）
             androidx.compose.animation.AnimatedVisibility(
@@ -319,7 +338,6 @@ private fun designer_screen(
             }
         }
     }
-}
 
 private fun find_by_id(root: d_node, id: String): d_node? {
     if (root.id == id) return root
