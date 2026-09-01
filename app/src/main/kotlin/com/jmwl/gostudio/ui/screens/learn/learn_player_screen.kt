@@ -44,6 +44,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import io.github.rosemoe.sora.text.Content
+import io.github.rosemoe.sora.text.ContentListener
 import com.jmwl.gostudio.editor.settings.apply_editor_colors
 import com.jmwl.gostudio.editor.settings.apply_editor_behavior_settings
 import com.jmwl.gostudio.editor.settings.load_editor_settings
@@ -248,6 +250,11 @@ private fun interactive_step(
     val step_editor = remember(step.id) { create_lesson_editor(context, step.starter_code) }
     DisposableEffect(step.id) {
         onDispose {
+            runCatching {
+                (step_editor.tag as? ContentListener)?.let { listener ->
+                    step_editor.text.removeContentListener(listener)
+                }
+            }
             runCatching { step_editor.release() }
         }
     }
@@ -353,6 +360,7 @@ private fun create_lesson_editor(context: Context, starter_code: String): CodeEd
         language?.let(::setEditorLanguage)
         apply_editor_colors(context, this)
         setText(normalize_lesson_code(starter_code))
+        attach_go_assignment_normalizer(this)
         apply_editor_behavior_settings(
             context = context,
             editor = this,
@@ -363,6 +371,51 @@ private fun create_lesson_editor(context: Context, starter_code: String): CodeEd
         setUndoEnabled(true)
     }
 }
+
+private fun attach_go_assignment_normalizer(editor: CodeEditor) {
+    val listener = object : ContentListener {
+        override fun beforeReplace(content: Content) = Unit
+
+        override fun afterInsert(
+            content: Content,
+            startLine: Int,
+            startColumn: Int,
+            endLine: Int,
+            endColumn: Int,
+            insertedContent: CharSequence
+        ) {
+            if (insertedContent.lastOrNull() == '=') {
+                editor.post { normalize_go_assignment(editor) }
+            }
+        }
+
+        override fun afterDelete(
+            content: Content,
+            startLine: Int,
+            startColumn: Int,
+            endLine: Int,
+            endColumn: Int,
+            deletedContent: CharSequence
+        ) = Unit
+    }
+    editor.tag = listener
+    editor.text.addContentListener(listener)
+}
+
+private fun normalize_go_assignment(editor: CodeEditor) {
+    runCatching {
+        val line_index = editor.cursor.leftLine
+        val line_text = editor.text.getLine(line_index).toString()
+        val match = go_assignment_regex.find(line_text) ?: return
+        val replacement = "${match.groupValues[1]} :="
+        val start = match.range.first
+
+        editor.text.replace(line_index, start, line_index, match.range.last + 1, replacement)
+        editor.setSelection(line_index, start + replacement.length)
+    }
+}
+
+private val go_assignment_regex = Regex("""([A-Za-z_][A-Za-z0-9_]*)[ \t]*:[ \t]*=""")
 
 @Composable
 private fun result_panel(result: exercise_result, modifier: Modifier = Modifier) {
