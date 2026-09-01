@@ -644,6 +644,9 @@ class editor_activity : ComponentActivity() {
         // 创建 AI agent（带项目文件工具）
         setup_ai_agent()
 
+        // 打开旧 App 项目时立即升级 SDK，避免等用户点击构建/运行才发现导入名过期
+        upgrade_app_ui_runtime_sdk_if_needed()
+
         reload_file_tree {
             lifecycleScope.launch {
                 if (!state.project_exists) {
@@ -1133,8 +1136,6 @@ class editor_activity : ComponentActivity() {
             output_panel_state.append_output("错误: $message", editor_output_line_level.ERROR)
             return
         }
-        upgrade_app_ui_runtime_sdk_if_needed()
-
         go_build_job = lifecycleScope.launch {
             output_panel_state.selected_tab = editor_output_tab.Output
             output_panel_state.clear_output()
@@ -1146,6 +1147,8 @@ class editor_activity : ComponentActivity() {
                 output_panel_state.task_stopping = false
                 return@launch
             }
+            val sdk_changed_files = upgrade_app_ui_runtime_sdk_if_needed()
+            if (sdk_changed_files.isNotEmpty()) refresh_files_after_ai_edit(sdk_changed_files)
 
             val success = try {
                 val build = project_manager.read_project_build_config(project_dir.absolutePath)
@@ -1239,7 +1242,6 @@ class editor_activity : ComponentActivity() {
             app_toast.show(this, project_environment.missing.joinToString("；"), app_toast.LENGTH_LONG)
             return
         }
-        upgrade_app_ui_runtime_sdk_if_needed()
         if (go_build_job?.isActive == true || go_run_job?.isActive == true) {
             app_toast.show(this, "任务正在运行中", app_toast.LENGTH_SHORT)
             return
@@ -1254,6 +1256,8 @@ class editor_activity : ComponentActivity() {
                 output_panel_state.task_running = false
                 return@launch
             }
+            val sdk_changed_files = upgrade_app_ui_runtime_sdk_if_needed()
+            if (sdk_changed_files.isNotEmpty()) refresh_files_after_ai_edit(sdk_changed_files)
 
             // 1. 编译
             val build = project_manager.read_project_build_config(project_dir.absolutePath)
@@ -1339,8 +1343,9 @@ class editor_activity : ComponentActivity() {
     }
 
     /** 旧项目 App SDK 缺新 API 或仍使用旧导入名时，自动升级并迁移。 */
-    private fun upgrade_app_ui_runtime_sdk_if_needed() {
-        if (!File(project_dir, "layout.xml").isFile) return
+    private fun upgrade_app_ui_runtime_sdk_if_needed(): List<String> {
+        if (!File(project_dir, "layout.xml").isFile) return emptyList()
+        val changed_paths = mutableListOf<String>()
         val sdk_dir = File(project_dir, "gostudio")
         val sdk_file = File(sdk_dir, "gostudio.go")
         val root_mod = File(project_dir, "go.mod")
@@ -1352,13 +1357,14 @@ class editor_activity : ComponentActivity() {
         val mod_is_current = root_mod.isFile && root_mod.readText().contains(
             "replace gostudio/appsdk => ./gostudio"
         )
-        if (sdk_is_current && mod_is_current) return
+        if (sdk_is_current && mod_is_current) return emptyList()
 
         sdk_dir.mkdirs()
         val asset_dir = "templates/app-ui/gostudio"
         gostudio_application.instance.assets.list(asset_dir)?.forEach { file_name ->
             gostudio_application.instance.assets.open("$asset_dir/$file_name").use { input ->
                 File(sdk_dir, file_name).outputStream().use { output -> input.copyTo(output) }
+                changed_paths += File(sdk_dir, file_name).absolutePath
             }
         }
 
@@ -1367,7 +1373,10 @@ class editor_activity : ComponentActivity() {
             val new_mod = old_mod
                 .replace("require gostudio v0.0.0", "require gostudio/appsdk v0.0.0")
                 .replace("replace gostudio => ./gostudio", "replace gostudio/appsdk => ./gostudio")
-            if (new_mod != old_mod) root_mod.writeText(new_mod)
+            if (new_mod != old_mod) {
+                root_mod.writeText(new_mod)
+                changed_paths += root_mod.absolutePath
+            }
         }
 
         project_dir.walkTopDown()
@@ -1385,8 +1394,12 @@ class editor_activity : ComponentActivity() {
                     .replace("\"gostudio\"", "\"gostudio/appsdk\"")
                     .replace("gostudio.Start()", "appsdk.Start()")
                     .replace(Regex("""\bgostudio\."""), "appsdk.")
-                if (updated != old) file.writeText(updated)
+                if (updated != old) {
+                    file.writeText(updated)
+                    changed_paths += file.absolutePath
+                }
             }
+        return changed_paths
     }
 
     /**
@@ -1406,8 +1419,6 @@ class editor_activity : ComponentActivity() {
             app_toast.show(this, "任务正在运行中", app_toast.LENGTH_SHORT)
             return
         }
-        upgrade_app_ui_runtime_sdk_if_needed()
-
         go_build_job = lifecycleScope.launch {
             output_panel_state.selected_tab = editor_output_tab.Output
             output_panel_state.clear_output()
@@ -1419,6 +1430,8 @@ class editor_activity : ComponentActivity() {
                 output_panel_state.task_stopping = false
                 return@launch
             }
+            val sdk_changed_files = upgrade_app_ui_runtime_sdk_if_needed()
+            if (sdk_changed_files.isNotEmpty()) refresh_files_after_ai_edit(sdk_changed_files)
 
             val success = try {
                 val build = project_manager.read_project_build_config(project_dir.absolutePath)
