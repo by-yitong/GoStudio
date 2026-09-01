@@ -187,6 +187,7 @@ private fun designer_screen(
     var left_open by remember { mutableStateOf(true) }
     var right_open by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val colors = app_theme_provider.colors
 
     fun rebuild_from_tree() {
         xml = serialize(tree)
@@ -195,17 +196,17 @@ private fun designer_screen(
 
     Scaffold(
         topBar = {
-            Surface(shadowElevation = 2.dp) {
+            Surface(shadowElevation = 2.dp, color = colors.editor_bg) {
                 Row(Modifier.fillMaxWidth().height(48.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = on_back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回") }
                     TextButton(onClick = { left_open = !left_open }) {
-                        Text("组件", fontSize = 12.sp, color = if (left_open) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+                        Text("组件", fontSize = 12.sp, color = if (left_open) colors.editor_icon else colors.editor_hint)
                     }
-                    Text("布局设计器", fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    Text("布局设计器", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = colors.editor_text, modifier = Modifier.weight(1f))
                     TextButton(onClick = { right_open = !right_open }) {
-                        Text("属性", fontSize = 12.sp, color = if (right_open) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+                        Text("属性", fontSize = 12.sp, color = if (right_open) colors.editor_icon else colors.editor_hint)
                     }
-                    TextButton(onClick = { on_save(serialize(tree)) }) { Text("保存", color = MaterialTheme.colorScheme.primary) }
+                    TextButton(onClick = { on_save(serialize(tree)) }) { Text("保存", color = colors.editor_icon) }
                 }
             }
         }
@@ -222,15 +223,21 @@ private fun designer_screen(
                 modifier = Modifier.fillMaxSize()
             )
 
-            // 左抽屉：组件面板（从左滑入，浮层）
+            // 左抽屉：组件树（从 XML 解析的层级结构，点击选中）
             androidx.compose.animation.AnimatedVisibility(
                 visible = left_open,
                 enter = androidx.compose.animation.slideInHorizontally { -it } + androidx.compose.animation.fadeIn(),
                 exit = androidx.compose.animation.slideOutHorizontally { -it } + androidx.compose.animation.fadeOut(),
                 modifier = Modifier.align(Alignment.CenterStart).fillMaxHeight()
             ) {
-                Surface(shadowElevation = 8.dp, color = MaterialTheme.colorScheme.surface) {
-                    ComponentPalette(
+                Surface(shadowElevation = 8.dp, color = colors.editor_bg) {
+                    ComponentTree(
+                        root = tree,
+                        selected = selected,
+                        on_select = { node ->
+                            selected = node
+                            right_open = true
+                        },
                         on_add = { tag ->
                             val target = selected?.takeIf { it.is_container } ?: tree
                             val node = d_node(tag, default_attrs(tag, tree))
@@ -240,7 +247,7 @@ private fun designer_screen(
                             tree = tree.deep_copy().also { selected = find_node(it, node) }
                             rebuild_from_tree()
                         },
-                        modifier = Modifier.width(130.dp).fillMaxHeight()
+                        modifier = Modifier.width(220.dp).fillMaxHeight()
                     )
                 }
             }
@@ -252,7 +259,7 @@ private fun designer_screen(
                 exit = androidx.compose.animation.slideOutHorizontally { it } + androidx.compose.animation.fadeOut(),
                 modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight()
             ) {
-                Surface(shadowElevation = 8.dp, color = MaterialTheme.colorScheme.surface) {
+                Surface(shadowElevation = 8.dp, color = colors.editor_bg) {
                     PropertyDrawer(
                         node = selected,
                         is_root = selected === tree,
@@ -280,6 +287,88 @@ private fun find_by_id(root: d_node, id: String): d_node? {
     if (root.id == id) return root
     root.children.forEach { c -> find_by_id(c, id)?.let { return it } }
     return null
+}
+
+/* 左抽屉：组件树 + 添加面板 */
+@Composable
+private fun ComponentTree(
+    root: d_node,
+    selected: d_node?,
+    on_select: (d_node) -> Unit,
+    on_add: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier.verticalScroll(rememberScrollState()).padding(vertical = 8.dp)) {
+        Text(
+            "组件树",
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            color = app_theme_provider.colors.editor_icon,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+        )
+        // 树形列表
+        TreeRow(node = root, depth = 0, selected = selected, on_select = on_select)
+        // 添加组件
+        Spacer(Modifier.height(12.dp))
+        Text(
+            "添加组件",
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            color = app_theme_provider.colors.editor_hint,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+        )
+        // 两列流式排列
+        PALETTE.chunked(2).forEach { row ->
+            Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 2.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                row.forEach { tag ->
+                    Surface(
+                        onClick = { on_add(tag) },
+                        shape = RoundedCornerShape(8.dp),
+                        color = app_theme_provider.colors.editor_button_bg,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            tag,
+                            fontSize = 11.sp,
+                            color = app_theme_provider.colors.editor_text,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 7.dp)
+                        )
+                    }
+                }
+                if (row.size == 1) Spacer(Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun TreeRow(node: d_node, depth: Int, selected: d_node?, on_select: (d_node) -> Unit) {
+    val is_sel = node === selected
+    val colors = app_theme_provider.colors
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { on_select(node) }
+            .background(if (is_sel) colors.editor_icon.copy(alpha = 0.15f) else androidx.compose.ui.graphics.Color.Transparent)
+            .padding(start = (12 + depth * 16).dp, top = 6.dp, bottom = 6.dp, end = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (node.is_container) {
+            Text("▾ ", fontSize = 10.sp, color = colors.editor_hint)
+        } else {
+            Text("· ", fontSize = 10.sp, color = colors.editor_hint)
+        }
+        Text(
+            node.tag,
+            fontSize = 12.sp,
+            color = if (is_sel) colors.editor_icon else colors.editor_text,
+            fontWeight = if (is_sel) FontWeight.Bold else FontWeight.Normal
+        )
+        node.id.takeIf { it.isNotBlank() }?.let {
+            Text("  #$it", fontSize = 10.sp, color = colors.editor_hint)
+        }
+    }
+    node.children.forEach { child -> TreeRow(child, depth + 1, selected, on_select) }
 }
 
 /* 左抽屉：组件列表 */
@@ -367,19 +456,19 @@ private fun PropertyDrawer(
 
     Column(modifier.verticalScroll(rememberScrollState()).padding(10.dp)) {
         if (node == null) {
-            Text("未选中组件\n点击预览中的控件", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("未选中组件\n点击预览或组件树", fontSize = 11.sp, color = app_theme_provider.colors.editor_hint)
             return@Column
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(node.tag, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+            Text(node.tag, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = app_theme_provider.colors.editor_icon)
             node.id.takeIf { it.isNotBlank() }?.let {
                 Spacer(Modifier.width(6.dp))
-                Text("#$it", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("#$it", fontSize = 11.sp, color = app_theme_provider.colors.editor_hint)
             }
             Spacer(Modifier.weight(1f))
             if (!is_root) {
                 IconButton(onClick = on_delete, modifier = Modifier.size(28.dp)) {
-                    Icon(Icons.Default.Delete, "删除", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(15.dp))
+                    Icon(Icons.Default.Delete, "删除", tint = androidx.compose.ui.graphics.Color(0xFFFF6B6B), modifier = Modifier.size(15.dp))
                 }
             }
         }
