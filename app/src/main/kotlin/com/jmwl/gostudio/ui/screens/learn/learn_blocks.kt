@@ -124,9 +124,10 @@ internal fun learn_code_sample(src: String, modifier: Modifier = Modifier) {
                 Text(
                     text = "Go",
                     fontSize = 9.sp,
+                    lineHeight = 10.sp,
                     fontFamily = FontFamily.Monospace,
                     color = colors.title_highlight,
-                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                    modifier = Modifier.padding(horizontal = 6.dp)
                 )
             }
             Spacer(Modifier.weight(1f))
