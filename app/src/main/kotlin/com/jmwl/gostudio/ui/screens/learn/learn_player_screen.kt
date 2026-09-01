@@ -411,6 +411,7 @@ private fun normalize_go_assignment(editor: CodeEditor) {
         val match = go_assignment_regex.find(line_text) ?: return
         val replacement = "${match.groupValues[1]} :="
         val start = match.range.first
+        if (line_text.regionMatches(start, replacement, 0, replacement.length)) return
 
         editor.text.replace(line_index, start, line_index, match.range.last + 1, replacement)
         editor.setSelection(line_index, start + replacement.length)
