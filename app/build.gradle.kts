@@ -70,6 +70,11 @@ android {
     }
 
     buildTypes {
+        getByName("debug") {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+        }
+
         getByName("release") {
             // 仅在 release 签名配置存在时才启用签名，否则使用 debug 签名（降级）
             signingConfig = signingConfigs.findByName("release")
