@@ -1338,15 +1338,22 @@ class editor_activity : ComponentActivity() {
         }
     }
 
-    /** 旧项目缺少生命周期 / 系统 API SDK 时，自动升级内置 gostudio 桥接包。 */
+    /** 旧项目 App SDK 缺新 API 或仍使用旧导入名时，自动升级并迁移。 */
     private fun upgrade_app_ui_runtime_sdk_if_needed() {
         if (!File(project_dir, "layout.xml").isFile) return
-        val sdk_file = File(project_dir, "gostudio/gostudio.go")
-        if (File(sdk_file.parentFile, "view.go").isFile &&
-            File(sdk_file.parentFile, "image.go").isFile &&
-            File(sdk_file.parentFile, "collection.go").isFile
-        ) return
-        val sdk_dir = sdk_file.parentFile ?: File(project_dir, "gostudio")
+        val sdk_dir = File(project_dir, "gostudio")
+        val sdk_file = File(sdk_dir, "gostudio.go")
+        val root_mod = File(project_dir, "go.mod")
+        val sdk_is_current = sdk_file.isFile &&
+            sdk_file.readText().contains("package appsdk") &&
+            File(sdk_dir, "view.go").isFile &&
+            File(sdk_dir, "image.go").isFile &&
+            File(sdk_dir, "collection.go").isFile
+        val mod_is_current = root_mod.isFile && root_mod.readText().contains(
+            "replace gostudio/appsdk => ./gostudio"
+        )
+        if (sdk_is_current && mod_is_current) return
+
         sdk_dir.mkdirs()
         val asset_dir = "templates/app-ui/gostudio"
         gostudio_application.instance.assets.list(asset_dir)?.forEach { file_name ->
@@ -1354,6 +1361,32 @@ class editor_activity : ComponentActivity() {
                 File(sdk_dir, file_name).outputStream().use { output -> input.copyTo(output) }
             }
         }
+
+        if (root_mod.isFile) {
+            val old_mod = root_mod.readText()
+            val new_mod = old_mod
+                .replace("require gostudio v0.0.0", "require gostudio/appsdk v0.0.0")
+                .replace("replace gostudio => ./gostudio", "replace gostudio/appsdk => ./gostudio")
+            if (new_mod != old_mod) root_mod.writeText(new_mod)
+        }
+
+        project_dir.walkTopDown()
+            .filter {
+                it.isFile && it.extension == "go" &&
+                    it.absolutePath != sdk_file.absolutePath &&
+                    !it.absolutePath.contains("/gostudio/") &&
+                    !it.absolutePath.contains("/bin/") &&
+                    !it.absolutePath.contains("/vendor/") &&
+                    !it.absolutePath.contains("/.git/")
+            }
+            .forEach { file ->
+                val old = file.readText()
+                val updated = old
+                    .replace("\"gostudio\"", "\"gostudio/appsdk\"")
+                    .replace("gostudio.Start()", "appsdk.Start()")
+                    .replace(Regex("""\bgostudio\."""), "appsdk.")
+                if (updated != old) file.writeText(updated)
+            }
     }
 
     /**

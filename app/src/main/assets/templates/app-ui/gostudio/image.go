@@ -1,4 +1,4 @@
-package gostudio
+package appsdk
 
 // ImageView 图片组件句柄。
 type ImageView struct{ Widget }

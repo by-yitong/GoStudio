@@ -1,4 +1,4 @@
-package gostudio
+package appsdk
 
 // OnClick 注册点击事件，任何带 id 的组件都可以使用。
 func (a *App) OnClick(id string, fn func()) {

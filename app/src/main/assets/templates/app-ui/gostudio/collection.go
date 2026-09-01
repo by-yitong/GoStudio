@@ -1,4 +1,4 @@
-package gostudio
+package appsdk
 
 // Spinner 下拉框。
 type Spinner struct{ Widget }

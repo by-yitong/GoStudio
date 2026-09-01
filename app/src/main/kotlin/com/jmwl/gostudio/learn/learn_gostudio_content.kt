@@ -25,12 +25,12 @@ internal fun gostudio_learn_tracks(): List<learn_track> = listOf(
 
                                 - `layout.xml`：声明界面结构与属性，语法与 AndLua 一致；
                                 - `main.go`：编写业务逻辑；
-                                - `gostudio/`：内置桥接 SDK，负责与原生界面通信。
+                                - `gostudio/`：内置 App SDK，导入名是 `appsdk`，负责与原生界面通信。
                                 """
                             ),
                             learn_block.code(
                                 """
-                                app := gostudio.Start()
+                                app := appsdk.Start()
                                 tv := app.Text("tv")
 
                                 app.Button("btn").OnClick(func() {

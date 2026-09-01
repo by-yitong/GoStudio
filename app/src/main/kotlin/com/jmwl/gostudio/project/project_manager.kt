@@ -232,10 +232,10 @@ object project_manager {
     private fun go_app_ui_template(): String = """
 package main
 
-import "gostudio"
+import "gostudio/appsdk"
 
 func main() {
-	app := gostudio.Start()
+	app := appsdk.Start()
 	tv := app.Text("tv")
 
 	app.Button("btn").OnClick(func() {
@@ -447,7 +447,7 @@ func main() {
     private fun go_mod_content(name: String, template_id: String): String {
         val base = "module $name\n\ngo 1.21\n"
         if (template_id == "app-ui") {
-            return base + "\nrequire gostudio v0.0.0\n\nreplace gostudio => ./gostudio\n"
+            return base + "\nrequire gostudio/appsdk v0.0.0\n\nreplace gostudio/appsdk => ./gostudio\n"
         }
         val dependencies = when (template_id) {
             "database" -> listOf("modernc.org/sqlite v1.33.1")

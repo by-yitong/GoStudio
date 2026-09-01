@@ -1,4 +1,4 @@
-package gostudio
+package appsdk
 
 // DatePicker 日期选择器。
 type DatePicker struct{ Widget }

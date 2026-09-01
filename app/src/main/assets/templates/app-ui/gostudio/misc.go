@@ -1,4 +1,4 @@
-package gostudio
+package appsdk
 
 // View 通用占位视图句柄。
 type View struct{ Widget }

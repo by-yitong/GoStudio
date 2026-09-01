@@ -1,4 +1,4 @@
-package gostudio
+package appsdk
 
 // OnCreate 注册 App 生命周期 create。
 func (a *App) OnCreate(fn func()) { a.On("", "create", func(Event) { fn() }) }

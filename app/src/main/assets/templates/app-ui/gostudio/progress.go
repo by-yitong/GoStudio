@@ -1,4 +1,4 @@
-package gostudio
+package appsdk
 
 // ProgressBar 进度条。
 type ProgressBar struct{ Widget }

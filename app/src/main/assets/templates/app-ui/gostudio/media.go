@@ -1,4 +1,4 @@
-package gostudio
+package appsdk
 
 // Chronometer 计时器。
 type Chronometer struct{ TextView }

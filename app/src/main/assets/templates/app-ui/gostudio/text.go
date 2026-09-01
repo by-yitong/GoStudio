@@ -1,4 +1,4 @@
-package gostudio
+package appsdk
 
 // TextView 文本、输入、自动补成、计时器、时钟等文本类组件句柄。
 type TextView struct{ Widget }

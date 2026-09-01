@@ -1,4 +1,4 @@
-package gostudio
+package appsdk
 
 // CheckBox 复选框。
 type CheckBox struct{ Widget }

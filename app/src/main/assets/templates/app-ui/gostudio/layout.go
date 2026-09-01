@@ -1,4 +1,4 @@
-package gostudio
+package appsdk
 
 // LinearLayout 线性布局。
 type LinearLayout struct{ Widget }

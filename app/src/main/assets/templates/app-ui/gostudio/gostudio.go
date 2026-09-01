@@ -1,8 +1,8 @@
-// Package gostudio 是 GoStudio「App 运行」模式下的 UI / 生命周期 / 系统桥接 SDK。
+// Package appsdk 是 GoStudio「App 运行」模式下的 UI / 生命周期 / 系统桥接 SDK。
 //
 // 布局由 GoStudio 宿主根据 layout.xml 渲染成原生界面；Go 程序负责业务逻辑，
 // 双方通过 stdin/stdout 的 JSON 行协议通信。
-package gostudio
+package appsdk
 
 import (
 	"bufio"

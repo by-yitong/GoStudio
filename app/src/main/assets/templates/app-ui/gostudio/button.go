@@ -1,4 +1,4 @@
-package gostudio
+package appsdk
 
 // Button 按钮句柄。
 type Button struct{ Widget }

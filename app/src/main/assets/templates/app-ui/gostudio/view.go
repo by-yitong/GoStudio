@@ -1,4 +1,4 @@
-package gostudio
+package appsdk
 
 import (
 	"encoding/json"
