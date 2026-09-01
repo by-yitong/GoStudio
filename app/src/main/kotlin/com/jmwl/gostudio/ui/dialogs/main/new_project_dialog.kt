@@ -67,10 +67,7 @@ fun new_project_dialog(
     val templates = listOf(
         template_item("app-ui", "App 界面", Icons.Default.Smartphone, "AndLua 式布局 + Go 逻辑，直接在宿主内运行"),
         template_item("hello", "Hello World", Icons.Default.PlayArrow, "最简 main.go，打印 Hello"),
-        template_item("http-request", "HTTP 请求", Icons.Default.CloudDownload, "请求天气 API 并解析 JSON"),
-        template_item("http", "HTTP 服务器", Icons.Default.Http, "net/http 服务器，监听 8080"),
         template_item("cli", "CLI 工具", Icons.Default.Terminal, "os.Args 命令行工具"),
-        template_item("webapi", "Web API", Icons.Default.Api, "标准库 JSON API 服务"),
         template_item("database", "数据库", Icons.Default.Storage, "database/sql 与 SQLite 示例"),
         template_item("gin", "Gin", Icons.Default.Rocket, "Gin 路由与 JSON API"),
         template_item("gorm", "GORM", Icons.Default.TableChart, "GORM 模型与 CRUD")
