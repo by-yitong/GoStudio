@@ -13,6 +13,8 @@
   --color-muted:      oklch(48% 0.010 255);
   --color-accent:     oklch(52% 0.19 255);
   --color-accent-strong: oklch(44% 0.19 255);
+  --color-accent-fill: var(--color-accent);
+  --color-accent-fill-strong: var(--color-accent-strong);
   --color-accent-ink: oklch(99% 0.002 255);
   --color-focus:      oklch(50% 0.20 255);
 
@@ -83,6 +85,9 @@
     --color-muted:      oklch(60% 0.008 255);
     --color-accent:     oklch(68% 0.14 255);
     --color-accent-strong: oklch(76% 0.12 255);
+    /* filled-CTA fill darkens off the link accent so accent-ink text clears WCAG 4.5:1 */
+    --color-accent-fill: oklch(54% 0.17 255);
+    --color-accent-fill-strong: oklch(50% 0.18 255);
     --color-accent-ink: oklch(98% 0.004 255);
     --color-focus:      oklch(70% 0.16 255);
 
