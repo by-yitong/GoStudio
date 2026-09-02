@@ -16,6 +16,8 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
@@ -35,6 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.jmwl.gostudio.ui.screens.ai.ai_markdown_text
 import com.jmwl.gostudio.ui.theme.app_theme_provider
 import com.jmwl.gostudio.ui.theme.motion
 import com.jmwl.gostudio.ui.dialogs.editor.editor_create_entry_dialog
@@ -159,6 +162,12 @@ internal fun editor_screen(
     var selected_tool by remember { mutableStateOf(editor_sidebar_tool.FILE) }
     var search_visible by remember { mutableStateOf(false) }
     val is_layout_xml = selected_tab_path?.endsWith("layout.xml") == true
+    val is_markdown_file = selected_tab_path?.lowercase()?.let {
+        it.endsWith(".md") || it.endsWith(".markdown")
+    } == true
+    // Markdown 文件默认进入预览；切换文件时重新初始化模式。
+    var markdown_preview_enabled by remember(selected_tab_path) { mutableStateOf(true) }
+    val show_markdown_preview = has_open_file && is_markdown_file && markdown_preview_enabled
     var search_query by remember { mutableStateOf("") }
     var search_replace_text by remember { mutableStateOf("") }
     var search_expanded by remember { mutableStateOf(false) }
@@ -193,6 +202,15 @@ internal fun editor_screen(
     val sidebar_offset_px = (-(drawer_width_px * (1f - drawer_progress_value))).roundToInt()
     val ime_visible = WindowInsets.ime.getBottom(density) > 0
     val show_symbol_bar = has_open_file && editor_focused && ime_visible
+
+    LaunchedEffect(show_markdown_preview) {
+        if (show_markdown_preview) {
+            editor.clearFocus()
+            editor_focused = false
+            search_visible = false
+            long_press_menu = null
+        }
+    }
 
     LaunchedEffect(drawer_open) {
         if (drawer_open) {
@@ -311,6 +329,11 @@ internal fun editor_screen(
                             on_build = on_build,
                             on_run = on_run,
                             is_layout_xml = is_layout_xml,
+                            is_markdown_file = is_markdown_file,
+                            markdown_preview_enabled = markdown_preview_enabled,
+                            on_toggle_markdown_mode = {
+                                markdown_preview_enabled = !markdown_preview_enabled
+                            },
                             on_open_designer = on_open_designer,
                             on_test = on_test,
                             on_pack = on_pack,
@@ -346,7 +369,12 @@ internal fun editor_screen(
                         .fillMaxWidth()
                         .weight(1f)
                 ) {
-                    if (has_open_file) {
+                    if (show_markdown_preview) {
+                        markdown_preview_panel(
+                            text = editor.text.toString(),
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else if (has_open_file) {
                         code_editor_panel(
                             editor = editor,
                             modifier = Modifier.fillMaxSize(),
@@ -759,6 +787,37 @@ internal fun editor_screen(
                 components = code_generator_components,
                 on_insert = on_insert_generated_code,
                 on_dismiss = { show_code_generator = false }
+            )
+        }
+    }
+}
+
+/**
+ * Markdown 工作区预览：复用 AI 会话的轻量 Markdown 渲染器。
+ */
+@Composable
+private fun markdown_preview_panel(
+    text: String,
+    modifier: Modifier = Modifier
+) {
+    val colors = app_theme_provider.colors
+
+    Box(
+        modifier = modifier
+            .background(colors.editor_bg)
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+    ) {
+        if (text.isBlank()) {
+            Text(
+                text = "空白 Markdown 文件",
+                color = colors.editor_hint,
+                fontSize = 14.sp
+            )
+        } else {
+            ai_markdown_text(
+                text = text,
+                color = colors.editor_text
             )
         }
     }

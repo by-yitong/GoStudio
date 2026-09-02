@@ -274,6 +274,9 @@ fun editor_top_bar(
     on_build: () -> Unit,
     on_run: () -> Unit,
     is_layout_xml: Boolean = false,
+    is_markdown_file: Boolean = false,
+    markdown_preview_enabled: Boolean = false,
+    on_toggle_markdown_mode: () -> Unit = {},
     on_open_designer: () -> Unit = {},
     on_test: () -> Unit = {},
     on_pack: () -> Unit = {},
@@ -317,6 +320,15 @@ fun editor_top_bar(
                     .weight(1f)
                     .padding(horizontal = 6.dp)
             )
+
+            if (is_markdown_file) {
+                editor_top_bar_icon_button(
+                    icon = if (markdown_preview_enabled) Icons.Default.Edit else Icons.Default.Visibility,
+                    content_description = if (markdown_preview_enabled) "编辑 Markdown" else "预览 Markdown",
+                    tint = if (markdown_preview_enabled) colors.editor_toolbar_icon else accent,
+                    on_click = on_toggle_markdown_mode
+                )
+            }
 
             editor_top_bar_icon_button(
                 icon = Icons.Default.Save,

@@ -93,6 +93,8 @@ class gostudio_application : Application() {
             file_name.equals("go.mod", ignoreCase = true) -> "source.go"
             file_name.equals("go.sum", ignoreCase = true) -> "source.go"
             file_name.endsWith(".json", ignoreCase = true) -> "source.json"
+            file_name.equals(".env", ignoreCase = true) ||
+                file_name.startsWith(".env.", ignoreCase = true) -> "source.dotenv"
             else -> "source.go" // GoStudio 默认按 Go 处理
         }
     }

@@ -12,7 +12,7 @@ fun relative_project_path(project_dir: File, file: File): String {
 
 fun load_file_tree_directory(dir: File): List<editor_file_node> {
     return dir.listFiles()
-        ?.filterNot { it.name.startsWith(".") }
+        ?.filterNot { !is_visible_file_tree_entry(it.name) }
         ?.sortedWith(compareBy<File> { !it.isDirectory }.thenBy { it.name.lowercase() })
         ?.map { child ->
             editor_file_node(
@@ -69,5 +69,9 @@ fun build_lazy_visible_file_nodes(
 }
 
 private fun File.visible_child_count(): Int {
-    return listFiles()?.count { !it.name.startsWith(".") } ?: 0
+    return listFiles()?.count { is_visible_file_tree_entry(it.name) } ?: 0
+}
+
+private fun is_visible_file_tree_entry(name: String): Boolean {
+    return name != ".git" && (!name.startsWith(".") || name == ".env" || name.startsWith(".env."))
 }
