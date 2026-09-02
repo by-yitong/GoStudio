@@ -1,0 +1,93 @@
+/* GoStudio web tokens — mirrors the locked design system in /design.md.
+ * Light palette is the site default; dark values follow the same hue (255),
+ * only lightness and chroma move. Syntax-highlight tokens are site-scoped. */
+
+:root {
+  /* palette · light (design.md) */
+  --color-paper:      oklch(98.5% 0.003 255);
+  --color-surface:    oklch(96% 0.004 255);
+  --color-surface-2:  oklch(99.5% 0.002 255);
+  --color-rule:       oklch(88% 0.005 255);
+  --color-ink:        oklch(18% 0.006 255);
+  --color-ink-2:      oklch(24% 0.006 255);
+  --color-muted:      oklch(48% 0.010 255);
+  --color-accent:     oklch(52% 0.19 255);
+  --color-accent-strong: oklch(44% 0.19 255);
+  --color-accent-ink: oklch(99% 0.002 255);
+  --color-focus:      oklch(50% 0.20 255);
+
+  /* code syntax · light */
+  --color-code-kw:    oklch(46% 0.17 255);
+  --color-code-str:   oklch(45% 0.11 162);
+  --color-code-num:   oklch(46% 0.11 60);
+  --color-code-cm:    var(--color-muted);
+  --color-code-out:   var(--color-muted);
+
+  /* type */
+  --font-display: "Inter", "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+  --font-body:    var(--font-display);
+  --font-mono:    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, "Noto Sans SC", monospace;
+
+  --text-xs:       0.75rem;
+  --text-sm:       0.875rem;
+  --text-base:     1rem;
+  --text-md:       1.25rem;
+  --text-lg:       1.5625rem;
+  --text-xl:       1.9531rem;
+  --text-2xl:      2.4414rem;
+  --text-display:  clamp(2.5rem, 4.5vw + 1rem, 4.5rem);
+  --text-display-s: clamp(1.75rem, 3vw + 0.75rem, 3rem);
+
+  /* space · 4pt */
+  --space-3xs: 0.125rem;
+  --space-2xs: 0.25rem;
+  --space-xs:  0.5rem;
+  --space-sm:  0.75rem;
+  --space-md:  1rem;
+  --space-lg:  1.5rem;
+  --space-xl:  2.5rem;
+  --space-2xl: 4rem;
+  --space-3xl: 6rem;
+
+  /* shape + rules */
+  --radius-card: 12px;
+  --radius-cta:  8px;
+  --rule-hair:   1px;
+  --rule-thick:  2px;
+
+  /* motion */
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in:     cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-micro:   120ms;
+  --dur-short:   220ms;
+  --dur-long:    420ms;
+
+  /* depth */
+  --z-base:   1;
+  --z-sticky: 200;
+
+  /* page */
+  --page-gutter: clamp(1.25rem, 5vw, 2.5rem);
+  --container:   68rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-paper:      oklch(16.5% 0.004 255);
+    --color-surface:    oklch(20.5% 0.005 255);
+    --color-surface-2:  oklch(15% 0.004 255);
+    --color-rule:       oklch(28% 0.006 255);
+    --color-ink:        oklch(91% 0.004 255);
+    --color-ink-2:      oklch(82% 0.005 255);
+    --color-muted:      oklch(60% 0.008 255);
+    --color-accent:     oklch(68% 0.14 255);
+    --color-accent-strong: oklch(76% 0.12 255);
+    --color-accent-ink: oklch(98% 0.004 255);
+    --color-focus:      oklch(70% 0.16 255);
+
+    --color-code-kw:    oklch(74% 0.12 255);
+    --color-code-str:   oklch(72% 0.12 162);
+    --color-code-num:   oklch(78% 0.11 75);
+  }
+}

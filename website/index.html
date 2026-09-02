@@ -2,279 +2,283 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>GoStudio — Android 上的 Go 语言 IDE</title>
-  <meta name="description" content="GoStudio 是运行在 Android 上的 Go 语言集成开发环境：内置 golang 与 gopls，基于 proot + Alpine rootfs，在手机上本地编辑、构建、调试 Go 项目。">
+  <meta name="description" content="GoStudio 是运行在 Android 上的 Go 语言集成开发环境：内置 golang 与 gopls，基于 proot + Alpine rootfs，在手机上本地克隆、编辑、构建并运行 Go 项目，无需云端，无需 root。">
   <meta property="og:title" content="GoStudio — Android 上的 Go 语言 IDE">
-  <meta property="og:description" content="在手机上本地写 Go：gopls 智能补全、proot + Alpine 工具链、Sora 编辑器、多框架模板。">
+  <meta property="og:description" content="手机上的 Go IDE。golang 与 gopls 内置，proot + Alpine 工具链，克隆、编辑、构建、运行，一条不少。">
   <meta property="og:type" content="website">
+  <meta name="theme-color" content="#FAFBFC">
+  <meta name="theme-color" content="#17181D" media="(prefers-color-scheme: dark)">
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/tokens.css">
   <link rel="stylesheet" href="assets/site.css">
 </head>
 <body>
+  <a class="skip" href="#main">跳到内容</a>
 
-  <header class="site-header">
-    <div class="container header-inner">
-      <a class="wordmark" href="#top" aria-label="GoStudio 首页">Go<span>Studio</span></a>
-      <nav class="site-nav" aria-label="主导航">
-        <a href="#features">功能</a>
-        <a href="#toolchain">工具链</a>
-        <a href="#templates">模板</a>
-        <a href="#plugins">插件</a>
-      </nav>
-      <div class="header-actions">
-        <a class="btn btn-ghost btn-sm" href="https://github.com/by-yitong/GoStudio" target="_blank" rel="noopener">GitHub</a>
-        <a class="btn btn-primary btn-sm" href="#download">下载</a>
-      </div>
+  <!-- nav · N9 edge-aligned minimal：词标极左，单一 CTA 极右，中间留白即设计 -->
+  <header class="nav">
+    <div class="nav-inner container">
+      <a class="wordmark" href="#top" aria-label="GoStudio 首页"><b>Go</b>Studio <span class="version-chip">v1.0.5</span></a>
+      <a class="btn btn-outline" href="https://github.com/by-yitong/GoStudio/releases/latest" target="_blank" rel="noopener">下载</a>
     </div>
   </header>
 
-  <main id="top">
+  <main id="main">
 
-    <!-- ============ Hero · Workbench split ============ -->
-    <section class="hero">
-      <div class="container hero-grid">
-        <div class="hero-copy">
-          <p class="eyebrow"><span class="eyebrow-dot" aria-hidden="true"></span>Android · Go IDE</p>
-          <h1>把完整的 Go 开发环境，装进口袋。</h1>
-          <p class="lede">GoStudio 在 Android 上本地运行 golang 与 gopls。编辑、构建、调试 Go 项目，全部在一台手机上完成——不依赖云端，也不需要 root。</p>
-          <div class="cta-row">
-            <a class="btn btn-primary btn-lg" href="#download">下载 GoStudio</a>
-            <a class="btn btn-ghost btn-lg" href="https://github.com/by-yitong/GoStudio" target="_blank" rel="noopener">查看源码</a>
+    <!-- hero · H1 marquee：一句陈述占满首屏，横线之下是全页工作流索引 -->
+    <section class="hero" id="top">
+      <div class="container">
+        <h1 class="hero-statement">手机上的 Go IDE。<br>工具链，一条不少。</h1>
+        <div class="hero-rule" aria-hidden="true"></div>
+        <nav class="stage-index" aria-label="工作流阶段">
+          <a href="#stage-1">1.0 克隆</a><span class="sep" aria-hidden="true">·</span>
+          <a href="#stage-2">2.0 编辑</a><span class="sep" aria-hidden="true">·</span>
+          <a href="#stage-3">3.0 构建</a><span class="sep" aria-hidden="true">·</span>
+          <a href="#stage-4">4.0 运行</a>
+        </nav>
+      </div>
+    </section>
+
+    <!-- 1.0 克隆 -->
+    <section class="stage" id="stage-1">
+      <div class="container">
+        <div class="stage-rule" aria-hidden="true"></div>
+        <div class="stage-grid">
+          <div>
+            <p class="stage-no">1.0 · 克隆</p>
+            <h2>把仓库放进手机，或者从模板开始。</h2>
+            <p class="stage-body">从 GitHub、Gitee、GitLab 克隆 Go 项目——HTTPS、SSH、Token、GitHub OAuth 设备码都可以登录，克隆完成自动导入最近项目。</p>
+            <p class="stage-body">从零开始同样就绪：Hello World、HTTP 服务器、CLI、Web API，以及 Gin、GORM、Cobra、Echo 框架模板，创建即生成 <code>go.mod</code> 与入口文件。</p>
           </div>
-          <p class="hero-meta">
-            <span>v1.0.5</span>
-            <span>Android 8.0+</span>
-            <span>arm64-v8a</span>
-            <span>MIT License</span>
-          </p>
+          <div class="stage-visual">
+            <figure class="code-fig">
+              <figcaption class="code-label">terminal</figcaption>
+              <pre><code><span class="c-prompt">$</span> <span class="c-cmd">git clone git@github.com:you/gostudio-demo.git</span>
+<span class="c-out">Cloning into 'gostudio-demo'...</span>
+<span class="c-out">remote: Enumerating objects: 128, done.</span>
+<span class="c-prompt">$</span> <span class="caret" aria-hidden="true"></span></code></pre>
+            </figure>
+          </div>
         </div>
+      </div>
+    </section>
 
-        <!-- 编辑器实机质感：真实工具表面，无假窗口装饰 -->
-        <div class="hero-editor" role="img" aria-label="GoStudio 编辑器界面示意：文件树、代码标签页与 gopls 补全">
-          <div class="editor-window">
-            <div class="editor-tabs" aria-hidden="true">
-              <span class="tab active">main.go</span>
-              <span class="tab">user.go</span>
-              <span class="tab">go.mod</span>
-            </div>
-            <div class="editor-body">
-              <div class="file-tree" aria-hidden="true">
-                <span class="ft-row ft-dir is-open">GoStudio</span>
-                <span class="ft-row ft-file">go.mod</span>
-                <span class="ft-row ft-file is-active">main.go</span>
-                <span class="ft-row ft-dir">handler</span>
-                <span class="ft-row ft-file is-sub">user.go</span>
-                <span class="ft-row ft-dir">internal</span>
-                <span class="ft-row ft-dir">templates</span>
-              </div>
-              <div class="code-area">
-                <pre class="code-lines" aria-hidden="true"><code>1
-2
-3
-4
-5
-6
-7</code></pre>
-                <pre class="code-content"><code><span class="c-kw">package</span> main
+    <!-- 2.0 编辑 -->
+    <section class="stage" id="stage-2">
+      <div class="container">
+        <div class="stage-rule" aria-hidden="true"></div>
+        <div class="stage-grid">
+          <div>
+            <p class="stage-no">2.0 · 编辑</p>
+            <h2>gopls 接住每一次按键。</h2>
+            <p class="stage-body">官方语言服务 gopls 完整接入：补全、参数提示、符号高亮、实时诊断、悬浮提示、跳转定义、格式化。</p>
+            <p class="stage-body">Sora 编辑器提供标签页、文件树、全局搜索与快捷符号栏——一套为触屏优化的编辑体验。</p>
+          </div>
+          <div class="stage-visual">
+            <figure class="code-fig">
+              <figcaption class="code-label">main.go</figcaption>
+              <pre><code><span class="c-kw">package</span> main
 
 <span class="c-kw">import</span> <span class="c-str">"fmt"</span>
 
 <span class="c-kw">func</span> <span class="c-fn">main</span>() {
-    fmt.Pr<span class="caret" aria-hidden="true"></span>
+    fmt.<span class="c-fn">Println</span>(<span class="c-str">"hello from android"</span>)
 }</code></pre>
-                <div class="autocomplete" aria-hidden="true">
-                  <p class="ac-title">fmt.Pr<em>— 2 个建议</em></p>
-                  <p class="ac-item"><span class="ac-sig">Printf</span><span class="ac-type">(format string, a ...any) (n int, err error)</span></p>
-                  <p class="ac-item is-active"><span class="ac-sig">Println</span><span class="ac-type">(a ...any) (n int, err error)</span></p>
-                </div>
-              </div>
-            </div>
-            <div class="editor-status" aria-hidden="true">
-              <span><span class="status-dot"></span>gopls 已连接</span>
-              <span>Go · UTF-8</span>
-            </div>
+            </figure>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ============ 工具链 · 终端带 ============ -->
-    <section id="toolchain" class="toolchain">
-      <div class="container toolchain-grid">
-        <div class="toolchain-copy">
-          <p class="section-label">TOOLCHAIN</p>
-          <h2>真·Linux 工具链，<br>跑在 Android 里。</h2>
-          <p class="section-body">GoStudio 通过 proot + Alpine rootfs 在设备上构建出一套完整的 Go 工具链运行环境。golang、gopls 全部内置，开箱即用。</p>
-          <ul class="rule-list">
-            <li>proot 用户态隔离，无需 root 权限</li>
-            <li>Alpine rootfs，golang / gopls 开箱内置</li>
-            <li>构建、调试、语言服务同环境运行</li>
-          </ul>
-        </div>
-        <div class="terminal" role="img" aria-label="终端示意：在设备上执行 go version 与 go build">
-          <div class="term-body" aria-hidden="true">
-            <p><span class="prompt">$</span> <span class="cmd">uname -m</span></p>
-            <p class="term-out">aarch64</p>
-            <p><span class="prompt">$</span> <span class="cmd">go version</span></p>
-            <p class="term-out">go version go1.24 linux/arm64</p>
-            <p><span class="prompt">$</span> <span class="cmd">go build ./...</span></p>
-            <p class="term-out term-ok">构建成功 · 0 错误</p>
-            <p><span class="prompt">$</span> <span class="caret" aria-hidden="true"></span></p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============ 功能 · 不对称 Bento ============ -->
-    <section id="features" class="features">
+    <!-- 3.0 构建 -->
+    <section class="stage" id="stage-3">
       <div class="container">
-        <div class="section-head">
-          <p class="section-label">FEATURES</p>
-          <h2>一个 IDE 该有的样子，<br>一个都不少。</h2>
-        </div>
-        <div class="bento">
-          <article class="bento-cell cell-gopls">
-            <p class="cell-tag">LSP</p>
-            <h3>gopls 语言智能</h3>
-            <p class="cell-body">官方语言服务完整接入，Sora 编辑器里的每一次按键都有回应。</p>
-            <ul class="cap-grid">
-              <li>代码补全</li>
-              <li>参数提示</li>
-              <li>符号高亮</li>
-              <li>实时诊断</li>
-              <li>悬浮提示</li>
-              <li>跳转定义</li>
-              <li>格式化</li>
-              <li>重命名</li>
-            </ul>
-          </article>
-          <article class="bento-cell cell-editor">
-            <p class="cell-tag">EDITOR</p>
-            <h3>Sora 编辑器</h3>
-            <p class="cell-body">标签页、文件树、全局搜索、快捷符号栏，为触屏优化的代码编辑体验。</p>
-          </article>
-          <article class="bento-cell cell-git">
-            <p class="cell-tag">GIT</p>
-            <h3>随时克隆项目</h3>
-            <p class="cell-body">从 GitHub / Gitee / GitLab 克隆 Go 项目，支持 HTTPS 与 SSH、Token、私钥和 GitHub OAuth 设备码登录。</p>
-          </article>
-          <article class="bento-cell cell-run">
-            <p class="cell-tag">RUN</p>
-            <h3>AndLua 式运行</h3>
-            <p class="cell-body">XML 布局 + Go 逻辑，构建后直接在宿主界面运行，无需打包 APK。</p>
-          </article>
-          <article class="bento-cell cell-logs">
-            <p class="cell-tag">LOGS</p>
-            <h3>输出面板</h3>
-            <p class="cell-body">构建与工具链日志统一收口，问题一眼可见。</p>
-          </article>
-          <article class="bento-cell cell-build">
-            <p class="cell-tag">BUILD</p>
-            <h3>项目配置</h3>
-            <p class="cell-body">Go 版本、构建目标、构建参数与并行任务数，按项目自定义。</p>
-          </article>
+        <div class="stage-rule" aria-hidden="true"></div>
+        <div class="stage-grid">
+          <div>
+            <p class="stage-no">3.0 · 构建</p>
+            <h2>构建发生在手机上，不在云端。</h2>
+            <p class="stage-body">proot + Alpine rootfs 在设备上构建出完整的 Go 工具链环境——golang 与 gopls 开箱内置，无需 root 权限，也不依赖云端。</p>
+            <p class="stage-body">构建与工具链日志统一收进输出面板；Go 版本、构建目标、构建参数、并行任务数，按项目自定义。</p>
+          </div>
+          <div class="stage-visual">
+            <figure class="code-fig">
+              <figcaption class="code-label">terminal</figcaption>
+              <pre><code><span class="c-prompt">$</span> <span class="c-cmd">go build ./...</span>
+<span class="c-prompt">$</span> <span class="c-cmd">./gostudio-demo</span>
+<span class="c-ok">hello from android</span></code></pre>
+            </figure>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- ============ 模板 ============ -->
-    <section id="templates" class="templates">
-      <div class="container templates-inner">
-        <div class="section-head">
-          <p class="section-label">TEMPLATES</p>
-          <h2>从一个模板开始，<br>而不是一个空文件夹。</h2>
-        </div>
-        <ul class="chip-row" aria-label="内置项目模板">
-          <li>Hello World</li>
-          <li>HTTP Server</li>
-          <li>CLI Tool</li>
-          <li>Web API</li>
-          <li>Gin</li>
-          <li>GORM</li>
-          <li>Cobra</li>
-          <li>Echo</li>
-        </ul>
-        <p class="templates-note">每个模板自动生成 go.mod 与入口文件，保存 go.mod 即可触发模块刷新。</p>
-      </div>
-    </section>
-
-    <!-- ============ 插件 ============ -->
-    <section id="plugins" class="plugins">
-      <div class="container plugins-grid">
-        <div class="plugins-copy">
-          <p class="section-label">PLUGINS</p>
-          <h2>数据包插件，<br>安全地扩展能力。</h2>
-          <p class="section-body">GoStudio 的插件不执行代码。一个 manifest 加能力目录，就是全部结构——当前支持 AI 技能扩展，模板与主题正在路上。</p>
-          <a class="text-link" href="https://github.com/by-yitong/gostudio-plugins" target="_blank" rel="noopener">浏览官方插件仓库 →</a>
-        </div>
-        <div class="plugin-tree" role="img" aria-label="插件目录结构示意">
-          <pre aria-hidden="true"><code><span class="pt-root">com.example.go-skills/</span>
-├── <span class="pt-file">manifest.json</span>   <span class="pt-c">← 必需</span>
-└── <span class="pt-dir">skills/</span>
-    └── <span class="pt-dir">go-bench/</span>
-        └── <span class="pt-file">SKILL.md</span></code></pre>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============ 数据带 ============ -->
-    <section class="stats-strip" aria-label="关键信息">
-      <div class="container stats-row">
-        <div class="stat"><strong>Android 8.0+</strong><span>最低系统版本</span></div>
-        <div class="stat"><strong>arm64-v8a</strong><span>原生打包目标</span></div>
-        <div class="stat"><strong>golang + gopls</strong><span>内置工具链</span></div>
-        <div class="stat"><strong>MIT</strong><span>开源协议</span></div>
-      </div>
-    </section>
-
-    <!-- ============ 下载 ============ -->
-    <section id="download" class="download">
+    <!-- 4.0 运行 -->
+    <section class="stage" id="stage-4">
       <div class="container">
-        <div class="download-card">
-          <div class="download-copy">
-            <h2>现在，在你的手机上写 Go。</h2>
-            <p>从 GitHub Releases 获取最新版本，或直接克隆源码自行构建。</p>
+        <div class="stage-rule" aria-hidden="true"></div>
+        <div class="stage-grid">
+          <div>
+            <p class="stage-no">4.0 · 运行</p>
+            <h2>写完即运行，不必先打包 APK。</h2>
+            <p class="stage-body">AndLua 式 App 运行：<code>layout.xml</code> 声明界面，<code>main.go</code> 编写逻辑。点击「运行」，GoStudio 先编译 Go 二进制，再在宿主界面内直接渲染布局、启动逻辑——改一行，再跑一次。</p>
+            <p class="stage-body">需要分发时，同样的布局与二进制也可以注入独立壳应用，打包成 APK。</p>
           </div>
-          <div class="download-actions">
-            <a class="btn btn-primary btn-lg" href="https://github.com/by-yitong/GoStudio/releases/latest" target="_blank" rel="noopener">下载最新版</a>
-            <a class="btn btn-ghost btn-lg" href="https://github.com/by-yitong/GoStudio" target="_blank" rel="noopener">GitHub 仓库</a>
+          <div class="stage-visual">
+            <figure class="code-fig">
+              <figcaption class="code-label">layout.xml</figcaption>
+              <pre><code><span class="c-kw">&lt;LinearLayout</span>
+    <span class="c-attr">orientation</span>=<span class="c-str">"vertical"</span>
+    <span class="c-attr">gravity</span>=<span class="c-str">"center"</span>
+    <span class="c-attr">padding</span>=<span class="c-str">"24dp"</span><span class="c-kw">&gt;</span>
+
+    <span class="c-kw">&lt;TextView</span>
+        <span class="c-attr">id</span>=<span class="c-str">"tv"</span>
+        <span class="c-attr">text</span>=<span class="c-str">"你好，GoStudio！"</span>
+        <span class="c-attr">textSize</span>=<span class="c-str">"24sp"</span> <span class="c-kw">/&gt;</span>
+
+    <span class="c-kw">&lt;Button</span>
+        <span class="c-attr">id</span>=<span class="c-str">"btn"</span>
+        <span class="c-attr">text</span>=<span class="c-str">"打招呼"</span> <span class="c-kw">/&gt;</span>
+
+<span class="c-kw">&lt;/LinearLayout&gt;</span></code></pre>
+            </figure>
+            <figure class="code-fig">
+              <figcaption class="code-label">main.go</figcaption>
+              <pre><code>app := appsdk.<span class="c-fn">Start</span>()
+tv := app.<span class="c-fn">Text</span>(<span class="c-str">"tv"</span>)
+
+app.<span class="c-fn">Button</span>(<span class="c-str">"btn"</span>).<span class="c-fn">OnClick</span>(<span class="c-kw">func</span>() {
+    tv.<span class="c-fn">SetText</span>(<span class="c-str">"你好，GoStudio"</span>)
+})
+
+app.<span class="c-fn">Run</span>()</code></pre>
+            </figure>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 插件 · 翻转分栏 -->
+    <section class="plugins" id="plugins">
+      <div class="container">
+        <div class="stage-rule" aria-hidden="true"></div>
+        <div class="plugins-grid">
+          <div class="stage-visual">
+            <figure class="code-fig">
+              <figcaption class="code-label">manifest.json</figcaption>
+              <pre><code>{
+  <span class="c-attr">"id"</span>: <span class="c-str">"com.example.go-skills"</span>,
+  <span class="c-attr">"name"</span>: <span class="c-str">"Go 进阶技能示例"</span>,
+  <span class="c-attr">"version"</span>: <span class="c-str">"1.0.0"</span>,
+  <span class="c-attr">"min_app_version"</span>: <span class="c-num">104</span>
+}</code></pre>
+            </figure>
+          </div>
+          <div class="plugins-copy">
+            <h2>插件是数据，不是代码。</h2>
+            <p>一个 <code>manifest.json</code> 加一个能力目录，就是插件的全部结构——不执行任何代码。当前支持 AI 技能（<code>skills/</code>）扩展，<code>templates/</code> 与 <code>themes/</code> 已预留。</p>
+            <p>在插件市场一键安装，或把目录打成 ZIP 本地导入；装完即用，可随时禁用或卸载。</p>
+            <a class="tlink" href="https://github.com/by-yitong/gostudio-plugins" target="_blank" rel="noopener">浏览官方插件仓库 →</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 规格 · F3 -->
+    <section class="spec" id="spec">
+      <div class="container">
+        <div class="stage-rule" aria-hidden="true"></div>
+        <h2>规格</h2>
+        <table class="spec-table">
+          <caption class="sr-only">GoStudio 规格一览</caption>
+          <tbody>
+            <tr><th scope="row">最新版本</th><td>v1.0.5</td><td>发布在 GitHub Releases</td></tr>
+            <tr><th scope="row">最低系统</th><td>Android 8.0</td><td>minSdk 26</td></tr>
+            <tr><th scope="row">打包架构</th><td>arm64-v8a</td><td>当前原生目标</td></tr>
+            <tr><th scope="row">工具链</th><td>golang · gopls</td><td>proot + Alpine rootfs 内置</td></tr>
+            <tr><th scope="row">编辑器</th><td>Sora</td><td>标签页 · 文件树 · 全局搜索</td></tr>
+            <tr><th scope="row">语言服务</th><td>gopls</td><td>补全 · 诊断 · 跳转 · 格式化</td></tr>
+            <tr><th scope="row">开源协议</th><td>MIT</td><td>源码托管在 GitHub</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 下载 -->
+    <section class="download" id="download">
+      <div class="container">
+        <div class="stage-rule" aria-hidden="true"></div>
+        <h2>下一步，装到手机上。</h2>
+        <p>最新 APK 发布在 GitHub Releases，下载安装即可；也可以克隆仓库，运行 <code>./gradlew assembleDebug</code> 自行构建。</p>
+        <div class="cta-row">
+          <a class="btn btn-fill" href="https://github.com/by-yitong/GoStudio/releases/latest" target="_blank" rel="noopener">下载最新版 →</a>
+          <a class="btn btn-outline" href="https://github.com/by-yitong/GoStudio" target="_blank" rel="noopener">查看源码</a>
         </div>
       </div>
     </section>
 
   </main>
 
-  <footer class="site-footer">
-    <div class="container footer-inner">
-      <p class="footer-brand">Go<span>Studio</span></p>
-      <nav class="footer-nav" aria-label="页脚">
-        <a href="https://github.com/by-yitong/GoStudio" target="_blank" rel="noopener">GitHub</a>
-        <a href="https://github.com/by-yitong/gostudio-plugins" target="_blank" rel="noopener">插件仓库</a>
-        <a href="https://github.com/xiaochenzaine/XCode" target="_blank" rel="noopener">致谢 XCode</a>
-      </nav>
-      <p class="footer-meta">MIT License · 基于 XCode 重构</p>
+  <!-- footer · Ft5 statement -->
+  <footer class="foot">
+    <div class="container">
+      <p class="foot-line">把下一次构建，交给你的手机。</p>
+      <div class="foot-meta">
+        <a class="wordmark" href="#top" aria-label="GoStudio 首页"><b>Go</b>Studio</a>
+        <nav class="foot-nav" aria-label="页脚链接">
+          <a href="https://github.com/by-yitong/GoStudio" target="_blank" rel="noopener">GitHub</a>
+          <a href="https://github.com/by-yitong/gostudio-plugins" target="_blank" rel="noopener">插件仓库</a>
+          <a href="https://github.com/xiaochenzaine/XCode" target="_blank" rel="noopener">致谢 XCode</a>
+        </nav>
+        <p class="foot-credit">© 2026 · MIT</p>
+      </div>
     </div>
   </footer>
 
+  <!-- sticky download bar · C4：滚过首屏后出现，抵达下载区后收起 -->
+  <aside class="cta-sticky" id="ctaSticky" aria-label="下载 GoStudio">
+    <p class="cta-sticky-meta">
+      <span class="version-chip">v1.0.5</span>
+      <span class="bar-detail">GoStudio · Android 8.0+ · arm64-v8a</span>
+    </p>
+    <a class="btn btn-fill" href="https://github.com/by-yitong/GoStudio/releases/latest" target="_blank" rel="noopener">下载最新版 →</a>
+  </aside>
+
   <script>
-    // 轻量入场：仅 Bento 单元格做一次交错显现
     (function () {
-      var cells = document.querySelectorAll('.bento-cell');
-      if (!('IntersectionObserver' in window)) return;
-      var io = new IntersectionObserver(function (entries) {
+      var bar = document.getElementById('ctaSticky');
+      if (!bar || !('IntersectionObserver' in window)) return;
+
+      var hero = document.querySelector('.hero');
+      var dock = document.querySelector('#download');
+      var foot = document.querySelector('.foot');
+      var pastHero = false, atDock = false, footNear = false;
+
+      function update() {
+        var show = pastHero && !(atDock || footNear);
+        bar.classList.toggle('is-shown', show);
+        bar.classList.toggle('is-hidden', !show);
+      }
+
+      new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) { pastHero = !e.isIntersecting; update(); });
+      }, { rootMargin: '-10% 0px 0px 0px' }).observe(hero);
+
+      var dockObserver = new IntersectionObserver(function (entries) {
         entries.forEach(function (e) {
-          if (e.isIntersecting) {
-            e.target.classList.add('is-in');
-            io.unobserve(e.target);
-          }
+          if (e.target === dock) atDock = e.isIntersecting;
+          else footNear = e.isIntersecting;
         });
-      }, { threshold: 0.15 });
-      cells.forEach(function (c) { io.observe(c); });
+        update();
+      }, { threshold: 0.05 });
+      dockObserver.observe(dock);
+      dockObserver.observe(foot);
     })();
   </script>
 </body>
