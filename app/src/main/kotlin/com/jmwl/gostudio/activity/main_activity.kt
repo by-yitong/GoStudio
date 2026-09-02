@@ -371,7 +371,7 @@ class main_activity : ComponentActivity() {
         reload_recent_projects()
         on_log("克隆完成：${project_dir.name}")
         app_toast.show(this, "项目已克隆: ${project_dir.name}", app_toast.LENGTH_SHORT)
-        open_editor(project_dir.name, project_dir.absolutePath)
+        open_editor(project_dir.name, project_dir.absolutePath, auto_tidy = true)
         return true
     }
 
@@ -388,11 +388,13 @@ class main_activity : ComponentActivity() {
         }
     }
 
-    private fun open_editor(project_name: String, project_path: String) {
+    private fun open_editor(project_name: String, project_path: String, auto_tidy: Boolean = false) {
         project_manager.ensure_project_clang_format(project_path)
         val intent = Intent(this, editor_activity::class.java).apply {
             putExtra("project_name", project_name)
             putExtra("project_path", project_path)
+            // 克隆的项目依赖未缓存，打开后自动 go mod tidy
+            if (auto_tidy) putExtra("auto_tidy", true)
         }
         startActivity(intent)
     }

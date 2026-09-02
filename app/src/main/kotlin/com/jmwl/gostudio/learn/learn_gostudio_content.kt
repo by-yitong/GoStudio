@@ -52,14 +52,14 @@ internal fun gostudio_learn_tracks(): List<learn_track> = listOf(
             learn_lesson(
                 id = "gostudio-app-events",
                 title = "组件与事件",
-                summary = "用生成代码功能快速绑定点击、长按、文本变化等事件。",
+                summary = "用可视化编辑器的事件功能快速绑定点击、长按、文本变化等事件。",
                 est_minutes = 6,
                 steps = listOf(
                     learn_step.concept(
                         "gostudio-app-events-c",
                         "常见事件",
                         listOf(
-                            learn_block.text("工作区右上角「更多 → 生成代码」会读取 `layout.xml` 中带 `id` 的组件，并按组件类型生成事件代码。"),
+                            learn_block.text("在 `layout.xml` 的可视化编辑器里选中带 `id` 的组件，点击「事件」即可按组件类型生成并跳转对应的事件代码。"),
                             learn_block.code(
                                 """
                                 app.OnClick("btn", func() {

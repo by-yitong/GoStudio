@@ -55,6 +55,8 @@ suspend fun install_go_toolchain(
         val ok = apk_update_and_install_go(onLog, onProgress)
         if (ok) {
             onLog("✅ ${mirror.name} 安装成功")
+            toolchain_manager.invalidate_go_probe()
+            toolchain_manager.ensure_default_go_env(onLog)
             return@withContext true
         }
         onLog("❌ ${mirror.name} 失败，切换下一个镜像源重试...")
@@ -80,7 +82,14 @@ suspend fun configure_best_apk_mirror(onLog: (String) -> Unit) {
 suspend fun install_go(
     onLog: (String) -> Unit,
     onProgress: (Int) -> Unit
-): Boolean = apk_install_with_best_mirror("go", onLog, onProgress)
+): Boolean {
+    val ok = apk_install_with_best_mirror("go", onLog, onProgress)
+    if (ok) {
+        toolchain_manager.invalidate_go_probe()
+        toolchain_manager.ensure_default_go_env(onLog)
+    }
+    return ok
+}
 
 /**
  * 单独安装/重装 gopls（经 go install）。
@@ -96,7 +105,7 @@ suspend fun install_gopls(
     onProgress(10)
     onLog("安装 gopls $GOPLS_VERSION（匹配 go 1.26）...")
     proot_manager.execute_command_with_environment(
-        command = "export GOPROXY=https://goproxy.cn,direct GOTOOLCHAIN=local && go install golang.org/x/tools/gopls@$GOPLS_VERSION",
+        command = "export GOPROXY=${goproxy_store.current()} GOTOOLCHAIN=local && go install golang.org/x/tools/gopls@$GOPLS_VERSION",
         working_dir = "/root",
         on_log = { onLog(it) }
     )
@@ -128,7 +137,7 @@ suspend fun install_garble(
 ): Boolean = withContext(Dispatchers.IO) {
     onLog("安装 garble...")
     proot_manager.execute_command_with_environment(
-        command = "export GOPROXY=https://goproxy.cn,direct && go install mvdan.cc/garble@latest",
+        command = "export GOPROXY=${goproxy_store.current()} && go install mvdan.cc/garble@latest",
         working_dir = "/home",
         on_log = { onLog(it) }
     )
@@ -187,7 +196,7 @@ private suspend fun apk_update_and_install_go(
     onLog("安装 gopls $GOPLS_VERSION（匹配 go 1.26，可能需要一两分钟）...")
     onProgress(80)
     val gopls_ok = proot_manager.execute_command_with_environment(
-        command = "export GOPROXY=https://goproxy.cn,direct GOTOOLCHAIN=local && go install golang.org/x/tools/gopls@$GOPLS_VERSION",
+        command = "export GOPROXY=${goproxy_store.current()} GOTOOLCHAIN=local && go install golang.org/x/tools/gopls@$GOPLS_VERSION",
         working_dir = "/root",
         on_log = { onLog(it) }
     )

@@ -4,6 +4,10 @@
 
 GoStudio 是一款运行在 Android 上的 Go 语言集成开发环境，目标是在移动设备上完成本地 Go 开发。它集成了代码编辑器、项目文件树、基于 go.mod 的项目结构、gopls 智能代码能力，以及基于 proot + Alpine rootfs 的工具链运行环境，可以直接在 Android 设备上编辑、构建和调试 Go 项目。
 
+### 交流
+
+QQ 群：1095682100，欢迎加入交流反馈。
+
 ### 功能特性
 
 - 从 GitHub/Gitee/GitLab 克隆 Go 项目（支持 HTTPS/SSH 地址、私有仓库登录、克隆进度与自动导入最近项目）
@@ -128,6 +132,10 @@ gopls 通过 proot + Alpine rootfs 工具链运行环境启动，用于提供 Go
 ## English
 
 GoStudio is an Android IDE focused on local Go language development on mobile devices. It combines a code editor, project file tree, go.mod-based project structure, gopls language features, and a proot + Alpine rootfs toolchain runtime (with golang/gopls bundled) so Go projects can be edited, built, and debugged directly on Android.
+
+### Community
+
+QQ Group: 1095682100 — join for discussion and feedback.
 
 ### Features
 

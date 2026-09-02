@@ -39,8 +39,24 @@ enum class ai_provider(
         listOf("claude-sonnet-4-5", "claude-opus-4", "claude-haiku-4", "claude-3-7-sonnet", "claude-3-5-haiku"));
 
     val is_openai_compatible: Boolean get() = this != ANTHROPIC
-    /** 是否支持 /v1/models（Anthropic 无标准端点，故不支持） */
-    val supports_model_list: Boolean get() = this != ANTHROPIC && this != CUSTOM
+    /** 模型列表可拉取：OpenAI 兼容端点有 GET /models，Anthropic 也有 /v1/models；个别中转不支持时由脚注诊断兜底 */
+    val supports_model_list: Boolean get() = true
+}
+
+/**
+ * 单个模型的能力标注（手动配置，端点 /models 不返回这些信息）。
+ * - [context_tokens]：模型上下文窗口（token），>0 时优先于全局 max_context_chars 用于历史截断
+ * - [supports_image] / [supports_video]：是否接收图片/视频输入（多模态）
+ */
+data class model_capabilities(
+    val context_tokens: Long = 0,
+    val supports_image: Boolean = false,
+    val supports_video: Boolean = false
+) {
+    /** 任一能力有值（用于判断是否落库、是否显示徽标） */
+    val is_empty: Boolean get() = context_tokens <= 0 && !supports_image && !supports_video
+    /** 多模态：图片或视频任一支持 */
+    val is_multimodal: Boolean get() = supports_image || supports_video
 }
 
 /**
@@ -59,7 +75,9 @@ data class provider_instance(
     /** 拉取/手填的模型列表缓存（候选 = 此列表 + 类型预置列表） */
     val models: List<String> = emptyList(),
     /** 用户隐藏的模型（从候选中排除，不删除） */
-    val hidden_models: List<String> = emptyList()
+    val hidden_models: List<String> = emptyList(),
+    /** 每个模型的能力标注（key=模型 id）：上下文长度、是否支持图片/视频输入 */
+    val model_caps: Map<String, model_capabilities> = emptyMap()
 ) {
     /** key 掩码摘要（列表行展示用），如 sk-abc1…wxyz */
     fun masked_key(): String = when {
@@ -150,6 +168,28 @@ fun default_state_for_provider(provider: ai_provider): ai_settings_state {
 /** 当前使用的实例（active id 失效时回退第一个） */
 fun ai_settings_state.active_provider_instance(): provider_instance? =
     instances.firstOrNull { it.id == active_instance_id } ?: instances.firstOrNull()
+
+/**
+ * 查某模型的能力标注：优先当前实例，再查同类型的其它实例
+ * （会话内切到同提供商的其它模型时也能命中）。
+ */
+fun ai_settings_state.model_capabilities_of(model: String): model_capabilities? {
+    if (model.isBlank()) return null
+    active_provider_instance()?.model_caps[model]?.let { return it }
+    return instances
+        .firstOrNull { it.provider == provider && it.model_caps.containsKey(model) }
+        ?.model_caps[model]
+}
+
+/**
+ * 实际生效的历史截断上限（字符）：模型级上下文长度优先（按 1 token ≈ 4 字符估算，
+ * 与 max_context_chars 默认值的换算一致），未标注时退回全局 max_context_chars。
+ */
+fun ai_settings_state.effective_context_chars(): Int {
+    val tokens = model_capabilities_of(model)?.context_tokens ?: 0
+    if (tokens <= 0) return max_context_chars
+    return (tokens * 4).coerceIn(1_000L, Int.MAX_VALUE.toLong()).toInt()
+}
 
 /** 把实例字段镜像到全局生效配置（ai_client / 会话栏切换读这些扁平字段） */
 private fun ai_settings_state.mirror_instance(instance: provider_instance): ai_settings_state = copy(
@@ -346,6 +386,15 @@ private fun instance_to_json(i: provider_instance): JsonObject {
     o.addProperty("enabled", i.enabled)
     o.add("models", JsonArray().apply { i.models.forEach { add(it) } })
     o.add("hidden_models", JsonArray().apply { i.hidden_models.forEach { add(it) } })
+    o.add("model_caps", JsonObject().apply {
+        i.model_caps.forEach { (model, caps) ->
+            add(model, JsonObject().apply {
+                addProperty("context_tokens", caps.context_tokens)
+                addProperty("image", caps.supports_image)
+                addProperty("video", caps.supports_video)
+            })
+        }
+    })
     return o
 }
 
@@ -354,12 +403,23 @@ private fun instance_from_json(o: JsonObject): provider_instance? = runCatching 
         id = o.get("id")?.takeIf { !it.isJsonNull }?.asString ?: java.util.UUID.randomUUID().toString(),
         label = o.get("label")?.takeIf { !it.isJsonNull }?.asString ?: "",
         provider = ai_provider.valueOf(o.get("provider").asString),
-        base_url = o.get("base_url")?.takeIf { !it.isJsonNull }?.asString ?: "",
-        model = o.get("model")?.takeIf { !it.isJsonNull }?.asString ?: "",
-        api_key = o.get("api_key")?.takeIf { !it.isJsonNull }?.asString ?: "",
+        // 读取时清洗：旧数据里可能存了粘贴带入的首尾空白/换行
+        base_url = (o.get("base_url")?.takeIf { !it.isJsonNull }?.asString ?: "").trim(),
+        model = (o.get("model")?.takeIf { !it.isJsonNull }?.asString ?: "").trim(),
+        api_key = (o.get("api_key")?.takeIf { !it.isJsonNull }?.asString ?: "").filterNot { it.isWhitespace() },
         enabled = o.get("enabled")?.takeIf { !it.isJsonNull }?.asBoolean ?: true,
         models = o.getAsJsonArray("models")?.mapNotNull { e -> e.takeIf { !e.isJsonNull }?.asString } ?: emptyList(),
-        hidden_models = o.getAsJsonArray("hidden_models")?.mapNotNull { e -> e.takeIf { !e.isJsonNull }?.asString } ?: emptyList()
+        hidden_models = o.getAsJsonArray("hidden_models")?.mapNotNull { e -> e.takeIf { !e.isJsonNull }?.asString } ?: emptyList(),
+        model_caps = o.getAsJsonObject("model_caps")?.entrySet()?.mapNotNull { (model, elem) ->
+            runCatching {
+                val c = elem.asJsonObject
+                model to model_capabilities(
+                    context_tokens = c.get("context_tokens")?.takeIf { !it.isJsonNull }?.asLong ?: 0L,
+                    supports_image = c.get("image")?.takeIf { !it.isJsonNull }?.asBoolean ?: false,
+                    supports_video = c.get("video")?.takeIf { !it.isJsonNull }?.asBoolean ?: false
+                )
+            }.getOrNull()
+        }?.toMap() ?: emptyMap()
     )
 }.getOrNull()
 

@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jmwl.gostudio.ui.theme.app_theme_provider
@@ -186,7 +187,8 @@ private fun compact_floating_icon_button(
 
 @Composable
 fun editor_symbol_bar(
-    on_insert: (String) -> Unit
+    on_insert: (String) -> Unit,
+    on_toggle_comment: () -> Unit
 ) {
 
     val colors = app_theme_provider.colors
@@ -263,6 +265,10 @@ fun editor_symbol_bar(
                                 )
                             }
                         }
+                        editor_symbol_comment_button(
+                            on_click = on_toggle_comment,
+                            height = 34.dp
+                        )
                         first_row_symbols.forEach { symbol ->
                             editor_symbol_button(
                                 symbol = symbol,
@@ -291,6 +297,7 @@ fun editor_symbol_bar(
                         .padding(horizontal = 8.dp, vertical = 5.dp),
                     horizontalArrangement = Arrangement.spacedBy(7.dp)
                 ) {
+                    editor_symbol_comment_button(on_click = on_toggle_comment)
                     symbols.forEachIndexed { index, symbol ->
                         editor_symbol_button(
                             symbol = symbol,
@@ -371,6 +378,33 @@ private fun editor_symbol_button(
             maxLines = 1,
             softWrap = false
         )
+    }
+}
+
+/** 注释切换按钮：给当前行（或选区各行）加/去 // 注释，样式对齐符号栏左侧的设置图标块。 */
+@Composable
+private fun editor_symbol_comment_button(
+    on_click: () -> Unit,
+    height: Dp = 32.dp
+) {
+    val colors = app_theme_provider.colors
+    Surface(
+        modifier = Modifier
+            .size(width = 44.dp, height = height)
+            .clickable { on_click() },
+        shape = RoundedCornerShape(8.dp),
+        color = colors.editor_button_bg
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(
+                "//",
+                color = colors.editor_text,
+                fontSize = 12.5.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                softWrap = false
+            )
+        }
     }
 }
 

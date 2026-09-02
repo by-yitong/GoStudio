@@ -175,6 +175,37 @@ object toolchain_manager {
     fun is_git_installed(): Boolean =
         File(toolchain_runtime_provider.paths().rootfs_dir, "usr/bin/git").isFile
 
+    /** guest 内 go env 配置文件的 host 路径（终端 HOME=/home → /home/.config/go/env）。 */
+    private fun go_env_config_file(): File =
+        File(toolchain_runtime_provider.paths().home_dir, ".config/go/env")
+
+    /** go env 文件里是否已有 GOPROXY 配置（用户自己改过则不再覆盖）。 */
+    private fun go_proxy_configured(): Boolean {
+        val file = go_env_config_file()
+        return file.isFile && file.readText().lineSequence().any { it.startsWith("GOPROXY=") }
+    }
+
+    /**
+     * 把国内模块代理持久化进 go env 配置文件（go env -w）。
+     *
+     * 交互终端经 /usr/bin/env -i 启动，不带 GOPROXY 环境变量，终端里 go 命令
+     * （go get / go install / go env）读的就是这份文件；不写则走默认
+     * proxy.golang.org，国内网络基本不可用。app 自跑的命令不受影响
+     * （[project_environment] 注入了同名环境变量，优先级高于此文件）。
+     *
+     * 装完 Go 后调用，旧版本升级后在 app 启动时补一次；已配置过则跳过（幂等）。
+     */
+    suspend fun ensure_default_go_env(on_log: (String) -> Unit = {}): Boolean {
+        if (go_proxy_configured()) return true
+        val goproxy = goproxy_store.current()
+        on_log("写入模块代理配置（${goproxy_store.current_display_name()}）...")
+        return proot_manager.execute_command_with_environment(
+            command = "go env -w GOPROXY=$goproxy GOSUMDB=${goproxy_store.sumdb_for(goproxy)} GOTOOLCHAIN=local",
+            working_dir = "/home",
+            on_log = on_log
+        )
+    }
+
     /**
      * 组装项目构建环境。
      *
@@ -187,13 +218,14 @@ object toolchain_manager {
 
         // GOROOT 动态匹配实际安装方式（apt=/usr/lib/go，手动=/usr/local/go）
         val goroot = go?.go_proot_dir ?: PROOT_GO_ROOT
+        val goproxy = goproxy_store.current()
         val environment = linkedMapOf(
             "GOSTUDIO_HOME" to PROOT_GOSTUDIO_HOME,
             "GOROOT" to goroot,
             "GOPATH" to "/home/go",
             "GOBIN" to PROOT_GOPATH_BIN,
-            "GOPROXY" to "https://goproxy.cn,direct",
-            "GOSUMDB" to "sum.golang.google.cn",
+            "GOPROXY" to goproxy,
+            "GOSUMDB" to goproxy_store.sumdb_for(goproxy),
             // 禁止 go 自动下载新工具链：proot 跑 toolchain 切换会段错误，强制用本地 go。
             "GOTOOLCHAIN" to "local",
             "CGO_ENABLED" to "0",

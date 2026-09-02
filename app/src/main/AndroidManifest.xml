@@ -7,7 +7,12 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     
     <!-- 应用数据在私有目录；公共文件按需交给系统文件选择器处理 -->
-    
+
+    <!-- 编译产物导出到公共 Download/gostudio/bin：Android 9 及以下需要写存储权限，10+ 走 MediaStore -->
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+
     <!-- 前台服务权限 -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />

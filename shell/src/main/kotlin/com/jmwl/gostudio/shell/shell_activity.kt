@@ -16,7 +16,6 @@ import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.text.Editable
 import android.text.TextWatcher
-import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.AbsListView
@@ -33,7 +32,6 @@ import android.widget.NumberPicker
 import android.widget.ProgressBar
 import android.widget.RatingBar
 import android.widget.Spinner
-import android.widget.ScrollView
 import android.widget.SeekBar
 import android.widget.TextClock
 import android.widget.TextView
@@ -64,28 +62,24 @@ class shell_activity : AppCompatActivity() {
     private lateinit var binary_file: File
     private val views_by_id = mutableMapOf<String, View>()
     private var bridge: standalone_bridge? = null
-    private var log_view: TextView? = null
-    private var log_scroll: ScrollView? = null
-    private var log_header: TextView? = null
-    private var log_expanded = true
     private val started = AtomicBoolean(false)
-    private val log_lines = ArrayDeque<String>()
     private lateinit var floating_windows: floating_window_manager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         com.google.android.material.color.DynamicColors.applyToActivityIfAvailable(this)
 
-        // 1. 复制 assets 到私有目录
+        // 1. 复制 assets 到私有目录（每次启动都覆盖：覆盖安装后 filesDir
+        //    会残留上一版的 app.bin/layout.xml，不覆盖就永远跑旧程序）
         val layout_file = File(filesDir, "layout.xml")
         binary_file = File(filesDir, "app.bin")
-        if (!layout_file.isFile) assets.open("app/layout.xml").use { input ->
+        assets.open("app/layout.xml").use { input ->
             layout_file.outputStream().use { input.copyTo(it) }
         }
-        if (!binary_file.isFile) assets.open("app/app.bin").use { input ->
+        assets.open("app/app.bin").use { input ->
             binary_file.outputStream().use { input.copyTo(it) }
         }
-        copy_asset_dir("app/images", File(filesDir, "images"))
+        copy_asset_dir("app/images", File(filesDir, "images"), overwrite = true)
         binary_file.setExecutable(true, false)
 
         // 2. 渲染布局
@@ -114,7 +108,6 @@ class shell_activity : AppCompatActivity() {
         b.start(binary_file.absolutePath, handler = this)
         b.send_lifecycle("create")
         b.send_lifecycle("start")
-        append_log("已启动")
     }
 
     override fun onResume() {
@@ -141,7 +134,7 @@ class shell_activity : AppCompatActivity() {
     }
 
     private fun copy_asset_dir(asset_path: String, target_dir: File, overwrite: Boolean = false) {
-        if (!target_dir.isDirectory) target_dir.mkdirs() else return
+        if (!target_dir.isDirectory) target_dir.mkdirs()
         assets.list(asset_path)?.forEach { name ->
             val source = "$asset_path/$name"
             val target = File(target_dir, name)
@@ -230,58 +223,15 @@ class shell_activity : AppCompatActivity() {
         frame.addView(root, FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT
         ))
-
-        val density = resources.displayMetrics.density
-        val panel = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setBackgroundColor(0xFF1B1C1F.toInt())
-        }
-        val header = TextView(this).apply {
-            text = "运行日志    ▾"
-            setTextColor(0xFF5CCFE6.toInt())
-            textSize = 12f
-            setPadding((density * 14).toInt(), (density * 9).toInt(), (density * 14).toInt(), (density * 9).toInt())
-            setOnClickListener {
-                log_expanded = !log_expanded
-                log_scroll?.visibility = if (log_expanded) View.VISIBLE else View.GONE
-                text = if (log_expanded) "运行日志    ▾" else "运行日志    ▸"
-            }
-        }
-        log_header = header
-        val scroll = ScrollView(this)
-        log_scroll = scroll
-        log_view = TextView(this).apply {
-            setTextIsSelectable(true)
-            setTextColor(0xFFE6E6E6.toInt())
-            textSize = 11f
-            setPadding((density * 14).toInt(), (density * 8).toInt(), (density * 14).toInt(), (density * 12).toInt())
-        }
-        scroll.addView(log_view, ViewGroup.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
-        ))
-        scroll.setBackgroundColor(0xFFF0101013.toInt())
-        panel.addView(header, LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
-        ))
-        panel.addView(scroll, LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, (density * 136).toInt()
-        ))
-        frame.addView(panel, FrameLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-            Gravity.BOTTOM
-        ))
         return frame
     }
 
+    /**
+     * 独立打包的成品 App 不显示调试日志面板（运行日志只在 GoStudio 运行模式里展示），
+     * 这里仅落到 logcat 供 adb 排查。
+     */
     private fun append_log(line: String) {
-        val view = log_view ?: return
-        synchronized(log_lines) {
-            log_lines.addLast(line)
-            while (log_lines.size > 200) log_lines.removeFirst()
-            view.text = log_lines.joinToString("\n")
-        }
-        log_scroll?.post { log_scroll?.fullScroll(ScrollView.FOCUS_DOWN) }
+        android.util.Log.d("GoStudioShell", line)
     }
 
     // ---- Go -> 界面 ----
@@ -640,7 +590,14 @@ class standalone_bridge(
     private val write_lock = Any()
 
     fun start(binary_path: String, handler: shell_activity) {
-        val proc = ProcessBuilder(binary_path).start()
+        val proc = ProcessBuilder(binary_path).apply {
+            val dns = system_dns_servers(handler)
+            if (dns.isNotEmpty()) environment()["GOSTUDIO_DNS"] = dns.joinToString(",")
+            // proot 里以 GOOS=linux 编译的纯 Go 二进制只会找 Linux 证书路径
+            // （Android 上不存在），HTTPS 会报 x509 unknown authority；
+            // 显式指向 Android 系统 CA 目录（Android 14+ 在 conscrypt apex，更早版本在 /system）
+            certificate_dir()?.let { environment()["SSL_CERT_DIR"] = it }
+        }.start()
         process = proc
         writer = java.io.BufferedWriter(
             java.io.OutputStreamWriter(proc.outputStream, Charsets.UTF_8)
@@ -681,6 +638,31 @@ class standalone_bridge(
             } catch (_: Exception) {
             }
         }.apply { isDaemon = true; start() }
+    }
+
+    /**
+     * Android 没有 /etc/resolv.conf，Go 裸进程解析不了域名。
+     * 取系统 DNS 服务器（活动网络优先，IPv4 优先）经 GOSTUDIO_DNS 传给 Go 进程，
+     * appsdk 的 netdns.go 会用它接管 net.DefaultResolver。
+     */
+    /** Android 系统 CA 证书目录：Go 的 x509 经 SSL_CERT_DIR 读取。 */
+    private fun certificate_dir(): String? =
+        listOf("/apex/com.android.conscrypt/cacerts", "/system/etc/security/cacerts")
+            .firstOrNull { java.io.File(it).isDirectory }
+
+    private fun system_dns_servers(context: android.content.Context): List<String> {
+        val cm = context.getSystemService(android.net.ConnectivityManager::class.java) ?: return emptyList()
+        val active = runCatching { cm.activeNetwork }.getOrNull()
+        val servers = runCatching { cm.allNetworks }.getOrDefault(emptyArray())
+            .sortedByDescending { it == active }
+            .flatMap { network ->
+                runCatching { cm.getLinkProperties(network)?.dnsServers ?: emptyList() }
+                    .getOrDefault(emptyList())
+            }
+            .mapNotNull { it.hostAddress }
+            .distinct()
+        val ipv4 = servers.filter { !it.contains(':') }
+        return (if (ipv4.isNotEmpty()) ipv4 else servers).take(3)
     }
 
     fun send_event(id: String, event: String, text: String = "", number: Double = 0.0, checked: Boolean = false) {

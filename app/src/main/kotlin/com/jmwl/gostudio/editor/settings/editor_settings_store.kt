@@ -52,6 +52,7 @@ internal fun load_editor_settings(context: Context): editor_settings_state {
         gopls_translate_documentation = prefs.getBoolean("gopls_translate_documentation", defaults.gopls_translate_documentation),
         gopls_translation_endpoint = translation_endpoint,
         gopls_translation_api_key = translation_api_key,
+        pack_auto_install = prefs.getBoolean("pack_auto_install", defaults.pack_auto_install),
         font_ligatures = prefs.getBoolean("font_ligatures", defaults.font_ligatures),
         font_size = prefs.getFloat("font_size", defaults.font_size).coerceIn(10f, 24f),
         tab_size = prefs.getInt("tab_size", defaults.tab_size).coerceIn(2, 8),
@@ -87,6 +88,7 @@ internal fun save_editor_settings(context: Context, settings: editor_settings_st
         .putBoolean("gopls_translate_documentation", settings.gopls_translate_documentation)
         .putString("gopls_translation_endpoint", settings.gopls_translation_endpoint.trim())
         .putBoolean("gopls_migrated", true)
+        .putBoolean("pack_auto_install", settings.pack_auto_install)
         .putBoolean("font_ligatures", settings.font_ligatures)
         .putFloat("font_size", settings.font_size)
         .putInt("tab_size", settings.tab_size)

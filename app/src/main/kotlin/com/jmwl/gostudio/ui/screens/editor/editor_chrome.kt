@@ -273,20 +273,19 @@ fun editor_top_bar(
     drawer_fraction: () -> Float = { 0f },
     on_build: () -> Unit,
     on_run: () -> Unit,
-    is_layout_xml: Boolean = false,
+    is_xml_file: Boolean = false,
     is_markdown_file: Boolean = false,
     markdown_preview_enabled: Boolean = false,
     on_toggle_markdown_mode: () -> Unit = {},
     on_open_designer: () -> Unit = {},
     on_test: () -> Unit = {},
     on_pack: () -> Unit = {},
+    on_tidy: () -> Unit = {},
     build_running: Boolean,
     build_stopping: Boolean,
     on_toggle_read_only: () -> Unit = {},
     on_open_ai: () -> Unit = {},
-    on_open_project_config: () -> Unit = {},
-    is_app_project: Boolean = false,
-    on_generate_code: () -> Unit = {}
+    on_open_project_config: () -> Unit = {}
 ) {
     val colors = app_theme_provider.colors
     val accent = MaterialTheme.colorScheme.primary
@@ -353,7 +352,7 @@ fun editor_top_bar(
                 )
             }
 
-            if (is_layout_xml) {
+            if (is_xml_file) {
                 editor_top_bar_icon_button(
                     icon = Icons.Default.DesignServices,
                     content_description = "可视化编辑",
@@ -396,20 +395,18 @@ fun editor_top_bar(
                             on_test()
                         }
                         editor_menu_item(
+                            icon = Icons.Default.CleaningServices,
+                            label = "tidy"
+                        ) {
+                            more_menu_open = false
+                            on_tidy()
+                        }
+                        editor_menu_item(
                             icon = Icons.Default.Archive,
                             label = "打包 APK"
                         ) {
                             more_menu_open = false
                             on_pack()
-                        }
-                        if (is_app_project) {
-                            editor_menu_item(
-                                icon = Icons.Default.AutoFixHigh,
-                                label = "生成代码"
-                            ) {
-                                more_menu_open = false
-                                on_generate_code()
-                            }
                         }
                         editor_menu_divider()
                     }

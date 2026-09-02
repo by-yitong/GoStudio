@@ -22,6 +22,13 @@ import java.util.zip.ZipOutputStream
  */
 object apk_packer {
 
+    private const val SHELL_PACKAGE = "com.jmwl.gostudio.shell"
+    // 壳 Activity 在 DEX 里的真实类名，包名替换时必须保留，否则打出来的 APK 点不开
+    private val SHELL_CLASS_NAMES = setOf(
+        "com.jmwl.gostudio.shell.shell_activity",
+        "com.jmwl.gostudio.shell.floating_window_manager"
+    )
+
     fun pack(
         context: Context,
         layout_file: File,
@@ -30,6 +37,7 @@ object apk_packer {
         app_name: String = "App",
         package_name: String = "",
         version_name: String = "",
+        version_code: Int = 1,
         icon_file: File? = null,
         image_dir: File? = null,
         float_dir: File? = null
@@ -48,7 +56,7 @@ object apk_packer {
 
         // 3. 改写 Manifest（名称/包名/版本）
         val rewritten = File(work_dir, "rewritten.apk")
-        rewrite_manifest(injected, rewritten, app_name, package_name, version_name)
+        rewrite_manifest(injected, rewritten, app_name, package_name, version_name, version_code)
 
         // 4. 替换图标
         val with_icon = if (icon_file != null && icon_file.isFile) {
@@ -117,8 +125,21 @@ object apk_packer {
         zos.closeEntry()
     }
 
-    /** 重写 AndroidManifest.xml 中的 label/package/versionName 字符串。 */
-    private fun rewrite_manifest(input: File, output: File, app_name: String, package_name: String, version_name: String) {
+    /**
+     * 重写 AndroidManifest.xml 中的 label/package/versionName 字符串与 versionCode。
+     *
+     * 包名除等值替换外还做前缀替换：provider 授权（如
+     * com.jmwl.gostudio.shell.androidx-startup）和动态注册权限声明同样带壳包名，
+     * 不换的话两个项目打出的 APK 会因 authorities 冲突装不到同一台设备上。
+     */
+    private fun rewrite_manifest(
+        input: File,
+        output: File,
+        app_name: String,
+        package_name: String,
+        version_name: String,
+        version_code: Int
+    ) {
         // 先解出 manifest，改字符串池，再整包重写
         val rewritten_apk = File(output.parentFile, "manifest-only.apk")
         ZipFile(input).use { zf ->
@@ -126,10 +147,18 @@ object apk_packer {
             val manifest_bytes = zf.getInputStream(manifest_entry).readBytes()
             val replacements = buildMap {
                 put("App", app_name)
-                if (package_name.isNotBlank()) put("com.jmwl.gostudio.shell", package_name)
+                if (package_name.isNotBlank()) put(SHELL_PACKAGE, package_name)
                 if (version_name.isNotBlank()) put("1.0", version_name)
             }
-            val new_manifest = binary_manifest_editor.replace_strings(manifest_bytes, replacements)
+            val prefix_replacements = if (package_name.isNotBlank()) {
+                mapOf(SHELL_PACKAGE to package_name)
+            } else emptyMap()
+            var new_manifest = binary_manifest_editor.replace_strings(
+                manifest_bytes, replacements, prefix_replacements, SHELL_CLASS_NAMES
+            )
+            if (version_code in 1..2_000_000_000) {
+                new_manifest = binary_manifest_editor.set_version_code(new_manifest, version_code)
+            }
 
             ZipOutputStream(FileOutputStream(rewritten_apk)).use { zos ->
                 val entries = zf.entries()

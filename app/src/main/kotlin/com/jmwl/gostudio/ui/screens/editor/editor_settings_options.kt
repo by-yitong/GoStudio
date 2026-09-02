@@ -160,6 +160,17 @@ internal fun editor_settings_switch_groups(settings: editor_settings_state): Lis
             )
         ),
         editor_settings_switch_group(
+            title = "打包",
+            items = listOf(
+                editor_settings_switch_item(
+                    title = "打包后自动安装",
+                    description = "关闭后 APK 导出到 Download/gostudio/apks",
+                    checked = settings.pack_auto_install,
+                    update = { value -> settings.copy(pack_auto_install = value) }
+                )
+            )
+        ),
+        editor_settings_switch_group(
             title = "gopls",
             items = listOf(
                 editor_settings_switch_item(

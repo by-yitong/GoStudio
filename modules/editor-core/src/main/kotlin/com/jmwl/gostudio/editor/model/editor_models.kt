@@ -32,6 +32,7 @@ data class editor_settings_state(
     val gopls_translate_documentation: Boolean = true,
     val gopls_translation_endpoint: String = gostudio_backend_config.TRANSLATION_BASE_URL,
     val gopls_translation_api_key: String = gostudio_backend_config.TRANSLATION_BACKEND_KEY,
+    val pack_auto_install: Boolean = true,
     val font_ligatures: Boolean = true,
     val font_size: Float = 14f,
     val tab_size: Int = 4,

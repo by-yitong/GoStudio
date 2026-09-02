@@ -23,6 +23,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.SystemUpdateAlt
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
@@ -134,6 +136,12 @@ fun main_about_screen(
                         "https://github.com/by-yitong/GoStudio"
                     ),
                     about_link_item(
+                        Icons.Default.Groups,
+                        "QQ 交流群",
+                        "1095682100（点击复制群号）",
+                        copy_value = "1095682100"
+                    ),
+                    about_link_item(
                         Icons.Default.BugReport,
                         "问题反馈",
                         "通过 GitHub Issues 提交问题",
@@ -175,7 +183,8 @@ private data class about_link_item(
     val icon: ImageVector,
     val title: String,
     val subtitle: String,
-    val url: String
+    val url: String? = null,
+    val copy_value: String? = null
 )
 
 @Composable
@@ -216,9 +225,23 @@ private fun about_link_row(
             .fillMaxWidth()
            .clip(shape)
             .background(colors.card_bg)
-           .clickable {
-               runCatching {
-                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(item.url)))
+            .clickable {
+                val url = item.url
+                val copy_value = item.copy_value
+                when {
+                    url != null -> runCatching {
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                    }
+                    copy_value != null -> {
+                        val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
+                            as android.content.ClipboardManager
+                        clipboard.setPrimaryClip(android.content.ClipData.newPlainText(item.title, copy_value))
+                        android.widget.Toast.makeText(
+                            context,
+                            "已复制：$copy_value",
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
+                    }
                 }
             }
             .heightIn(min = 54.dp)
@@ -262,7 +285,11 @@ private fun about_link_row(
         }
 
         Icon(
-            imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+            imageVector = if (item.copy_value != null) {
+                Icons.Default.ContentCopy
+            } else {
+                Icons.AutoMirrored.Filled.OpenInNew
+            },
             contentDescription = null,
             tint = colors.card_text_subtitle.copy(alpha = 0.36f),
             modifier = Modifier.size(14.dp)

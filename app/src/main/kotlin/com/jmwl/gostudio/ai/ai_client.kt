@@ -31,6 +31,11 @@ interface ai_stream_callback {
 class ai_client(
     private val settings: ai_settings_state
 ) {
+    // 粘贴的 key/URL/模型名常带首尾空格换行（旧数据也可能存了带空白的），发请求前统一裁掉
+    private val base_url = settings.base_url.trim()
+    private val api_key = settings.api_key.trim()
+    private val model = settings.model.trim()
+
     private val gson = Gson()
     private val json_media_type = "application/json; charset=utf-8".toMediaType()
 
@@ -68,15 +73,24 @@ class ai_client(
     }
 
     /**
-     * 拉取可用模型列表（OpenAI 兼容 GET /models）。
-     * 适用于智谱/DeepSeek/Kimi/OpenAI/xAI；Anthropic 无此端点不应调用。
+     * 拉取可用模型列表。OpenAI 兼容端点 GET /models（Bearer）；
+     * Anthropic 也有 /v1/models（x-api-key + anthropic-version，默认分页 20 条故带 limit）。
+     * 两者的响应都是 data[].id 结构，解析方式一致。
      * @return 模型 id 排序列表；失败抛异常由调用方提示
      */
     fun fetch_models(): List<String> {
-        val url = settings.base_url.trimEnd('/') + "/models"
+        val is_anthropic = settings.provider == ai_provider.ANTHROPIC
+        val url = base_url.trimEnd('/') + "/models" + if (is_anthropic) "?limit=1000" else ""
         val request = Request.Builder()
             .url(url)
-            .header("Authorization", "Bearer ${settings.api_key}")
+            .apply {
+                if (is_anthropic) {
+                    header("x-api-key", api_key)
+                    header("anthropic-version", "2023-06-01")
+                } else {
+                    header("Authorization", "Bearer ${api_key}")
+                }
+            }
             .header("Accept", "application/json")
             .get()
             .build()
@@ -102,13 +116,13 @@ class ai_client(
         val started = System.currentTimeMillis()
         if (settings.provider == ai_provider.ANTHROPIC) {
             val payload = linkedMapOf<String, Any>(
-                "model" to settings.model,
+                "model" to model,
                 "max_tokens" to 64,
                 "messages" to listOf(mapOf("role" to "user", "content" to "连接测试，请只回复两个字：可用"))
             )
             val request = Request.Builder()
-                .url(settings.base_url.trimEnd('/') + "/messages")
-                .header("x-api-key", settings.api_key)
+                .url(base_url.trimEnd('/') + "/messages")
+                .header("x-api-key", api_key)
                 .header("anthropic-version", "2023-06-01")
                 .header("Content-Type", "application/json")
                 .post(gson.toJson(payload).toRequestBody(json_media_type))
@@ -125,13 +139,13 @@ class ai_client(
             }
         }
         val payload = linkedMapOf<String, Any>(
-            "model" to settings.model,
+            "model" to model,
             "max_tokens" to 64,
             "messages" to listOf(mapOf("role" to "user", "content" to "连接测试，请只回复两个字：可用"))
         )
         val request = Request.Builder()
-            .url(settings.base_url.trimEnd('/') + "/chat/completions")
-            .header("Authorization", "Bearer ${settings.api_key}")
+            .url(base_url.trimEnd('/') + "/chat/completions")
+            .header("Authorization", "Bearer ${api_key}")
             .header("Content-Type", "application/json")
             .post(gson.toJson(payload).toRequestBody(json_media_type))
             .build()
@@ -148,11 +162,11 @@ class ai_client(
 
     // ============ OpenAI 兼容 ============
     private suspend fun stream_openai(messages: List<ai_message>, tools: List<Map<String, Any>>, callback: ai_stream_callback) {
-        val url = settings.base_url.trimEnd('/') + "/chat/completions"
+        val url = base_url.trimEnd('/') + "/chat/completions"
         val body = build_request_body(messages, tools)
         val request = Request.Builder()
             .url(url)
-            .header("Authorization", "Bearer ${settings.api_key}")
+            .header("Authorization", "Bearer ${api_key}")
             .header("Content-Type", "application/json")
             .header("Accept", "text/event-stream")
             .post(body.toRequestBody(json_media_type))
@@ -171,7 +185,7 @@ class ai_client(
 
     private fun build_request_body(messages: List<ai_message>, tools: List<Map<String, Any>>): String {
         val payload = linkedMapOf<String, Any>(
-            "model" to settings.model,
+            "model" to model,
             "messages" to messages.map { it.to_api_map() },
             "stream" to true
         )
@@ -221,7 +235,7 @@ class ai_client(
     // tool 结果作为 user 消息的 content block（type=tool_result）；
     // tool 调用作为 assistant 的 content block（type=tool_use）。
     private suspend fun stream_anthropic(messages: List<ai_message>, tools: List<Map<String, Any>>, callback: ai_stream_callback) {
-        val url = settings.base_url.trimEnd('/') + "/messages"
+        val url = base_url.trimEnd('/') + "/messages"
         // 分离 system（第一条 system 消息）和对话消息
         val system_text = messages.firstOrNull { it.role == ai_message_role.SYSTEM }?.text ?: ""
         val conversation = messages.filter { it.role != ai_message_role.SYSTEM }
@@ -229,7 +243,7 @@ class ai_client(
         val body = build_anthropic_body(system_text, conversation, tools)
         val request = Request.Builder()
             .url(url)
-            .header("x-api-key", settings.api_key)
+            .header("x-api-key", api_key)
             .header("anthropic-version", "2023-06-01")
             .header("Content-Type", "application/json")
             .post(body.toRequestBody(json_media_type))
@@ -249,7 +263,7 @@ class ai_client(
         // Anthropic 要求：连续同角色消息必须合并（多个 tool 结果都是 user 角色，不能 user-user 相邻）
         val merged = merge_consecutive_same_role(conversation)
         val payload = linkedMapOf<String, Any>(
-            "model" to settings.model,
+            "model" to model,
             "max_tokens" to 8192, // Anthropic 必填
             "system" to system,
             "stream" to true,

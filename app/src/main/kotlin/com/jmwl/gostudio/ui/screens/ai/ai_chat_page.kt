@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jmwl.gostudio.ai.ai_agent_loop
 import com.jmwl.gostudio.ai.ai_provider
+import com.jmwl.gostudio.ai.model_capabilities_of
 import com.jmwl.gostudio.ui.theme.app_theme_provider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -114,10 +115,12 @@ fun ai_chat_page(
         }
     }
 
-    // 新消息 or 流式增长时自动滚到底
-    LaunchedEffect(agent.messages.size, last_text_len) {
+    // 新消息 or 流式增长 or 等待气泡出现时自动滚到底
+    LaunchedEffect(agent.messages.size, last_text_len, is_running) {
         if (agent.messages.isNotEmpty()) {
-            list_state.animateScrollToItem(agent.messages.size - 1)
+            // 等待气泡是列表尾部的额外 item：显示中滚到它，否则滚到最后一条消息
+            val waiting = is_running && agent.messages.none { it.streaming }
+            list_state.animateScrollToItem(agent.messages.size - if (waiting) 0 else 1)
         }
     }
 
@@ -206,8 +209,14 @@ fun ai_chat_page(
             if (!name.contains('.')) name += ".png"
             val target = java.io.File(upload_target_dir(), name)
             runCatching { target.writeBytes(bytes) }
+            // 模型能力标注了不支持图片时提醒（未标注的不打扰）
+            val image_caps = com.jmwl.gostudio.ai.cached_ai_settings(context)
+                .model_capabilities_of(current_model)?.supports_image
             withContext(Dispatchers.Main) {
                 append_attachment(name, "[图片已保存到项目: ${target.absolutePath}]")
+                if (image_caps == false) {
+                    Toast.makeText(context, "当前模型未开启图片输入，图片仅以文件路径附加", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
@@ -287,6 +296,10 @@ fun ai_chat_page(
                                 { new_text -> agent.edit_and_resend_user(index, new_text) }
                             } else null
                         )
+                    }
+                    // agent 运行中但还没有流式占位消息（发送后到占位插入前、工具轮次之间）：显示等待气泡
+                    if (is_running && agent.messages.none { it.streaming }) {
+                        item(key = "waiting-bubble") { ai_waiting_bubble() }
                     }
                 }
             }

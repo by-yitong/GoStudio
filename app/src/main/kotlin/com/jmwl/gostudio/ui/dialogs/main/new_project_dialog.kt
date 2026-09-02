@@ -65,12 +65,12 @@ fun new_project_dialog(
     val is_app_template = selected_template == "app-ui"
 
     val templates = listOf(
-        template_item("app-ui", "App 界面", Icons.Default.Smartphone, "AndLua 式布局 + Go 逻辑，直接在宿主内运行"),
         template_item("hello", "Hello World", Icons.Default.PlayArrow, "最简 main.go，打印 Hello"),
         template_item("cli", "CLI 工具", Icons.Default.Terminal, "os.Args 命令行工具"),
         template_item("database", "数据库", Icons.Default.Storage, "database/sql 与 SQLite 示例"),
         template_item("gin", "Gin", Icons.Default.Rocket, "Gin 路由与 JSON API"),
-        template_item("gorm", "GORM", Icons.Default.TableChart, "GORM 模型与 CRUD")
+        template_item("gorm", "GORM", Icons.Default.TableChart, "GORM 模型与 CRUD"),
+        template_item("app-ui", "App 界面", Icons.Default.Smartphone, "AndLua 式布局 + Go 逻辑，直接在宿主内运行")
     )
 
     var project_name by remember { mutableStateOf("") }

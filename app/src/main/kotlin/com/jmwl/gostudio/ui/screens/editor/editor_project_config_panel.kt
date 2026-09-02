@@ -37,10 +37,13 @@ import com.jmwl.gostudio.toolchain.toolchain_manager
 import com.jmwl.gostudio.ui.theme.app_theme_provider
 
 @Composable
-fun editor_project_config_panel(
+internal fun editor_project_config_panel(
     project_root_path: String,
     is_app_project: Boolean = false,
     on_apply: (project_ide_config, () -> Unit) -> Unit,
+    on_compile: (project_ide_config) -> Unit = {},
+    on_compile_cancel: () -> Unit = {},
+    compile_state: editor_compile_dialog_state? = null,
     modifier: Modifier = Modifier
 ) {
     val colors = app_theme_provider.colors
@@ -92,9 +95,20 @@ fun editor_project_config_panel(
                 project_config_extra_args_card(
                     value = config.app.version_name,
                     title = "版本名",
-                    subtitle = "如 1.0.0",
+                    subtitle = "如 1.0.0，展示给用户看的版本",
                     placeholder = "1.0.0",
                     on_change = { v -> config = config.copy(app = config.app.copy(version_name = v)) }
+                )
+                project_config_extra_args_card(
+                    value = config.app.version_code.toString(),
+                    title = "版本号",
+                    subtitle = "内部版本 versionCode，整数；升级安装时需大于已装版本",
+                    placeholder = "1",
+                    on_change = { v ->
+                        config.app.copy(
+                            version_code = v.trim().filter { it.isDigit() }.toIntOrNull()?.coerceIn(1, 2_000_000_000) ?: 1
+                        ).let { app -> config = config.copy(app = app) }
+                    }
                 )
                 project_config_extra_args_card(
                     value = config.app.icon_path,
@@ -200,6 +214,61 @@ fun editor_project_config_panel(
             enabled = has_changes,
             on_click = { on_apply(config) { saved_config = config } }
         )
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        project_config_compile_card(
+            goos = config.build.goos,
+            goarch = config.build.goarch,
+            enabled = compile_state?.running != true,
+            on_click = { on_compile(config) }
+        )
+    }
+
+    compile_state?.let { state ->
+        editor_compile_log_dialog(state = state, on_cancel = on_compile_cancel)
+    }
+}
+
+/** 底部「编译」入口：按面板当前 GOOS/GOARCH 交叉编译，产物自动导出到 Download/gostudio。 */
+@Composable
+private fun project_config_compile_card(
+    goos: String,
+    goarch: String,
+    enabled: Boolean,
+    on_click: () -> Unit
+) {
+    val colors = app_theme_provider.colors
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = colors.card_bg),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(enabled = enabled, onClick = on_click)
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            project_config_icon(Icons.Default.Build)
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = if (enabled) "编译" else "编译中...",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = colors.card_text_title
+                )
+                Text(
+                    text = "目标 $goos/$goarch · 产物导出到 Download/gostudio/bin",
+                    fontSize = 10.sp,
+                    lineHeight = 12.sp,
+                    color = colors.card_text_subtitle
+                )
+            }
+        }
     }
 }
 

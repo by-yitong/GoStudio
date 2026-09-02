@@ -65,6 +65,7 @@ fun main_theme_settings_screen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding_values)
+                .imePadding()
                 .verticalScroll(rememberScrollState())
         ) {
             Spacer(modifier = Modifier.height(18.dp))

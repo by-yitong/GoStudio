@@ -14,12 +14,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -60,6 +62,8 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -86,7 +90,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
@@ -96,6 +102,7 @@ import androidx.compose.ui.unit.sp
 import com.jmwl.gostudio.ai.ai_client
 import com.jmwl.gostudio.ai.ai_provider
 import com.jmwl.gostudio.ai.ai_settings_state
+import com.jmwl.gostudio.ai.model_capabilities
 import com.jmwl.gostudio.ai.provider_instance
 import com.jmwl.gostudio.ai.with_active_instance
 import com.jmwl.gostudio.ai.with_instance
@@ -130,15 +137,17 @@ fun ai_settings_screen(
     // 系统返回键：子页打开时先回 AI 主页，而不是退出整个设置路由
     BackHandler(enabled = sub_page != null) { sub_page = null }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-        ) {
-            // 顶栏标题（与返回键同行）
+    // 边到边模式下 adjustResize 不压缩窗口，键盘遮挡要靠 imePadding 自己让位
+    Box(modifier = Modifier.fillMaxSize().imePadding()) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            // 固定顶栏：内容上滑时标题与返回键仍可见
             sub_page_top_bar("AI 设置", on_back)
 
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+            ) {
             Spacer(modifier = Modifier.height(24.dp))
 
             // 4 个菜单入口
@@ -199,6 +208,7 @@ fun ai_settings_screen(
             }
 
             Spacer(modifier = Modifier.height(40.dp))
+            }
         }
 
         // 子页覆盖层
@@ -311,9 +321,8 @@ private fun ai_model_settings_screen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-        ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            // 固定顶栏：列表上滑时「添加提供商」仍可见
             om_top_bar(
                 colors = colors, title = "模型配置", on_back = on_back,
                 trailing = {
@@ -323,6 +332,9 @@ private fun ai_model_settings_screen(
                 }
             )
 
+            Column(
+                modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())
+            ) {
             if (settings.instances.isEmpty()) {
                 // 空态（对应 OpenMinis "No providers configured"）
                 Column(
@@ -372,6 +384,7 @@ private fun ai_model_settings_screen(
             }
 
             Spacer(modifier = Modifier.height(96.dp))
+            }
         }
 
         // 实例详情覆盖层
@@ -538,6 +551,8 @@ private fun ai_provider_detail_screen(
     var test_result by remember { mutableStateOf<Triple<Boolean, String, Long>?>(null) }
     var add_model_open by remember { mutableStateOf(false) }
     var add_model_input by remember { mutableStateOf("") }
+    // 正在编辑能力的模型 id（null=关闭弹窗）
+    var caps_edit_model by remember { mutableStateOf<String?>(null) }
 
     fun update(transform: (provider_instance) -> provider_instance) = on_update(transform(instance))
 
@@ -598,11 +613,13 @@ private fun ai_provider_detail_screen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-        ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            // 固定顶栏：长表单上滑时标题与返回仍可见（本页变更即存，无保存按钮）
             ai_sub_page_header(colors = colors, title = instance.label.ifBlank { "提供商" }, on_back = on_back)
 
+            Column(
+                modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())
+            ) {
             Spacer(modifier = Modifier.height(24.dp))
 
             if (!is_active) {
@@ -638,7 +655,7 @@ private fun ai_provider_detail_screen(
                 ai_input_card(icon = Icons.Default.Key, title = "API Key", colors = colors, is_top = true, is_bottom = true) {
                     OutlinedTextField(
                         value = instance.api_key,
-                        onValueChange = { text -> update { it.copy(api_key = text) } },
+                        onValueChange = { text -> update { it.copy(api_key = strip_whitespace(text)) } },
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = { Text("sk-...", color = colors.input_hint, fontSize = 13.sp) },
                         singleLine = true,
@@ -664,7 +681,7 @@ private fun ai_provider_detail_screen(
                 ai_input_card(icon = Icons.Default.Cloud, title = "Base URL", colors = colors, is_top = true, is_bottom = false) {
                     OutlinedTextField(
                         value = instance.base_url,
-                        onValueChange = { text -> update { it.copy(base_url = text) } },
+                        onValueChange = { text -> update { it.copy(base_url = strip_whitespace(text)) } },
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = { Text(instance.provider.base_url.ifBlank { "https://api.example.com/v1" }, color = colors.input_hint, fontSize = 13.sp) },
                         singleLine = true, shape = RoundedCornerShape(0.dp), colors = field_colors(colors)
@@ -674,7 +691,7 @@ private fun ai_provider_detail_screen(
                 ai_input_card(icon = Icons.Default.ModelTraining, title = "默认模型", colors = colors, is_top = false, is_bottom = true) {
                     OutlinedTextField(
                         value = instance.model,
-                        onValueChange = { text -> update { it.copy(model = text) } },
+                        onValueChange = { text -> update { it.copy(model = strip_whitespace(text)) } },
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = { Text(instance.provider.default_model.ifBlank { "如 glm-4.6、deepseek-chat" }, color = colors.input_hint, fontSize = 13.sp) },
                         singleLine = true, shape = RoundedCornerShape(0.dp),
@@ -794,6 +811,23 @@ private fun ai_provider_detail_screen(
                                 if (m == instance.model) {
                                     Text("默认模型", fontSize = 9.sp, color = colors.title_highlight.copy(alpha = 0.8f))
                                 }
+                                // 能力徽标：上下文长度 / 图片 / 视频（已标注时显示）
+                                instance.model_caps[m]?.takeIf { !it.is_empty }?.let { caps ->
+                                    Spacer(modifier = Modifier.height(3.dp))
+                                    ai_caps_badges(caps, colors)
+                                }
+                            }
+                            // 能力标注：上下文长度 / 多模态输入
+                            Box(
+                                modifier = Modifier.size(26.dp).clip(CircleShape).clickable { caps_edit_model = m },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Default.Tune,
+                                    contentDescription = "模型能力",
+                                    tint = if (instance.model_caps[m]?.is_empty == false) colors.title_highlight else colors.subtitle,
+                                    modifier = Modifier.size(15.dp)
+                                )
                             }
                             // 隐藏/恢复（不删除，只是不再出现在候选里）
                             Box(
@@ -828,6 +862,7 @@ private fun ai_provider_detail_screen(
             fetch_note?.let { (ok, note) ->
                 ai_hint_text(colors = colors, text = if (ok) "✓ $note" else "✗ $note", success = ok)
             }
+            ai_hint_text(colors = colors, text = "点模型行的调节图标，可标注上下文长度与图片/视频输入能力")
             Spacer(modifier = Modifier.height(10.dp))
             Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp)) {
                 ai_add_button(colors = colors, label = "添加自定义模型") { add_model_open = true }
@@ -886,6 +921,7 @@ private fun ai_provider_detail_screen(
             }
 
             Spacer(modifier = Modifier.height(96.dp))
+            }
         }
     }
 
@@ -898,7 +934,7 @@ private fun ai_provider_detail_screen(
             text = {
                 OutlinedTextField(
                     value = add_model_input,
-                    onValueChange = { add_model_input = it },
+                    onValueChange = { add_model_input = strip_whitespace(it) },
                     label = { Text("模型 ID") },
                     singleLine = true,
                     colors = field_colors(colors)
@@ -921,6 +957,171 @@ private fun ai_provider_detail_screen(
                 }) { Text("取消", color = colors.subtitle) }
             }
         )
+    }
+
+    // 模型能力编辑（上下文长度 / 多模态输入）
+    caps_edit_model?.let { m ->
+        ai_model_caps_dialog(
+            colors = colors,
+            model_name = m,
+            initial = instance.model_caps[m] ?: model_capabilities(),
+            on_save = { caps ->
+                update {
+                    it.copy(model_caps = if (caps.is_empty) it.model_caps - m else it.model_caps + (m to caps))
+                }
+                caps_edit_model = null
+            },
+            on_dismiss = { caps_edit_model = null }
+        )
+    }
+}
+
+/** 常用上下文窗口快捷档位（tokens） */
+private val context_presets = listOf(
+    "8K" to 8_000L, "32K" to 32_000L, "128K" to 128_000L, "256K" to 256_000L, "1M" to 1_000_000L
+)
+
+/** token 数格式化为 128K / 1.5M 等短标签 */
+private fun format_context_tokens(tokens: Long): String = when {
+    tokens >= 1_000_000 -> {
+        val m = tokens / 1_000_000.0
+        if (m % 1.0 == 0.0) "${m.toLong()}M" else String.format(java.util.Locale.US, "%.1fM", m)
+    }
+    tokens >= 1_000 -> {
+        val k = tokens / 1_000.0
+        if (k % 1.0 == 0.0) "${k.toLong()}K" else String.format(java.util.Locale.US, "%.1fK", k)
+    }
+    else -> tokens.toString()
+}
+
+/** 模型能力编辑弹窗：上下文长度（tokens）+ 图片/视频输入开关。/models 端点不返回这些信息，靠手动标注 */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ai_model_caps_dialog(
+    colors: app_colors,
+    model_name: String,
+    initial: model_capabilities,
+    on_save: (model_capabilities) -> Unit,
+    on_dismiss: () -> Unit
+) {
+    var tokens_text by remember(model_name) {
+        mutableStateOf(if (initial.context_tokens > 0) initial.context_tokens.toString() else "")
+    }
+    var image_on by remember(model_name) { mutableStateOf(initial.supports_image) }
+    var video_on by remember(model_name) { mutableStateOf(initial.supports_video) }
+    val selected_tokens = tokens_text.toLongOrNull() ?: 0L
+
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = on_dismiss,
+        containerColor = colors.dialog_bg,
+        title = { Text("模型能力", color = colors.dialog_text) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    model_name,
+                    fontSize = 11.sp, fontFamily = FontFamily.Monospace,
+                    color = colors.subtitle,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis
+                )
+                OutlinedTextField(
+                    value = tokens_text,
+                    onValueChange = { tokens_text = it.filter { ch -> ch.isDigit() }.take(10) },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("上下文长度（tokens）") },
+                    placeholder = { Text("留空使用全局默认", fontSize = 13.sp) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    colors = field_colors(colors)
+                )
+                // 常用窗口长度快捷档位
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    context_presets.forEach { (label, value) ->
+                        ai_caps_preset_chip(label, selected = value == selected_tokens, colors = colors) {
+                            tokens_text = value.toString()
+                        }
+                    }
+                }
+                // 多模态输入
+                ai_caps_toggle_row(title = "图片输入", description = "多模态：可接收图片附件", checked = image_on, colors = colors) { image_on = it }
+                ai_caps_toggle_row(title = "视频输入", description = "多模态：可接收视频附件", checked = video_on, colors = colors) { video_on = it }
+                Text(
+                    "上下文长度用于自动压缩过长的历史消息（按 1 token ≈ 4 字符估算）；文本输入为所有模型默认支持。",
+                    fontSize = 10.sp, lineHeight = 13.sp, color = colors.subtitle
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                on_save(model_capabilities(
+                    context_tokens = selected_tokens,
+                    supports_image = image_on,
+                    supports_video = video_on
+                ))
+            }) { Text("保存", color = colors.title_highlight) }
+        },
+        dismissButton = { TextButton(onClick = on_dismiss) { Text("取消", color = colors.subtitle) } }
+    )
+}
+
+/** 弹窗里的多模态开关行 */
+@Composable
+private fun ai_caps_toggle_row(
+    title: String,
+    description: String,
+    checked: Boolean,
+    colors: app_colors,
+    on_toggle: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp))
+            .background(colors.card_bg)
+            .clickable { on_toggle(!checked) }
+            .padding(horizontal = 10.dp, vertical = 7.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, fontSize = 13.sp, color = colors.card_text_title)
+            Text(description, fontSize = 10.sp, color = colors.card_text_subtitle)
+        }
+        ai_small_switch(checked = checked, colors = colors)
+    }
+}
+
+/** 快捷档位 chip（选中态高亮） */
+@Composable
+private fun ai_caps_preset_chip(label: String, selected: Boolean, colors: app_colors, on_click: () -> Unit) {
+    Box(
+        modifier = Modifier.clip(RoundedCornerShape(999.dp))
+            .background(if (selected) colors.title_highlight else colors.title_highlight.copy(alpha = 0.12f))
+            .clickable(onClick = on_click)
+            .padding(horizontal = 10.dp, vertical = 4.dp)
+    ) {
+        Text(
+            label, fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
+            color = if (selected) colors.dialog_clone_text else colors.title_highlight
+        )
+    }
+}
+
+/** 模型行下方的徽标组：上下文长度 / 图片 / 视频 */
+@Composable
+private fun ai_caps_badges(caps: model_capabilities, colors: app_colors) {
+    Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+        if (caps.context_tokens > 0) ai_caps_chip(format_context_tokens(caps.context_tokens), colors)
+        if (caps.supports_image) ai_caps_chip("图片", colors)
+        if (caps.supports_video) ai_caps_chip("视频", colors)
+    }
+}
+
+/** 单个能力徽标 */
+@Composable
+private fun ai_caps_chip(text: String, colors: app_colors) {
+    Box(
+        modifier = Modifier.clip(RoundedCornerShape(4.dp))
+            .background(colors.title_highlight.copy(alpha = 0.12f))
+            .padding(horizontal = 4.dp, vertical = 1.dp)
+    ) {
+        Text(text, fontSize = 9.sp, color = colors.title_highlight)
     }
 }
 
@@ -1085,7 +1286,7 @@ private fun ai_add_provider_flow(
                                 ai_input_card(icon = Icons.Default.Security, title = "密钥", colors = colors, is_top = true, is_bottom = true) {
                                     OutlinedTextField(
                                         value = key_input,
-                                        onValueChange = { key_input = it },
+                                        onValueChange = { key_input = strip_whitespace(it) },
                                         modifier = Modifier.fillMaxWidth(),
                                         placeholder = { Text("sk-...", color = colors.input_hint, fontSize = 13.sp) },
                                         singleLine = true,
@@ -1110,7 +1311,7 @@ private fun ai_add_provider_flow(
                                 ai_input_card(icon = Icons.Default.Cloud, title = "Base URL", colors = colors, is_top = true, is_bottom = true) {
                                     OutlinedTextField(
                                         value = base_url_input,
-                                        onValueChange = { base_url_input = it },
+                                        onValueChange = { base_url_input = strip_whitespace(it) },
                                         modifier = Modifier.fillMaxWidth(),
                                         placeholder = { Text(t.base_url.ifBlank { "https://api.example.com/v1" }, color = colors.input_hint, fontSize = 13.sp) },
                                         singleLine = true, shape = RoundedCornerShape(0.dp), colors = field_colors(colors)
@@ -1177,9 +1378,35 @@ private fun ai_behavior_settings_screen(
     val tones = listOf("friendly" to "友好", "professional" to "专业", "concise" to "简洁")
     val depths = listOf(0 to "标准", 1 to "深入", 2 to "极致")
 
+    // 本地副本与进入页面时的初始状态不一致 = 有未保存修改
+    val dirty = settings != initial
+    var confirm_discard by remember { mutableStateOf(false) }
+
+    // 返回（顶栏返回键）：有未保存修改先确认，避免误触丢改动
+    fun back_requested() {
+        if (dirty) confirm_discard = true else on_back()
+    }
+
+    BackHandler(enabled = dirty) { confirm_discard = true }
+
     Box(modifier = Modifier.fillMaxSize()) {
-        Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-            ai_sub_page_header(colors = colors, title = "AI 行为", on_back = on_back)
+        Column(modifier = Modifier.fillMaxSize()) {
+            // 固定顶栏 + 右上角保存：内容上滑时保存按钮始终可见；无改动时置灰提示已同步
+            om_top_bar(
+                colors = colors, title = "AI 行为",
+                on_back = { back_requested() },
+                trailing = {
+                    TextButton(onClick = { on_save(settings) }) {
+                        Text(
+                            "保存",
+                            fontSize = 14.sp,
+                            fontWeight = if (dirty) FontWeight.Bold else FontWeight.Normal,
+                            color = if (dirty) colors.title_highlight else colors.subtitle
+                        )
+                    }
+                }
+            )
+            Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
             Spacer(modifier = Modifier.height(24.dp))
 
             // 思考深度
@@ -1250,14 +1477,31 @@ private fun ai_behavior_settings_screen(
                 ai_switch_card(icon = Icons.Default.UnfoldMore, title = "自动展开", description = "思考过程默认展开（否则折叠只显示标题）", checked = settings.auto_expand_thinking, colors = colors, is_top = false, is_bottom = true) { settings = settings.copy(auto_expand_thinking = it) }
             }
 
-            Spacer(modifier = Modifier.height(96.dp))
-        }
-
-        Surface(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(), color = colors.editor_bg, shadowElevation = 8.dp) {
-            Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 14.dp), contentAlignment = Alignment.Center) {
-                ai_save_button(colors = colors) { on_save(settings) }
+            Spacer(modifier = Modifier.height(40.dp))
             }
         }
+    }
+
+    // 返回时有未保存修改：保存 / 放弃 二选一（点空白处留在本页）
+    if (confirm_discard) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { confirm_discard = false },
+            containerColor = colors.dialog_bg,
+            title = { Text("未保存的修改", color = colors.dialog_text) },
+            text = { Text("AI 行为的改动尚未保存，离开将丢失。", fontSize = 13.sp, color = colors.subtitle) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirm_discard = false
+                    on_save(settings)
+                }) { Text("保存", color = colors.title_highlight) }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    confirm_discard = false
+                    on_back()
+                }) { Text("放弃修改", color = colors.danger) }
+            }
+        )
     }
 }
 
@@ -1289,8 +1533,9 @@ private fun ai_mcp_settings_screen(project_dir: java.io.File?, on_back: () -> Un
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+        Column(modifier = Modifier.fillMaxSize()) {
             ai_sub_page_header(colors = colors, title = "MCP 配置", on_back = on_back)
+            Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
             Spacer(modifier = Modifier.height(16.dp))
 
             // 模式切换：表单 / 原始 JSON
@@ -1406,6 +1651,7 @@ private fun ai_mcp_settings_screen(project_dir: java.io.File?, on_back: () -> Un
                 }
             }
             Spacer(modifier = Modifier.height(40.dp))
+            }
         }
     }
 
@@ -1524,8 +1770,9 @@ private fun ai_skill_settings_screen(project_dir: java.io.File?, on_back: () -> 
     fun reload() { skills = manager.all() }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+        Column(modifier = Modifier.fillMaxSize()) {
             ai_sub_page_header(colors = colors, title = "Skill 配置", on_back = on_back)
+            Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
             Spacer(modifier = Modifier.height(20.dp))
 
             // 创建按钮 + AI 创建提示
@@ -1554,6 +1801,7 @@ private fun ai_skill_settings_screen(project_dir: java.io.File?, on_back: () -> 
                 }
             }
             Spacer(modifier = Modifier.height(40.dp))
+            }
         }
     }
 
@@ -1998,6 +2246,9 @@ private fun ai_save_button(colors: app_colors, label: String = "保存设置", o
         )
     }
 }
+
+/** 密钥/URL/模型 ID 里不存在合法空白，输入（含粘贴）时把空格、换行、制表符直接滤掉 */
+private fun strip_whitespace(s: String): String = s.filterNot { it.isWhitespace() }
 
 @Composable
 private fun field_colors(colors: app_colors) = OutlinedTextFieldDefaults.colors(

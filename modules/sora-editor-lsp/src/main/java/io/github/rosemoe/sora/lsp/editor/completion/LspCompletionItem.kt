@@ -68,6 +68,13 @@ class LspCompletionItem(
             }
             detail = labelDetails.detail
         }
+        // Prefer the symbol's documentation summary over its signature in the completion list
+        if (kind != CompletionItemKind.Color) {
+            completionDocumentationSummary(
+                completionItem.documentation?.let { if (it.isLeft) it.left else it.right.value },
+                symbolName = completionItem.label
+            )?.let { detail = it }
+        }
         val tags = completionItem.tags
         if (tags != null) {
             deprecated = tags.contains(CompletionItemTag.Deprecated)

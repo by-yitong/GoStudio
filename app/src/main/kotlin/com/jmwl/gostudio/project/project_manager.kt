@@ -766,7 +766,10 @@ func main() {
             project_ide_config(
                 go_version = config?.go_version.orEmpty(),
                 build = normalize_project_build_config(config?.build ?: project_build_config()),
-                app = config?.app ?: project_app_config()
+                // 旧配置文件没有 version_code，Gson 反序列化会得到 0，这里归一到合法值
+                app = (config?.app ?: project_app_config()).let { app ->
+                    app.copy(version_code = app.version_code.coerceIn(1, 2_000_000_000))
+                }
             )
         } catch (_: Exception) {
             project_ide_config()
@@ -1073,6 +1076,7 @@ data class project_app_config(
     val app_name: String = "",
     val package_name: String = "",
     val version_name: String = "1.0",
+    val version_code: Int = 1,
     val icon_path: String = "icon.png"
 )
 

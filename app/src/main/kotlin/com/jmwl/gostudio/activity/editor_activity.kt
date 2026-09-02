@@ -97,7 +97,14 @@ class editor_activity : ComponentActivity() {
     private var block_hint_job: Job? = null
     private var go_build_job: Job? = null
     private var go_run_job: Job? = null
+    private var cross_compile_job: Job? = null
+    private val compile_dialog_state = editor_compile_dialog_state()
+    private var pending_export: Pair<File, String>? = null
     private var file_tree_job: Job? = null
+    /** 克隆的项目打开后自动执行一次 go mod tidy（见 initialize_project） */
+    private var pending_auto_tidy = false
+    /** 项目文件监听：终端(proot)里 git pull / touch / rm 等外部变更自动刷新文件树与打开的 tab */
+    private var project_watcher: editor_file_watcher? = null
     private var textmate_prewarm_started = false
     private var gopls_project: gopls_lsp_project? = null
     private var gopls_connect_job: Job? = null
@@ -181,7 +188,9 @@ class editor_activity : ComponentActivity() {
         if (result.resultCode != RESULT_OK) return@registerForActivityResult
         refresh_files_after_ai_edit(
             listOf(
-                File(project_dir, "layout.xml").absolutePath,
+                result.data?.getStringExtra(
+                    com.jmwl.gostudio.designer.layout_designer_activity.EXTRA_LAYOUT_FILE
+                ) ?: File(project_dir, "layout.xml").absolutePath,
                 File(project_dir, "images").absolutePath
             )
         )
@@ -200,6 +209,24 @@ class editor_activity : ComponentActivity() {
         }
     }
 
+    /** Android 9 及以下导出到公共 Download 需要写存储权限；授权后补做挂起的导出。 */
+    private val storage_permission_launcher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        val pending = pending_export
+        pending_export = null
+        if (pending == null) return@registerForActivityResult
+        val (file, name) = pending
+        if (granted) {
+            export_compiled_binary_to_downloads(file, name)
+        } else {
+            compile_dialog_state.append(
+                "未授予存储权限，已取消导出（文件仍保存在 ${file.absolutePath}）",
+                editor_output_line_level.WARNING
+            )
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -208,6 +235,7 @@ class editor_activity : ComponentActivity() {
             ?: File(project_path).name.ifBlank { "项目" }
 
         project_dir = File(project_path)
+        pending_auto_tidy = intent.getBooleanExtra("auto_tidy", false)
         state.project_name = project_name.ifBlank { project_dir.name.ifBlank { "项目" } }
         state.expanded_paths = setOf(project_dir.absolutePath)
         state.project_exists = project_dir.exists() && project_dir.isDirectory
@@ -229,6 +257,9 @@ class editor_activity : ComponentActivity() {
                 editor_activity_content()
             }
         }
+        project_watcher = editor_file_watcher(lifecycleScope) { changed_files, tree_dirs ->
+            handle_external_file_changes(changed_files, tree_dirs)
+        }.apply { start() }
         initialize_project()
     }
 
@@ -262,6 +293,8 @@ class editor_activity : ComponentActivity() {
         go_build_job?.cancel()
         go_run_job?.cancel()
         file_tree_job?.cancel()
+        project_watcher?.stop()
+        project_watcher = null
         gopls_connect_job?.cancel()
         gopls_project?.dispose()
         gopls_project = null
@@ -370,6 +403,9 @@ class editor_activity : ComponentActivity() {
             },
             on_toggle_toolbar = { state.toolbar_visible = !state.toolbar_visible },
             on_project_config_apply = { config, on_saved -> apply_project_config(config, on_saved) },
+            on_project_config_compile = { config -> compile_project_from_config(config) },
+            on_compile_cancel = { cross_compile_job?.cancel() },
+            compile_dialog_state = compile_dialog_state,
             is_app_project = File(project_dir, "layout.xml").isFile,
             on_select_tab = { path -> request_select_tab(path) },
             on_pin_tab = { path -> toggle_pin_tab(path) },
@@ -380,6 +416,7 @@ class editor_activity : ComponentActivity() {
             on_run = { run_go_project() },
             on_test = { run_go_tests() },
             on_pack = { pack_app_ui_project() },
+            on_tidy = { run_go_mod_tidy() },
             on_save = { request_save_file() },
             on_format = { format_current_file() },
             on_toggle_read_only = { toggle_read_only() },
@@ -394,6 +431,7 @@ class editor_activity : ComponentActivity() {
             on_replace_all = { replacement -> replace_all_matches(replacement) },
             on_clear_search = { clear_search() },
             on_insert_symbol = { symbol -> insert_symbol(symbol) },
+            on_toggle_comment = { toggle_line_comment() },
             on_create_file = { parent_path, name, template -> create_project_file(parent_path, name, template) },
             on_create_folder = { parent_path, name -> create_project_folder(parent_path, name) },
             on_refresh_files = { path -> refresh_file_tree(path) },
@@ -656,6 +694,108 @@ class editor_activity : ComponentActivity() {
             }
     }
 
+    /**
+     * 给构建环境叠加项目配置的交叉编译目标（GOOS/GOARCH）。
+     * 运行/打包 App 的流程不要调用：产物必须能在本机直接执行。
+     */
+    private fun cross_compile_environment(
+        base: Map<String, String>,
+        build: project_build_config
+    ): Map<String, String> {
+        return base + mapOf(
+            "GOOS" to build.goos,
+            "GOARCH" to build.goarch
+        )
+    }
+
+    /**
+     * 项目配置页「编译」：按面板当前配置交叉编译，
+     * 日志写入编译弹窗，产物自动导出到公共 Download/gostudio。
+     */
+    private fun compile_project_from_config(config: project_ide_config) {
+        if (detected_project_info.kind != project_kind.GO) {
+            app_toast.show(this, "当前项目不是 Go 项目", app_toast.LENGTH_SHORT)
+            return
+        }
+        if (go_build_job?.isActive == true || go_run_job?.isActive == true || cross_compile_job?.isActive == true) {
+            app_toast.show(this, "任务正在运行中", app_toast.LENGTH_SHORT)
+            return
+        }
+        val project_environment = toolchain_manager.project_environment(project_dir.absolutePath)
+        if (project_environment.missing.isNotEmpty()) {
+            app_toast.show(this, project_environment.missing.joinToString("；"), app_toast.LENGTH_LONG)
+            return
+        }
+        // 编译前先把面板配置落盘，保证编译参数与所见一致
+        project_manager.save_project_ide_config(project_dir.absolutePath, config)
+
+        val goos = config.build.goos
+        val goarch = config.build.goarch
+        val exe_suffix = if (goos == "windows") ".exe" else ""
+        cross_compile_job = lifecycleScope.launch {
+            if (!save_dirty_open_files(show_toast = false)) {
+                app_toast.show(this@editor_activity, "编译取消，文件保存失败", app_toast.LENGTH_SHORT)
+                return@launch
+            }
+            compile_dialog_state.show()
+            compile_dialog_state.append("正在编译... 目标平台 $goos/$goarch", editor_output_line_level.INFO)
+            val bin_dir = File(project_dir, "bin").apply { mkdirs() }
+            val bin_file = File(bin_dir, "${project_dir.name}-$goos-$goarch$exe_suffix")
+            val success = try {
+                proot_manager.execute_command_with_environment(
+                    command = build_go_build_command(config.build) +
+                        " -o " + shell_quote(bin_file.absolutePath) + " " + shell_quote(config.build.run_entry),
+                    working_dir = project_dir.absolutePath,
+                    extra_environment = cross_compile_environment(project_environment.environment, config.build),
+                    on_log = { line -> compile_dialog_state.append(line, output_level_for_line(line)) }
+                )
+            } catch (_: CancellationException) {
+                compile_dialog_state.append("编译已停止", editor_output_line_level.WARNING)
+                return@launch
+            } finally {
+                compile_dialog_state.finish()
+            }
+
+            if (success) {
+                compile_dialog_state.append(
+                    "编译完成: ${bin_file.absolutePath} (${bin_file.length() / 1024}KB)",
+                    editor_output_line_level.SUCCESS
+                )
+                export_compiled_binary(bin_file)
+            } else {
+                compile_dialog_state.append("编译失败", editor_output_line_level.ERROR)
+            }
+        }
+    }
+
+    /** 导出编译产物到公共 Download/gostudio；Android 9 及以下未授权时先申请权限再补导出。 */
+    private fun export_compiled_binary(bin_file: File) {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.Q &&
+            androidx.core.content.ContextCompat.checkSelfPermission(
+                this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+            ) != android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            pending_export = bin_file to bin_file.name
+            compile_dialog_state.append("等待存储权限，用于导出到 Download/gostudio/bin", editor_output_line_level.INFO)
+            storage_permission_launcher.launch(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            return
+        }
+        export_compiled_binary_to_downloads(bin_file, bin_file.name)
+    }
+
+    private fun export_compiled_binary_to_downloads(file: File, name: String) {
+        com.jmwl.gostudio.runtime.build_exporter.export_to_downloads(this, file, name)
+            .onSuccess { path ->
+                compile_dialog_state.append("已导出: $path", editor_output_line_level.SUCCESS)
+            }
+            .onFailure { error ->
+                compile_dialog_state.append(
+                    "导出失败: ${error.message}（文件仍保存在 ${file.absolutePath}）",
+                    editor_output_line_level.WARNING
+                )
+            }
+    }
+
     private fun initialize_project() {
         // 创建 AI agent（带项目文件工具）
         setup_ai_agent()
@@ -672,6 +812,12 @@ class editor_activity : ComponentActivity() {
 
                 prewarm_textmate_languages()
                 restore_editor_session()
+                sync_project_watcher_dirs()
+                // 克隆进来的项目依赖还没拉过：会话恢复完立刻整理一次依赖
+                if (pending_auto_tidy) {
+                    pending_auto_tidy = false
+                    run_go_mod_tidy(auto = true)
+                }
             }
         }
     }
@@ -770,7 +916,7 @@ class editor_activity : ComponentActivity() {
     }
 
     /** AI 改文件后刷新编辑器对应 tab */
-    private fun refresh_files_after_ai_edit(changed_paths: List<String>) {
+    private fun refresh_files_after_ai_edit(changed_paths: List<String>, reload_tree: Boolean = true) {
         for (path in changed_paths) {
             val file = java.io.File(path)
             val tab = state.open_tabs.firstOrNull { java.io.File(it.file_path).absolutePath == file.absolutePath }
@@ -805,7 +951,71 @@ class editor_activity : ComponentActivity() {
             }
         }
         // 刷新文件树
-        reload_file_tree()
+        if (reload_tree) reload_file_tree()
+    }
+
+    /** 外部（终端 git pull / touch / rm 等）改了项目文件：定向刷新文件树 + 同步被改的打开 tab。 */
+    private fun handle_external_file_changes(changed_files: Set<String>, tree_dirs: Set<String>) {
+        if (!state.project_exists) return
+        if (tree_dirs.isNotEmpty()) refresh_file_tree_dirs(tree_dirs)
+        if (changed_files.isNotEmpty()) refresh_files_after_external_change(changed_files)
+    }
+
+    /**
+     * 外部修改的打开 tab 从磁盘同步：有未保存修改的 tab 保留用户编辑不覆盖；
+     * 磁盘内容与当前一致的（比如自己保存触发的事件）跳过，避免光标被无谓重置。
+     */
+    private fun refresh_files_after_external_change(changed_paths: Set<String>) {
+        val refreshable = changed_paths.mapNotNull { path ->
+            val canonical = File(path).absolutePath
+            val tab = state.open_tabs.firstOrNull { File(it.file_path).absolutePath == canonical }
+                ?: return@mapNotNull null
+            if (tab.has_changes) return@mapNotNull null
+            val disk = runCatching { File(canonical).readText() }.getOrNull() ?: return@mapNotNull null
+            if (disk == tab.content) return@mapNotNull null
+            canonical
+        }
+        if (refreshable.isNotEmpty()) refresh_files_after_ai_edit(refreshable, reload_tree = false)
+    }
+
+    /** 外部变更后定向重载：根目录与已展开目录重读磁盘，未展开目录仅失效缓存（下次展开时再读）。 */
+    private fun refresh_file_tree_dirs(evented_dirs: Set<String>) {
+        val root_path = project_dir.absolutePath
+        evented_dirs.forEach { dir ->
+            file_tree_children_cache.remove(dir)
+            if (!File(dir).exists()) state.expanded_paths = state.expanded_paths - dir
+        }
+        val reload_targets = (evented_dirs + root_path)
+            .filter { it == root_path || it in state.expanded_paths }
+            .filter { File(it).isDirectory }
+        if (reload_targets.isEmpty()) {
+            state.file_nodes = build_lazy_visible_file_nodes(project_dir, state.expanded_paths, file_tree_children_cache)
+            return
+        }
+        file_tree_job?.cancel()
+        file_tree_job = lifecycleScope.launch {
+            state.file_tree_loading = true
+            val result = withContext(Dispatchers.IO) {
+                runCatching { reload_targets.associateWith { load_file_tree_directory(File(it)) } }
+            }
+            state.file_tree_loading = false
+            result.onSuccess { loaded ->
+                file_tree_children_cache.putAll(loaded)
+                state.file_nodes = build_lazy_visible_file_nodes(project_dir, state.expanded_paths, file_tree_children_cache)
+                sync_project_watcher_dirs()
+            }
+        }
+    }
+
+    /** 文件树懒加载：只监听已缓存目录（根+已展开）与打开 tab 的父目录，随展开/开关 tab 增减。 */
+    private fun sync_project_watcher_dirs() {
+        val watcher = project_watcher ?: return
+        if (!::project_dir.isInitialized || !state.project_exists) return
+        val dirs = file_tree_children_cache.keys.toHashSet()
+        state.open_tabs.forEach { tab ->
+            File(tab.file_path).parentFile?.takeIf { it.isDirectory }?.let { dirs.add(it.absolutePath) }
+        }
+        watcher.set_directories(dirs)
     }
 
     private fun prewarm_textmate_languages() {
@@ -845,92 +1055,6 @@ class editor_activity : ComponentActivity() {
 
     private fun request_open_file(file_path: String) {
         open_file(file_path)
-    }
-
-    /** 读取 layout.xml 里的带 id 组件，供「生成代码」弹窗使用。 */
-    private fun layout_components_for_generator(): List<editor_layout_component> {
-        val layout_file = File(project_dir, "layout.xml")
-        if (!layout_file.isFile) return emptyList()
-        val layout_text = state.open_tabs.firstOrNull { it.file_path == layout_file.absolutePath }
-            ?.document?.toString() ?: layout_file.readText()
-        val result = mutableListOf<editor_layout_component>()
-        val component_names = mapOf(
-            "TextView" to "文本", "EditText" to "输入框", "AutoCompleteTextView" to "自动补全输入框",
-            "Button" to "按钮", "ImageView" to "图片", "ImageButton" to "图片按钮",
-            "CheckBox" to "复选框", "RadioButton" to "单选框", "Switch" to "开关",
-            "ToggleButton" to "开关按钮", "ProgressBar" to "进度条", "SeekBar" to "拖动条",
-            "RatingBar" to "评分条", "Spinner" to "下拉框", "ListView" to "列表",
-            "GridView" to "网格列表", "DatePicker" to "日期选择器", "TimePicker" to "时间选择器",
-            "CalendarView" to "日历", "NumberPicker" to "数字选择器", "Chronometer" to "计时器",
-            "TextClock" to "文本时钟", "VideoView" to "视频", "WebView" to "网页",
-            "View" to "占位视图", "Space" to "空白占位"
-        )
-        try {
-            val parser = android.util.Xml.newPullParser()
-            parser.setInput(layout_text.reader())
-            var event = parser.eventType
-            while (event != org.xmlpull.v1.XmlPullParser.END_DOCUMENT) {
-                if (event == org.xmlpull.v1.XmlPullParser.START_TAG) {
-                    val id = (0 until parser.attributeCount)
-                        .firstOrNull { parser.getAttributeName(it) == "id" }
-                        ?.let { parser.getAttributeValue(it) }
-                    if (!id.isNullOrBlank()) {
-                        result += editor_layout_component(
-                            id = id,
-                            tag = parser.name,
-                            title = "${component_names[parser.name] ?: parser.name} #$id"
-                        )
-                    }
-                }
-                event = parser.next()
-            }
-        } catch (_: Exception) {
-            return emptyList()
-        }
-        return result
-    }
-
-    /** 把生成代码插入到运行入口；若未打开则先打开 main.go。 */
-    private fun insert_generated_code(code: String) {
-        lifecycleScope.launch {
-            val build = project_manager.read_project_build_config(project_dir.absolutePath)
-            val entry = File(project_dir, build.run_entry).canonicalFile
-            val target = if (entry.isFile) entry else File(project_dir, "main.go").canonicalFile
-            if (state.current_file_path != target.absolutePath) {
-                val index = find_tab_index(target.absolutePath)
-                if (index >= 0) {
-                    attach_editor_tab(index)
-                } else {
-                    val loaded = withContext(Dispatchers.IO) {
-                        load_project_file(project_dir, target.absolutePath)
-                    }.getOrElse { error ->
-                        app_toast.show(this@editor_activity, "打开 main.go 失败: ${error.message}", app_toast.LENGTH_LONG)
-                        return@launch
-                    }
-                    open_loaded_file_tab(loaded)
-                }
-            }
-            if (state.read_only) {
-                app_toast.show(this@editor_activity, "只读模式不能插入代码", app_toast.LENGTH_SHORT)
-                return@launch
-            }
-            val text = editor.text
-            val run_line = (0 until text.lineCount).firstOrNull { line ->
-                text.getLineString(line).trim() == "app.Run()"
-            }
-            if (run_line != null) {
-                val indent = text.getLineString(run_line).takeWhile { it == ' ' || it == '\t' }
-                val snippet = code.trim().prependIndent(indent)
-                text.beginBatchEdit()
-                text.insert(run_line, 0, snippet + "\n")
-                text.endBatchEdit()
-                editor.setSelection(run_line + snippet.split('\n').size, 0)
-            } else {
-                editor.commitText(code, false, true)
-            }
-            update_history_state()
-            app_toast.show(this@editor_activity, "代码已插入", app_toast.LENGTH_SHORT)
-        }
     }
 
     /** 设计器里点击事件按钮后：已有事件直接定位，没有则生成并定位。 */
@@ -1025,13 +1149,15 @@ class editor_activity : ComponentActivity() {
         }
     }
 
-    /** 打开独立布局设计器（编辑当前项目的 layout.xml）。 */
+    /** 打开独立布局设计器：编辑当前打开的 xml 文件，未打开 xml 时编辑项目 layout.xml。 */
     private fun open_layout_designer() {
         lifecycleScope.launch { save_dirty_open_files(show_toast = false) }
-        layout_designer_launcher.launch(
-            android.content.Intent(this, com.jmwl.gostudio.designer.layout_designer_activity::class.java)
-                .putExtra(com.jmwl.gostudio.designer.layout_designer_activity.EXTRA_PROJECT_DIR, project_dir.absolutePath)
-        )
+        val intent = android.content.Intent(this, com.jmwl.gostudio.designer.layout_designer_activity::class.java)
+            .putExtra(com.jmwl.gostudio.designer.layout_designer_activity.EXTRA_PROJECT_DIR, project_dir.absolutePath)
+        state.current_file_path?.takeIf { it.endsWith(".xml") }?.let {
+            intent.putExtra(com.jmwl.gostudio.designer.layout_designer_activity.EXTRA_LAYOUT_FILE, it)
+        }
+        layout_designer_launcher.launch(intent)
     }
 
     private fun request_select_tab(file_path: String) {
@@ -1178,6 +1304,7 @@ class editor_activity : ComponentActivity() {
             output_panel_state.clear_output()
             output_panel_state.task_running = true
             output_panel_state.task_stopping = false
+            output_panel_state.append_output("正在构建...", editor_output_line_level.INFO)
             if (!save_dirty_open_files(show_toast = false)) {
                 output_panel_state.append_output("构建取消，文件保存失败", editor_output_line_level.ERROR)
                 output_panel_state.task_running = false
@@ -1193,11 +1320,13 @@ class editor_activity : ComponentActivity() {
                 bin_dir.mkdirs()
                 // working_dir 与 -o 用 host 路径：base_args 会把项目目录 bind 到 guest 同名路径，
                 // 使 go build 进程能 cd 成功，且路径与文件系统一致。
+                // 构建/交叉编译走 GOOS/GOARCH；运行与打包流程不注入（产物要在本机直接执行）。
+                output_panel_state.append_output("构建目标: ${build.goos}/${build.goarch}", editor_output_line_level.INFO)
                 val out_flag = " -o ${shell_quote(File(bin_dir, project_dir.name).absolutePath)}"
                 proot_manager.execute_command_with_environment(
                     command = build_go_build_command(build) + out_flag + " " + shell_quote(build.run_entry),
                     working_dir = project_dir.absolutePath,
-                    extra_environment = project_environment.environment,
+                    extra_environment = cross_compile_environment(project_environment.environment, build),
                     on_log = { line -> output_panel_state.append_output(line, output_level_for_line(line)) }
                 )
             } catch (_: CancellationException) {
@@ -1288,6 +1417,7 @@ class editor_activity : ComponentActivity() {
             output_panel_state.clear_output()
             output_panel_state.task_running = true
             output_panel_state.task_stopping = false
+            output_panel_state.append_output("正在打包 APK...", editor_output_line_level.INFO)
             if (!save_dirty_open_files(show_toast = false)) {
                 output_panel_state.append_output("打包取消，文件保存失败", editor_output_line_level.ERROR)
                 output_panel_state.task_running = false
@@ -1305,7 +1435,13 @@ class editor_activity : ComponentActivity() {
                 proot_manager.execute_command_with_environment(
                     command = build_go_build_command(build) + " -o " + shell_quote(binary.absolutePath) + " " + shell_quote(build.run_entry),
                     working_dir = project_dir.absolutePath,
-                    extra_environment = project_environment.environment,
+                    // 打包产物只在壳里裸跑（不在 proot 里执行），按 GOOS=android 编译：
+                    // 标准库会原生适配 Android（CA 证书目录等）；CGO 关闭保证纯 Go 无需 NDK
+                    extra_environment = project_environment.environment + mapOf(
+                        "GOOS" to "android",
+                        "GOARCH" to "arm64",
+                        "CGO_ENABLED" to "0"
+                    ),
                     on_log = { line -> output_panel_state.append_output(line, output_level_for_line(line)) }
                 )
             } catch (_: CancellationException) {
@@ -1323,6 +1459,15 @@ class editor_activity : ComponentActivity() {
             val ide_config = project_manager.read_project_ide_config(project_dir.absolutePath)
             val app_config = ide_config.app
             val icon_file = app_config.icon_path.takeIf { it.isNotBlank() }?.let { File(project_dir, it) }
+            // 包名留空时按项目名推导（与建项目时的默认规则一致），并校验合法性
+            val package_name = app_config.package_name.ifBlank { "com.gs.${project_dir.name}" }
+            if (!valid_android_package_name(package_name)) {
+                output_panel_state.append_output(
+                    "包名不合法: $package_name（需形如 com.example.app），已用默认包名打包",
+                    editor_output_line_level.WARNING
+                )
+            }
+            val effective_package = if (valid_android_package_name(package_name)) package_name else "com.gs.${project_dir.name}"
             val output_apk = File(bin_dir, project_dir.name + ".apk")
             val result = withContext(Dispatchers.IO) {
                 com.jmwl.gostudio.runtime.apk_packer.pack(
@@ -1331,8 +1476,9 @@ class editor_activity : ComponentActivity() {
                     binary_file = binary,
                     output_apk = output_apk,
                     app_name = app_config.app_name.ifBlank { project_dir.name },
-                    package_name = app_config.package_name,
+                    package_name = effective_package,
                     version_name = app_config.version_name,
+                    version_code = app_config.version_code,
                     icon_file = icon_file,
                     image_dir = File(project_dir, "images"),
                     float_dir = File(project_dir, "floats")
@@ -1343,9 +1489,17 @@ class editor_activity : ComponentActivity() {
 
             result.fold(
                 onSuccess = {
-                    output_panel_state.append_output("打包完成: ${output_apk.absolutePath} (${output_apk.length() / 1024 / 1024}MB)", editor_output_line_level.SUCCESS)
-                    app_toast.show(this@editor_activity, "打包完成，正在安装…", app_toast.LENGTH_SHORT)
-                    install_packed_apk(output_apk)
+                    val size_mb = "%.1f".format(output_apk.length() / 1024.0 / 1024.0)
+                    output_panel_state.append_output(
+                        "打包完成: ${output_apk.absolutePath} (${size_mb}MB) · 包名 $effective_package · 版本 v${app_config.version_name}(${app_config.version_code})",
+                        editor_output_line_level.SUCCESS
+                    )
+                    if (state.editor_settings.pack_auto_install) {
+                        app_toast.show(this@editor_activity, "打包完成，正在安装…", app_toast.LENGTH_SHORT)
+                        install_packed_apk(output_apk)
+                    } else {
+                        export_packed_apk(output_apk, project_dir.name, app_config.version_name)
+                    }
                 },
                 onFailure = { e ->
                     output_panel_state.append_output("打包失败: ${e.message}", editor_output_line_level.ERROR)
@@ -1353,6 +1507,37 @@ class editor_activity : ComponentActivity() {
                 }
             )
         }
+    }
+
+    /**
+     * 未开启「打包后自动安装」时，把 APK 导出到公共 Download/gostudio/apks，
+     * 命名「项目名-v版本名.apk」（如 ggsh-v1.0.1.apk）。
+     */
+    private fun export_packed_apk(apk_file: File, project_name: String, version_name: String) {
+        val display_version = version_name.trim().ifBlank { "1.0" }.removePrefix("v")
+        val display_name = "$project_name-v$display_version.apk"
+        lifecycleScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                com.jmwl.gostudio.runtime.build_exporter.export_to_downloads(
+                    this@editor_activity, apk_file, display_name, subdir = "apks"
+                )
+            }
+            result.fold(
+                onSuccess = { path ->
+                    output_panel_state.append_output("APK 已导出: $path", editor_output_line_level.SUCCESS)
+                    app_toast.show(this@editor_activity, "已导出 $display_name", app_toast.LENGTH_LONG)
+                },
+                onFailure = { e ->
+                    output_panel_state.append_output("APK 导出失败: ${e.message}", editor_output_line_level.ERROR)
+                    app_toast.show(this@editor_activity, "导出失败，APK 在 bin/${apk_file.name}", app_toast.LENGTH_LONG)
+                }
+            )
+        }
+    }
+
+    /** Android 包名：至少两段，每段以字母开头，仅限字母/数字/下划线。 */
+    private fun valid_android_package_name(name: String): Boolean {
+        return Regex("^[a-zA-Z][a-zA-Z0-9_]*(\\.[a-zA-Z][a-zA-Z0-9_]*)+$").matches(name.trim())
     }
 
     /** 打包完成后自动调起系统安装器（复用应用内更新的 FileProvider 目录）。 */
@@ -1392,7 +1577,8 @@ class editor_activity : ComponentActivity() {
             File(sdk_dir, "view.go").isFile &&
             File(sdk_dir, "image.go").isFile &&
             File(sdk_dir, "collection.go").isFile &&
-            File(sdk_dir, "float.go").isFile
+            File(sdk_dir, "float.go").isFile &&
+            File(sdk_dir, "netdns.go").isFile
         val mod_is_current = root_mod.isFile && root_mod.readText().contains(
             "replace gostudio/appsdk => ./gostudio"
         )
@@ -1463,6 +1649,7 @@ class editor_activity : ComponentActivity() {
             output_panel_state.clear_output()
             output_panel_state.task_running = true
             output_panel_state.task_stopping = false
+            output_panel_state.append_output("正在构建...", editor_output_line_level.INFO)
             if (!save_dirty_open_files(show_toast = false)) {
                 output_panel_state.append_output("运行取消，文件保存失败", editor_output_line_level.ERROR)
                 output_panel_state.task_running = false
@@ -1529,6 +1716,67 @@ class editor_activity : ComponentActivity() {
     }
 
     /**
+     * go mod tidy：整理 go.mod/go.sum 依赖，输出写入输出面板。
+     * [auto] = true 为克隆项目打开后的自动执行（失败不打 toast，只写输出面板）。
+     */
+    private fun run_go_mod_tidy(auto: Boolean = false) {
+        if (detected_project_info.kind != project_kind.GO) {
+            if (!auto) app_toast.show(this, "当前项目不是 Go 项目", app_toast.LENGTH_SHORT)
+            return
+        }
+        if (go_build_job?.isActive == true || go_run_job?.isActive == true) {
+            if (!auto) app_toast.show(this, "任务正在运行中", app_toast.LENGTH_SHORT)
+            return
+        }
+        val project_environment = toolchain_manager.project_environment(project_dir.absolutePath)
+        if (project_environment.missing.isNotEmpty()) {
+            val message = project_environment.missing.joinToString("；")
+            if (!auto) app_toast.show(this, message, app_toast.LENGTH_LONG)
+            output_panel_state.append_output("错误: $message", editor_output_line_level.ERROR)
+            return
+        }
+
+        go_build_job = lifecycleScope.launch {
+            output_panel_state.selected_tab = editor_output_tab.Output
+            output_panel_state.clear_output()
+            output_panel_state.task_running = true
+            output_panel_state.task_stopping = false
+            output_panel_state.append_output(
+                if (auto) "克隆项目，自动整理依赖（go mod tidy）..." else "go mod tidy...",
+                editor_output_line_level.NORMAL
+            )
+            val success = try {
+                proot_manager.execute_command_with_environment(
+                    command = "go mod tidy",
+                    working_dir = project_dir.absolutePath,
+                    extra_environment = project_environment.environment,
+                    on_log = { line -> output_panel_state.append_output(line, output_level_for_line(line)) }
+                )
+            } catch (_: CancellationException) {
+                output_panel_state.append_output("tidy 已停止", editor_output_line_level.WARNING)
+                return@launch
+            } finally {
+                output_panel_state.task_running = false
+                output_panel_state.task_stopping = false
+            }
+
+            // go.mod/go.sum 可能在打开的标签里，从盘上同步刷新内容
+            val changed = listOf("go.mod", "go.sum")
+                .filter { File(project_dir, it).isFile }
+                .map { File(project_dir, it).absolutePath }
+            if (changed.isNotEmpty()) refresh_files_after_ai_edit(changed)
+
+            if (success) {
+                output_panel_state.append_output("tidy 完成", editor_output_line_level.SUCCESS)
+                if (!auto) app_toast.show(this@editor_activity, "tidy 完成", app_toast.LENGTH_SHORT)
+            } else {
+                output_panel_state.append_output("tidy 失败", editor_output_line_level.ERROR)
+                if (!auto) app_toast.show(this@editor_activity, "tidy 失败", app_toast.LENGTH_LONG)
+            }
+        }
+    }
+
+    /**
      * 运行当前项目的测试（`go test ./...`），输出流式写入输出面板。
      */
     private fun run_go_tests() {
@@ -1553,6 +1801,7 @@ class editor_activity : ComponentActivity() {
             output_panel_state.clear_output()
             output_panel_state.task_running = true
             output_panel_state.task_stopping = false
+            output_panel_state.append_output("正在运行测试...", editor_output_line_level.INFO)
             if (!save_dirty_open_files(show_toast = false)) {
                 output_panel_state.append_output("测试取消，文件保存失败", editor_output_line_level.ERROR)
                 output_panel_state.task_running = false
@@ -1893,6 +2142,8 @@ class editor_activity : ComponentActivity() {
 
     private fun persist_editor_session() {
         if (!::project_dir.isInitialized) return
+        // tab 开开关关都会走到这里：顺手同步监听目录（新增 tab 的父目录要挂上观察器）
+        sync_project_watcher_dirs()
         capture_active_tab_state()
         save_editor_session(
             context = this,
@@ -2426,6 +2677,7 @@ class editor_activity : ComponentActivity() {
                 state.file_nodes = emptyList()
                 app_toast.show(this@editor_activity, "刷新文件失败: ${error.message}", app_toast.LENGTH_LONG)
             }
+            sync_project_watcher_dirs()
             on_complete?.invoke()
         }
     }
@@ -2457,6 +2709,7 @@ class editor_activity : ComponentActivity() {
     private fun load_file_tree_directory_if_needed(path: String, force: Boolean = false, on_complete: (() -> Unit)? = null) {
         if (!force && path in file_tree_children_cache) {
             state.file_nodes = build_lazy_visible_file_nodes(project_dir, state.expanded_paths, file_tree_children_cache)
+            sync_project_watcher_dirs()
             on_complete?.invoke()
             return
         }
@@ -2470,6 +2723,7 @@ class editor_activity : ComponentActivity() {
             result.onSuccess { children ->
                 file_tree_children_cache[path] = children
                 state.file_nodes = build_lazy_visible_file_nodes(project_dir, state.expanded_paths, file_tree_children_cache)
+                sync_project_watcher_dirs()
             }.onFailure { error ->
                 app_toast.show(this@editor_activity, "刷新文件失败: ${error.message}", app_toast.LENGTH_LONG)
                 state.expanded_paths = state.expanded_paths - path
@@ -2585,12 +2839,14 @@ class editor_activity : ComponentActivity() {
         file_tree_children_cache.putAll(updated_cache)
         remove_file_tree_cache_for_path(new_path)
         file_tree_children_cache.remove(File(new_path).parentFile?.absolutePath)
+        sync_project_watcher_dirs()
     }
 
     private fun remove_file_tree_cache_for_path(path: String) {
         file_tree_children_cache.keys
             .filter { is_same_or_child_path(it, path) }
             .forEach { file_tree_children_cache.remove(it) }
+        sync_project_watcher_dirs()
     }
 
     private fun sync_tabs_after_rename(old_path: String, new_path: String) {

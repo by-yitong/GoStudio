@@ -81,6 +81,18 @@ fun main_settings_content(
     val update_controller = remember { com.jmwl.gostudio.update.app_update_controller(context) }
     var update_checking by remember { mutableStateOf(false) }
 
+    // 模块代理源切换弹窗（应用后刷新副标题显示）
+    var show_goproxy_dialog by remember { mutableStateOf(false) }
+    var goproxy_display_name by remember { mutableStateOf(com.jmwl.gostudio.toolchain.goproxy_store.current_display_name()) }
+    if (show_goproxy_dialog) {
+        com.jmwl.gostudio.ui.dialogs.main.goproxy_settings_dialog(
+            on_dismiss = {
+                show_goproxy_dialog = false
+                goproxy_display_name = com.jmwl.gostudio.toolchain.goproxy_store.current_display_name()
+            }
+        )
+    }
+
     // 手动检查更新
     fun start_update_check() {
         if (update_checking) return
@@ -191,6 +203,16 @@ fun main_settings_content(
                 colors = colors,
                 onClick = on_tools_click,
                 is_top = true,
+                is_bottom = false
+            )
+            Spacer(modifier = Modifier.height(1.dp))
+            main_settings_card_item(
+                icon = Icons.Default.Public,
+                title = "模块代理 (GOPROXY)",
+                subtitle = "当前：$goproxy_display_name · 内置国内源，支持自定义与测速",
+                colors = colors,
+                onClick = { show_goproxy_dialog = true },
+                is_top = false,
                 is_bottom = false
             )
             Spacer(modifier = Modifier.height(1.dp))

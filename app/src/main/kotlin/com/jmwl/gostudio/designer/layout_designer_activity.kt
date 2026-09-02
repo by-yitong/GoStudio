@@ -51,13 +51,17 @@ import kotlin.math.roundToInt
  * AndLua 式布局设计器（独立页面）：
  * 左抽屉=组件面板 / 中间=实时预览（可点选） / 右抽屉=选中组件属性。
  * 通过 Intent 传入项目目录，读取 layout.xml；返回时写回结果。
+ * 可选 EXTRA_LAYOUT_FILE 指定编辑项目内其他 xml 布局文件（默认 layout.xml）。
  */
 class layout_designer_activity : androidx.activity.ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val project_dir = intent.getStringExtra(EXTRA_PROJECT_DIR) ?: run { finish(); return }
-        val layout_file = File(project_dir, "layout.xml")
+        val layout_file = intent.getStringExtra(EXTRA_LAYOUT_FILE)
+            ?.takeIf { it.isNotBlank() }
+            ?.let(::File)
+            ?: File(project_dir, "layout.xml")
         val initial = if (layout_file.isFile) layout_file.readText() else DEFAULT_LAYOUT
 
         // 状态栏颜色与工作区背景一致
@@ -71,15 +75,14 @@ class layout_designer_activity : androidx.activity.ComponentActivity() {
                     project_dir = File(project_dir),
                     on_save = { xml ->
                         layout_file.writeText(xml)
-                        setResult(RESULT_OK, Intent().putExtra(EXTRA_SAVED, true))
+                        setResult(RESULT_OK, saved_result(layout_file))
                         finish()
                     },
                     on_open_event = { xml, component_id, event_type, component_tag ->
                         layout_file.writeText(xml)
                         setResult(
                             RESULT_OK,
-                            Intent()
-                                .putExtra(EXTRA_SAVED, true)
+                            saved_result(layout_file)
                                 .putExtra(EXTRA_EVENT_COMPONENT_ID, component_id)
                                 .putExtra(EXTRA_EVENT_TYPE, event_type)
                                 .putExtra(EXTRA_EVENT_COMPONENT_TAG, component_tag)
@@ -93,7 +96,12 @@ class layout_designer_activity : androidx.activity.ComponentActivity() {
 
     companion object {
         const val EXTRA_PROJECT_DIR = "project_dir"
+        const val EXTRA_LAYOUT_FILE = "layout_file"
         const val EXTRA_SAVED = "saved"
+
+        /** 保存成功的返回 Intent：带上实际编辑的布局文件路径，供调用方定向刷新。 */
+        private fun saved_result(layout_file: File): Intent =
+            Intent().putExtra(EXTRA_SAVED, true).putExtra(EXTRA_LAYOUT_FILE, layout_file.absolutePath)
         const val EXTRA_EVENT_COMPONENT_ID = "event_component_id"
         const val EXTRA_EVENT_TYPE = "event_type"
         const val EXTRA_EVENT_COMPONENT_TAG = "event_component_tag"
@@ -358,7 +366,7 @@ private fun attrs_for(tag: String, parent_tag: String? = null): List<String> {
     return result.distinct()
 }
 
-private fun parse_xml(xml: String): d_node {
+private fun parse_xml(xml: String): d_node? {
     val parser = android.util.Xml.newPullParser()
     parser.setInput(xml.reader())
     var event = parser.eventType
@@ -376,7 +384,8 @@ private fun parse_xml(xml: String): d_node {
         }
         event = parser.next()
     }
-    return root ?: d_node("LinearLayout")
+    // 空文档返回 null：设计器进入无根状态，添加的第一个组件将成为新根
+    return root
 }
 
 private fun serialize(node: d_node): String {
@@ -476,6 +485,7 @@ private fun designer_screen(
     on_open_event: (String, String, String, String) -> Unit
 ) {
     var xml by remember { mutableStateOf(initial_xml) }
+    // tree 为 null 表示根布局已删除、布局被清空，此时添加的第一个组件将成为新根
     var tree by remember { mutableStateOf(parse_xml(initial_xml)) }
     var selected by remember { mutableStateOf<d_node?>(null) }
     var preview_revision by remember { mutableIntStateOf(0) }
@@ -487,8 +497,10 @@ private fun designer_screen(
     val context = LocalContext.current
     val colors = app_theme_provider.colors
 
+    fun current_xml(): String = tree?.let { serialize(it) } ?: ""
+
     fun rebuild_from_tree() {
-        xml = serialize(tree)
+        xml = current_xml()
         preview_revision++
         has_unsaved_changes = true
     }
@@ -505,7 +517,7 @@ private fun designer_screen(
             confirmButton = {
                 TextButton(onClick = {
                     show_exit_confirm = false
-                    on_save(serialize(tree))
+                    on_save(current_xml())
                 }) { Text("保存", color = colors.editor_icon) }
             },
             dismissButton = {
@@ -528,7 +540,7 @@ private fun designer_screen(
                 project_dir = project_dir,
                 revision = preview_revision,
                 on_select = { id ->
-                    selected = find_by_id(tree, id)
+                    selected = tree?.let { find_by_id(it, id) }
                 },
                 modifier = Modifier.fillMaxSize()
             )
@@ -561,7 +573,7 @@ private fun designer_screen(
                 Surface(
                     onClick = {
                         has_unsaved_changes = false
-                        on_save(serialize(tree))
+                        on_save(current_xml())
                     },
                     shape = RoundedCornerShape(50),
                     color = colors.editor_bg.copy(alpha = 0.85f),
@@ -625,43 +637,60 @@ private fun designer_screen(
                             selected = node
                         },
                         on_add = { tag ->
-                            val target = selected?.takeIf { it.is_container } ?: tree
-                            val node = d_node(tag, default_attrs(tag, tree))
-                            node.parent = target
-                            target.children.add(node)
-                            selected = node
-                            tree = tree.deep_copy().also { selected = find_node(it, node) }
+                            val cur = tree
+                            if (cur == null) {
+                                // 布局已清空：第一个添加的组件/布局直接作为新根节点（空占位树使 id 从 1 编号）
+                                val node = d_node(tag, default_attrs(tag, d_node("")))
+                                tree = node
+                                selected = node
+                            } else {
+                                val target = selected?.takeIf { it.is_container } ?: cur
+                                val node = d_node(tag, default_attrs(tag, cur))
+                                node.parent = target
+                                target.children.add(node)
+                                selected = node
+                                tree = cur.deep_copy().also { selected = find_node(it, node) }
+                            }
                             rebuild_from_tree()
                         },
                         on_copy = { node -> clipboard = node.deep_copy() },
                         on_paste = { container ->
                             clipboard?.let { clip ->
+                                val cur = tree ?: return@let
                                 val copy = clip.deep_copy()
                                 // 重置复制的 id 避免冲突
                                 if (copy.attrs.containsKey("id")) {
-                                    copy.attrs["id"] = next_id(tree, copy.tag)
+                                    copy.attrs["id"] = next_id(cur, copy.tag)
                                 }
                                 copy.parent = container
                                 container.children.add(copy)
-                                tree = tree.deep_copy().also { selected = find_node(it, copy) }
+                                tree = cur.deep_copy().also { selected = find_node(it, copy) }
                                 rebuild_from_tree()
                             }
                         },
                         on_delete = { node ->
-                            remove_node(tree, node)
-                            if (selected === node) selected = null
-                            tree = tree.deep_copy()
+                            val cur = tree
+                            if (cur != null && node === cur) {
+                                // 删除根布局：清空整个布局，之后添加的第一个组件成为新根
+                                tree = null
+                                selected = null
+                            } else if (cur != null) {
+                                remove_node(cur, node)
+                                if (selected === node) selected = null
+                                tree = cur.deep_copy()
+                            }
                             rebuild_from_tree()
                         },
                         on_move = { node, direction ->
+                            val cur = tree
                             val parent = node.parent
-                            if (parent != null) {
+                            if (cur != null && parent != null) {
                                 val index = parent.children.indexOf(node)
                             val new_index = index + direction
                             if (new_index in parent.children.indices) {
                                 parent.children.removeAt(index)
                                 parent.children.add(new_index, node)
-                                tree = tree.deep_copy().also { selected = find_node(it, node) }
+                                tree = cur.deep_copy().also { selected = find_node(it, node) }
                                 rebuild_from_tree()
                                 }
                             }
@@ -684,21 +713,33 @@ private fun designer_screen(
                         node = selected,
                         is_root = selected === tree,
                         on_change = {
-                            tree = tree.deep_copy().also { selected = find_node(it, selected!!) }
-                            rebuild_from_tree()
+                            val cur = tree
+                            if (cur != null) {
+                                tree = cur.deep_copy().also { selected = find_node(it, selected!!) }
+                                rebuild_from_tree()
+                            }
                         },
                         on_delete = {
-                            if (selected != null && selected !== tree) {
-                                remove_node(tree, selected!!)
+                            val cur = selected
+                            val root = tree
+                            if (cur != null && root != null) {
+                                if (cur === root) {
+                                    // 删除根布局：清空整个布局
+                                    tree = null
+                                } else {
+                                    remove_node(root, cur)
+                                    tree = root.deep_copy()
+                                }
                                 selected = null
-                                tree = tree.deep_copy()
                                 rebuild_from_tree()
                             }
                         },
                         project_dir = project_dir,
                         on_open_event = { component_id, event_type ->
-                            selected?.tag?.let { tag ->
-                                on_open_event(serialize(tree), component_id, event_type, tag)
+                            val cur = tree
+                            val tag = selected?.tag
+                            if (cur != null && tag != null) {
+                                on_open_event(serialize(cur), component_id, event_type, tag)
                             }
                         },
                         modifier = Modifier.width(240.dp).fillMaxHeight()
@@ -717,7 +758,7 @@ private fun find_by_id(root: d_node, id: String): d_node? {
 /* 左抽屉：组件树 + 添加面板 */
 @Composable
 private fun ComponentTree(
-    root: d_node,
+    root: d_node?,
     selected: d_node?,
     on_select: (d_node) -> Unit,
     on_add: (String) -> Unit,
@@ -728,7 +769,8 @@ private fun ComponentTree(
     clipboard_node: d_node?,
     modifier: Modifier = Modifier
 ) {
-    Column(modifier.verticalScroll(rememberScrollState()).padding(vertical = 8.dp)) {
+    // 根 Column 不整体滚动：组件树与展开的添加面板用 weight 平分剩余高度，各自内部滚动。
+    Column(modifier.padding(vertical = 8.dp)) {
         Text(
             "组件树",
             fontSize = 10.sp,
@@ -736,8 +778,28 @@ private fun ComponentTree(
             color = app_theme_provider.colors.editor_icon,
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
         )
-        // 树形列表
-        TreeRow(root, 0, selected, on_select, on_copy, on_paste, on_delete, on_move, clipboard_node != null, clipboard_node?.tag)
+        // 树形列表：限高（占剩余空间的份额），超出内部滚动
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+        ) {
+            if (root == null) {
+                // 根布局被删除后的空状态提示
+                Text(
+                    "布局为空\n从下方添加组件或布局\n第一个添加的将成为根节点",
+                    fontSize = 11.sp,
+                    lineHeight = 17.sp,
+                    color = app_theme_provider.colors.editor_hint,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 10.dp)
+                )
+            } else {
+                TreeRow(root, 0, selected, on_select, on_copy, on_paste, on_delete, on_move, clipboard_node != null, clipboard_node?.tag)
+            }
+        }
         // 折叠卡片：组件 / 布局
         Spacer(Modifier.height(10.dp))
         ExpandableCard(title = "添加组件", modifier = Modifier.padding(horizontal = 10.dp)) {
@@ -767,6 +829,28 @@ private fun TreeRow(
     val is_root = depth == 0
     val colors = app_theme_provider.colors
     var menu_open by remember { mutableStateOf(false) }
+    var confirm_delete_root by remember { mutableStateOf(false) }
+
+    // 根布局删除确认：会连带清空所有子组件
+    if (confirm_delete_root) {
+        AlertDialog(
+            onDismissRequest = { confirm_delete_root = false },
+            title = { Text("删除根布局", fontSize = 15.sp, fontWeight = FontWeight.Bold) },
+            text = { Text("将删除根布局及全部子组件，整个布局会被清空。确定吗？", fontSize = 13.sp) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirm_delete_root = false
+                    on_delete(node)
+                }) { Text("删除", color = androidx.compose.ui.graphics.Color(0xFFFF6B6B)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirm_delete_root = false }) { Text("取消") }
+            },
+            containerColor = colors.editor_bg,
+            titleContentColor = colors.editor_text,
+            textContentColor = colors.editor_hint
+        )
+    }
 
     Box {
         Row(
@@ -801,7 +885,12 @@ private fun TreeRow(
                 text = { Text("复制", fontSize = 13.sp) },
                 onClick = { on_copy(node); menu_open = false }
             )
-            if (!is_root) {
+            if (is_root) {
+                DropdownMenuItem(
+                    text = { Text("删除根布局", fontSize = 13.sp, color = androidx.compose.ui.graphics.Color(0xFFFF6B6B)) },
+                    onClick = { menu_open = false; confirm_delete_root = true }
+                )
+            } else {
                 DropdownMenuItem(
                     text = { Text("删除", fontSize = 13.sp, color = androidx.compose.ui.graphics.Color(0xFFFF6B6B)) },
                     onClick = { on_delete(node); menu_open = false }
@@ -828,28 +917,34 @@ private fun TreeRow(
     }
 }
 
-/* 折叠卡片（固定高度内容区可滚动） */
+/* 折叠卡片：头部按钮 + 展开内容与组件树按 weight 平分抽屉高度 */
 @Composable
-private fun ExpandableCard(title: String, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+private fun ColumnScope.ExpandableCard(title: String, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     val colors = app_theme_provider.colors
-    Column(modifier) {
-        Surface(
-            onClick = { expanded = !expanded },
-            shape = RoundedCornerShape(10.dp),
-            color = colors.editor_button_bg
-        ) {
-            Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(title, fontSize = 12.sp, color = colors.editor_text, modifier = Modifier.weight(1f))
-                Text(if (expanded) "▾" else "▸", fontSize = 12.sp, color = colors.editor_hint)
-            }
+    Surface(
+        onClick = { expanded = !expanded },
+        shape = RoundedCornerShape(10.dp),
+        color = colors.editor_button_bg,
+        modifier = modifier
+    ) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(title, fontSize = 12.sp, color = colors.editor_text, modifier = Modifier.weight(1f))
+            Text(if (expanded) "▾" else "▸", fontSize = 12.sp, color = colors.editor_hint)
         }
-        androidx.compose.animation.AnimatedVisibility(visible = expanded) {
-            Column(
-                Modifier.fillMaxWidth().height(180.dp).verticalScroll(rememberScrollState()).padding(top = 4.dp)
-            ) {
-                content()
-            }
+    }
+    androidx.compose.animation.AnimatedVisibility(
+        visible = expanded,
+        // 展开时占一份权重，与组件树（及另一张展开的卡片）平分；收起时不占空间。
+        modifier = if (expanded) modifier.weight(1f) else Modifier
+    ) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(top = 4.dp)
+        ) {
+            content()
         }
     }
 }
@@ -894,6 +989,9 @@ private fun RealtimePreview(
 
     LaunchedEffect(xml, revision) {
         error = null
+        result = null
+        // 布局被清空时不解析，显示空状态占位
+        if (xml.isBlank()) return@LaunchedEffect
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
             runCatching {
                 val tmp = File.createTempFile("design", ".xml", context.cacheDir)
@@ -906,6 +1004,16 @@ private fun RealtimePreview(
     }
 
     Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))) {
+        if (xml.isBlank()) {
+            // 空布局占位提示
+            Text(
+                "布局为空\n从左侧添加组件或布局作为根节点",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                modifier = Modifier.align(Alignment.Center)
+            )
+        }
         error?.let {
             Text("解析错误: $it", color = MaterialTheme.colorScheme.error, fontSize = 11.sp, modifier = Modifier.align(Alignment.TopCenter).padding(8.dp))
         }
@@ -969,7 +1077,10 @@ private fun PropertyDrawer(
         AlertDialog(
             onDismissRequest = { show_delete_confirm = false },
             title = { Text("删除组件", fontSize = 15.sp, fontWeight = FontWeight.Bold) },
-            text = { Text("确定删除 ${tag_cn(node?.tag ?: "")}${node?.id?.takeIf { it.isNotBlank() }?.let { " (#$it)" } ?: ""} 吗？", fontSize = 13.sp) },
+            text = {
+                val desc = "确定删除 ${tag_cn(node?.tag ?: "")}${node?.id?.takeIf { it.isNotBlank() }?.let { " (#$it)" } ?: ""} 吗？"
+                Text(if (is_root) "根布局删除后整个布局将被清空，确定吗？" else desc, fontSize = 13.sp)
+            },
             confirmButton = {
                 TextButton(onClick = {
                     show_delete_confirm = false
@@ -997,10 +1108,8 @@ private fun PropertyDrawer(
                 Text("#$it", fontSize = 11.sp, color = app_theme_provider.colors.editor_hint)
             }
             Spacer(Modifier.weight(1f))
-            if (!is_root) {
-                IconButton(onClick = { show_delete_confirm = true }, modifier = Modifier.size(28.dp)) {
-                    Icon(Icons.Default.Delete, "删除", tint = androidx.compose.ui.graphics.Color(0xFFFF6B6B), modifier = Modifier.size(15.dp))
-                }
+            IconButton(onClick = { show_delete_confirm = true }, modifier = Modifier.size(28.dp)) {
+                Icon(Icons.Default.Delete, "删除", tint = androidx.compose.ui.graphics.Color(0xFFFF6B6B), modifier = Modifier.size(15.dp))
             }
         }
         Spacer(Modifier.height(10.dp))

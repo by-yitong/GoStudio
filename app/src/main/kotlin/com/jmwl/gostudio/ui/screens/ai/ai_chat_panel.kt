@@ -66,10 +66,12 @@ fun ai_chat_panel(
     // 最后一条消息文本长度（流式增长时也触发滚动）
     val last_text_len = agent.messages.lastOrNull()?.text?.length ?: 0
 
-    // 新消息 or 流式增长时自动滚到底
-    LaunchedEffect(agent.messages.size, last_text_len) {
+    // 新消息 or 流式增长 or 等待气泡出现时自动滚到底
+    LaunchedEffect(agent.messages.size, last_text_len, is_running) {
         if (agent.messages.isNotEmpty()) {
-            list_state.animateScrollToItem(agent.messages.size - 1)
+            // 等待气泡是列表尾部的额外 item：显示中滚到它，否则滚到最后一条消息
+            val waiting = is_running && agent.messages.none { it.streaming }
+            list_state.animateScrollToItem(agent.messages.size - if (waiting) 0 else 1)
         }
     }
 
@@ -179,6 +181,10 @@ fun ai_chat_panel(
                             { new_text -> agent.edit_and_resend_user(index, new_text) }
                         } else null
                     )
+                }
+                // agent 运行中但还没有流式占位消息（发送后到占位插入前、工具轮次之间）：显示等待气泡
+                if (is_running && agent.messages.none { it.streaming }) {
+                    item(key = "waiting-bubble") { ai_waiting_bubble() }
                 }
             }
         }

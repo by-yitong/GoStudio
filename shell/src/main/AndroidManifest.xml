@@ -4,12 +4,14 @@
     android:versionCode="1"
     android:versionName="1.0">
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.VIBRATE" />
 
     <application
         android:label="App"
         android:icon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="true"
         android:theme="@style/Theme.Material3.DayNight.NoActionBar">
         <!-- activity 必须用全限定名：打包时会替换 package，相对名会解析错 -->
         <activity

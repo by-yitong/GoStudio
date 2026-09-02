@@ -262,10 +262,11 @@ class ai_agent_loop(
                 add(ai_message(role = ai_message_role.SYSTEM, text = system_prompt))
                 addAll(history_snapshot.filter { it.role != ai_message_role.SYSTEM && !it.is_error })
             }
-            // 用 compaction 替代简单截断（优先模型摘要，失败退化启发式）
+            // 用 compaction 替代简单截断（优先模型摘要，失败退化启发式）；
+            // 上限优先取模型级标注的上下文长度（effective_context_chars），未标注用全局值
             val trimmed = ai_compaction.compact(
                 request_messages.filter { it.role != ai_message_role.SYSTEM },
-                settings.max_context_chars,
+                settings.effective_context_chars(),
                 client = client
             )
             val final_messages = listOf(request_messages.first { it.role == ai_message_role.SYSTEM }) + trimmed

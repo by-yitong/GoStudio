@@ -8,8 +8,12 @@ import com.jmwl.gostudio.core.logging.logger_manager
 import com.jmwl.gostudio.editor.theme.editor_theme_manager
 import com.jmwl.gostudio.plugins.plugin_manager
 import com.jmwl.gostudio.service.keep_alive_service
+import com.jmwl.gostudio.toolchain.toolchain_manager
 import com.jmwl.gostudio.toolchain.toolchain_runtime_provider
 import com.jmwl.gostudio.ui.theme.theme_manager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import com.jmwl.gostudio.utils.app_lifecycle_observer
 import io.github.rosemoe.sora.langs.textmate.TextMateLanguage
 import io.github.rosemoe.sora.langs.textmate.registry.FileProviderRegistry
@@ -54,7 +58,22 @@ class gostudio_application : Application() {
             proot_tmp_dir = File(filesDir, "home/gostudio/proot-tmps")
         )
 
+        // 先于任何 GOPROXY 读取（工具链环境组装/迁移补写都依赖它）
+        com.jmwl.gostudio.toolchain.goproxy_store.init(this)
+
         plugin_manager.init(this)
+
+        // 旧版本装的 Go 没把 GOPROXY 写进 go env 文件，终端里走默认 proxy.golang.org：
+        // 启动时补写一次（文件里已有 GOPROXY 则跳过，不影响用户自定义）。
+        CoroutineScope(Dispatchers.IO).launch {
+            runCatching {
+                if (toolchain_manager.is_go_installed()) {
+                    toolchain_manager.ensure_default_go_env()
+                }
+            }.onFailure { error ->
+                logger_manager.e("gostudio_application", "写入默认 GOPROXY 失败: ${error.message}", error)
+            }
+        }
 
         init_textmate()
         start_keep_alive_service()

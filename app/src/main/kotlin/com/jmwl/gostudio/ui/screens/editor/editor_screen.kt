@@ -97,6 +97,10 @@ internal fun editor_screen(
     terminal_extra_environment: Map<String, String>,
     on_toggle_toolbar: () -> Unit,
     on_project_config_apply: (project_ide_config, () -> Unit) -> Unit,
+    /** 项目配置页「编译」：按面板当前配置交叉编译并导出 */
+    on_project_config_compile: (project_ide_config) -> Unit = {},
+    on_compile_cancel: () -> Unit = {},
+    compile_dialog_state: editor_compile_dialog_state? = null,
     is_app_project: Boolean = false,
     on_select_tab: (String) -> Unit,
     on_pin_tab: (String) -> Unit,
@@ -107,6 +111,7 @@ internal fun editor_screen(
     on_run: () -> Unit,
     on_test: () -> Unit = {},
     on_pack: () -> Unit = {},
+    on_tidy: () -> Unit = {},
     on_save: () -> Unit,
     on_format: () -> Unit,
     on_toggle_read_only: () -> Unit,
@@ -119,6 +124,7 @@ internal fun editor_screen(
     on_replace_all: (String) -> Unit,
     on_clear_search: () -> Unit,
     on_insert_symbol: (String) -> Unit,
+    on_toggle_comment: () -> Unit = {},
     on_create_file: (String, String, editor_create_file_template) -> Unit,
     on_create_folder: (String, String) -> Unit,
     on_refresh_files: (String) -> Unit,
@@ -151,8 +157,6 @@ internal fun editor_screen(
     /** 递增触发器：App 编译完成并进入运行界面后切走编译日志 */
     sidebar_log_close_trigger: Int = 0,
     on_open_designer: () -> Unit = {},
-    layout_components_provider: () -> List<editor_layout_component> = { emptyList() },
-    on_insert_generated_code: (String) -> Unit = {},
     /** AI 设置覆盖层打开或正在退出时，禁用 AI 页自身返回处理 */
     ai_settings_visible: Boolean = false
 ) {
@@ -161,7 +165,8 @@ internal fun editor_screen(
     var drawer_width by remember { mutableStateOf(300.dp) }
     var selected_tool by remember { mutableStateOf(editor_sidebar_tool.FILE) }
     var search_visible by remember { mutableStateOf(false) }
-    val is_layout_xml = selected_tab_path?.endsWith("layout.xml") == true
+    // 任意 xml 布局文件都可进可视化设计器（设计器默认编辑 layout.xml）。
+    val is_xml_file = selected_tab_path?.endsWith(".xml") == true
     val is_markdown_file = selected_tab_path?.lowercase()?.let {
         it.endsWith(".md") || it.endsWith(".markdown")
     } == true
@@ -179,8 +184,6 @@ internal fun editor_screen(
     var create_dialog_request by remember { mutableStateOf<editor_create_dialog_request?>(null) }
     var show_ai_page by remember { mutableStateOf(false) }
     var show_project_config by remember { mutableStateOf(false) }
-    var show_code_generator by remember { mutableStateOf(false) }
-    var code_generator_components by remember { mutableStateOf<List<editor_layout_component>>(emptyList()) }
     // 外部触发打开 AI 页面（编辑器选区 AI 动作）
     LaunchedEffect(ai_open_trigger) {
         if (ai_open_trigger > 0) show_ai_page = true
@@ -328,7 +331,7 @@ internal fun editor_screen(
                             drawer_fraction = { drawer_progress.value },
                             on_build = on_build,
                             on_run = on_run,
-                            is_layout_xml = is_layout_xml,
+                            is_xml_file = is_xml_file,
                             is_markdown_file = is_markdown_file,
                             markdown_preview_enabled = markdown_preview_enabled,
                             on_toggle_markdown_mode = {
@@ -337,16 +340,12 @@ internal fun editor_screen(
                             on_open_designer = on_open_designer,
                             on_test = on_test,
                             on_pack = on_pack,
+                            on_tidy = on_tidy,
                             build_running = output_panel_state.task_running,
                             build_stopping = output_panel_state.task_stopping,
                             on_toggle_read_only = on_toggle_read_only,
                             on_open_ai = { show_ai_page = true },
-                            on_open_project_config = { show_project_config = true },
-                            is_app_project = is_app_project,
-                            on_generate_code = {
-                                code_generator_components = layout_components_provider()
-                                show_code_generator = true
-                            }
+                            on_open_project_config = { show_project_config = true }
                         )
                     }
                     // 文件标签栏保持在顶部
@@ -538,7 +537,8 @@ internal fun editor_screen(
                 // 这样自动补全弹窗只会出现在编辑器区域内，不会压到键盘上方的符号输入区。
                 if (show_symbol_bar) {
                     editor_symbol_bar(
-                        on_insert = on_insert_symbol
+                        on_insert = on_insert_symbol,
+                        on_toggle_comment = on_toggle_comment
                     )
                 }
 
@@ -777,17 +777,12 @@ internal fun editor_screen(
                     project_root_path = project_root_path,
                     is_app_project = is_app_project,
                     on_apply = on_project_config_apply,
+                    on_compile = on_project_config_compile,
+                    on_compile_cancel = on_compile_cancel,
+                    compile_state = compile_dialog_state,
                     modifier = Modifier.fillMaxSize()
                 )
             }
-        }
-
-        if (show_code_generator) {
-            editor_code_generator_dialog(
-                components = code_generator_components,
-                on_insert = on_insert_generated_code,
-                on_dismiss = { show_code_generator = false }
-            )
         }
     }
 }

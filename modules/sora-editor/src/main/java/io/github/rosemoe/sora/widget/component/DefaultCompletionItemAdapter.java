@@ -42,8 +42,8 @@ import io.github.rosemoe.sora.widget.schemes.EditorColorScheme;
 public final class DefaultCompletionItemAdapter extends EditorCompletionAdapter {
     @Override
     public int getItemHeight() {
-        // 45 dp
-        return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 45, getContext().getResources().getDisplayMetrics());
+        // 52 dp, room for the optional second documentation line
+        return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 52, getContext().getResources().getDisplayMetrics());
     }
 
     @Override
@@ -64,6 +64,8 @@ public final class DefaultCompletionItemAdapter extends EditorCompletionAdapter 
         }
 
         tv = view.findViewById(R.id.result_item_detail);
+        var hasDetail = item.detail != null && item.detail.length() > 0;
+        tv.setVisibility(hasDetail ? View.VISIBLE : View.GONE);
         tv.setText(item.detail);
         tv.setTextColor(getThemeColor(EditorColorScheme.COMPLETION_WND_TEXT_SECONDARY));
         tv.setSelected(isCurrentCursorPosition);
@@ -74,6 +76,8 @@ public final class DefaultCompletionItemAdapter extends EditorCompletionAdapter 
         }
 
         tv = view.findViewById(R.id.result_item_desc);
+        var hasDesc = item.desc != null && item.desc.length() > 0;
+        tv.setVisibility(hasDesc ? View.VISIBLE : View.GONE);
         tv.setText(item.desc);
         tv.setTextColor(getThemeColor(EditorColorScheme.COMPLETION_WND_TEXT_SECONDARY));
         tv.setSelected(isCurrentCursorPosition);

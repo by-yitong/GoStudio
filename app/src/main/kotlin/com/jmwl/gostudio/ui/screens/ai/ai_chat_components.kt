@@ -1,7 +1,6 @@
 package com.jmwl.gostudio.ui.screens.ai
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -163,7 +162,10 @@ fun ai_message_bubble(
     on_regenerate: (() -> Unit)? = null,
     on_edit: ((String) -> Unit)? = null
 ) {
-    val has_visible = message.has_visible_text || (show_thinking && message.tool_executions.isNotEmpty())
+    val has_visible = message.has_visible_text ||
+        (show_thinking && message.tool_executions.isNotEmpty()) ||
+        // 流式占位（还没收到首个 token）也要显示气泡，承载「思考中」加载动画
+        message.streaming
     if (!has_visible) return
 
     val colors = app_theme_provider.colors
@@ -200,9 +202,9 @@ fun ai_message_bubble(
                         ai_reasoning_card(message.reasoning, message.streaming)
                         Spacer(modifier = Modifier.height(4.dp))
                     }
-                    // 流式中且还没有文本/思考：显示打字指示器
+                    // 流式中且还没有文本/思考：显示「思考中」加载动画
                     if (message.streaming && !message.has_visible_text && message.reasoning.isBlank()) {
-                        ai_typing_indicator()
+                        ai_thinking_indicator()
                     }
                     // 文本内容（Markdown 渲染：标题/列表/表格/代码块/行内格式）
                     if (message.has_visible_text) {
@@ -366,32 +368,55 @@ fun ai_reasoning_card(reasoning: String, streaming: Boolean) {
 }
 
 /**
- * 打字指示器：三个错相位跳动的圆点。
+ * 「思考中…」加载指示器：圆形进度 + 动态省略号。
+ * 用于发送后等待首个 token、以及 agent 轮次之间的等待反馈。
  */
 @Composable
-fun ai_typing_indicator() {
+fun ai_thinking_indicator() {
     val colors = app_theme_provider.colors
-    val transition = rememberInfiniteTransition(label = "typing")
+    val transition = rememberInfiniteTransition(label = "thinking")
+    val dots by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 3f,
+        animationSpec = infiniteRepeatable(tween(1200, easing = androidx.compose.animation.core.LinearEasing)),
+        label = "dots"
+    )
     Row(
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        modifier = Modifier.padding(vertical = 2.dp)
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(7.dp),
+        modifier = Modifier.padding(vertical = 3.dp)
     ) {
-        repeat(3) { i ->
-            val alpha by transition.animateFloat(
-                initialValue = 0.3f,
-                targetValue = 1f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(600, delayMillis = i * 150),
-                    repeatMode = RepeatMode.Reverse
-                ),
-                label = "dot_$i"
-            )
-            Box(
-                modifier = Modifier
-                    .size(7.dp)
-                    .clip(androidx.compose.foundation.shape.CircleShape)
-                    .background(colors.title_highlight.copy(alpha = alpha))
-            )
+        CircularProgressIndicator(
+            modifier = Modifier.size(14.dp),
+            strokeWidth = 1.5.dp,
+            color = colors.title_highlight,
+            trackColor = colors.title_highlight.copy(alpha = 0.15f)
+        )
+        Text(
+            text = "思考中" + ".".repeat((dots.toInt() % 3) + 1),
+            fontSize = 12.sp,
+            color = colors.subtitle
+        )
+    }
+}
+
+/**
+ * 等待气泡（assistant 样式）：agent 正在运行但还没有流式占位消息时，
+ * 在消息流末尾显示，保证从点发送到收到首个 token 全程有加载反馈。
+ */
+@Composable
+fun ai_waiting_bubble() {
+    val colors = app_theme_provider.colors
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 3.dp)
+    ) {
+        Surface(
+            shape = RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp, bottomStart = 4.dp, bottomEnd = 14.dp),
+            color = colors.card_bg
+        ) {
+            Column(modifier = Modifier.padding(horizontal = 11.dp, vertical = 8.dp)) {
+                ai_thinking_indicator()
+            }
         }
     }
 }
