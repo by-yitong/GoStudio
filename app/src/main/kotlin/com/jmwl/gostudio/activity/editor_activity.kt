@@ -444,6 +444,9 @@ class editor_activity : ComponentActivity() {
                         com.jmwl.gostudio.ai.save_ai_settings(this@editor_activity, new_settings)
                         show_ai_settings = false
                     },
+                    on_change = { new_settings ->
+                        com.jmwl.gostudio.ai.save_ai_settings(this@editor_activity, new_settings)
+                    },
                     project_dir = project_dir
                 )
             }
@@ -708,7 +711,7 @@ class editor_activity : ComponentActivity() {
             register(com.jmwl.gostudio.ai.tools.bash_tool(project, go_env))
         }
 
-        val skill_manager = com.jmwl.gostudio.ai.skills.ai_skill_manager(global_skills_dir, project_skills_dir)
+        val skill_manager = com.jmwl.gostudio.ai.skills.ai_skill_manager(global_skills_dir, project_skills_dir, com.jmwl.gostudio.plugins.plugin_manager.skill_dirs())
         registry.register(com.jmwl.gostudio.ai.tools.create_skill_tool(skill_manager))
         val input_processor = com.jmwl.gostudio.ai.ai_input_processor(
             project_dir = project,

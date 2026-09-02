@@ -68,22 +68,78 @@ object git_manager {
     private suspend fun run_git(
         project_root: String,
         args: String,
-        timeout_ms: Long = COMMAND_TIMEOUT_MS
+        timeout_ms: Long = COMMAND_TIMEOUT_MS,
+        on_command_log: ((String) -> Unit)? = null
     ): Pair<Boolean, String> {
         val output = StringBuilder()
-        val environment = toolchain_manager.project_environment(project_root).environment
+        val environment = toolchain_manager.project_environment(project_root).environment +
+            withContext(Dispatchers.IO) { git_auth_manager.authentication_environment() }
         val command = "git -c core.quotepath=false -c color.ui=never $args"
         val exit_ok = withTimeoutOrNull(timeout_ms) {
             proot_manager.execute_command_with_environment(
                 command = command,
                 working_dir = project_root,
                 extra_environment = environment,
-                on_log = { line -> output.appendLine(line) }
+                on_log = { line ->
+                    output.appendLine(line)
+                    normalize_output(line).takeIf { it.isNotBlank() }?.let { output_line -> on_command_log?.invoke(output_line) }
+                }
             )
         } ?: false
         val clean_output = normalize_output(output.toString())
         log_command(args, exit_ok, clean_output)
         return exit_ok to clean_output
+    }
+
+    /** 测试当前登录配置；SSH 使用 ssh -T，HTTPS Token 走 GitHub API，其他方式可传入测试仓库。 */
+    suspend fun test_authentication(
+        config: git_auth_config,
+        test_repository_url: String = ""
+    ): Pair<Boolean, String> {
+        if (config.method == git_auth_method.NONE ||
+            config.method == git_auth_method.SYSTEM ||
+            config.method == git_auth_method.HTTPS_PASSWORD
+        ) {
+            if (test_repository_url.isBlank()) return false to "请先填写测试仓库地址"
+            return withContext(Dispatchers.IO) {
+                val output = StringBuilder()
+                val ok = proot_manager.execute_command_with_environment(
+                    command = "git ls-remote --heads ${shell_quote(test_repository_url.trim())}",
+                    working_dir = "/home",
+                    extra_environment = toolchain_manager.project_environment("/home").environment +
+                        git_auth_manager.authentication_environment(config),
+                    on_log = { line -> output.appendLine(line) }
+                )
+                val clean_output = normalize_output(output.toString())
+                ok to clean_output.ifBlank { if (ok) "认证成功" else "认证失败" }
+            }
+        }
+
+        if (config.method == git_auth_method.HTTPS_TOKEN || config.method == git_auth_method.GITHUB_OAUTH) {
+            return withContext(Dispatchers.IO) {
+                val user = git_auth_manager.github_username(config.token)
+                if (user.isSuccess) true to "GitHub 登录成功：${user.getOrDefault("")}"
+                else false to user.exceptionOrNull()?.message.orEmpty()
+            }
+        }
+
+        return withContext(Dispatchers.IO) {
+            val output = StringBuilder()
+            val command = "${git_auth_manager.ssh_command(config)} -T " +
+                "-o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new " +
+                "git@${shell_quote(config.host.trim().ifBlank { "github.com" })}"
+            val ok = proot_manager.execute_command_with_environment(
+                command = command,
+                working_dir = "/home",
+                extra_environment = toolchain_manager.project_environment("/home").environment +
+                    git_auth_manager.authentication_environment(config),
+                on_log = { line -> output.appendLine(line) }
+            )
+            val clean_output = normalize_output(output.toString())
+            // GitHub 对 ssh -T 成功认证也会返回 1；这里按文本判断。
+            (ok || clean_output.contains("successfully authenticated", ignoreCase = true)) to
+                clean_output.ifBlank { if (ok) "认证成功" else "认证失败" }
+        }
     }
 
     /** 项目根是否已是 git 仓库。 */
@@ -118,6 +174,19 @@ object git_manager {
         android.util.Log.d(LOG_TAG, "git identity configured for $project_root; init=$previous_output")
         return true
     }
+
+    /** 克隆 Git 仓库；目录名由调用方保证安全。 */
+    suspend fun clone_repository(
+        projects_root: String,
+        repository_url: String,
+        destination_name: String,
+        on_command_log: (String) -> Unit = {}
+    ): Pair<Boolean, String> = run_git(
+        project_root = projects_root,
+        args = "clone --depth=1 --single-branch ${shell_quote(repository_url)} ${shell_quote(destination_name)}",
+        timeout_ms = 600_000L,
+        on_command_log = on_command_log
+    )
 
     /** 本地分支名，当前分支排在首位。 */
     suspend fun branches(project_root: String): List<String> {

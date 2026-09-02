@@ -6,6 +6,7 @@ import android.os.Build
 import com.jmwl.gostudio.activity.crash.crash_activity
 import com.jmwl.gostudio.core.logging.logger_manager
 import com.jmwl.gostudio.editor.theme.editor_theme_manager
+import com.jmwl.gostudio.plugins.plugin_manager
 import com.jmwl.gostudio.service.keep_alive_service
 import com.jmwl.gostudio.toolchain.toolchain_runtime_provider
 import com.jmwl.gostudio.ui.theme.theme_manager
@@ -52,6 +53,8 @@ class gostudio_application : Application() {
             rootfs_dir = File(filesDir, "home/gostudio/alpine-rootfs"),
             proot_tmp_dir = File(filesDir, "home/gostudio/proot-tmps")
         )
+
+        plugin_manager.init(this)
 
         init_textmate()
         start_keep_alive_service()

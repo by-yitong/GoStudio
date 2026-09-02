@@ -12,6 +12,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.lifecycleScope
 import com.jmwl.gostudio.project.project_manager
 import com.jmwl.gostudio.project.recent_project_info
+import com.jmwl.gostudio.toolchain.git_manager
 import com.jmwl.gostudio.toolchain.install_garble
 import com.jmwl.gostudio.toolchain.install_gcc
 import com.jmwl.gostudio.toolchain.install_git
@@ -32,7 +33,10 @@ import com.jmwl.gostudio.ui.theme.theme_manager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import android.net.Uri
 import java.io.File
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 class main_activity : ComponentActivity() {
     private var recent_projects by mutableStateOf<List<recent_project>>(emptyList())
@@ -76,9 +80,12 @@ class main_activity : ComponentActivity() {
                     on_back_to_background = { moveTaskToBack(true) },
                     on_terminal = ::open_terminal,
                     on_project_click = ::open_recent_project,
-                    on_project_remove = ::remove_recent_project,
+                    on_project_copy = ::copy_project,
+                    on_project_delete = ::delete_project,
+                    on_project_export = ::export_project,
                     on_create_project = ::create_project,
                     on_open_project = ::open_project_path,
+                    on_clone_project = ::clone_github_project,
                     on_toolchain_trigger_change = { trigger ->
                         toolchain_tasks = if (trigger != null) {
                             toolchain_tasks + trigger
@@ -177,11 +184,88 @@ class main_activity : ComponentActivity() {
         }
     }
 
-    private fun remove_recent_project(project: recent_project) {
+    /** 复制项目到同目录副本（name-copy、name-copy-2 递增），成功后加入最近列表。 */
+    private fun copy_project(project: recent_project) {
         lifecycleScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    val source = File(project.path)
+                    if (!source.isDirectory) throw IllegalArgumentException("项目目录不存在")
+                    val parent = source.parentFile ?: throw IllegalArgumentException("无法定位父目录")
+                    var target = File(parent, source.name + "-copy")
+                    var index = 2
+                    while (target.exists()) {
+                        target = File(parent, source.name + "-copy-$index")
+                        index++
+                    }
+                    source.copyRecursively(target, overwrite = false)
+                    target
+                }
+            }
+            result.fold(
+                onSuccess = { target ->
+                    project_manager.add_recent_project(target.absolutePath)
+                    reload_recent_projects()
+                    app_toast.show(this@main_activity, "已复制到 ${target.name}", app_toast.LENGTH_SHORT)
+                },
+                onFailure = { error ->
+                    app_toast.show(this@main_activity, "复制失败：${error.message}", app_toast.LENGTH_LONG)
+                }
+            )
+        }
+    }
+
+    /** 删除项目目录并移出最近列表。 */
+    private fun delete_project(project: recent_project) {
+        lifecycleScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    val dir = File(project.path)
+                    if (dir.isDirectory) {
+                        if (!dir.deleteRecursively()) throw IllegalStateException("目录删除失败")
+                    }
+                }
+            }
             project_manager.remove_recent_project(project.path)
             reload_recent_projects()
-            app_toast.show(this@main_activity, "已从最近项目移除", app_toast.LENGTH_SHORT)
+            result.fold(
+                onSuccess = {
+                    app_toast.show(this@main_activity, "已删除 ${project.name}", app_toast.LENGTH_SHORT)
+                },
+                onFailure = { error ->
+                    app_toast.show(this@main_activity, "目录删除失败：${error.message}（已移出最近列表）", app_toast.LENGTH_LONG)
+                }
+            )
+        }
+    }
+
+    /** 导出项目为 ZIP 到用户选择的 SAF 目标。 */
+    private fun export_project(project: recent_project, uri: Uri) {
+        lifecycleScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    val root = File(project.path)
+                    if (!root.isDirectory) throw IllegalArgumentException("项目目录不存在")
+                    contentResolver.openOutputStream(uri)?.use { output ->
+                        ZipOutputStream(output.buffered()).use { zip ->
+                            root.walkTopDown().filter { it.isFile }.forEach { file ->
+                                val entry_name = file.relativeTo(root).invariantSeparatorsPath
+                                zip.putNextEntry(ZipEntry(entry_name))
+                                file.inputStream().use { it.copyTo(zip) }
+                                zip.closeEntry()
+                            }
+                        }
+                    } ?: throw IllegalStateException("无法打开导出目标")
+                }
+            }
+            result.fold(
+                onSuccess = {
+                    app_toast.show(this@main_activity, "已导出 ${project.name}.zip", app_toast.LENGTH_SHORT)
+                },
+                onFailure = { error ->
+                    app_toast.show(this@main_activity, "导出失败：${error.message}", app_toast.LENGTH_LONG)
+                }
+            )
         }
     }
 
@@ -207,6 +291,88 @@ class main_activity : ComponentActivity() {
                 app_toast.show(this@main_activity, "创建失败: ${error.message}", app_toast.LENGTH_LONG)
             }
         }
+    }
+
+    private suspend fun clone_github_project(
+        repository_url: String,
+        on_log: (String) -> Unit,
+        on_progress: (Int) -> Unit
+    ): Boolean {
+        if (!toolchain_status.git_installed) {
+            on_log("Git 未安装，请先到「工具」页安装 Git")
+            return false
+        }
+
+        val url = repository_url.trim()
+        val https_pattern = Regex(
+            """^https?://([\w.-]+)(?::\d+)?/(?:[\w.-]+/)*([\w.-]+?)(?:\.git)?/?$""",
+            RegexOption.IGNORE_CASE
+        )
+        val ssh_pattern = Regex(
+            """^(?:ssh://)?git@([\w.-]+)(?::\d+)?[/:](?:[\w.-]+/)*([\w.-]+?)(?:\.git)?$""",
+            RegexOption.IGNORE_CASE
+        )
+        val match = https_pattern.find(url) ?: ssh_pattern.find(url)
+        if (match == null) {
+            on_log("仓库地址无效：$url")
+            return false
+        }
+
+        val raw_name = match.groupValues[2].ifBlank { "github-project" }
+        val base_name = raw_name.replace(Regex("[^A-Za-z0-9._-]"), "_")
+            .replace(Regex("^[.]*"), "")
+            .ifBlank { "github-project" }
+        val projects_root = project_manager.default_projects_dir()
+        val project_dir = withContext(Dispatchers.IO) {
+            var candidate = File(projects_root, base_name)
+            var index = 1
+            while (candidate.exists()) {
+                candidate = File(projects_root, "${base_name}-${index++}")
+            }
+            candidate
+        }
+
+        on_log("仓库：$url")
+        on_log("目标：${project_dir.name}")
+        on_progress(8)
+        val (clone_ok, clone_output) = git_manager.clone_repository(
+            projects_root = projects_root.absolutePath,
+            repository_url = url,
+            destination_name = project_dir.name,
+            on_command_log = on_log
+        )
+        if (!clone_ok) {
+            on_progress(100)
+            on_log(clone_output.ifBlank { "克隆失败" })
+            withContext(Dispatchers.IO) { project_dir.deleteRecursively() }
+            return false
+        }
+
+        on_progress(70)
+        val configured = withContext(Dispatchers.IO) {
+            project_manager.ensure_project_config(project_dir.absolutePath)
+        }
+        configured.onFailure { error ->
+            on_progress(100)
+            on_log(error.message ?: "仓库根目录缺少 go.mod，不是可打开的 Go 项目")
+            withContext(Dispatchers.IO) { project_dir.deleteRecursively() }
+            return false
+        }
+
+        on_progress(88)
+        val recent = project_manager.add_recent_project(project_dir.absolutePath)
+        recent.onFailure { error ->
+            on_progress(100)
+            on_log("项目加入最近列表失败: ${error.message}")
+            return false
+        }
+
+        on_progress(100)
+        reload_recent_projects()
+        on_log("克隆完成：${project_dir.name}")
+        app_toast.show(this, "项目已克隆: ${project_dir.name}", app_toast.LENGTH_SHORT)
+        open_editor(project_dir.name, project_dir.absolutePath)
+        return true
     }
 
     private fun open_project_path(project_path: String) {

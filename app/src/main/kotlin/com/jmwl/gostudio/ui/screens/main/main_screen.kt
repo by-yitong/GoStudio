@@ -1,14 +1,20 @@
 package com.jmwl.gostudio.ui.screens.main
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.border
 import androidx.compose.foundation.background
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -49,6 +55,7 @@ internal enum class main_home_tab(val title: String) {
 fun main_screen(
     on_new_project: () -> Unit = {},
     on_open_project: () -> Unit = {},
+    on_clone_project: () -> Unit = {},
     on_tools: () -> Unit = {},
     on_plugins: () -> Unit = {},
     on_terminal: () -> Unit = {},
@@ -59,10 +66,13 @@ fun main_screen(
     on_editor_theme_click: () -> Unit = {},
     on_editor_click: () -> Unit = {},
     on_ai_settings_click: () -> Unit = {},
+    on_git_settings_click: () -> Unit = {},
     on_about_click: () -> Unit = {},
     recent_projects: List<recent_project> = emptyList(),
     on_project_click: (recent_project) -> Unit = {},
-    on_project_remove: (recent_project) -> Unit = {}
+    on_project_copy: (recent_project) -> Unit = {},
+    on_project_delete: (recent_project) -> Unit = {},
+    on_project_export: (recent_project, Uri) -> Unit = { _, _ -> }
 ) {
     val colors = app_theme_provider.colors
     // rememberSaveable：从二级页返回时恢复页签，不再跳回「项目」
@@ -117,10 +127,13 @@ fun main_screen(
                 main_home_tab.PROJECTS -> projects_page(
                     on_new_project = on_new_project,
                     on_open_project = on_open_project,
+                    on_clone_project = on_clone_project,
                     on_terminal = on_terminal,
                     recent_projects = recent_projects,
                     on_project_click = on_project_click,
-                    on_project_remove = on_project_remove
+                    on_project_copy = on_project_copy,
+                    on_project_delete = on_project_delete,
+                    on_project_export = on_project_export
                 )
                 main_home_tab.LEARN -> Box(Modifier.statusBarsPadding()) {
                     learn_tab_page(
@@ -134,6 +147,7 @@ fun main_screen(
                         on_editor_theme_click = on_editor_theme_click,
                         on_editor_click = on_editor_click,
                         on_ai_settings_click = on_ai_settings_click,
+                        on_git_settings_click = on_git_settings_click,
                         on_about_click = on_about_click,
                         on_tools_click = on_tools,
                         on_plugins_click = on_plugins
@@ -150,10 +164,13 @@ fun main_screen(
 private fun projects_page(
     on_new_project: () -> Unit,
     on_open_project: () -> Unit,
+    on_clone_project: () -> Unit,
     on_terminal: () -> Unit,
     recent_projects: List<recent_project>,
     on_project_click: (recent_project) -> Unit,
-    on_project_remove: (recent_project) -> Unit
+    on_project_copy: (recent_project) -> Unit,
+    on_project_delete: (recent_project) -> Unit,
+    on_project_export: (recent_project, Uri) -> Unit
 ) {
     val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
@@ -189,6 +206,7 @@ private fun projects_page(
                 new_project_card(on_click = on_new_project)
                 // 导入项目（CodeAssist ImportGradleCard 同款描边卡）
                 outlined_action_card(Icons.Default.FolderOpen, "导入项目", "打开手机上已有的项目目录", on_open_project)
+                outlined_action_card(Icons.Default.CloudDownload, "克隆 Git 项目", "从 GitHub 等仓库地址导入 Go 项目", on_clone_project)
 
                 if (recent_projects.isEmpty()) {
                     // 空状态：图标 + 双行引导（替代单行灰字）
@@ -217,12 +235,63 @@ private fun projects_page(
                     }
                 } else {
                     section_label("最近项目", count = recent_projects.size)
+
+                    // 长按操作菜单 / 删除确认 / 导出目标选择
+                    var menu_project by remember { mutableStateOf<recent_project?>(null) }
+                    var confirm_delete_project by remember { mutableStateOf<recent_project?>(null) }
+                    var export_project by remember { mutableStateOf<recent_project?>(null) }
+
+                    val export_launcher = rememberLauncherForActivityResult(
+                        ActivityResultContracts.CreateDocument("application/zip")
+                    ) { uri ->
+                        val project = export_project
+                        export_project = null
+                        if (uri != null && project != null) on_project_export(project, uri)
+                    }
+
                     recent_projects.forEachIndexed { i, project ->
                         project_card(
                             project = project,
                             delay_millis = i * 50,
                             on_open = { on_project_click(project) },
-                            on_delete = { on_project_remove(project) }
+                            on_long_click = { menu_project = project }
+                        )
+                    }
+
+                    menu_project?.let { project ->
+                        project_actions_sheet(
+                            project = project,
+                            on_copy = {
+                                menu_project = null
+                                on_project_copy(project)
+                            },
+                            on_delete = {
+                                menu_project = null
+                                confirm_delete_project = project
+                            },
+                            on_export = {
+                                menu_project = null
+                                export_project = project
+                                export_launcher.launch(project.name + ".zip")
+                            },
+                            on_dismiss = { menu_project = null }
+                        )
+                    }
+
+                    confirm_delete_project?.let { project ->
+                        AlertDialog(
+                            onDismissRequest = { confirm_delete_project = null },
+                            title = { Text("删除项目") },
+                            text = { Text("将删除项目目录及全部内容：\n${project.path}") },
+                            confirmButton = {
+                                TextButton(onClick = {
+                                    confirm_delete_project = null
+                                    on_project_delete(project)
+                                }) { Text("删除", color = MaterialTheme.colorScheme.error) }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { confirm_delete_project = null }) { Text("取消") }
+                            }
                         )
                     }
                 }
@@ -332,13 +401,14 @@ private fun section_label(text: String, count: Int? = null) {
     }
 }
 
-/** 项目卡（CodeAssist ProjectCard 原样）：错峰滑入 + 字母头像 + 版本胶囊 + 删除位。 */
+/** 项目卡：错峰滑入 + 字母头像 + 版本胶囊；长按弹操作菜单。 */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun project_card(
     project: recent_project,
     delay_millis: Int,
     on_open: () -> Unit,
-    on_delete: () -> Unit
+    on_long_click: () -> Unit
 ) {
     val interaction = remember { MutableInteractionSource() }
     Row(
@@ -348,7 +418,12 @@ private fun project_card(
             .press_scale(interaction)
             .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(18.dp))
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(18.dp))
-            .clickable(interaction, indication = null, onClick = on_open)
+            .combinedClickable(
+                interactionSource = interaction,
+                indication = null,
+                onClick = on_open,
+                onLongClick = on_long_click
+            )
             .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
@@ -423,16 +498,6 @@ private fun project_card(
                 }
             }
         }
-        val delete_interaction = remember { MutableInteractionSource() }
-        Box(
-            Modifier
-                .size(34.dp)
-                .press_scale(delete_interaction)
-                .clickable(delete_interaction, indication = null, onClick = on_delete),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(Icons.Default.Close, contentDescription = "移除项目", Modifier.size(18.dp), tint = MaterialTheme.colorScheme.outline)
-        }
         Icon(Icons.Default.ChevronRight, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.outline)
     }
 }
@@ -458,6 +523,7 @@ private fun settings_tab_page(
     on_editor_theme_click: () -> Unit,
     on_editor_click: () -> Unit,
     on_ai_settings_click: () -> Unit,
+    on_git_settings_click: () -> Unit,
     on_about_click: () -> Unit,
     on_tools_click: () -> Unit,
     on_plugins_click: () -> Unit
@@ -467,8 +533,79 @@ private fun settings_tab_page(
         on_editor_theme_click = on_editor_theme_click,
         on_editor_click = on_editor_click,
         on_ai_click = on_ai_settings_click,
+        on_git_click = on_git_settings_click,
         on_about_click = on_about_click,
         on_tools_click = on_tools_click,
         on_plugins_click = on_plugins_click
     )
+}
+
+
+/** 项目长按操作菜单：复制 / 删除 / 导出。 */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun project_actions_sheet(
+    project: recent_project,
+    on_copy: () -> Unit,
+    on_delete: () -> Unit,
+    on_export: () -> Unit,
+    on_dismiss: () -> Unit
+) {
+    ModalBottomSheet(onDismissRequest = on_dismiss) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 28.dp)
+        ) {
+            Text(
+                project.name,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                project.path,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = 2.dp, bottom = 14.dp)
+            )
+            project_action_item(Icons.Default.ContentCopy, "复制项目", "复制到同目录副本", on_copy)
+            project_action_item(Icons.Default.FileDownload, "导出项目", "打包为 ZIP 保存", on_export)
+            project_action_item(Icons.Default.Delete, "删除项目", "删除目录并移出最近列表", on_delete, destructive = true)
+        }
+    }
+}
+
+@Composable
+private fun project_action_item(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+    destructive: Boolean = false
+) {
+    val tint = if (destructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        Icon(icon, null, Modifier.size(22.dp), tint = tint)
+        Column {
+            Text(title, style = MaterialTheme.typography.bodyLarge, color = tint)
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline
+            )
+        }
+    }
 }

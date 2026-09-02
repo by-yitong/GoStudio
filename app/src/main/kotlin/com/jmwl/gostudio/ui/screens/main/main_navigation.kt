@@ -51,6 +51,7 @@ import com.jmwl.gostudio.ai.tools.ai_tool_registry
 import com.jmwl.gostudio.ai.load_ai_settings
 import com.jmwl.gostudio.ai.save_ai_settings
 import com.jmwl.gostudio.ui.dialogs.common.install_progress_dialog
+import com.jmwl.gostudio.ui.dialogs.main.clone_project_dialog
 import com.jmwl.gostudio.ui.dialogs.main.new_project_dialog
 import com.jmwl.gostudio.ui.dialogs.main.open_project_dialog
 import com.jmwl.gostudio.ui.dialogs.main.toolchain_custom_install_dialog
@@ -58,6 +59,7 @@ import com.jmwl.gostudio.ui.screens.ai.ai_chat_screen
 import com.jmwl.gostudio.ui.screens.ai.ai_settings_screen
 import com.jmwl.gostudio.ui.screens.editor.editor_settings_screen
 import com.jmwl.gostudio.ui.screens.editor.editor_theme_settings_screen
+import com.jmwl.gostudio.ui.screens.main.git_settings_screen
 import com.jmwl.gostudio.ui.theme.app_theme_preset
 import com.jmwl.gostudio.ui.theme.app_theme_provider
 import com.jmwl.gostudio.ui.theme.app_theme_type
@@ -69,6 +71,7 @@ private val route_levels = mapOf(
     "main" to 0,
     "tools" to 1,
     "plugins" to 1,
+    "plugin_market" to 2,
     "settings" to 1,
     "agent" to 1,
     "learn" to 1,
@@ -76,6 +79,7 @@ private val route_levels = mapOf(
     "theme_settings" to 2,
     "editor_settings" to 2,
     "ai_settings" to 2,
+    "git_settings" to 2,
     "editor_theme_settings" to 3,
     "learn_track" to 2,
     "learn_lesson" to 3
@@ -117,9 +121,12 @@ fun main_navigation(
     on_back_to_background: () -> Unit,
     on_terminal: () -> Unit,
     on_project_click: (recent_project) -> Unit,
-    on_project_remove: (recent_project) -> Unit,
+    on_project_copy: (recent_project) -> Unit,
+    on_project_delete: (recent_project) -> Unit,
+    on_project_export: (recent_project, android.net.Uri) -> Unit,
     on_create_project: (String, String, String, String) -> Unit,
     on_open_project: (String) -> Unit,
+    on_clone_project: suspend (String, (String) -> Unit, (Int) -> Unit) -> Boolean,
     on_toolchain_trigger_change: (toolchain_trigger?) -> Unit,
     on_custom_toolchain_dialog_change: (toolchain_custom_install_request?) -> Unit,
     on_theme_change: (app_theme_type) -> Unit,
@@ -145,7 +152,7 @@ fun main_navigation(
         val global_skills_dir = java.io.File(ai_root, "skills")
         val global_prompts_dir = java.io.File(ai_root, "prompts")
         runCatching { com.jmwl.gostudio.ai.skills.release_builtin_skills(context, global_skills_dir) }
-        val skill_mgr = com.jmwl.gostudio.ai.skills.ai_skill_manager(global_skills_dir, null)
+        val skill_mgr = com.jmwl.gostudio.ai.skills.ai_skill_manager(global_skills_dir, null, com.jmwl.gostudio.plugins.plugin_manager.skill_dirs())
         ai_agent_loop(
             settings_provider = {
                 // 会话 override 优先，覆盖全局的提供商/模型/key
@@ -177,6 +184,8 @@ fun main_navigation(
 
     var show_new_project_dialog by remember { mutableStateOf(false) }
     var show_open_project_dialog by remember { mutableStateOf(false) }
+    var github_clone_url by remember { mutableStateOf<String?>(null) }
+    var show_clone_project_dialog by remember { mutableStateOf(false) }
     val active_toolchain_trigger = toolchain_tasks.firstOrNull()
     var toolchain_dialog_visible by remember(active_toolchain_trigger) { mutableStateOf(true) }
 
@@ -214,6 +223,7 @@ fun main_navigation(
                 main_screen(
                     on_new_project = { show_new_project_dialog = true },
                     on_open_project = { show_open_project_dialog = true },
+                    on_clone_project = { show_clone_project_dialog = true },
                     recent_projects = recent_projects,
                     on_tools = { nav_controller.navigate("tools") },
                     on_plugins = { nav_controller.navigate("plugins") },
@@ -227,9 +237,12 @@ fun main_navigation(
                     on_editor_theme_click = { nav_controller.navigate("editor_theme_settings") },
                     on_editor_click = { nav_controller.navigate("editor_settings") },
                     on_ai_settings_click = { nav_controller.navigate("ai_settings") },
+                    on_git_settings_click = { nav_controller.navigate("git_settings") },
                     on_about_click = { nav_controller.navigate("about") },
                     on_project_click = on_project_click,
-                    on_project_remove = on_project_remove
+                    on_project_copy = on_project_copy,
+                    on_project_delete = on_project_delete,
+                    on_project_export = on_project_export
                 )
             }
 
@@ -280,7 +293,13 @@ fun main_navigation(
                 )
             }
 
-            composable("plugins") { placeholder_screen("插件") { nav_controller.popBackStack() } }
+            composable("plugins") {
+                plugins_screen(
+                    on_back = { nav_controller.popBackStack() },
+                    on_browse = { nav_controller.navigate("plugin_market") }
+                )
+            }
+            composable("plugin_market") { plugin_market_screen(on_back = { nav_controller.popBackStack() }) }
             composable("settings") {
                 main_settings_screen(
                     on_back = { nav_controller.popBackStack() },
@@ -288,6 +307,7 @@ fun main_navigation(
                     on_editor_theme_click = { nav_controller.navigate("editor_theme_settings") },
                     on_editor_click = { nav_controller.navigate("editor_settings") },
                     on_ai_click = { nav_controller.navigate("ai_settings") },
+                    on_git_click = { nav_controller.navigate("git_settings") },
                     on_about_click = { nav_controller.navigate("about") }
                 )
             }
@@ -372,6 +392,10 @@ fun main_navigation(
                     on_exit = { nav_controller.popBackStack() }
                 )
             }
+            composable("git_settings") {
+                git_settings_screen(on_back = { nav_controller.popBackStack() })
+            }
+
             composable("ai_settings") {
                 ai_settings_screen(
                     initial = ai_settings_state,
@@ -380,6 +404,10 @@ fun main_navigation(
                         save_ai_settings(context, new_settings)
                         ai_settings_state = new_settings
                         nav_controller.popBackStack()
+                    },
+                    on_change = { new_settings ->
+                        save_ai_settings(context, new_settings)
+                        ai_settings_state = new_settings
                     }
                 )
             }
@@ -419,6 +447,27 @@ fun main_navigation(
                 show_open_project_dialog = false
                 on_open_project(project_path)
             }
+        )
+    }
+
+    if (show_clone_project_dialog) {
+        clone_project_dialog(
+            on_dismiss = { show_clone_project_dialog = false },
+            on_clone = { repository_url ->
+                show_clone_project_dialog = false
+                github_clone_url = repository_url
+            }
+        )
+    }
+
+    github_clone_url?.let { repository_url ->
+        install_progress_dialog(
+            title = "克隆 Git 项目",
+            task = { on_log, on_progress ->
+                on_clone_project(repository_url, on_log, on_progress)
+            },
+            on_dismiss = { github_clone_url = null },
+            on_success = { github_clone_url = null },
         )
     }
 

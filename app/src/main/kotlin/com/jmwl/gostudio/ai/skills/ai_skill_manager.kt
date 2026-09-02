@@ -28,11 +28,12 @@ data class ai_skill(
     val source: skill_source    // 来源
 )
 
-enum class skill_source { BUILT_IN, GLOBAL, PROJECT }
+enum class skill_source { BUILT_IN, GLOBAL, PROJECT, PLUGIN }
 
 class ai_skill_manager(
     private val global_skills_dir: File,   // <app home>/.ai/skills
-    private val project_skills_dir: File?  // <project>/.ai/skills（可能无项目）
+    private val project_skills_dir: File?, // <project>/.ai/skills（可能无项目）
+    private val plugin_skill_dirs: List<File> = emptyList() // 插件提供的 skills 目录
 ) {
     /** 已发现的所有 skill（按 name 去重，项目级覆盖同名全局） */
     private var skills: List<ai_skill> = emptyList()
@@ -40,7 +41,10 @@ class ai_skill_manager(
     /** 扫描并加载 skill 索引（在 IO 线程调用） */
     fun discover() {
         val result = linkedMapOf<String, ai_skill>()
-        // 全局优先（项目级后加载，覆盖同名）
+        // 优先级：插件 < 全局 < 项目（后加载覆盖同名）
+        plugin_skill_dirs.forEach { dir ->
+            scan_dir(dir, skill_source.PLUGIN, is_project_relative = false, result)
+        }
         scan_dir(global_skills_dir, skill_source.GLOBAL, is_project_relative = false, result)
         project_skills_dir?.let {
             scan_dir(it, skill_source.PROJECT, is_project_relative = true, result)
@@ -141,7 +145,7 @@ class ai_skill_manager(
     /** 删除 skill（仅允许删全局/项目的，内置不删） */
     fun delete_skill(name: String): Boolean {
         val s = find(name) ?: return false
-        if (s.source == skill_source.BUILT_IN) return false
+        if (s.source == skill_source.BUILT_IN || s.source == skill_source.PLUGIN) return false
         return runCatching {
             s.skill_dir.deleteRecursively()
             discover()

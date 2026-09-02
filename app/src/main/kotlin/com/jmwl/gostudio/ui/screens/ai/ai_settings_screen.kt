@@ -119,6 +119,7 @@ fun ai_settings_screen(
     initial: ai_settings_state,
     on_back: () -> Unit,
     on_save: (ai_settings_state) -> Unit,
+    on_change: (ai_settings_state) -> Unit,
     project_dir: java.io.File? = null
 ) {
     val colors = app_theme_provider.colors
@@ -218,10 +219,10 @@ fun ai_settings_screen(
                         "model" -> ai_model_settings_screen(
                             initial = settings,
                             on_back = { sub_page = null },
-                            on_save = { new_settings ->
+                            on_change = { new_settings ->
                                 settings = new_settings
-                                on_save(new_settings)
-                                sub_page = null
+                                // 模型配置是“变更即存”：只持久化，不退出设置页。
+                                on_change(new_settings)
                             }
                         )
                         "behavior" -> ai_behavior_settings_screen(
@@ -291,7 +292,7 @@ private fun om_top_bar(
 private fun ai_model_settings_screen(
     initial: ai_settings_state,
     on_back: () -> Unit,
-    on_save: (ai_settings_state) -> Unit
+    on_change: (ai_settings_state) -> Unit
 ) {
     val colors = app_theme_provider.colors
     var settings by remember { mutableStateOf(initial) }
@@ -306,7 +307,7 @@ private fun ai_model_settings_screen(
     // 变更即存（与 OpenMinis 一致：每次改动直接落盘，无底部保存条）
     fun commit(next: ai_settings_state) {
         settings = next
-        on_save(next)
+        on_change(next)
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -1512,7 +1513,8 @@ private fun ai_skill_settings_screen(project_dir: java.io.File?, on_back: () -> 
     val manager = remember(project_dir) {
         com.jmwl.gostudio.ai.skills.ai_skill_manager(
             File(paths.home_dir, ".ai/skills"),
-            project_dir?.let { File(it, ".ai/skills") }
+            project_dir?.let { File(it, ".ai/skills") },
+            com.jmwl.gostudio.plugins.plugin_manager.skill_dirs()
         ).also { it.discover() }
     }
     var skills by remember { mutableStateOf(manager.all()) }
@@ -1606,8 +1608,10 @@ private fun ai_skill_card(
         com.jmwl.gostudio.ai.skills.skill_source.BUILT_IN -> "内置"
         com.jmwl.gostudio.ai.skills.skill_source.GLOBAL -> "全局"
         com.jmwl.gostudio.ai.skills.skill_source.PROJECT -> "项目"
+        com.jmwl.gostudio.ai.skills.skill_source.PLUGIN -> "插件"
     }
-    val can_delete = skill.source != com.jmwl.gostudio.ai.skills.skill_source.BUILT_IN
+    val can_delete = skill.source != com.jmwl.gostudio.ai.skills.skill_source.BUILT_IN &&
+        skill.source != com.jmwl.gostudio.ai.skills.skill_source.PLUGIN
     Row(
         modifier = Modifier.fillMaxWidth().background(colors.card_bg)
             .clickable(interactionSource = interaction_source, indication = null, onClick = on_view)

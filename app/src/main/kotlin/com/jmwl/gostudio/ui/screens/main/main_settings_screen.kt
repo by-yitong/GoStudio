@@ -32,6 +32,7 @@ fun main_settings_screen(
     on_editor_theme_click: () -> Unit = {},
     on_editor_click: () -> Unit = {},
     on_ai_click: () -> Unit = {},
+    on_git_click: () -> Unit = {},
     on_about_click: () -> Unit = {},
     on_tools_click: () -> Unit = {},
     on_plugins_click: () -> Unit = {}
@@ -46,6 +47,7 @@ fun main_settings_screen(
             on_editor_theme_click = on_editor_theme_click,
             on_editor_click = on_editor_click,
             on_ai_click = on_ai_click,
+            on_git_click = on_git_click,
             on_about_click = on_about_click,
             on_tools_click = on_tools_click,
             on_plugins_click = on_plugins_click,
@@ -66,6 +68,7 @@ fun main_settings_content(
     on_editor_theme_click: () -> Unit = {},
     on_editor_click: () -> Unit = {},
     on_ai_click: () -> Unit = {},
+    on_git_click: () -> Unit = {},
     on_about_click: () -> Unit = {},
     on_tools_click: () -> Unit = {},
     on_plugins_click: () -> Unit = {},
@@ -188,6 +191,16 @@ fun main_settings_content(
                 colors = colors,
                 onClick = on_tools_click,
                 is_top = true,
+                is_bottom = false
+            )
+            Spacer(modifier = Modifier.height(1.dp))
+            main_settings_card_item(
+                icon = Icons.Default.Key,
+                title = "Git 登录",
+                subtitle = "Token、账号密码、SSH Key、OAuth",
+                colors = colors,
+                onClick = on_git_click,
+                is_top = false,
                 is_bottom = false
             )
             Spacer(modifier = Modifier.height(1.dp))
