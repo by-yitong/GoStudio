@@ -114,25 +114,31 @@ internal fun gostudio_learn_tracks(): List<learn_track> = listOf(
             learn_lesson(
                 id = "gostudio-app-floating",
                 title = "系统悬浮窗",
-                summary = "申请权限、显示可拖动文本卡片或自定义 XML 悬浮布局。",
-                est_minutes = 6,
+                summary = "申请权限、显示拖动窗口、更新内容，以及加载自定义 XML 悬浮布局。",
+                est_minutes = 8,
                 steps = listOf(
                     learn_step.concept(
-                        "gostudio-app-floating-c",
-                        "悬浮窗",
+                        "gostudio-app-floating-permission",
+                        "权限与基础用法",
                         listOf(
-                            learn_block.text("悬浮窗使用 Android 的系统窗口权限。首次使用需要跳到系统设置授权，返回 App 后会收到权限回调。"),
+                            learn_block.text("悬浮窗使用 Android 系统窗口权限。首次使用会跳转到系统设置，授权后返回 App 会触发回调。"),
                             learn_block.code(
                                 """
                                 app.OnFloatingWindowPermission(func(granted bool) {
-                                    if granted {
-                                        app.ShowFloatingWindow(
-                                            "note",
-                                            appsdk.FloatTitle("提示"),
-                                            appsdk.FloatText("GoStudio 悬浮窗"),
-                                            appsdk.FloatSize(220, 0),
-                                        )
+                                    if !granted {
+                                        app.Toast("未授予悬浮窗权限")
+                                        return
                                     }
+
+                                    app.ShowFloatingWindow(
+                                        "note",
+                                        appsdk.FloatTitle("提示"),
+                                        appsdk.FloatText("GoStudio 悬浮窗"),
+                                        appsdk.FloatPosition(24, 64),
+                                        appsdk.FloatSize(220, 0),
+                                        appsdk.FloatDraggable(true),
+                                        appsdk.FloatCloseButton(true),
+                                    )
                                 })
 
                                 if ok, _ := app.CanFloatingWindow(); ok {
@@ -140,21 +146,68 @@ internal fun gostudio_learn_tracks(): List<learn_track> = listOf(
                                 } else {
                                     app.RequestFloatingWindowPermission()
                                 }
+                                """
+                            ),
+                            learn_block.text("`id` 用于后续更新、移动、关闭和事件回调；宽高、坐标单位都是 dp。")
+                        )
+                    ),
+                    learn_step.concept(
+                        "gostudio-app-floating-api",
+                        "更新、移动与事件",
+                        listOf(
+                            learn_block.code(
+                                """
+                                app.SetFloatingWindowText("note", "内容已更新")
+                                app.MoveFloatingWindow("note", 80, 120)
 
-                                // 自定义 XML：
+                                app.OnFloatingWindowClick("note", func(e appsdk.Event) {
+                                    app.Toast("悬浮窗被点击")
+                                })
+
+                                app.OnFloatingWindowClose("note", func(e appsdk.Event) {
+                                    app.Log("悬浮窗已关闭")
+                                })
+
+                                app.CloseFloatingWindow("note")
+                                """
+                            ),
+                            learn_block.callout(
+                                "note",
+                                "关闭按钮和 CloseFloatingWindow 都会触发 float_close 回调；默认文本窗口支持 float_click 回调。"
+                            )
+                        )
+                    ),
+                    learn_step.concept(
+                        "gostudio-app-floating-xml",
+                        "自定义悬浮窗布局",
+                        listOf(
+                            learn_block.text("在项目 `floats` 目录中创建 XML，例如 `floats/note.xml`："),
+                            learn_block.code(
+                                """
+                                <LinearLayout orientation="vertical" background="#F21B1C1F" padding="14dp">
+
+                                    <TextView id="float_text" text="悬浮窗内容" textColor="#E6E6E6" textSize="14sp"/>
+                                    <Button id="float_btn" text="操作" layout_marginTop="10dp"/>
+
+                                </LinearLayout>
+                                """
+                            ),
+                            learn_block.code(
+                                """
                                 app.ShowFloatingWindow(
                                     "panel",
                                     appsdk.FloatLayout("floats/note.xml"),
                                     appsdk.FloatSize(280, 0),
                                     appsdk.FloatFocusable(true),
                                 )
+
+                                app.Text("float_text").SetText("通过 Go 更新")
+                                app.Button("float_btn").OnClick(func() {
+                                    app.CloseFloatingWindow("panel")
+                                })
                                 """
                             ),
-                            learn_block.text(
-                                """
-                                也可以在项目 `floats` 目录放置 XML，例如 `floats/note.xml`，用 `appsdk.FloatLayout("floats/note.xml")` 加载。悬浮布局里的控件仍可通过 `app.Button("id")` 这类句柄操作。
-                                """.trimIndent()
-                            )
+                            learn_block.text("悬浮布局里的控件仍会注册到宿主，因此可以继续使用 `app.Text`、`app.Button` 等组件句柄。独立 APK 打包时，`floats/` 目录会自动注入。")
                         )
                     )
                 )
