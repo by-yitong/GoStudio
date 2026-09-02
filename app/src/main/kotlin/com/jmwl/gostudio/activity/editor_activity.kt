@@ -1334,7 +1334,8 @@ class editor_activity : ComponentActivity() {
                     package_name = app_config.package_name,
                     version_name = app_config.version_name,
                     icon_file = icon_file,
-                    image_dir = File(project_dir, "images")
+                    image_dir = File(project_dir, "images"),
+                    float_dir = File(project_dir, "floats")
                 )
             }
             output_panel_state.task_running = false
@@ -1390,7 +1391,8 @@ class editor_activity : ComponentActivity() {
             sdk_file.readText().contains("package appsdk") &&
             File(sdk_dir, "view.go").isFile &&
             File(sdk_dir, "image.go").isFile &&
-            File(sdk_dir, "collection.go").isFile
+            File(sdk_dir, "collection.go").isFile &&
+            File(sdk_dir, "float.go").isFile
         val mod_is_current = root_mod.isFile && root_mod.readText().contains(
             "replace gostudio/appsdk => ./gostudio"
         )

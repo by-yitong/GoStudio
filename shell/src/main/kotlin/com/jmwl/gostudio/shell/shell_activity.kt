@@ -62,7 +62,7 @@ import java.util.concurrent.TimeUnit
 class shell_activity : AppCompatActivity() {
 
     private lateinit var binary_file: File
-    private var views_by_id: Map<String, View> = emptyMap()
+    private val views_by_id = mutableMapOf<String, View>()
     private var bridge: standalone_bridge? = null
     private var log_view: TextView? = null
     private var log_scroll: ScrollView? = null
@@ -70,6 +70,7 @@ class shell_activity : AppCompatActivity() {
     private var log_expanded = true
     private val started = AtomicBoolean(false)
     private val log_lines = ArrayDeque<String>()
+    private lateinit var floating_windows: floating_window_manager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -89,7 +90,15 @@ class shell_activity : AppCompatActivity() {
 
         // 2. 渲染布局
         val layout = runtime_layout_loader(this).load(layout_file)
-        views_by_id = layout.views
+        views_by_id.clear()
+        views_by_id.putAll(layout.views)
+        floating_windows = floating_window_manager(
+            activity = this,
+            base_dir = filesDir,
+            register_views = views_by_id::putAll,
+            wire_events = ::wire_widget_events,
+            on_event = { id, event, value -> bridge?.send_event(id, event, checked = value) }
+        )
         wire_click_events()
         setContentView(build_content(layout.root))
     }
@@ -110,6 +119,7 @@ class shell_activity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        floating_windows.notify_permission_changed()
         bridge?.send_lifecycle("resume")
     }
 
@@ -124,17 +134,18 @@ class shell_activity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        if (::floating_windows.isInitialized) floating_windows.close_all()
         bridge?.send_lifecycle("destroy")
         Handler(Looper.getMainLooper()).postDelayed({ bridge?.stop() }, 150)
         super.onDestroy()
     }
 
-    private fun copy_asset_dir(asset_path: String, target_dir: File) {
+    private fun copy_asset_dir(asset_path: String, target_dir: File, overwrite: Boolean = false) {
         if (!target_dir.isDirectory) target_dir.mkdirs() else return
         assets.list(asset_path)?.forEach { name ->
             val source = "$asset_path/$name"
             val target = File(target_dir, name)
-            if (target.isFile) return@forEach
+            if (target.isFile && !overwrite) return@forEach
             assets.open(source).use { input ->
                 target.outputStream().use { output -> input.copyTo(output) }
             }
@@ -142,7 +153,10 @@ class shell_activity : AppCompatActivity() {
     }
 
     private fun wire_click_events() {
-        views_by_id.forEach { (id, view) ->
+        views_by_id.forEach { (id, view) -> wire_widget_events(id, view) }
+    }
+
+    private fun wire_widget_events(id: String, view: View) {
             view.setOnClickListener { bridge?.send_event(id, "click") }
             view.setOnLongClickListener {
                 bridge?.send_event(id, "long_click")
@@ -203,8 +217,7 @@ class shell_activity : AppCompatActivity() {
                         override fun onNothingSelected(parent: AdapterView<*>?) = Unit
                     }
                 }
-            }
-        }
+    }
     }
 
     private fun build_content(root: View): View {
@@ -589,6 +602,12 @@ class shell_activity : AppCompatActivity() {
                 startActivity(Intent.createChooser(intent, msg.optString("title", "分享")))
                 ""
             }
+            "float_can" -> if (floating_windows.can_show()) "true" else "false"
+            "float_request_permission" -> floating_windows.request_permission()
+            "float_show" -> floating_windows.show(msg.optString("vid"), msg)
+            "float_set_text" -> floating_windows.set_text(msg.optString("vid"), msg.optString("text"))
+            "float_move" -> floating_windows.move(msg.optString("vid"), msg.optInt("x"), msg.optInt("y"))
+            "float_close" -> floating_windows.close(msg.optString("vid"), msg.optBoolean("boolean"))
             "device_info" -> {
                 JSONObject()
                     .put("manufacturer", Build.MANUFACTURER)

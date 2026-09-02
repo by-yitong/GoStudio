@@ -291,6 +291,7 @@ func Test$test_name(t *testing.T) {
         File(dir, "go.mod").writeText(go_mod_content(name, template_id))
         if (template_id == "app-ui") {
             File(dir, "layout.xml").writeText(app_ui_layout_template())
+            File(File(dir, "floats").apply { mkdirs() }, "note.xml").writeText(app_ui_float_layout_template())
             create_app_ui_runtime(dir)
         }
     }
@@ -310,6 +311,16 @@ func Test$test_name(t *testing.T) {
             }
         }
     }
+
+    /** 默认悬浮窗布局示例。 */
+    private fun app_ui_float_layout_template(): String = """
+<LinearLayout orientation="vertical" background="#F21B1C1F" padding="14dp">
+
+    <TextView id="float_text" text="悬浮窗内容" textColor="#E6E6E6" textSize="14sp"/>
+    <Button id="float_btn" text="操作" layout_marginTop="10dp"/>
+
+</LinearLayout>
+""".trimIndent() + "\n"
 
     /** App 界面模板：AndLua 式 XML 布局 + Go 逻辑，宿主内直接运行 */
     private fun go_app_ui_template(): String = """

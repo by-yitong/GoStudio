@@ -67,7 +67,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 class runtime_host_activity : AppCompatActivity(), runtime_bridge.protocol_handler {
 
     private lateinit var project_dir: File
-    private var views_by_id: Map<String, View> = emptyMap()
+    private val views_by_id = mutableMapOf<String, View>()
     private var bridge: runtime_bridge? = null
     private var log_view: TextView? = null
     private var log_scroll: ScrollView? = null
@@ -75,6 +75,7 @@ class runtime_host_activity : AppCompatActivity(), runtime_bridge.protocol_handl
     private var log_expanded = true
     private val started = AtomicBoolean(false)
     private val log_lines = ArrayDeque<String>()
+    private lateinit var floating_windows: floating_window_manager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -90,7 +91,15 @@ class runtime_host_activity : AppCompatActivity(), runtime_bridge.protocol_handl
         }
 
         val layout = runtime_layout_loader(this).load(layout_file)
-        views_by_id = layout.views
+        views_by_id.clear()
+        views_by_id.putAll(layout.views)
+        floating_windows = floating_window_manager(
+            activity = this,
+            base_dir = project_dir,
+            register_views = views_by_id::putAll,
+            wire_events = ::wire_widget_events,
+            on_event = { id, event, value -> bridge?.send_event(id, event, checked = value) }
+        )
         wire_click_events()
 
         setContentView(build_content(layout.root))
@@ -128,6 +137,7 @@ class runtime_host_activity : AppCompatActivity(), runtime_bridge.protocol_handl
 
     override fun onResume() {
         super.onResume()
+        floating_windows.notify_permission_changed()
         bridge?.send_lifecycle("resume")
     }
 
@@ -142,6 +152,7 @@ class runtime_host_activity : AppCompatActivity(), runtime_bridge.protocol_handl
     }
 
     override fun onDestroy() {
+        if (::floating_windows.isInitialized) floating_windows.close_all()
         bridge?.send_lifecycle("destroy")
         Handler(Looper.getMainLooper()).postDelayed({ bridge?.stop() }, 150)
         super.onDestroy()
@@ -149,7 +160,10 @@ class runtime_host_activity : AppCompatActivity(), runtime_bridge.protocol_handl
 
     /** 把布局控件的原生事件转发给 Go。 */
     private fun wire_click_events() {
-        views_by_id.forEach { (id, view) ->
+        views_by_id.forEach { (id, view) -> wire_widget_events(id, view) }
+    }
+
+    private fun wire_widget_events(id: String, view: View) {
             view.setOnClickListener { bridge?.send_event(id, "click") }
             view.setOnLongClickListener {
                 bridge?.send_event(id, "long_click")
@@ -210,11 +224,10 @@ class runtime_host_activity : AppCompatActivity(), runtime_bridge.protocol_handl
                         override fun onNothingSelected(parent: AdapterView<*>?) = Unit
                     }
                 }
-            }
-        }
     }
 
     /** 业务布局 + 底部日志浮层。 */
+    }
     private fun build_content(root: View): View {
         val frame = FrameLayout(this)
         frame.setBackgroundColor(com.google.android.material.color.MaterialColors.getColor(frame, com.google.android.material.R.attr.colorSurface))
@@ -574,6 +587,12 @@ class runtime_host_activity : AppCompatActivity(), runtime_bridge.protocol_handl
                 startActivity(Intent.createChooser(intent, msg.optString("title", "分享")))
                 ""
             }
+            "float_can" -> if (floating_windows.can_show()) "true" else "false"
+            "float_request_permission" -> floating_windows.request_permission()
+            "float_show" -> floating_windows.show(msg.optString("vid"), msg)
+            "float_set_text" -> floating_windows.set_text(msg.optString("vid"), msg.optString("text"))
+            "float_move" -> floating_windows.move(msg.optString("vid"), msg.optInt("x"), msg.optInt("y"))
+            "float_close" -> floating_windows.close(msg.optString("vid"), msg.optBoolean("boolean"))
             "device_info" -> {
                 JSONObject()
                     .put("manufacturer", Build.MANUFACTURER)

@@ -23,6 +23,8 @@ type message struct {
 	Action   string          `json:"action,omitempty"`
 	Text     string          `json:"text,omitempty"`
 	Title    string          `json:"title,omitempty"`
+	X        int             `json:"x"`
+	Y        int             `json:"y"`
 	Number   float64         `json:"number,omitempty"`
 	Boolean  bool            `json:"boolean,omitempty"`
 	Duration int             `json:"duration,omitempty"`

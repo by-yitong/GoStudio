@@ -3,6 +3,7 @@
     
     <!-- 网络权限 -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     
     <!-- 应用数据在私有目录；公共文件按需交给系统文件选择器处理 -->

@@ -31,7 +31,8 @@ object apk_packer {
         package_name: String = "",
         version_name: String = "",
         icon_file: File? = null,
-        image_dir: File? = null
+        image_dir: File? = null,
+        float_dir: File? = null
     ): Result<File> = runCatching {
         val work_dir = File(context.cacheDir, "apkpack").apply { mkdirs() }
 
@@ -43,7 +44,7 @@ object apk_packer {
 
         // 2. 注入
         val injected = File(work_dir, "injected.apk")
-        inject(template, injected, layout_file, binary_file, image_dir)
+        inject(template, injected, layout_file, binary_file, image_dir, float_dir)
 
         // 3. 改写 Manifest（名称/包名/版本）
         val rewritten = File(work_dir, "rewritten.apk")
@@ -68,7 +69,8 @@ object apk_packer {
         output: File,
         layout_file: File,
         binary_file: File,
-        image_dir: File?
+        image_dir: File?,
+        float_dir: File?
     ) {
         ZipFile(template).use { zf ->
             ZipOutputStream(FileOutputStream(output)).use { zos ->
@@ -93,6 +95,12 @@ object apk_packer {
                 }
                 add_entry(zos, "assets/app/layout.xml", layout_file)
                 add_entry(zos, "assets/app/app.bin", binary_file)
+                if (float_dir?.isDirectory == true) {
+                    float_dir.walkTopDown().filter { it.isFile }.forEach { file ->
+                        val relative = file.relativeTo(float_dir).path
+                        add_entry(zos, "assets/app/floats/$relative", file)
+                    }
+                }
                 if (image_dir?.isDirectory == true) {
                     image_dir.walkTopDown().filter { it.isFile }.forEach { file ->
                         val relative = file.relativeTo(image_dir).path

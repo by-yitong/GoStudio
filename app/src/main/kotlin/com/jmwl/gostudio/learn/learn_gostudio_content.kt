@@ -5,7 +5,7 @@ internal fun gostudio_learn_tracks(): List<learn_track> = listOf(
     learn_track(
         id = "gostudio-app",
         title = "GoStudio App",
-        subtitle = "AndLua 式布局、Go 逻辑、生命周期与系统 API",
+        subtitle = "AndLua 式布局、Go 逻辑、生命周期、系统 API 与悬浮窗",
         accent_color = 0xFF5CCFE6L,
         category = "GoStudio App",
         lessons = listOf(
@@ -106,6 +106,54 @@ internal fun gostudio_learn_tracks(): List<learn_track> = listOf(
                             learn_block.callout(
                                 "note",
                                 "生命周期回调运行在事件 goroutine 中。界面操作仍通过 SDK 消息回到主线程执行。"
+                            )
+                        )
+                    )
+                )
+            ),
+            learn_lesson(
+                id = "gostudio-app-floating",
+                title = "系统悬浮窗",
+                summary = "申请权限、显示可拖动文本卡片或自定义 XML 悬浮布局。",
+                est_minutes = 6,
+                steps = listOf(
+                    learn_step.concept(
+                        "gostudio-app-floating-c",
+                        "悬浮窗",
+                        listOf(
+                            learn_block.text("悬浮窗使用 Android 的系统窗口权限。首次使用需要跳到系统设置授权，返回 App 后会收到权限回调。"),
+                            learn_block.code(
+                                """
+                                app.OnFloatingWindowPermission(func(granted bool) {
+                                    if granted {
+                                        app.ShowFloatingWindow(
+                                            "note",
+                                            appsdk.FloatTitle("提示"),
+                                            appsdk.FloatText("GoStudio 悬浮窗"),
+                                            appsdk.FloatSize(220, 0),
+                                        )
+                                    }
+                                })
+
+                                if ok, _ := app.CanFloatingWindow(); ok {
+                                    app.ShowFloatingWindow("note", appsdk.FloatText("已授权"))
+                                } else {
+                                    app.RequestFloatingWindowPermission()
+                                }
+
+                                // 自定义 XML：
+                                app.ShowFloatingWindow(
+                                    "panel",
+                                    appsdk.FloatLayout("floats/note.xml"),
+                                    appsdk.FloatSize(280, 0),
+                                    appsdk.FloatFocusable(true),
+                                )
+                                """
+                            ),
+                            learn_block.text(
+                                """
+                                也可以在项目 `floats` 目录放置 XML，例如 `floats/note.xml`，用 `appsdk.FloatLayout("floats/note.xml")` 加载。悬浮布局里的控件仍可通过 `app.Button("id")` 这类句柄操作。
+                                """.trimIndent()
                             )
                         )
                     )
