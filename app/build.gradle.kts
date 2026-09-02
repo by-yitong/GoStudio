@@ -15,8 +15,8 @@ android {
         applicationId = "com.jmwl.gostudio"
         minSdk = 26
         targetSdk = 28
-        versionCode = 106
-        versionName = "1.0.6"
+        versionCode = 107
+        versionName = "1.0.7"
 
         ndk {
             abiFilters.add("arm64-v8a")
