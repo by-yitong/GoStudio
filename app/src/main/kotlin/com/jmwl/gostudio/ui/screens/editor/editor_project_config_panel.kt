@@ -198,7 +198,7 @@ internal fun editor_project_config_panel(
             project_config_extra_args_card(
                 value = config.build.ldflags,
                 title = "LDFLAGS",
-                subtitle = "传递给链接器的参数（-ldflags）",
+                subtitle = "链接器参数（-ldflags）；Release 构建未写 -s -w 时会自动附加",
                 placeholder = "-s -w",
                 on_change = { flags -> config = config.copy(build = config.build.copy(ldflags = flags)) }
             )

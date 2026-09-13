@@ -12,7 +12,7 @@
         android:label="App"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true"
-        android:theme="@style/Theme.Material3.DayNight.NoActionBar">
+        android:theme="@android:style/Theme.Material.Light.NoActionBar">
         <!-- activity 必须用全限定名：打包时会替换 package，相对名会解析错 -->
         <activity
             android:name="com.jmwl.gostudio.shell.shell_activity"

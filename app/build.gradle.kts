@@ -78,7 +78,13 @@ android {
         getByName("release") {
             // 仅在 release 签名配置存在时才启用签名，否则使用 debug 签名（降级）
             signingConfig = signingConfigs.findByName("release")
-            isMinifyEnabled = false
+            // R8 裁剪 + 资源收缩：keep 规则见 proguard-rules.pro
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
     
@@ -131,7 +137,6 @@ dependencies {
     implementation("com.google.code.gson:gson:2.11.0")
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-    implementation("io.getstream:stream-chat-android-compose:7.3.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
     // AI 助手:加密存储 API key

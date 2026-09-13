@@ -34,9 +34,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import android.net.Uri
+import android.provider.OpenableColumns
 import androidx.documentfile.provider.DocumentFile
 import java.io.File
 import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 
 class main_activity : ComponentActivity() {
@@ -49,10 +51,16 @@ class main_activity : ComponentActivity() {
     private var toolchain_tasks by mutableStateOf<List<toolchain_trigger>>(emptyList())
     private var custom_toolchain_dialog by mutableStateOf<toolchain_custom_install_request?>(null)
 
+    // 其他应用（QQ 等）「用其他应用打开」传进来的 zip：启动后直接进入导入流程
+    private var external_zip by mutableStateOf<Uri?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         enableEdgeToEdge()
+        if (intent?.action == Intent.ACTION_VIEW) {
+            intent.data?.let { external_zip = it }
+        }
         setContent {
             app_theme_provider {
                 // 启动后静默检查更新（仅发现新版本时弹窗）
@@ -86,6 +94,8 @@ class main_activity : ComponentActivity() {
                     on_project_export = ::export_project,
                     on_create_project = ::create_project,
                     on_import_project = ::import_project,
+                    on_import_project_zip = ::import_project_zip,
+                    initial_import_zip = external_zip,
                     on_clone_project = ::clone_github_project,
                     on_toolchain_trigger_change = { trigger ->
                         toolchain_tasks = if (trigger != null) {
@@ -496,6 +506,147 @@ class main_activity : ComponentActivity() {
         open_editor(project_dir.name, project_dir.absolutePath, auto_tidy = true)
         return true
     }
+
+    /**
+     * 从文件管理器选中的 ZIP 压缩包导入项目：
+     * 解包到内部 projects 根（唯一顶层目录视为包裹目录自动剥离），其余流程与目录导入一致。
+     */
+    private suspend fun import_project_zip(
+        uri: Uri,
+        on_log: (String) -> Unit,
+        on_progress: (Int) -> Unit
+    ): Boolean {
+        val projects_root = project_manager.default_projects_dir()
+
+        on_progress(3)
+        // 第一遍流式扫描：统计文件数、校验 go.mod、识别包裹目录
+        val scanned = withContext(Dispatchers.IO) {
+            runCatching {
+                val names = mutableListOf<String>()
+                contentResolver.openInputStream(uri)?.use { input ->
+                    ZipInputStream(input.buffered()).use { zip ->
+                        while (true) {
+                            val entry = zip.nextEntry ?: break
+                            if (!entry.isDirectory) names.add(entry.name)
+                            zip.closeEntry()
+                        }
+                    }
+                } ?: throw IllegalStateException("无法读取所选文件")
+                // 压缩包必须是合法 ZIP
+                val entries = names.filterNot { is_junk_entry(it) }
+                if (entries.isEmpty()) throw IllegalStateException("压缩包为空或不是有效的 ZIP 文件")
+                val top_dirs = entries.filter { it.contains('/') }.map { it.substringBefore('/') }.toSet()
+                val has_top_files = entries.any { !it.contains('/') }
+                val wrapper = if (top_dirs.size == 1 && !has_top_files) top_dirs.first() else null
+                val root_prefix = wrapper?.let { "$it/" } ?: ""
+                if (entries.none { it == "${root_prefix}go.mod" }) {
+                    throw IllegalStateException("压缩包根下没有 go.mod，不是可导入的 Go 项目")
+                }
+                wrapper to entries.size
+            }
+        }.getOrElse { error ->
+            on_log(error.message ?: "无法读取所选压缩包")
+            on_progress(100)
+            return false
+        }
+        val (wrapper, total) = scanned
+
+        val base_name = withContext(Dispatchers.IO) {
+            (zip_display_name(uri)?.substringBeforeLast(".zip") ?: wrapper)
+                ?.replace(Regex("[^A-Za-z0-9._-]"), "_")
+                ?.replace(Regex("^[.]*"), "")
+                ?.ifBlank { null }
+                ?: "imported-project"
+        }
+        val project_dir = withContext(Dispatchers.IO) {
+            var candidate = File(projects_root, base_name)
+            var index = 1
+            while (candidate.exists()) {
+                candidate = File(projects_root, "${base_name}-${index++}")
+            }
+            candidate
+        }
+        on_log("导入：$base_name")
+        on_log("目标：${project_dir.name}")
+        on_log("共 $total 个文件")
+        on_progress(8)
+
+        val root_prefix = wrapper?.let { "$it/" } ?: ""
+        val copy_result = withContext(Dispatchers.IO) {
+            runCatching {
+                var copied = 0
+                contentResolver.openInputStream(uri)?.use { input ->
+                    ZipInputStream(input.buffered()).use { zip ->
+                        val project_root_path = project_dir.canonicalPath + File.separator
+                        while (true) {
+                            val entry = zip.nextEntry ?: break
+                            val name = entry.name
+                            if (entry.isDirectory || is_junk_entry(name) ||
+                                (root_prefix.isNotEmpty() && !name.startsWith(root_prefix))
+                            ) {
+                                zip.closeEntry()
+                                continue
+                            }
+                            val relative = name.removePrefix(root_prefix)
+                            val target = File(project_dir, relative)
+                            // zip-slip：拒绝越界路径
+                            if (!target.canonicalPath.startsWith(project_root_path)) {
+                                throw IllegalStateException("压缩包含非法路径: $name")
+                            }
+                            target.parentFile?.mkdirs()
+                            target.outputStream().use { output -> zip.copyTo(output) }
+                            zip.closeEntry()
+                            copied++
+                            on_progress(10 + (85.0 * copied / total).toInt())
+                        }
+                    }
+                } ?: throw IllegalStateException("无法读取所选文件")
+            }
+        }
+        if (copy_result.isFailure) {
+            on_progress(100)
+            on_log("解包失败：${copy_result.exceptionOrNull()?.message ?: "未知错误"}")
+            withContext(Dispatchers.IO) { project_dir.deleteRecursively() }
+            return false
+        }
+
+        on_progress(97)
+        val configured = withContext(Dispatchers.IO) {
+            project_manager.ensure_project_config(project_dir.absolutePath)
+        }
+        configured.onFailure { error ->
+            on_progress(100)
+            on_log(error.message ?: "项目配置初始化失败")
+            withContext(Dispatchers.IO) { project_dir.deleteRecursively() }
+            return false
+        }
+
+        val recent = project_manager.add_recent_project(project_dir.absolutePath)
+        recent.onFailure { error ->
+            on_progress(100)
+            on_log("项目加入最近列表失败: ${error.message}")
+            return false
+        }
+
+        on_progress(100)
+        reload_recent_projects()
+        on_log("导入完成：${project_dir.name}")
+        app_toast.show(this, "项目已导入: ${project_dir.name}", app_toast.LENGTH_SHORT)
+        // 导入的项目依赖未缓存，打开后自动 go mod tidy（与克隆一致）
+        open_editor(project_dir.name, project_dir.absolutePath, auto_tidy = true)
+        return true
+    }
+
+    /** macOS 打包工具塞进 zip 的垃圾条目。 */
+    private fun is_junk_entry(name: String): Boolean =
+        name.startsWith("__MACOSX/") || name.contains("/__MACOSX/") ||
+            name.substringAfterLast('/') == ".DS_Store"
+
+    /** 通过 SAF 查询所选文件显示名（用于 zip 导入的项目命名）。 */
+    private fun zip_display_name(uri: Uri): String? =
+        contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) cursor.getString(0) else null
+        }
 
     private fun open_editor(project_name: String, project_path: String, auto_tidy: Boolean = false) {
         project_manager.ensure_project_clang_format(project_path)

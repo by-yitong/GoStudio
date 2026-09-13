@@ -44,9 +44,6 @@ import android.widget.ToggleButton
 import android.widget.VideoView
 import android.widget.ViewFlipper
 import android.webkit.WebView
-import androidx.core.widget.NestedScrollView
-import com.google.android.material.button.MaterialButton
-import com.google.android.material.textview.MaterialTextView
 import java.io.File
 import java.lang.reflect.Method
 
@@ -111,11 +108,11 @@ class runtime_layout_loader(private val context: Context) {
         "RadioGroup" to { RadioGroup(it) },
         "ScrollView" to { ScrollView(it) },
         "HorizontalScrollView" to { HorizontalScrollView(it) },
-        "NestedScrollView" to { NestedScrollView(it) },
+        "NestedScrollView" to { ScrollView(it) }, // 平台 ScrollView 替代（无 androidx 依赖），标签名保留兼容旧布局
         "ViewFlipper" to { ViewFlipper(it) },
         // 基础控件
-        "TextView" to { MaterialTextView(it) },
-        "Button" to { MaterialButton(it) },
+        "TextView" to { TextView(it) },
+        "Button" to { Button(it) },
         "EditText" to { EditText(it) },
         "AutoCompleteTextView" to { AutoCompleteTextView(it) },
         "ImageView" to { ImageView(it) },

@@ -75,6 +75,9 @@ class runtime_host_activity : AppCompatActivity(), runtime_bridge.protocol_handl
     private var log_expanded = true
     private val started = AtomicBoolean(false)
     private var layout_error: String? = null
+    /** 页面栈：app.ShowPage 压入新布局，返回键出栈回到上一页。 */
+    private val page_stack = ArrayDeque<runtime_layout_loader.Result>()
+    private lateinit var page_container: FrameLayout
     private val log_lines = ArrayDeque<String>()
     private lateinit var floating_windows: floating_window_manager
 
@@ -99,12 +102,18 @@ class runtime_host_activity : AppCompatActivity(), runtime_bridge.protocol_handl
             on_event = { id, event, value -> bridge?.send_event(id, event, checked = value) }
         )
         try {
-            val layout = runtime_layout_loader(this).load(layout_file)
+            val first = runtime_layout_loader(this).load(layout_file)
             views_by_id.clear()
-            views_by_id.putAll(layout.views)
-            wire_click_events()
+            page_container = FrameLayout(this)
+            setContentView(build_content(page_container))
+            show_page(first)
 
-            setContentView(build_content(layout.root))
+            // 页面栈优先：有上层页面时返回键出栈，最后一页才退出界面
+            onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    if (!pop_page()) finish()
+                }
+            })
         } catch (e: Exception) {
             // 布局 XML 有语法错误等问题时不崩溃：页内展示错误，返回键照常回到编辑器
             layout_error = describe_layout_error(e)
@@ -166,9 +175,47 @@ class runtime_host_activity : AppCompatActivity(), runtime_bridge.protocol_handl
         super.onDestroy()
     }
 
-    /** 把布局控件的原生事件转发给 Go。 */
-    private fun wire_click_events() {
-        views_by_id.forEach { (id, view) -> wire_widget_events(id, view) }
+    /** 把已加载的页面压栈显示：注册控件并接好事件。 */
+    private fun show_page(page: runtime_layout_loader.Result) {
+        page_stack.addLast(page)
+        (page.root.parent as? ViewGroup)?.removeView(page.root)
+        page_container.removeAllViews()
+        page_container.addView(
+            page.root,
+            FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        )
+        views_by_id.putAll(page.views)
+        page.views.forEach { (id, view) -> wire_widget_events(id, view) }
+    }
+
+    /** 加载并切入项目内另一个布局页；返回 null 表示成功，否则为错误信息。 */
+    private fun push_page(layout_name: String): String? {
+        val file = File(project_dir, layout_name)
+        if (!file.isFile) return "页面布局不存在: $layout_name"
+        return try {
+            show_page(runtime_layout_loader(this).load(file, project_dir))
+            null
+        } catch (e: Exception) {
+            describe_layout_error(e)
+        }
+    }
+
+    /** 出栈回到上一页；已是最后一页时返回 false。控件表只回退本页注册的 id。 */
+    private fun pop_page(): Boolean {
+        if (page_stack.size <= 1) return false
+        val popped = page_stack.removeLast()
+        popped.views.forEach { (id, view) ->
+            if (views_by_id[id] === view) views_by_id.remove(id)
+        }
+        val top = page_stack.last()
+        (top.root.parent as? ViewGroup)?.removeView(top.root)
+        page_container.removeAllViews()
+        page_container.addView(
+            top.root,
+            FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        )
+        views_by_id.putAll(top.views)
+        return true
     }
 
     private fun wire_widget_events(id: String, view: View) {
@@ -651,6 +698,14 @@ class runtime_host_activity : AppCompatActivity(), runtime_bridge.protocol_handl
                 ""
             }
             "float_can" -> if (floating_windows.can_show()) "true" else "false"
+            "show_page" -> {
+                val page_error = push_page(msg.optString("text"))
+                if (page_error != null) {
+                    append_log("错误: $page_error")
+                    error(page_error)
+                } else ""
+            }
+            "back_page" -> if (pop_page()) "" else error("已是最后一个页面")
             "float_request_permission" -> floating_windows.request_permission()
             "float_show" -> floating_windows.show(msg.optString("vid"), msg)
             "float_set_text" -> floating_windows.set_text(msg.optString("vid"), msg.optString("text"))

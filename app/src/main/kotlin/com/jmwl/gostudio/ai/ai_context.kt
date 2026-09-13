@@ -19,7 +19,9 @@ data class ai_environment_context(
     /** go.mod 内容（项目根的，如有） */
     val go_mod_content: String? = null,
     /** 项目顶层文件树概览 */
-    val project_tree_overview: String? = null
+    val project_tree_overview: String? = null,
+    /** 布局方言教程（app-ui 项目含 layout.xml 时自动加载，注入 system prompt 防止用错标准安卓 XML） */
+    val layout_guide: String? = null
 ) {
     val has_project: Boolean get() = project_dir != null
 }
@@ -62,9 +64,19 @@ fun build_system_prompt(env: ai_environment_context, enabled_tools: List<String>
     } else {
         sb.appendLine("- 当前未打开项目（用户在主界面做通用 Go 问答）")
     }
-    sb.appendLine()
+        sb.appendLine()
 
-    // 工具说明
+        // 布局方言教程：app-ui 项目自动注入。模型默认会写标准安卓 XML，
+        // 方言不匹配的属性被静默忽略，是「界面不生效」类问题的头号根因，必须前置纠正。
+        if (env.layout_guide != null) {
+            sb.appendLine("## 布局 XML 方言（必须遵守）")
+            sb.appendLine("本项目是 GoStudio 应用项目，界面文件 layout.xml（及各 *.xml 页面）使用 GoStudio 专用方言，不是标准安卓 XML。创建或修改任何界面文件、绑定控件事件时，必须严格遵守以下教程：")
+            sb.appendLine()
+            sb.appendLine(env.layout_guide.trim())
+            sb.appendLine()
+        }
+
+        // 工具说明
     if (enabled_tools.isNotEmpty()) {
         sb.appendLine("## 可用工具")
         sb.appendLine("你可以调用以下工具来获取信息或执行操作。需要时通过 tool calling 调用：")

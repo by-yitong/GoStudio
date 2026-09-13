@@ -91,7 +91,7 @@ class binary_manifest_editor_test {
     }
 
     @Test
-    fun `package prefix swap rewrites authorities and permissions but keeps shell class`() {
+    fun `package prefix swap rewrites package strings but keeps shell class`() {
         val rewritten = binary_manifest_editor.replace_strings(
             template_manifest(),
             replacements = mapOf("com.jmwl.gostudio.shell" to "com.example.packed"),
@@ -100,12 +100,12 @@ class binary_manifest_editor_test {
         )
 
         val strings = pool_strings(rewritten)
-        // provider 授权与动态权限声明要跟着换包名，否则两个项目的 APK 无法共存
-        assertThat(strings).contains("com.example.packed.androidx-startup")
-        assertThat(strings).contains("com.example.packed.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION")
+        // 壳包名字符串换成目标包名（带壳前缀的 provider 授权/权限同理；
+        // 精简模板已无 androidx provider，前缀路径由受保护类名覆盖）
+        assertThat(strings).contains("com.example.packed")
+        assertThat(strings).doesNotContain("com.jmwl.gostudio.shell")
         // 壳 Activity 类名必须保留：它指向 DEX 里的真实类
         assertThat(strings).contains("com.jmwl.gostudio.shell.shell_activity")
-        assertThat(strings).doesNotContain("com.jmwl.gostudio.shell.androidx-startup")
 
         assertThat(
             ApkUtils.getPackageNameFromBinaryAndroidManifest(little_endian(rewritten))

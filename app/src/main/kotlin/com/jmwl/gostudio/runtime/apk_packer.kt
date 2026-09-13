@@ -102,6 +102,14 @@ object apk_packer {
                     zos.closeEntry()
                 }
                 add_entry(zos, "assets/app/layout.xml", layout_file)
+                // 项目根目录的其他 xml 是 ShowPage 页面布局，一并打进包
+                layout_file.parentFile?.listFiles { file ->
+                    file.isFile && file.name.endsWith(".xml")
+                }?.forEach { page ->
+                    if (page.absolutePath != layout_file.absolutePath) {
+                        add_entry(zos, "assets/app/${page.name}", page)
+                    }
+                }
                 add_entry(zos, "assets/app/app.bin", binary_file)
                 if (float_dir?.isDirectory == true) {
                     float_dir.walkTopDown().filter { it.isFile }.forEach { file ->

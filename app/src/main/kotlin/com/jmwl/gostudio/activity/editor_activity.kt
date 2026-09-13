@@ -893,7 +893,11 @@ class editor_activity : ComponentActivity() {
                     cursor_line = state.cursor_line,
                     cursor_column = state.cursor_column,
                     go_mod_content = runCatching { java.io.File(project, "go.mod").takeIf { it.isFile }?.readText() }.getOrNull(),
-                    project_tree_overview = runCatching { com.jmwl.gostudio.ai.collect_tree_overview(project) }.getOrNull()
+                    project_tree_overview = runCatching { com.jmwl.gostudio.ai.collect_tree_overview(project) }.getOrNull(),
+                    // app-ui 项目（项目根含 layout.xml）：自动注入布局方言教程
+                    layout_guide = if (java.io.File(project, "layout.xml").isFile)
+                        com.jmwl.gostudio.ai.skills.load_builtin_skill_body(this, "layout-xml")
+                    else null
                 )
             },
             tool_registry = registry,
@@ -1695,11 +1699,27 @@ class editor_activity : ComponentActivity() {
     private fun build_go_build_command(build: project_build_config): String {
         val parts = mutableListOf("go build")
         if (build.build_tags.isNotBlank()) parts.add("-tags ${shell_quote(build.build_tags)}")
-        if (build.ldflags.isNotBlank()) parts.add("-ldflags ${shell_quote(build.ldflags)}")
+        val ldflags = effective_build_ldflags(build)
+        if (ldflags.isNotBlank()) parts.add("-ldflags ${shell_quote(ldflags)}")
         if (build.trimpath) parts.add("-trimpath")
         if (build.parallel_jobs > 0) parts.add("-p ${build.parallel_jobs}")
         if (build.build_type == "Debug") parts.add("-gcflags=\"all=-N -l\"")
         return parts.joinToString(" ")
+    }
+
+    /**
+     * Release 构建默认补齐 -s -w（剥离符号表与 DWARF，运行行为不变，
+     * 打包出的 APK 二进制约小 25~30%）；用户 ldflags 已写的不重复附加。
+     */
+    private fun effective_build_ldflags(build: project_build_config): String {
+        val user = build.ldflags.trim()
+        if (build.build_type != "Release") return user
+        val tokens = user.split(Regex("\\s+")).filter { it.isNotBlank() }
+        val extra = listOfNotNull(
+            "-s".takeUnless { "-s" in tokens },
+            "-w".takeUnless { "-w" in tokens }
+        )
+        return (listOf(user) + extra).filter { it.isNotBlank() }.joinToString(" ")
     }
 
     /**

@@ -41,8 +41,8 @@ import android.widget.Toast
 import android.widget.VideoView
 import android.widget.ViewFlipper
 import android.webkit.WebView
-import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
+import android.app.Activity
+import android.app.AlertDialog
 import org.json.JSONObject
 import java.io.File
 import java.net.HttpURLConnection
@@ -58,18 +58,20 @@ import java.util.concurrent.TimeUnit
  * Go 逻辑是纯静态 ARM64 ELF，直接 ProcessBuilder 启动（无需 proot），
  * 与宿主通过 stdin/stdout 的 JSON 行协议通信。
  */
-class shell_activity : AppCompatActivity() {
+class shell_activity : Activity() {
 
     private lateinit var binary_file: File
     private val views_by_id = mutableMapOf<String, View>()
     private var bridge: standalone_bridge? = null
     private val started = AtomicBoolean(false)
     private var layout_error: String? = null
+    /** 页面栈：app.ShowPage 压入新布局，返回键出栈回到上一页。 */
+    private val page_stack = ArrayDeque<runtime_layout_loader.Result>()
+    private lateinit var page_container: FrameLayout
     private lateinit var floating_windows: floating_window_manager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        com.google.android.material.color.DynamicColors.applyToActivityIfAvailable(this)
 
         // 1. 复制 assets 到私有目录（每次启动都覆盖：覆盖安装后 filesDir
         //    会残留上一版的 app.bin/layout.xml，不覆盖就永远跑旧程序）
@@ -82,6 +84,12 @@ class shell_activity : AppCompatActivity() {
             binary_file.outputStream().use { input.copyTo(it) }
         }
         copy_asset_dir("app/images", File(filesDir, "images"), overwrite = true)
+        // 页面布局：项目根目录的其他 xml 一并解包，供 app.ShowPage 使用
+        assets.list("app")?.filter { it.endsWith(".xml") }?.forEach { name ->
+            assets.open("app/$name").use { input ->
+                File(filesDir, name).outputStream().use { input.copyTo(it) }
+            }
+        }
         binary_file.setExecutable(true, false)
 
         // 2. 渲染布局
@@ -93,16 +101,23 @@ class shell_activity : AppCompatActivity() {
             on_event = { id, event, value -> bridge?.send_event(id, event, checked = value) }
         )
         try {
-            val layout = runtime_layout_loader(this).load(layout_file)
+            val first = runtime_layout_loader(this).load(layout_file)
             views_by_id.clear()
-            views_by_id.putAll(layout.views)
-            wire_click_events()
-            setContentView(build_content(layout.root))
+            page_container = FrameLayout(this)
+            setContentView(build_content(page_container))
+            show_page(first)
+
+            // 页面栈优先：有上层页面时返回键出栈，最后一页才退出界面
         } catch (e: Exception) {
             // 布局 XML 有语法错误等问题时不崩溃：页内展示错误，返回键照常退出
             layout_error = describe_layout_error(e)
             setContentView(build_layout_error_page(layout_error!!))
         }
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        if (!pop_page()) super.onBackPressed()
     }
 
     override fun onStart() {
@@ -154,8 +169,47 @@ class shell_activity : AppCompatActivity() {
         }
     }
 
-    private fun wire_click_events() {
-        views_by_id.forEach { (id, view) -> wire_widget_events(id, view) }
+    /** 把已加载的页面压栈显示：注册控件并接好事件。 */
+    private fun show_page(page: runtime_layout_loader.Result) {
+        page_stack.addLast(page)
+        (page.root.parent as? ViewGroup)?.removeView(page.root)
+        page_container.removeAllViews()
+        page_container.addView(
+            page.root,
+            FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        )
+        views_by_id.putAll(page.views)
+        page.views.forEach { (id, view) -> wire_widget_events(id, view) }
+    }
+
+    /** 加载并切入包内另一个布局页；返回 null 表示成功，否则为错误信息。 */
+    private fun push_page(layout_name: String): String? {
+        val file = File(filesDir, layout_name)
+        if (!file.isFile) return "页面布局不存在: $layout_name"
+        return try {
+            show_page(runtime_layout_loader(this).load(file, filesDir))
+            null
+        } catch (e: Exception) {
+            describe_layout_error(e)
+        }
+    }
+
+    /** 出栈回到上一页；已是最后一页时返回 false。控件表只回退本页注册的 id。 */
+    private fun pop_page(): Boolean {
+        if (page_stack.size <= 1) return false
+        val popped = page_stack.removeLast()
+        popped.views.forEach { (id, view) ->
+            if (views_by_id[id] === view) views_by_id.remove(id)
+        }
+        val top = page_stack.last()
+        (top.root.parent as? ViewGroup)?.removeView(top.root)
+        page_container.removeAllViews()
+        page_container.addView(
+            top.root,
+            FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        )
+        views_by_id.putAll(top.views)
+        return true
     }
 
     private fun wire_widget_events(id: String, view: View) {
@@ -277,11 +331,14 @@ class shell_activity : AppCompatActivity() {
 
     private fun build_content(root: View): View {
         val frame = FrameLayout(this)
-        frame.setBackgroundColor(
-            com.google.android.material.color.MaterialColors.getColor(
-                frame, com.google.android.material.R.attr.colorSurface
-            )
-        )
+        // 平台主题背景色（无 material 依赖）：跟随系统日夜间 colorBackground
+        val typed = android.util.TypedValue()
+        theme.resolveAttribute(android.R.attr.colorBackground, typed, true)
+        if (typed.type >= android.util.TypedValue.TYPE_FIRST_COLOR_INT &&
+            typed.type <= android.util.TypedValue.TYPE_LAST_COLOR_INT
+        ) {
+            frame.setBackgroundColor(typed.data)
+        }
         frame.addView(root, FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT
         ))
@@ -615,6 +672,14 @@ class shell_activity : AppCompatActivity() {
                 ""
             }
             "float_can" -> if (floating_windows.can_show()) "true" else "false"
+            "show_page" -> {
+                val page_error = push_page(msg.optString("text"))
+                if (page_error != null) {
+                    append_log("错误: $page_error")
+                    error(page_error)
+                } else ""
+            }
+            "back_page" -> if (pop_page()) "" else error("已是最后一个页面")
             "float_request_permission" -> floating_windows.request_permission()
             "float_show" -> floating_windows.show(msg.optString("vid"), msg)
             "float_set_text" -> floating_windows.set_text(msg.optString("vid"), msg.optString("text"))

@@ -182,6 +182,30 @@ class ai_skill_manager(
     }
 }
 
+/** 内置 skill 正文缓存（assets 只读一次，进程内复用） */
+private val builtin_skill_bodies = mutableMapOf<String, String>()
+
+/**
+ * 读取内置 skill 的正文（剥离 frontmatter），供 system prompt 注入用。
+ * 始终读 APK assets 而非已释放副本，保证注入内容随 app 版本更新。
+ */
+fun load_builtin_skill_body(context: Context, name: String): String? = synchronized(builtin_skill_bodies) {
+    builtin_skill_bodies[name]?.let { return it }
+    val text = runCatching {
+        context.assets.open("skills/$name/SKILL.md").bufferedReader().use { it.readText() }
+    }.getOrNull() ?: return null
+    val body = strip_skill_frontmatter(text)
+    builtin_skill_bodies[name] = body
+    body
+}
+
+/** 剥离 SKILL.md 开头的 YAML frontmatter，返回正文。 */
+private fun strip_skill_frontmatter(text: String): String {
+    if (!text.startsWith("---")) return text.trim()
+    val end = text.indexOf("\n---", 3)
+    return if (end < 0) text.trim() else text.substring(end + 4).trim()
+}
+
 /**
  * 首次运行时把内置 skill 从 assets 释放到全局 skill 目录。
  * 内置 skill 在 app/src/main/assets/skills/ 下。

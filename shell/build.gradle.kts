@@ -38,5 +38,6 @@ android {
 }
 
 dependencies {
-    implementation("com.google.android.material:material:1.12.0")
+    // 无第三方依赖：shell 是打包模板，体积直接算进每个打包出的 APK。
+    // 全部使用平台 API（Activity/AlertDialog/Button/TextView 等）。
 }
