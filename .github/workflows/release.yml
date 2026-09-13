@@ -28,6 +28,12 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
+      # oniguruma 原生模块指定 CMake 4.3.0：runner SDK/自带版本都没有，用 pip 装进 PATH
+      - name: 安装 CMake 4.3.0
+        run: |
+          python3 -m pip install --user 'cmake==4.3.0'
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
       - name: 解码签名密钥并生成 local.properties
         env:
           KEYSTORE_BASE64: ${{ secrets.GOSTUDIO_KEYSTORE_BASE64 }}
