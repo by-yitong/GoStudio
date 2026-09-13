@@ -8,11 +8,12 @@ name: Release APK
 #   GOSTUDIO_KEY_PASSWORD      key 密码
 #   GOSTUDIO_STORE_PASSWORD    keystore 密码
 #
-# 可选 Webhook 通知（QQ 推送服务 qiqi），地址存 Secret WEBHOOK_URL，未配置则跳过：
-#   成功 -> multipart/form-data POST：file=APK 直传（服务端经图床转公网 URL 发 QQ），
-#           type=file，text=更新日志 + 发布页链接（文字消息先发）
-#   失败 -> application/json POST：{msg_type:"text", content:{text: 标签+日志末尾+run 链接}}
-#   注意 QQ 服务器拉不动 GitHub 直链，所以 APK 必须走直传而不是 URL 模式。
+# 可选 Webhook 通知（QQ 推送服务 qiqi + APK 中转服务），相关 Secrets：
+#   WEBHOOK_URL            qiqi 推送地址（未配置则跳过通知）
+#   GOSTUDIO_RELAY_TOKEN   中转服务 mirror 鉴权 token
+#   成功 -> relay(HK) 从 GitHub 拉 APK 落盘 -> qiqi URL 模式发文件+更新日志；
+#           任一环失败自动降级为文字消息+下载链接
+#   失败 -> qiqi 文字消息：{msg_type:"text", content:{text: 标签+日志末尾+run 链接}}
 
 on:
   push:
@@ -77,30 +78,41 @@ jobs:
           files: ${{ steps.apk.outputs.file }}
           body_path: release_body.md
 
-      # continue-on-error：通知失败不把 run 标红（构建/发布本身已成功），
-      # 也避免误触发下面的「打包失败」通知
-      - name: Webhook 通知（成功：直传 APK + 更新日志）
+      # 走中转链路：relay（HK 服务器）从 GitHub 拉 APK -> qiqi URL 模式让 QQ 从 relay 拉文件。
+      # 比 runner 直传国内快（runner 上行国内带宽极慢），也绕开 QQ 拉不动 GitHub 的问题。
+      - name: Webhook 通知（成功：中转 APK + 更新日志）
         if: success() && env.WEBHOOK_URL != ''
         continue-on-error: true
         env:
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+          RELAY_TOKEN: ${{ secrets.GOSTUDIO_RELAY_TOKEN }}
           APK_FILE: ${{ steps.apk.outputs.file }}
           VERSION_NAME: ${{ steps.apk.outputs.version_name }}
           VERSION_CODE: ${{ steps.apk.outputs.version_code }}
         run: |
-          # QQ 侧文件名用 版本名+versionCode，方便区分安装包
-          QQ_NAME="GoStudio-v${VERSION_NAME}+${VERSION_CODE}.apk"
-          cp "$APK_FILE" "$QQ_NAME"
-          NOTES=$(printf '%s\n发布页: https://github.com/%s/releases/tag/%s' "$(cat release_body.md)" "$GITHUB_REPOSITORY" "$GITHUB_REF_NAME")
+          RELAY='http://103.117.137.209/gostudio-dl'
           DL_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/${APK_FILE}"
-          # runner 上行国内带宽慢，给足超时；成功与否看响应体 StatusCode（服务端
-          # 在 QQ 拉取失败时也可能回 HTTP 200，curl -f 不可靠）
-          RESP=$(curl -sS --connect-timeout 20 --max-time 1800 --retry 1 -X POST "$WEBHOOK_URL" \
-            -F "file=@${QQ_NAME}" -F "type=file" --form-string "text=${NOTES}")
-          echo "webhook 响应: ${RESP}"
-          if ! printf '%s' "$RESP" | grep -q '"StatusCode":0'; then
-            echo "APK 直传未送达（响应非 success），降级为文字通知"
-            FALLBACK=$(printf 'GoStudio %s 打包成功，APK 直传 QQ 失败（图床拉取超时），请用链接下载：\n%s\n%s' "$GITHUB_REF_NAME" "$DL_URL" "$NOTES")
+          QQ_NAME="GoStudio-v${VERSION_NAME}+${VERSION_CODE}.apk"
+          NOTES=$(printf '%s\n发布页: https://github.com/%s/releases/tag/%s' "$(cat release_body.md)" "$GITHUB_REPOSITORY" "$GITHUB_REF_NAME")
+
+          # 1) relay 从 GitHub 拉取 APK，落盘名用 版本名+versionCode
+          MIRROR=$(curl -fsS --max-time 600 -X POST "$RELAY/mirror" \
+            -H "X-Relay-Token: ${RELAY_TOKEN}" -H 'Content-Type: application/json' \
+            -d "$(jq -n --arg url "$DL_URL" --arg name "$QQ_NAME" '{url:$url, name:$name}')")
+          echo "mirror 响应: ${MIRROR}"
+          RELAY_URL=$(printf '%s' "$MIRROR" | jq -r '.url // empty')
+
+          # 2) QQ URL 模式发文件；成功与否看响应体 StatusCode（服务端可能回 200 带错误文本）
+          RESP=""
+          if [ -n "$RELAY_URL" ]; then
+            RESP=$(curl -sS --max-time 300 -X POST "$WEBHOOK_URL" \
+              -H 'Content-Type: application/json' \
+              -d "$(jq -n --arg url "$RELAY_URL" --arg text "$NOTES" '{msg_type:"file", content:{url:$url, text:$text}}')")
+            echo "webhook 响应: ${RESP}"
+          fi
+          if [ -z "$RELAY_URL" ] || ! printf '%s' "$RESP" | grep -q '"StatusCode":0'; then
+            echo "文件推送未送达，降级为文字通知"
+            FALLBACK=$(printf 'GoStudio %s 打包成功，请用链接下载（中转较快）：\n%s/f/%s\n%s' "$GITHUB_REF_NAME" "$RELAY" "$QQ_NAME" "$NOTES")
             jq -n --arg text "$FALLBACK" '{msg_type:"text", content:{text:$text}}' > webhook_fallback.json
             curl -fsS --max-time 60 -X POST "$WEBHOOK_URL" \
               -H 'Content-Type: application/json' --data-binary @webhook_fallback.json
