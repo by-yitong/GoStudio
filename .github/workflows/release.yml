@@ -92,11 +92,15 @@ jobs:
           QQ_NAME="GoStudio-v${VERSION_NAME}+${VERSION_CODE}.apk"
           cp "$APK_FILE" "$QQ_NAME"
           NOTES=$(printf '%s\n发布页: https://github.com/%s/releases/tag/%s' "$(cat release_body.md)" "$GITHUB_REPOSITORY" "$GITHUB_REF_NAME")
-          # runner 上行国内带宽慢，给足超时；直传失败降级为纯文字通知
-          if ! curl -fsS --connect-timeout 20 --max-time 1800 --retry 1 -X POST "$WEBHOOK_URL" \
-            -F "file=@${QQ_NAME}" -F "type=file" --form-string "text=${NOTES}"; then
-            echo "APK 直传失败，降级为文字通知"
-            FALLBACK=$(printf 'GoStudio %s 打包成功，但 APK 直传 QQ 超时，请到发布页下载。\n%s' "$GITHUB_REF_NAME" "$NOTES")
+          DL_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/${APK_FILE}"
+          # runner 上行国内带宽慢，给足超时；成功与否看响应体 StatusCode（服务端
+          # 在 QQ 拉取失败时也可能回 HTTP 200，curl -f 不可靠）
+          RESP=$(curl -sS --connect-timeout 20 --max-time 1800 --retry 1 -X POST "$WEBHOOK_URL" \
+            -F "file=@${QQ_NAME}" -F "type=file" --form-string "text=${NOTES}")
+          echo "webhook 响应: ${RESP}"
+          if ! printf '%s' "$RESP" | grep -q '"StatusCode":0'; then
+            echo "APK 直传未送达（响应非 success），降级为文字通知"
+            FALLBACK=$(printf 'GoStudio %s 打包成功，APK 直传 QQ 失败（图床拉取超时），请用链接下载：\n%s\n%s' "$GITHUB_REF_NAME" "$DL_URL" "$NOTES")
             jq -n --arg text "$FALLBACK" '{msg_type:"text", content:{text:$text}}' > webhook_fallback.json
             curl -fsS --max-time 60 -X POST "$WEBHOOK_URL" \
               -H 'Content-Type: application/json' --data-binary @webhook_fallback.json
