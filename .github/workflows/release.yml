@@ -1,11 +1,21 @@
 name: Release APK
 
 # 推送 v* tag 自动构建签名 Release APK 并创建 GitHub Release。
+#
 # 签名信息读仓库 Secrets（加密存储，日志自动打码），密钥文件本身绝不入库：
 #   GOSTUDIO_KEYSTORE_BASE64   发布签名 jks 的 base64
 #   GOSTUDIO_KEY_ALIAS         key 别名
 #   GOSTUDIO_KEY_PASSWORD      key 密码
 #   GOSTUDIO_STORE_PASSWORD    keystore 密码
+#
+# 可选 Webhook 通知（自己的服务器），地址存 Secret WEBHOOK_URL，未配置则跳过：
+#   成功 -> multipart/form-data POST：
+#     payload = JSON 字符串 { event: "release_success", tag, version_name,
+#               version_code, apk_name, apk_size, notes(更新日志全文),
+#               release_url, run_url }
+#     apk     = APK 二进制文件
+#   失败 -> application/json POST：
+#     { event: "release_failed", tag, run_url, error(日志末尾) }
 
 on:
   push:
@@ -46,7 +56,9 @@ jobs:
             "$KEY_ALIAS" "$KEY_PASSWORD" "$STORE_PASSWORD" > local.properties
 
       - name: 构建 Release APK
-        run: ./gradlew :app:assembleRelease --no-daemon
+        run: |
+          set -o pipefail
+          ./gradlew :app:assembleRelease --no-daemon 2>&1 | tee build.log
 
       - name: 整理产物与版本信息
         id: apk
@@ -58,17 +70,51 @@ jobs:
           echo "file=GoStudio-${TAG}.apk" >> "$GITHUB_OUTPUT"
           echo "version_name=${NAME}" >> "$GITHUB_OUTPUT"
           echo "version_code=${CODE}" >> "$GITHUB_OUTPUT"
+          printf '## 更新内容\n（发布后在此补充）\n\n## 安装包\n- GoStudio-%s.apk\n- versionName: %s\n- versionCode: %s\n' \
+            "$TAG" "$NAME" "$CODE" > release_body.md
 
       - name: 创建 Release 并上传 APK
         uses: softprops/action-gh-release@v2
         with:
           name: GoStudio ${{ github.ref_name }}
           files: ${{ steps.apk.outputs.file }}
-          body: |
-            ## 更新内容
-            （发布后在此补充）
+          body_path: release_body.md
 
-            ## 安装包
-            - ${{ steps.apk.outputs.file }}
-            - versionName: ${{ steps.apk.outputs.version_name }}
-            - versionCode: ${{ steps.apk.outputs.version_code }}
+      - name: Webhook 通知（成功：APK 文件 + 更新日志）
+        if: success() && env.WEBHOOK_URL != ''
+        env:
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+          APK_FILE: ${{ steps.apk.outputs.file }}
+          VERSION_NAME: ${{ steps.apk.outputs.version_name }}
+          VERSION_CODE: ${{ steps.apk.outputs.version_code }}
+        run: |
+          jq -n \
+            --arg tag "$GITHUB_REF_NAME" \
+            --arg name "$VERSION_NAME" \
+            --arg code "$VERSION_CODE" \
+            --arg apk_name "$APK_FILE" \
+            --arg apk_size "$(stat -c%s "$APK_FILE")" \
+            --arg notes "$(cat release_body.md)" \
+            --arg release_url "https://github.com/${GITHUB_REPOSITORY}/releases/tag/${GITHUB_REF_NAME}" \
+            --arg run_url "https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
+            '{event:"release_success", tag:$tag, version_name:$name, version_code:($code|tonumber),
+              apk_name:$apk_name, apk_size:($apk_size|tonumber), notes:$notes,
+              release_url:$release_url, run_url:$run_url}' > webhook_payload.json
+          curl -fsS --max-time 120 -X POST "$WEBHOOK_URL" \
+            -F "payload=<webhook_payload.json" \
+            -F "apk=@${APK_FILE};type=application/vnd.android.package-archive"
+
+      - name: Webhook 通知（失败：错误日志）
+        if: failure() && env.WEBHOOK_URL != ''
+        env:
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+        run: |
+          ERROR_TEXT=$(tail -n 50 build.log 2>/dev/null || echo "构建早期失败，详见运行日志")
+          jq -n \
+            --arg tag "$GITHUB_REF_NAME" \
+            --arg error "$ERROR_TEXT" \
+            --arg run_url "https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
+            '{event:"release_failed", tag:$tag, error:$error, run_url:$run_url}' > webhook_fail.json
+          curl -fsS --max-time 60 -X POST "$WEBHOOK_URL" \
+            -H 'Content-Type: application/json' \
+            --data-binary @webhook_fail.json
