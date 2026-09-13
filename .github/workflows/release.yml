@@ -9,7 +9,7 @@ name: Release APK
 #   GOSTUDIO_STORE_PASSWORD    keystore 密码
 #
 # 可选 Webhook 通知（QQ 推送服务 qiqi），地址存 Secret WEBHOOK_URL，未配置则跳过：
-#   成功 -> multipart/form-data POST：file=APK 直传 + text=更新日志；
+#   成功 -> 先 JSON {msg_type:"markdown"} 发更新日志，再 multipart 直传 APK 文件；
 #           成功与否看响应体 StatusCode（服务端可能在 QQ 拉取失败时仍回 HTTP 200）
 #   失败 -> application/json POST：{msg_type:"text", content:{text: 标签+日志末尾+run 链接}}
 #
@@ -126,11 +126,19 @@ jobs:
           # QQ 侧文件名用 版本名+versionCode，方便区分安装包
           QQ_NAME="GoStudio-v${VERSION_NAME}+${VERSION_CODE}.apk"
           cp "$APK_FILE" "$QQ_NAME"
-          NOTES=$(printf '%s\n发布页: https://github.com/%s/releases/tag/%s' "$(cat release_body.md)" "$GITHUB_REPOSITORY" "$TAG")
+          NOTES=$(printf '%s\n\n发布页: https://github.com/%s/releases/tag/%s' "$(cat release_body.md)" "$GITHUB_REPOSITORY" "$TAG")
           DL_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${APK_FILE}"
+
+          # 1) 更新日志走 markdown 消息（release_body.md 本身就是 md，QQ 渲染成标题/列表）
+          jq -n --arg text "$NOTES" '{msg_type:"markdown", content:{text:$text}}' > webhook_md.json
+          MD_RESP=$(curl -fsS --max-time 60 -X POST "$WEBHOOK_URL" \
+            -H 'Content-Type: application/json' --data-binary @webhook_md.json)
+          echo "markdown 响应: ${MD_RESP}"
+
+          # 2) APK 文件直传（更新日志已单独发，不再附 text）
           # runner 上行国内带宽慢，给足超时；成功与否看响应体 StatusCode
           RESP=$(curl -sS --connect-timeout 20 --max-time 1800 --retry 1 -X POST "$WEBHOOK_URL" \
-            -F "file=@${QQ_NAME}" -F "type=file" --form-string "text=${NOTES}")
+            -F "file=@${QQ_NAME}" -F "type=file")
           echo "webhook 响应: ${RESP}"
           if ! printf '%s' "$RESP" | grep -q '"StatusCode":0'; then
             echo "APK 直传未送达（响应非 success），降级为文字通知"
