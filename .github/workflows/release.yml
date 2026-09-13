@@ -82,11 +82,15 @@ jobs:
         env:
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
           APK_FILE: ${{ steps.apk.outputs.file }}
+          VERSION_NAME: ${{ steps.apk.outputs.version_name }}
+          VERSION_CODE: ${{ steps.apk.outputs.version_code }}
         run: |
-          NOTES="$(cat release_body.md)
-        发布页: https://github.com/${GITHUB_REPOSITORY}/releases/tag/${GITHUB_REF_NAME}"
+          # QQ 侧文件名用 版本名+versionCode，方便区分安装包
+          QQ_NAME="GoStudio-v${VERSION_NAME}+${VERSION_CODE}.apk"
+          cp "$APK_FILE" "$QQ_NAME"
+          NOTES=$(printf '%s\n发布页: https://github.com/%s/releases/tag/%s' "$(cat release_body.md)" "$GITHUB_REPOSITORY" "$GITHUB_REF_NAME")
           curl -fsS --max-time 300 -X POST "$WEBHOOK_URL" \
-            -F "file=@${APK_FILE}" \
+            -F "file=@${QQ_NAME}" \
             -F "type=file" \
             --form-string "text=${NOTES}"
 
@@ -96,11 +100,8 @@ jobs:
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
         run: |
           ERROR_TEXT=$(tail -n 50 build.log 2>/dev/null || echo "构建早期失败，详见运行日志")
-          jq -n \
-            --arg text "GoStudio 打包失败 ${GITHUB_REF_NAME}
-        ${ERROR_TEXT}
-        日志: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
-            '{msg_type:"text", content:{text:$text}}' > webhook_fail.json
+          FAIL_TEXT=$(printf 'GoStudio 打包失败 %s\n%s\n日志: https://github.com/%s/actions/runs/%s' "$GITHUB_REF_NAME" "$ERROR_TEXT" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID")
+          jq -n --arg text "$FAIL_TEXT" '{msg_type:"text", content:{text:$text}}' > webhook_fail.json
           curl -fsS --max-time 60 -X POST "$WEBHOOK_URL" \
             -H 'Content-Type: application/json' \
             --data-binary @webhook_fail.json
