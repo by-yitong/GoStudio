@@ -5,7 +5,7 @@ internal fun gostudio_learn_tracks(): List<learn_track> = listOf(
     learn_track(
         id = "gostudio-app",
         title = "GoStudio App",
-        subtitle = "AndLua 式布局、Go 逻辑、生命周期、系统 API 与悬浮窗",
+        subtitle = "AndLua 式布局、Go 逻辑、生命周期、系统 API、悬浮窗与常用组件",
         accent_color = 0xFF5CCFE6L,
         category = "GoStudio App",
         lessons = listOf(
@@ -236,6 +236,204 @@ internal fun gostudio_learn_tracks(): List<learn_track> = listOf(
                                 """
                             ),
                             learn_block.text("此外还支持 `OpenURL` 打开浏览器、`Share` 调起系统分享、`GetClipboard` 读取剪贴板。")
+                        )
+                    )
+                )
+            ),
+            learn_lesson(
+                id = "gostudio-app-lists",
+                title = "列表与下拉选择",
+                summary = "ListView、GridView 与 Spinner：填充数据、响应选择。",
+                est_minutes = 6,
+                steps = listOf(
+                    learn_step.concept(
+                        "gostudio-app-lists-c",
+                        "填充与点击",
+                        listOf(
+                            learn_block.text("在布局里放一个下拉框和一个列表："),
+                            learn_block.code(
+                                """
+                                <LinearLayout orientation="vertical" padding="16dp">
+
+                                    <Spinner id="city"/>
+                                    <ListView id="list" layout_height="240dp" layout_marginTop="12dp"/>
+
+                                </LinearLayout>
+                                """
+                            ),
+                            learn_block.text("Go 侧用 `SetItems` 填充字符串数组，用 `OnItemClick` 响应选择——列表的点击和下拉框的选中都会走这个回调："),
+                            learn_block.code(
+                                """
+                                app.ListView("list").SetItems([]string{"苹果", "香蕉", "橙子"})
+                                app.Spinner("city").SetItems([]string{"北京", "上海", "广州"})
+
+                                app.ListView("list").OnItemClick(func(position int, text string) {
+                                    app.Toast("选中: " + text)
+                                })
+
+                                app.Spinner("city").OnItemClick(func(position int, text string) {
+                                    app.Log("城市:", text)
+                                })
+                                """
+                            ),
+                            learn_block.text("用 `Select(position)` 程序化选中某项，`GetSelection()` 读取当前选中项的下标。`GridView` 用法与 `ListView` 完全一致，只是以网格排列。")
+                        )
+                    )
+                )
+            ),
+            learn_lesson(
+                id = "gostudio-app-pickers",
+                title = "日期与时间选择器",
+                summary = "DatePicker、TimePicker、CalendarView 与 NumberPicker。",
+                est_minutes = 5,
+                steps = listOf(
+                    learn_step.concept(
+                        "gostudio-app-pickers-c",
+                        "读值与监听变化",
+                        listOf(
+                            learn_block.text("日期、时间类组件在布局里声明后，Go 侧可以读写值并监听变化："),
+                            learn_block.code(
+                                """
+                                <LinearLayout orientation="vertical" padding="16dp">
+
+                                    <DatePicker id="date"/>
+                                    <TimePicker id="time" layout_marginTop="12dp"/>
+                                    <NumberPicker id="count" layout_marginTop="12dp"/>
+
+                                </LinearLayout>
+                                """
+                            ),
+                            learn_block.code(
+                                """
+                                // 日期：格式 YYYY-MM-DD
+                                app.DatePicker("date").SetDate("2026-01-01")
+                                if d, err := app.DatePicker("date").GetDate(); err == nil {
+                                    app.Log("日期:", d)
+                                }
+                                app.DatePicker("date").OnDateChange(func(date string) {
+                                    app.Log("新日期:", date)
+                                })
+
+                                // 时间：格式 HH:MM
+                                app.TimePicker("time").SetTime("08:30")
+                                app.TimePicker("time").OnTimeChange(func(t string) {
+                                    app.Log("新时间:", t)
+                                })
+
+                                // 数字选择器：设范围和值
+                                app.NumberPicker("count").SetRange(1, 100)
+                                app.NumberPicker("count").SetValue(5)
+                                if v, err := app.NumberPicker("count").GetValue(); err == nil {
+                                    app.Log("数量:", v)
+                                }
+                                """
+                            ),
+                            learn_block.text("`CalendarView` 是月历视图，同样用 `SetDate`/`GetDate` 读写选中日期。也可以在可视化编辑器里选中组件，点「事件」自动生成这些回调。")
+                        )
+                    )
+                )
+            ),
+            learn_lesson(
+                id = "gostudio-app-media",
+                title = "WebView 与媒体组件",
+                summary = "网页、视频、计时器与时钟。",
+                est_minutes = 6,
+                steps = listOf(
+                    learn_step.concept(
+                        "gostudio-app-media-c",
+                        "WebView",
+                        listOf(
+                            learn_block.text("`WebView` 在 App 内嵌一个浏览器，用 `LoadURL` 加载网页，配套导航方法控制前进后退："),
+                            learn_block.code(
+                                """
+                                <WebView id="web" layout_width="match_parent" layout_height="300dp"/>
+                                """
+                            ),
+                            learn_block.code(
+                                """
+                                wv := app.WebView("web")
+                                wv.LoadURL("https://golang.google.cn")
+
+                                app.Button("back").OnClick(func() { wv.GoBack() })
+                                app.Button("forward").OnClick(func() { wv.GoForward() })
+                                app.Button("reload").OnClick(func() { wv.Reload() })
+                                """
+                            )
+                        )
+                    ),
+                    learn_step.concept(
+                        "gostudio-app-media-video",
+                        "视频与计时组件",
+                        listOf(
+                            learn_block.text("`VideoView` 播放视频：`SetVideo` 设置地址（本地路径或网络 URL），再 `Start`/`Pause`/`Stop` 控制："),
+                            learn_block.code(
+                                """
+                                v := app.VideoView("video")
+                                v.SetVideo("https://example.com/demo.mp4")
+                                v.Start()
+                                """
+                            ),
+                            learn_block.text("`Chronometer` 是秒表，`TextClock` 是走动的时钟，都用 `SetFormat` 自定义显示格式，`Start`/`Stop` 启停："),
+                            learn_block.code(
+                                """
+                                app.Chronometer("timer").SetFormat("已用 %s 秒")
+                                app.Chronometer("timer").Start()
+
+                                app.TextClock("clock").SetFormat("HH:mm:ss")
+                                """
+                            ),
+                            learn_block.callout(
+                                "note",
+                                "ImageView / ImageButton 用 SetImage(url) 加载本地或网络图片，SetScaleType 控制缩放方式——参数写法和 Android 一致（fitCenter、centerCrop 等）。"
+                            )
+                        )
+                    )
+                )
+            ),
+            learn_lesson(
+                id = "gostudio-app-dialog",
+                title = "对话框与视图控制",
+                summary = "Dialog 弹窗，以及隐藏、禁用、改背景等通用操作。",
+                est_minutes = 5,
+                steps = listOf(
+                    learn_step.concept(
+                        "gostudio-app-dialog-c",
+                        "Dialog 与 Alert",
+                        listOf(
+                            learn_block.text("`Dialog` 弹出带按钮的对话框，`OnDialog` 回调告诉你用户按了哪个按钮；`Alert` 是单个「确定」按钮的简化版："),
+                            learn_block.code(
+                                """
+                                err := app.Dialog("删除确认", "确定要删除这条记录吗？", "取消", "删除")
+                                if err != nil {
+                                    app.Toast("弹窗失败: " + err.Error())
+                                    return
+                                }
+
+                                app.OnDialog(func(button string) {
+                                    if button == "删除" {
+                                        app.Toast("已删除")
+                                    }
+                                })
+
+                                app.Alert("提示", "保存成功")
+                                """
+                            ),
+                            learn_block.text("任何组件都支持一组通用操作：显示隐藏、启用禁用、透明度、背景色："),
+                            learn_block.code(
+                                """
+                                btn := app.Button("btn")
+
+                                btn.SetVisibility(false)          // 隐藏（不再占位）
+                                btn.SetEnabled(false)             // 禁用，变灰不可点
+                                btn.SetAlpha(0.5)                 // 半透明
+                                btn.SetBackground("#FF2D2D2D")    // 改背景色
+                                btn.SetText("换个文案")
+                                """
+                            ),
+                            learn_block.callout(
+                                "tip",
+                                "这些方法在所有组件句柄上都有（app.Text、app.ListView 拿到的句柄同样可以），因为它们都继承自同一个 Widget 基础类型。"
+                            )
                         )
                     )
                 )

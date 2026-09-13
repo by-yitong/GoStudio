@@ -19,6 +19,7 @@ private val text_widgets = setOf(
     "RadioButton", "Switch", "ToggleButton", "Chronometer", "TextClock"
 )
 private val checked_widgets = setOf("CheckBox", "RadioButton", "Switch", "ToggleButton")
+private val adapter_widgets = setOf("Spinner", "ListView", "GridView")
 
 private fun component_templates(component: editor_layout_component): List<editor_code_template> {
     val id = component.id
@@ -73,7 +74,13 @@ private fun component_templates(component: editor_layout_component): List<editor
     if (component.tag == "TimePicker") {
         result += editor_code_template(
             "time_change", "时间变化", "用户选择新时间时触发",
-            "app.OnTimeChange(\"$id\", func(time string) {\n\tapp.Log(\"时间: \", time)\n})"
+            "app.OnTimeChange(\"$id\", func(time string) {\n\tapp.Log(\"时间: \" + time)\n})"
+        )
+    }
+    if (component.tag in adapter_widgets) {
+        result += editor_code_template(
+            "item_click", "条目点击", "Spinner / ListView / GridView 条目被选中或点击时触发",
+            "app.OnItemClick(\"$id\", func(position int, text string) {\n\tapp.Log(\"条目: \" + text)\n})"
         )
     }
     return result

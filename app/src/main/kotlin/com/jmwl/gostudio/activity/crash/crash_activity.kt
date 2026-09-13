@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
@@ -66,6 +67,7 @@ class crash_activity : ComponentActivity() {
                 crash_screen(
                     crash_log = crash_log,
                     crash_stack = crash_stack,
+                    on_back = { finish() },
                     on_restart = {
                         val intent = packageManager.getLaunchIntentForPackage(packageName)
                         intent?.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
@@ -142,6 +144,7 @@ private sealed interface report_step {
 fun crash_screen(
     crash_log: String,
     crash_stack: String,
+    on_back: () -> Unit,
     on_restart: () -> Unit,
     on_exit: () -> Unit,
     on_copy: (String, String) -> Unit,
@@ -445,7 +448,29 @@ fun crash_screen(
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // ===== 底部：重启 / 退出 =====
+        // ===== 底部：返回 / 重启 / 退出 =====
+        Button(
+            onClick = on_back,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(44.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = colors.success,
+                contentColor = colors.dialog_clone_text
+            )
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = null,
+                modifier = Modifier.size(15.dp)
+            )
+            Spacer(modifier = Modifier.width(5.dp))
+            Text("返回上页（关闭此页）", fontSize = 13.sp)
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -457,8 +482,8 @@ fun crash_screen(
                     .height(44.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = colors.success,
-                    contentColor = colors.dialog_clone_text
+                    containerColor = colors.top_button_bg,
+                    contentColor = colors.subtitle
                 )
             ) {
                 Icon(

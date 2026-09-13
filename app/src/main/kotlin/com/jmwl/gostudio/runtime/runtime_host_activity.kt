@@ -74,6 +74,7 @@ class runtime_host_activity : AppCompatActivity(), runtime_bridge.protocol_handl
     private var log_header: TextView? = null
     private var log_expanded = true
     private val started = AtomicBoolean(false)
+    private var layout_error: String? = null
     private val log_lines = ArrayDeque<String>()
     private lateinit var floating_windows: floating_window_manager
 
@@ -90,9 +91,6 @@ class runtime_host_activity : AppCompatActivity(), runtime_bridge.protocol_handl
             return
         }
 
-        val layout = runtime_layout_loader(this).load(layout_file)
-        views_by_id.clear()
-        views_by_id.putAll(layout.views)
         floating_windows = floating_window_manager(
             activity = this,
             base_dir = project_dir,
@@ -100,14 +98,24 @@ class runtime_host_activity : AppCompatActivity(), runtime_bridge.protocol_handl
             wire_events = ::wire_widget_events,
             on_event = { id, event, value -> bridge?.send_event(id, event, checked = value) }
         )
-        wire_click_events()
+        try {
+            val layout = runtime_layout_loader(this).load(layout_file)
+            views_by_id.clear()
+            views_by_id.putAll(layout.views)
+            wire_click_events()
 
-        setContentView(build_content(layout.root))
+            setContentView(build_content(layout.root))
+        } catch (e: Exception) {
+            // 布局 XML 有语法错误等问题时不崩溃：页内展示错误，返回键照常回到编辑器
+            layout_error = describe_layout_error(e)
+            setContentView(build_layout_error_page(layout_error!!))
+        }
     }
 
     override fun onStart() {
         super.onStart()
         if (!started.compareAndSet(false, true)) return
+        if (layout_error != null) return
         val paths = toolchain_runtime_provider.paths()
         val binary = File(project_dir, "bin/${project_dir.name}")
         if (!binary.isFile) {
@@ -164,7 +172,11 @@ class runtime_host_activity : AppCompatActivity(), runtime_bridge.protocol_handl
     }
 
     private fun wire_widget_events(id: String, view: View) {
-            view.setOnClickListener { bridge?.send_event(id, "click") }
+            // AdapterView（Spinner/ListView/GridView）禁止 setOnClickListener，系统会直接抛异常；
+            // 列表类的条目点击走下方 item_click
+            if (view !is AdapterView<*>) {
+                view.setOnClickListener { bridge?.send_event(id, "click") }
+            }
             view.setOnLongClickListener {
                 bridge?.send_event(id, "long_click")
                 true
@@ -228,6 +240,57 @@ class runtime_host_activity : AppCompatActivity(), runtime_bridge.protocol_handl
 
     /** 业务布局 + 底部日志浮层。 */
     }
+    /** 布局解析失败的错误文案：XML 解析异常明确提示为语法错误。 */
+    private fun describe_layout_error(e: Exception): String =
+        if (e is org.xmlpull.v1.XmlPullParserException) {
+            "布局 XML 语法错误：${e.message}"
+        } else {
+            "布局加载失败：${e.message ?: e.javaClass.simpleName}"
+        }
+
+    /** 解析失败时的替代页面：不崩溃，用户按返回键即可回编辑器修布局。 */
+    private fun build_layout_error_page(message: String): View {
+        val density = resources.displayMetrics.density
+        fun dp(value: Int) = (value * density).toInt()
+        val scroll = ScrollView(this)
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(24), dp(48), dp(24), dp(24))
+        }
+        container.addView(
+            TextView(this).apply {
+                text = "布局加载失败"
+                textSize = 20f
+                typeface = android.graphics.Typeface.DEFAULT_BOLD
+                setTextColor(Color.parseColor("#FF6B6B"))
+            }
+        )
+        container.addView(
+            TextView(this).apply {
+                text = message
+                textSize = 13f
+                setTextColor(Color.parseColor("#E6E6E6"))
+                setPadding(0, dp(12), 0, 0)
+            }
+        )
+        container.addView(
+            TextView(this).apply {
+                text = "请点击返回回到上一页，修复 layout.xml 后重新运行。"
+                textSize = 13f
+                setTextColor(Color.parseColor("#9AA0A6"))
+                setPadding(0, dp(12), 0, 0)
+            }
+        )
+        scroll.setBackgroundColor(
+            com.google.android.material.color.MaterialColors.getColor(scroll, com.google.android.material.R.attr.colorSurface)
+        )
+        scroll.addView(
+            container,
+            ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        )
+        return scroll
+    }
+
     private fun build_content(root: View): View {
         val frame = FrameLayout(this)
         frame.setBackgroundColor(com.google.android.material.color.MaterialColors.getColor(frame, com.google.android.material.R.attr.colorSurface))

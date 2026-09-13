@@ -43,6 +43,8 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import com.jmwl.gostudio.runtime.runtime_layout_loader
+import com.jmwl.gostudio.runtime.strip_xml_comments
+import com.jmwl.gostudio.ui.toast.app_toast
 import com.jmwl.gostudio.ui.theme.app_theme_provider
 import java.io.File
 import kotlin.math.roundToInt
@@ -63,6 +65,14 @@ class layout_designer_activity : androidx.activity.ComponentActivity() {
             ?.let(::File)
             ?: File(project_dir, "layout.xml")
         val initial = if (layout_file.isFile) layout_file.readText() else DEFAULT_LAYOUT
+        // 布局有语法错误时进不去设计器：提示后返回编辑器修 XML，不崩溃也不误存空布局
+        val initial_tree = try {
+            parse_xml(initial)
+        } catch (e: Exception) {
+            app_toast.show(this, "布局 XML 语法错误：${e.message}", app_toast.LENGTH_LONG)
+            finish()
+            return
+        }
 
         // 状态栏颜色与工作区背景一致
         window.statusBarColor = android.graphics.Color.parseColor("#1B1C1F")
@@ -72,6 +82,7 @@ class layout_designer_activity : androidx.activity.ComponentActivity() {
             MaterialTheme {
                 designer_screen(
                     initial_xml = initial,
+                    initial_tree = initial_tree,
                     project_dir = File(project_dir),
                     on_save = { xml ->
                         layout_file.writeText(xml)
@@ -332,9 +343,12 @@ private fun property_groups_for(attrs: List<String>): List<property_group> {
     }
 }
 
+private val ADAPTER_TAGS = setOf("Spinner", "ListView", "GridView")
+
 private fun component_events(tag: String): List<Pair<String, String>> {
     val events = mutableListOf(
-        "click" to "点击事件",
+        // AdapterView 类组件无法触发普通 click，运行时改发 item_click
+        if (tag in ADAPTER_TAGS) "item_click" to "条目点击事件" else "click" to "点击事件",
         "long_click" to "长按事件"
     )
     if (tag in setOf(
@@ -368,7 +382,7 @@ private fun attrs_for(tag: String, parent_tag: String? = null): List<String> {
 
 private fun parse_xml(xml: String): d_node? {
     val parser = android.util.Xml.newPullParser()
-    parser.setInput(xml.reader())
+    parser.setInput(strip_xml_comments(xml).reader())
     var event = parser.eventType
     var root: d_node? = null
     val stack = ArrayDeque<d_node>()
@@ -480,13 +494,14 @@ private fun find_node(root: d_node, target: d_node): d_node? {
 @Composable
 private fun designer_screen(
     initial_xml: String,
+    initial_tree: d_node?,
     project_dir: File,
     on_save: (String) -> Unit,
     on_open_event: (String, String, String, String) -> Unit
 ) {
     var xml by remember { mutableStateOf(initial_xml) }
     // tree 为 null 表示根布局已删除、布局被清空，此时添加的第一个组件将成为新根
-    var tree by remember { mutableStateOf(parse_xml(initial_xml)) }
+    var tree by remember { mutableStateOf(initial_tree) }
     var selected by remember { mutableStateOf<d_node?>(null) }
     var preview_revision by remember { mutableIntStateOf(0) }
     var left_open by remember { mutableStateOf(true) }
@@ -1029,6 +1044,14 @@ private fun RealtimePreview(
                     frame.removeAllViews()
                     (r.root.parent as? ViewGroup)?.removeView(r.root)
                     frame.addView(r.root, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+                    fun select(id: String, view: View) {
+                        // 清除旧高亮
+                        r.views[selected_id]?.setBackgroundColor(0x00000000)
+                        // 设置新高亮
+                        view.setBackgroundColor(highlight)
+                        selected_id = id
+                        on_select(id)
+                    }
                     r.views.forEach { (id, view) ->
                         // 所有可点控件：点击=选中高亮，不触发输入/长按
                         view.isFocusable = false
@@ -1039,13 +1062,11 @@ private fun RealtimePreview(
                             view.setInputType(android.text.InputType.TYPE_NULL)
                             view.keyListener = null
                         }
-                        view.setOnClickListener {
-                            // 清除旧高亮
-                            r.views[selected_id]?.setBackgroundColor(0x00000000)
-                            // 设置新高亮
-                            view.setBackgroundColor(highlight)
-                            selected_id = id
-                            on_select(id)
+                        // AdapterView 禁止 setOnClickListener（系统会抛异常），改用触摸选中
+                        if (view is android.widget.AdapterView<*>) {
+                            view.setOnTouchListener { _, _ -> select(id, view); false }
+                        } else {
+                            view.setOnClickListener { select(id, view) }
                         }
                     }
                 },

@@ -104,7 +104,7 @@ object learn_content {
     val accent_conc = 0xFFE0533DL
 
     val tracks: List<learn_track> =
-        listOf(go_basics(), go_next(), go_concurrency()) + gostudio_learn_tracks() + practical_learn_tracks()
+        listOf(go_basics(), go_next(), go_concurrency()) + gostudio_learn_tracks() + ide_learn_tracks() + practical_learn_tracks()
 
     fun find_lesson(lesson_id: String): Pair<learn_track, learn_lesson>? {
         for (track in tracks) for (lesson in track.lessons) {
@@ -359,7 +359,7 @@ object learn_content {
     // ================= Go 进阶 =================
 
     private fun go_next() = learn_track(
-        id = "go-next", title = "Go 进阶", subtitle = "切片、map、结构体与错误处理",
+        id = "go-next", title = "Go 进阶", subtitle = "切片、map、结构体、接口、错误处理与文件 IO",
         accent_color = accent_next, category = "Go 语言",
         lessons = listOf(
             learn_lesson(
@@ -557,6 +557,91 @@ object learn_content {
                 )
             ),
             learn_lesson(
+                id = "go-interface", title = "接口", summary = "不关心具体类型，只关心它能做什么。", est_minutes = 8,
+                steps = listOf(
+                    learn_step.concept(
+                        "go-interface-c", "定义与实现",
+                        listOf(
+                            text("**接口**（interface）是一份方法清单。一个类型只要把清单上的方法**原样实现**出来（名字、参数、返回值一致），就自动满足这个接口，不需要写任何「我实现了它」的声明："),
+                            code(
+                                """
+                                type Shape interface {
+                                    Area() float64
+                                }
+
+                                type Square struct{ side float64 }
+
+                                func (s Square) Area() float64 { return s.side * s.side }
+                                """
+                            ),
+                            text("现在 `Square` 满足了 `Shape`，可以赋给 `Shape` 类型的变量或参数。调用方只依赖接口、不依赖具体类型——这就是 Go 的多态："),
+                            code(
+                                """
+                                func printArea(s Shape) {
+                                    fmt.Println(s.Area())
+                                }
+
+                                printArea(Square{side: 3})  // 9
+                                """
+                            ),
+                            tip("标准库的 `error` 就是一个只有 `Error() string` 方法的接口——下一课的错误处理会天天和它打交道。")
+                        )
+                    ),
+                    learn_step.interactive(
+                        "go-interface-i", "用接口求面积",
+                        listOf(text("定义接口 `Shape`（含方法 `Area() float64`），为 `Square` 实现它，然后打印边长 `3` 的面积（`9`）。")),
+                        starter_code = """
+                            package main
+
+                            import "fmt"
+
+                            // 1. 定义 Shape 接口
+                            // 2. 定义 Square 结构体和它的 Area 方法
+
+                            func main() {
+                                // 3. 声明一个 Shape 变量并打印它的面积
+                            }
+                        """,
+                        hints = listOf(
+                            "type Shape interface { Area() float64 }",
+                            "type Square struct{ side float64 }，方法接收者写 func (s Square) Area()",
+                            "var s Shape = Square{side: 3}，然后 fmt.Println(s.Area())"
+                        ),
+                        solution = """
+                            package main
+
+                            import "fmt"
+
+                            type Shape interface {
+                                Area() float64
+                            }
+
+                            type Square struct{ side float64 }
+
+                            func (s Square) Area() float64 { return s.side * s.side }
+
+                            func main() {
+                                var s Shape = Square{side: 3}
+                                fmt.Println(s.Area())
+                            }
+                        """,
+                        check = exercise_check(expected_output = "9", require_source = listOf("interface", "func (s Square) Area()", "Shape"))
+                    ),
+                    learn_step.quiz(
+                        "go-interface-q", "小测",
+                        prompt = "Go 里一个类型怎样「表明」自己实现了某接口？",
+                        options = listOf(
+                            "用 implements 关键字声明",
+                            "实现接口里的全部方法即可，无需任何声明",
+                            "从接口继承",
+                            "在注册表里登记"
+                        ),
+                        correct_index = 1,
+                        explanation = "Go 的接口实现是隐式的：方法签名匹配即满足，这是它和 Java 等语言最大的区别之一。"
+                    )
+                )
+            ),
+            learn_lesson(
                 id = "go-errors", title = "错误处理", summary = "if err != nil 是 Go 的日常。", est_minutes = 6,
                 steps = listOf(
                     learn_step.concept(
@@ -635,14 +720,279 @@ object learn_content {
                         check = exercise_check(expected_output = "5", require_source = listOf("error", "errors.New", "err"))
                     )
                 )
-            )
+            ),
+            learn_lesson(
+                id = "go-strings", title = "字符串与格式化", summary = "Sprintf、strings 与 strconv。", est_minutes = 6,
+                steps = listOf(
+                    learn_step.concept(
+                        "go-strings-c", "格式化动词",
+                        listOf(
+                            text("`fmt.Sprintf` 按占位符（动词）拼接字符串，**不打印、只返回结果**："),
+                            code(
+                                """
+                                s := fmt.Sprintf("%s 有 %d 个苹果", "Gopher", 3)
+                                // s == "Gopher 有 3 个苹果"
+
+                                fmt.Printf("圆周率约 %.2f\n", 3.14159)  // 3.14
+                                """
+                            ),
+                            text("常用动词：`%s` 字符串、`%d` 整数、`%f`/`%.2f` 浮点、`%t` 布尔、`%v` 任意值通用。处理文本还离不开 `strings` 和 `strconv`："),
+                            code(
+                                """
+                                strings.ToUpper("go")            // "GO"
+                                strings.Contains("hello", "ell") // true
+                                strings.Split("a,b,c", ",")      // ["a" "b" "c"]
+                                strings.TrimSpace("  hi  ")      // "hi"
+
+                                n, err := strconv.Atoi("42")      // 字符串 → int
+                                strconv.Itoa(42)                  // int → 字符串
+                                """
+                            )
+                        )
+                    ),
+                    learn_step.interactive(
+                        "go-strings-i", "拼一句话",
+                        listOf(text("用 `fmt.Sprintf` 把 `Gopher` 和 `5` 拼成一句话并打印：\n\n`Gopher 今年 5 岁`")),
+                        starter_code = """
+                            package main
+
+                            import "fmt"
+
+                            func main() {
+                                name := "Gopher"
+                                age := 5
+                                // 用 Sprintf 生成 "Gopher 今年 5 岁" 并打印
+                            }
+                        """,
+                        hints = listOf(
+                            "fmt.Sprintf(\"%s 今年 %d 岁\", name, age)",
+                            "结果用 fmt.Println 打印"
+                        ),
+                        solution = """
+                            package main
+
+                            import "fmt"
+
+                            func main() {
+                                name := "Gopher"
+                                age := 5
+                                msg := fmt.Sprintf("%s 今年 %d 岁", name, age)
+                                fmt.Println(msg)
+                            }
+                        """,
+                        check = exercise_check(expected_output = "Gopher 今年 5 岁", require_source = listOf("Sprintf", "%s", "%d"))
+                    ),
+                    learn_step.quiz(
+                        "go-strings-q", "小测",
+                        prompt = "把整数放进格式化字符串，用哪个动词？",
+                        options = listOf("%s", "%d", "%f", "没有对应动词"),
+                        correct_index = 1,
+                        explanation = "%d 对应整数；%s 字符串、%f 浮点、%v 通用。"
+                    )
+                )
+            ),
+            learn_lesson(
+                id = "go-defer", title = "defer 与 panic", summary = "延迟执行与崩溃恢复。", est_minutes = 5,
+                steps = listOf(
+                    learn_step.concept(
+                        "go-defer-c", "defer：离开函数前必做",
+                        listOf(
+                            text("`defer` 把一个调用推迟到**函数返回前**执行，常用于关文件、解锁等收尾工作。多个 defer **后进先出**（像栈一样）："),
+                            code(
+                                """
+                                func work() {
+                                    defer fmt.Println("第一个 defer（最后执行）")
+                                    defer fmt.Println("第二个 defer（先执行）")
+                                    fmt.Println("正常逻辑")
+                                }
+                                // 输出：正常逻辑 → 第二个 defer → 第一个 defer
+                                """
+                            ),
+                            text("`panic` 会让程序直接崩溃；`recover` 只能在 defer 的函数里调用，能把程序拉回来："),
+                            code(
+                                """
+                                func safe() {
+                                    defer func() {
+                                        if r := recover(); r != nil {
+                                            fmt.Println("恢复了:", r)
+                                        }
+                                    }()
+                                    panic("出大事了")
+                                }
+                                """
+                            ),
+                            note("日常代码请用 error 而不是 panic；recover 主要用在库的边界或必须兜底的地方。")
+                        )
+                    ),
+                    learn_step.interactive(
+                        "go-defer-i", "逆序打印",
+                        listOf(text("在循环里用 `defer` 打印 `1` 到 `3`，循环结束后打印 `开始`。观察 defer 的执行顺序，输出应为四行：\n\n`开始`\n`3`\n`2`\n`1`")),
+                        starter_code = """
+                            package main
+
+                            import "fmt"
+
+                            func main() {
+                                // 1. for 循环 i 从 1 到 3，循环体里 defer fmt.Println(i)
+                                // 2. 循环之后打印 开始
+                            }
+                        """,
+                        hints = listOf(
+                            "defer fmt.Println(i) 写在循环体内",
+                            "fmt.Println(\"开始\") 写在循环之后"
+                        ),
+                        solution = """
+                            package main
+
+                            import "fmt"
+
+                            func main() {
+                                for i := 1; i <= 3; i++ {
+                                    defer fmt.Println(i)
+                                }
+                                fmt.Println("开始")
+                            }
+                        """,
+                        check = exercise_check(expected_output = "开始\n3\n2\n1", require_source = listOf("defer", "for"))
+                    )
+                )
+            ),
+            learn_lesson(
+                id = "go-files", title = "文件读写", summary = "os.ReadFile、os.WriteFile 与逐行扫描。", est_minutes = 6,
+                steps = listOf(
+                    learn_step.concept(
+                        "go-files-c", "一次读写整个文件",
+                        listOf(
+                            text("小文件用 `os.ReadFile` / `os.WriteFile` 一步到位，返回的是**字节切片**（`[]byte`）："),
+                            code(
+                                """
+                                // 写文件：内容 + 权限
+                                err := os.WriteFile("note.txt", []byte("你好"), 0644)
+
+                                // 读文件
+                                data, err := os.ReadFile("note.txt")
+                                fmt.Println(string(data))  // 你好
+                                """
+                            ),
+                            text("两个函数都返回 `error`，用之前先判断。第三个参数 `0644` 是文件权限——「自己可读写、别人只读」，新手阶段照抄这个数就行，不影响你读写自己写的文件。逐行处理大文件时用 `bufio.Scanner`："),
+                            code(
+                                """
+                                f, err := os.Open("note.txt")
+                                if err != nil {
+                                    return
+                                }
+                                defer f.Close()
+
+                                scanner := bufio.NewScanner(f)
+                                for scanner.Scan() {
+                                    fmt.Println(scanner.Text())  // 每次一行
+                                }
+                                """
+                            ),
+                            tip("相对路径相对程序运行目录。在 GoStudio 里点「运行」时就是项目目录，写出的文件会出现在项目文件树里。")
+                        )
+                    ),
+                    learn_step.interactive(
+                        "go-files-i", "写完再读",
+                        listOf(text("把字符串 `hello gostudio` 写入 `hello.txt`，再读回来原样打印。")),
+                        starter_code = """
+                            package main
+
+                            import (
+                                "fmt"
+                                "os"
+                            )
+
+                            func main() {
+                                // 1. os.WriteFile 写入 hello.txt
+                                // 2. os.ReadFile 读回来
+                                // 3. fmt.Println(string(data))
+                            }
+                        """,
+                        hints = listOf(
+                            "os.WriteFile(\"hello.txt\", []byte(\"hello gostudio\"), 0644)",
+                            "data, err := os.ReadFile(\"hello.txt\")，判断 err 后打印 string(data)"
+                        ),
+                        solution = """
+                            package main
+
+                            import (
+                                "fmt"
+                                "os"
+                            )
+
+                            func main() {
+                                if err := os.WriteFile("hello.txt", []byte("hello gostudio"), 0644); err != nil {
+                                    fmt.Println("写入失败:", err)
+                                    return
+                                }
+                                data, err := os.ReadFile("hello.txt")
+                                if err != nil {
+                                    fmt.Println("读取失败:", err)
+                                    return
+                                }
+                                fmt.Println(string(data))
+                            }
+                        """,
+                        check = exercise_check(expected_output = "hello gostudio", require_source = listOf("os.WriteFile", "os.ReadFile"))
+                    ),
+                    learn_step.quiz(
+                        "go-files-q", "小测",
+                        prompt = "os.ReadFile 返回的是什么？",
+                        options = listOf("字符串和 error", "字节切片和 error", "文件对象", "io.Reader"),
+                        correct_index = 1,
+                        explanation = "返回 ([]byte, error)，要当字符串用得先 string(data) 转一下。"
+                    )
+                )
+            ),
+            learn_lesson(
+                id = "go-packages", title = "包与模块", summary = "package、import、可见性与 go.mod。", est_minutes = 5,
+                steps = listOf(
+                    learn_step.concept(
+                        "go-packages-c", "项目是怎么组织的",
+                        listOf(
+                            text("每个 `.go` 文件开头用 `package` 声明自己属于哪个包，**同目录的文件必须同包**。要用其它包的代码，先 `import`："),
+                            code(
+                                """
+                                package main
+
+                                import (
+                                    "fmt"     // 标准库
+                                    "strings" // 标准库
+
+                                    "myapp/util" // 自己项目里的包
+                                )
+                                """
+                            ),
+                            text("**可见性规则只有一条**：名字大写开头 = 导出（其它包可用），小写开头 = 私有（只限本包）："),
+                            code(
+                                """
+                                package util
+
+                                func Hello() string { return "hi" } // 外部可用
+                                func helper() {}                     // 只限本包
+                                """
+                            ),
+                            text("`go.mod` 是项目的身份证，记录模块名和依赖版本。新建项目时 GoStudio 会自动生成；代码里用了新的第三方包后运行一次，依赖会自动下载并记录进去。"),
+                            note("在 GoStudio 里给项目加新文件：同目录的 `.go` 文件写上同样的 package 名，就能直接互相调用，不需要改任何配置。")
+                        )
+                    ),
+                    learn_step.quiz(
+                        "go-packages-q", "小测",
+                        prompt = "别的包要用你写的函数，函数名必须？",
+                        options = listOf("小写字母开头", "大写字母开头", "加 public 关键字", "登记进 go.mod"),
+                        correct_index = 1,
+                        explanation = "Go 用首字母大小写决定导出：大写导出、小写私有，没有 public/private 关键字。"
+                    )
+                )
+            ),
         )
     )
 
     // ================= Go 并发 =================
 
     private fun go_concurrency() = learn_track(
-        id = "go-conc", title = "Go 并发", subtitle = "goroutine、channel 与 WaitGroup",
+        id = "go-conc", title = "Go 并发", subtitle = "goroutine、channel、WaitGroup、select 与锁",
         accent_color = accent_conc, category = "并发编程",
         lessons = listOf(
             learn_lesson(
@@ -857,7 +1207,178 @@ object learn_content {
                         )
                     )
                 )
-            )
+            ),
+            learn_lesson(
+                id = "go-select", title = "select 与定时器", summary = "同时等多个 channel，等不到就超时。", est_minutes = 7,
+                steps = listOf(
+                    learn_step.concept(
+                        "go-select-c", "select：多路等待",
+                        listOf(
+                            text("`select` 长得像 `switch`，但专门用来等 channel——哪个 case 先等到数据就执行哪个，都没数据就一起等："),
+                            code(
+                                """
+                                select {
+                                case msg := <-ch1:
+                                    fmt.Println("收到", msg)
+                                case ch2 <- "hello":
+                                    fmt.Println("发送成功")
+                                }
+                                """
+                            ),
+                            text("配合 `time.After`（在指定时长后返回一个就绪的 channel）实现超时控制，是并发程序的标配写法："),
+                            code(
+                                """
+                                select {
+                                case msg := <-ch:
+                                    fmt.Println("收到:", msg)
+                                case <-time.After(100 * time.Millisecond):
+                                    fmt.Println("超时")
+                                }
+                                """
+                            ),
+                            tip("`time.Ticker` 按固定间隔反复触发，适合定时任务：`for range ticker.C { ... }`，用完记得 `ticker.Stop()`。")
+                        )
+                    ),
+                    learn_step.interactive(
+                        "go-select-i", "等不到就超时",
+                        listOf(text("创建一个**从不放数据**的 channel，用 `select` 等它或等 100 毫秒超时，超时后打印 `超时`。")),
+                        starter_code = """
+                            package main
+
+                            import (
+                                "fmt"
+                                "time"
+                            )
+
+                            func main() {
+                                ch := make(chan string)
+                                // 用 select 等 ch 或 time.After(100 * time.Millisecond)
+                                // 超时分支打印 超时
+                            }
+                        """,
+                        hints = listOf(
+                            "case <-time.After(100 * time.Millisecond):",
+                            "另一个 case 从 ch 接收，但它永远不会就绪"
+                        ),
+                        solution = """
+                            package main
+
+                            import (
+                                "fmt"
+                                "time"
+                            )
+
+                            func main() {
+                                ch := make(chan string)
+                                select {
+                                case msg := <-ch:
+                                    fmt.Println("收到:", msg)
+                                case <-time.After(100 * time.Millisecond):
+                                    fmt.Println("超时")
+                                }
+                            }
+                        """,
+                        check = exercise_check(expected_output = "超时", require_source = listOf("select {", "time.After"))
+                    ),
+                    learn_step.quiz(
+                        "go-select-q", "小测",
+                        prompt = "select 的多个 case 同时就绪时会怎样？",
+                        options = listOf("按书写顺序执行第一个", "随机挑一个执行", "两个都执行", "编译报错"),
+                        correct_index = 1,
+                        explanation = "Go 故意随机选择，防止代码依赖 case 顺序。"
+                    )
+                )
+            ),
+            learn_lesson(
+                id = "go-mutex", title = "互斥锁", summary = "sync.Mutex 防止数据竞争。", est_minutes = 7,
+                steps = listOf(
+                    learn_step.concept(
+                        "go-mutex-c", "竞争与加锁",
+                        listOf(
+                            text("多个 goroutine 同时读写同一个变量，结果会不可预测——这叫**数据竞争**。比如 1000 个 goroutine 各执行一次 `n++`，最后 `n` 往往不是 1000，因为「读-改-写」会互相踩踏。"),
+                            text("`sync.Mutex`（互斥锁）保证同一时刻只有一个 goroutine 进入临界区："),
+                            code(
+                                """
+                                var (
+                                    mu sync.Mutex
+                                    n  int
+                                )
+
+                                mu.Lock()
+                                n++      // 临界区：同一时刻只有一个 goroutine 在这
+                                mu.Unlock()
+                                """
+                            ),
+                            tip("习惯写法：拿到锁之后立刻 defer mu.Unlock()，函数再长也不会忘记解锁。")
+                        )
+                    ),
+                    learn_step.interactive(
+                        "go-mutex-i", "安全数到一千",
+                        listOf(text("启动 1000 个 goroutine 各执行一次 `n++`，用 `sync.Mutex` 保护计数，全部结束后打印 `1000`。脚手架里的 `var ( ... )` 只是把多个变量声明合在一起写的分组写法。")),
+                        starter_code = """
+                            package main
+
+                            import (
+                                "fmt"
+                                "sync"
+                            )
+
+                            func main() {
+                                var (
+                                    mu sync.Mutex
+                                    wg sync.WaitGroup
+                                    n  int
+                                )
+
+                                for i := 0; i < 1000; i++ {
+                                    wg.Add(1)
+                                    go func() {
+                                        defer wg.Done()
+                                        // 加锁后 n++，再解锁
+                                    }()
+                                }
+
+                                wg.Wait()
+                                fmt.Println(n)
+                            }
+                        """,
+                        hints = listOf(
+                            "在 goroutine 里：mu.Lock() → n++ → mu.Unlock()",
+                            "也可以 mu.Lock() 之后立刻 defer mu.Unlock()，再加 n++"
+                        ),
+                        solution = """
+                            package main
+
+                            import (
+                                "fmt"
+                                "sync"
+                            )
+
+                            func main() {
+                                var (
+                                    mu sync.Mutex
+                                    wg sync.WaitGroup
+                                    n  int
+                                )
+
+                                for i := 0; i < 1000; i++ {
+                                    wg.Add(1)
+                                    go func() {
+                                        defer wg.Done()
+                                        mu.Lock()
+                                        n++
+                                        mu.Unlock()
+                                    }()
+                                }
+
+                                wg.Wait()
+                                fmt.Println(n)
+                            }
+                        """,
+                        check = exercise_check(expected_output = "1000", require_source = listOf("mu.Lock", "mu.Unlock", "wg.Wait"))
+                    )
+                )
+            ),
         )
     )
 }

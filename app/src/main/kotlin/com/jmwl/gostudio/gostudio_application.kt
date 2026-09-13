@@ -146,8 +146,8 @@ class gostudio_application : Application() {
             val intent = Intent(this, crash_activity::class.java)
             intent.putExtra("crash_log", log)
             intent.putExtra("crash_stack", stack)
+            // 只叠加不清栈：保留崩溃前的页面，崩溃页「返回上页」时系统会按需重建上一页
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
             startActivity(intent)
         } catch (e: Exception) {
             logger_manager.e("gostudio_application", "Failed to show crash activity: ${e.message}")

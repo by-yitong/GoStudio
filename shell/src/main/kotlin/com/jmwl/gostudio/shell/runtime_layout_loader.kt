@@ -51,6 +51,18 @@ import java.io.File
 import java.lang.reflect.Method
 
 /**
+ * 剔除 XML 注释。XML 规范禁止注释内出现 "--"，手写布局常违反并导致 KXmlParser 抛异常；
+ * 注释不参与渲染，解析前整体移除；未闭合的注释按 XML 语义连同其后内容一并截断。
+ */
+fun strip_xml_comments(xml: String): String {
+    val stripped = xml_comment_regex.replace(xml, "")
+    val unclosed = stripped.indexOf("<!--")
+    return if (unclosed >= 0) stripped.substring(0, unclosed) else stripped
+}
+
+private val xml_comment_regex = Regex("<!--.*?-->", setOf(RegexOption.DOT_MATCHES_ALL))
+
+/**
  * AndLua 风格布局加载器（移植自 AndroLua loadlayout.lua，MIT License，
  * Copyright (C) 2011 Michal Kottman / 2015-2016 Nirenr）。
  *
@@ -69,7 +81,7 @@ class runtime_layout_loader(private val context: Context) {
 
     fun load(file: File, project_dir: File? = null): Result {
         base_dir = project_dir?.absoluteFile ?: file.parentFile
-        val parser = Xml.newPullParser().apply { setInput(file.inputStream(), null) }
+        val parser = Xml.newPullParser().apply { setInput(strip_xml_comments(file.readText()).reader()) }
         var event = parser.eventType
         var root: View? = null
         val views = mutableMapOf<String, View>()

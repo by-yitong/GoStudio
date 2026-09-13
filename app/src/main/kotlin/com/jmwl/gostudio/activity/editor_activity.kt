@@ -1140,6 +1140,7 @@ class editor_activity : ComponentActivity() {
                 "rating_change" -> code.contains("app.OnRatingChange($id")
                 "date_change" -> code.contains("app.OnDateChange($id")
                 "time_change" -> code.contains("app.OnTimeChange($id")
+                "item_click" -> code.contains("app.OnItemClick($id")
                 else -> false
             }
         }
