@@ -77,8 +77,11 @@ jobs:
           files: ${{ steps.apk.outputs.file }}
           body_path: release_body.md
 
+      # continue-on-error：通知失败不把 run 标红（构建/发布本身已成功），
+      # 也避免误触发下面的「打包失败」通知
       - name: Webhook 通知（成功：直传 APK + 更新日志）
         if: success() && env.WEBHOOK_URL != ''
+        continue-on-error: true
         env:
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
           APK_FILE: ${{ steps.apk.outputs.file }}
@@ -89,13 +92,19 @@ jobs:
           QQ_NAME="GoStudio-v${VERSION_NAME}+${VERSION_CODE}.apk"
           cp "$APK_FILE" "$QQ_NAME"
           NOTES=$(printf '%s\n发布页: https://github.com/%s/releases/tag/%s' "$(cat release_body.md)" "$GITHUB_REPOSITORY" "$GITHUB_REF_NAME")
-          curl -fsS --max-time 300 -X POST "$WEBHOOK_URL" \
-            -F "file=@${QQ_NAME}" \
-            -F "type=file" \
-            --form-string "text=${NOTES}"
+          # runner 上行国内带宽慢，给足超时；直传失败降级为纯文字通知
+          if ! curl -fsS --connect-timeout 20 --max-time 900 --retry 1 -X POST "$WEBHOOK_URL" \
+            -F "file=@${QQ_NAME}" -F "type=file" --form-string "text=${NOTES}"; then
+            echo "APK 直传失败，降级为文字通知"
+            FALLBACK=$(printf 'GoStudio %s 打包成功，但 APK 直传 QQ 超时，请到发布页下载。\n%s' "$GITHUB_REF_NAME" "$NOTES")
+            jq -n --arg text "$FALLBACK" '{msg_type:"text", content:{text:$text}}' > webhook_fallback.json
+            curl -fsS --max-time 60 -X POST "$WEBHOOK_URL" \
+              -H 'Content-Type: application/json' --data-binary @webhook_fallback.json
+          fi
 
       - name: Webhook 通知（失败：错误日志）
         if: failure() && env.WEBHOOK_URL != ''
+        continue-on-error: true
         env:
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
         run: |
