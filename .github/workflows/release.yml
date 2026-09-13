@@ -4,20 +4,28 @@ name: Release APK
 #
 # 签名信息读仓库 Secrets（加密存储，日志自动打码），密钥文件本身绝不入库：
 #   GOSTUDIO_KEYSTORE_BASE64   发布签名 jks 的 base64
-#   GOSTUDIO_KEY_ALIAS         key 别名
+#   GOSTUDIO_KEYSTORE_ALIAS    key 别名
 #   GOSTUDIO_KEY_PASSWORD      key 密码
 #   GOSTUDIO_STORE_PASSWORD    keystore 密码
 #
-# 可选 Webhook 通知（QQ 推送服务 qiqi + APK 中转服务），相关 Secrets：
-#   WEBHOOK_URL            qiqi 推送地址（未配置则跳过通知）
-#   GOSTUDIO_RELAY_TOKEN   中转服务 mirror 鉴权 token
-#   成功 -> relay(HK) 从 GitHub 拉 APK 落盘 -> qiqi URL 模式发文件+更新日志；
-#           任一环失败自动降级为文字消息+下载链接
-#   失败 -> qiqi 文字消息：{msg_type:"text", content:{text: 标签+日志末尾+run 链接}}
+# 可选 Webhook 通知（QQ 推送服务 qiqi），地址存 Secret WEBHOOK_URL，未配置则跳过：
+#   成功 -> multipart/form-data POST：file=APK 直传 + text=更新日志；
+#           成功与否看响应体 StatusCode（服务端可能在 QQ 拉取失败时仍回 HTTP 200）
+#   失败 -> application/json POST：{msg_type:"text", content:{text: 标签+日志末尾+run 链接}}
+#
+# 免构建测试（改通知逻辑时用，不用重新打包）：
+#   Actions 页面手动 Run workflow，apk_url 填一个现成 APK 地址（如某个 Release 的资产
+#   直链），即跳过构建/发布，只跑通知链路，1 分钟出结果。
 
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      apk_url:
+        description: "直接用这个 APK 测试通知（跳过构建与发布，留空则忽略）"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -26,23 +34,58 @@ jobs:
   build-release:
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    env:
+      # 非空 = 免构建测试模式：只测通知链路
+      TEST_APK_URL: ${{ github.event.inputs.apk_url }}
     steps:
+      # ===== 测试模式：下载现成 APK 当产物，跳过构建 =====
+      # （正式模式的产物整理在构建之后，同一个 id）
+      - name: 准备产物与版本信息
+        id: apk
+        run: |
+          if [ -n "$TEST_APK_URL" ]; then
+            curl -fsSL --retry 2 --max-time 600 -o apk-to-send.apk "$TEST_APK_URL"
+            ls -la apk-to-send.apk
+            echo "file=apk-to-send.apk" >> "$GITHUB_OUTPUT"
+            echo "version_name=test" >> "$GITHUB_OUTPUT"
+            echo "version_code=0" >> "$GITHUB_OUTPUT"
+            echo "tag=notify-test" >> "$GITHUB_OUTPUT"
+            printf '## 更新内容\n（通知链路测试，非正式发布）\n' > release_body.md
+          else
+            TAG="${GITHUB_REF_NAME}"
+            cp app/build/outputs/apk/release/app-release.apk "GoStudio-${TAG}.apk"
+            NAME=$(sed -n 's/.*"versionName": *"\([^"]*\)".*/\1/p' app/build/outputs/apk/release/output-metadata.json)
+            CODE=$(sed -n 's/.*"versionCode": *\([0-9]*\).*/\1/p' app/build/outputs/apk/release/output-metadata.json)
+            echo "file=GoStudio-${TAG}.apk" >> "$GITHUB_OUTPUT"
+            echo "version_name=${NAME}" >> "$GITHUB_OUTPUT"
+            echo "version_code=${CODE}" >> "$GITHUB_OUTPUT"
+            echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+            printf '## 更新内容\n（发布后在此补充）\n\n## 安装包\n- GoStudio-%s.apk\n- versionName: %s\n- versionCode: %s\n' \
+              "$TAG" "$NAME" "$CODE" > release_body.md
+          fi
+
+      # ===== 正式模式：构建 + 发布 =====
       - uses: actions/checkout@v4
+        if: env.TEST_APK_URL == ''
 
       - uses: actions/setup-java@v5
+        if: env.TEST_APK_URL == ''
         with:
           distribution: temurin
           java-version: "17"
 
       - uses: gradle/actions/setup-gradle@v4
+        if: env.TEST_APK_URL == ''
 
       # oniguruma 原生模块指定 CMake 4.3.0：runner SDK/自带版本都没有，用 pip 装进 PATH
       - name: 安装 CMake 4.3.0
+        if: env.TEST_APK_URL == ''
         run: |
           python3 -m pip install --user 'cmake==4.3.0'
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: 解码签名密钥并生成 local.properties
+        if: env.TEST_APK_URL == ''
         env:
           KEYSTORE_BASE64: ${{ secrets.GOSTUDIO_KEYSTORE_BASE64 }}
           KEY_ALIAS: ${{ secrets.GOSTUDIO_KEY_ALIAS }}
@@ -54,65 +97,44 @@ jobs:
             "$KEY_ALIAS" "$KEY_PASSWORD" "$STORE_PASSWORD" > local.properties
 
       - name: 构建 Release APK
+        if: env.TEST_APK_URL == ''
         run: |
           set -o pipefail
           ./gradlew :app:assembleRelease --no-daemon 2>&1 | tee build.log
 
-      - name: 整理产物与版本信息
-        id: apk
-        run: |
-          TAG="${GITHUB_REF_NAME}"
-          cp app/build/outputs/apk/release/app-release.apk "GoStudio-${TAG}.apk"
-          NAME=$(sed -n 's/.*"versionName": *"\([^"]*\)".*/\1/p' app/build/outputs/apk/release/output-metadata.json)
-          CODE=$(sed -n 's/.*"versionCode": *\([0-9]*\).*/\1/p' app/build/outputs/apk/release/output-metadata.json)
-          echo "file=GoStudio-${TAG}.apk" >> "$GITHUB_OUTPUT"
-          echo "version_name=${NAME}" >> "$GITHUB_OUTPUT"
-          echo "version_code=${CODE}" >> "$GITHUB_OUTPUT"
-          printf '## 更新内容\n（发布后在此补充）\n\n## 安装包\n- GoStudio-%s.apk\n- versionName: %s\n- versionCode: %s\n' \
-            "$TAG" "$NAME" "$CODE" > release_body.md
-
       - name: 创建 Release 并上传 APK
+        if: env.TEST_APK_URL == ''
         uses: softprops/action-gh-release@v2
         with:
           name: GoStudio ${{ github.ref_name }}
           files: ${{ steps.apk.outputs.file }}
           body_path: release_body.md
 
-      # 走中转链路：relay（HK 服务器）从 GitHub 拉 APK -> qiqi URL 模式让 QQ 从 relay 拉文件。
-      # 比 runner 直传国内快（runner 上行国内带宽极慢），也绕开 QQ 拉不动 GitHub 的问题。
-      - name: Webhook 通知（成功：中转 APK + 更新日志）
+      # ===== 通知（两种模式都跑）=====
+      # continue-on-error：通知失败不把 run 标红（构建/发布本身已成功），
+      # 也避免误触发下面的「打包失败」通知
+      - name: Webhook 通知（成功：直传 APK + 更新日志）
         if: success() && env.WEBHOOK_URL != ''
         continue-on-error: true
         env:
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
-          RELAY_TOKEN: ${{ secrets.GOSTUDIO_RELAY_TOKEN }}
           APK_FILE: ${{ steps.apk.outputs.file }}
           VERSION_NAME: ${{ steps.apk.outputs.version_name }}
           VERSION_CODE: ${{ steps.apk.outputs.version_code }}
+          TAG: ${{ steps.apk.outputs.tag }}
         run: |
-          RELAY='http://103.117.137.209/gostudio-dl'
-          DL_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/${APK_FILE}"
+          # QQ 侧文件名用 版本名+versionCode，方便区分安装包
           QQ_NAME="GoStudio-v${VERSION_NAME}+${VERSION_CODE}.apk"
-          NOTES=$(printf '%s\n发布页: https://github.com/%s/releases/tag/%s' "$(cat release_body.md)" "$GITHUB_REPOSITORY" "$GITHUB_REF_NAME")
-
-          # 1) relay 从 GitHub 拉取 APK，落盘名用 版本名+versionCode
-          MIRROR=$(curl -fsS --max-time 600 -X POST "$RELAY/mirror" \
-            -H "X-Relay-Token: ${RELAY_TOKEN}" -H 'Content-Type: application/json' \
-            -d "$(jq -n --arg url "$DL_URL" --arg name "$QQ_NAME" '{url:$url, name:$name}')")
-          echo "mirror 响应: ${MIRROR}"
-          RELAY_URL=$(printf '%s' "$MIRROR" | jq -r '.url // empty')
-
-          # 2) QQ URL 模式发文件；成功与否看响应体 StatusCode（服务端可能回 200 带错误文本）
-          RESP=""
-          if [ -n "$RELAY_URL" ]; then
-            RESP=$(curl -sS --max-time 300 -X POST "$WEBHOOK_URL" \
-              -H 'Content-Type: application/json' \
-              -d "$(jq -n --arg url "$RELAY_URL" --arg text "$NOTES" '{msg_type:"file", content:{url:$url, text:$text}}')")
-            echo "webhook 响应: ${RESP}"
-          fi
-          if [ -z "$RELAY_URL" ] || ! printf '%s' "$RESP" | grep -q '"StatusCode":0'; then
-            echo "文件推送未送达，降级为文字通知"
-            FALLBACK=$(printf 'GoStudio %s 打包成功，请用链接下载（中转较快）：\n%s/f/%s\n%s' "$GITHUB_REF_NAME" "$RELAY" "$QQ_NAME" "$NOTES")
+          cp "$APK_FILE" "$QQ_NAME"
+          NOTES=$(printf '%s\n发布页: https://github.com/%s/releases/tag/%s' "$(cat release_body.md)" "$GITHUB_REPOSITORY" "$TAG")
+          DL_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${APK_FILE}"
+          # runner 上行国内带宽慢，给足超时；成功与否看响应体 StatusCode
+          RESP=$(curl -sS --connect-timeout 20 --max-time 1800 --retry 1 -X POST "$WEBHOOK_URL" \
+            -F "file=@${QQ_NAME}" -F "type=file" --form-string "text=${NOTES}")
+          echo "webhook 响应: ${RESP}"
+          if ! printf '%s' "$RESP" | grep -q '"StatusCode":0'; then
+            echo "APK 直传未送达（响应非 success），降级为文字通知"
+            FALLBACK=$(printf 'GoStudio %s 打包成功，APK 直传 QQ 失败，请用链接下载：\n%s\n%s' "$TAG" "$DL_URL" "$NOTES")
             jq -n --arg text "$FALLBACK" '{msg_type:"text", content:{text:$text}}' > webhook_fallback.json
             curl -fsS --max-time 60 -X POST "$WEBHOOK_URL" \
               -H 'Content-Type: application/json' --data-binary @webhook_fallback.json
