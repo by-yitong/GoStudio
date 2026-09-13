@@ -24,7 +24,7 @@ permissions:
 jobs:
   build-release:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
 
@@ -93,7 +93,7 @@ jobs:
           cp "$APK_FILE" "$QQ_NAME"
           NOTES=$(printf '%s\n发布页: https://github.com/%s/releases/tag/%s' "$(cat release_body.md)" "$GITHUB_REPOSITORY" "$GITHUB_REF_NAME")
           # runner 上行国内带宽慢，给足超时；直传失败降级为纯文字通知
-          if ! curl -fsS --connect-timeout 20 --max-time 900 --retry 1 -X POST "$WEBHOOK_URL" \
+          if ! curl -fsS --connect-timeout 20 --max-time 1800 --retry 1 -X POST "$WEBHOOK_URL" \
             -F "file=@${QQ_NAME}" -F "type=file" --form-string "text=${NOTES}"; then
             echo "APK 直传失败，降级为文字通知"
             FALLBACK=$(printf 'GoStudio %s 打包成功，但 APK 直传 QQ 超时，请到发布页下载。\n%s' "$GITHUB_REF_NAME" "$NOTES")
