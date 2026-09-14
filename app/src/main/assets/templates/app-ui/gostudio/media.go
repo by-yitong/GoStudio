@@ -33,6 +33,35 @@ func (v *VideoView) SetVideo(url string) error { return v.setProperty("video", u
 // Pause 暂停视频。
 func (w *Widget) Pause() error { return w.invoke("pause", nil) }
 
+// Seek 跳转到指定位置，单位毫秒。
+func (v *VideoView) Seek(ms int) error { return v.invoke("seek", ms) }
+
+// Position 返回当前播放位置，单位毫秒。
+func (v *VideoView) Position() (int, error) {
+	n, err := v.numberProperty("position")
+	return int(n), err
+}
+
+// Duration 返回视频总时长，单位毫秒；就绪前返回 0。
+func (v *VideoView) Duration() (int, error) {
+	n, err := v.numberProperty("duration")
+	return int(n), err
+}
+
+// IsPlaying 返回是否正在播放。
+func (v *VideoView) IsPlaying() (bool, error) { return v.boolProperty("is_playing") }
+
+// ShowControls 显示内置控制面板（点视频也可呼出）。
+func (v *VideoView) ShowControls() error { return v.invoke("show_controls", nil) }
+
+// HideControls 隐藏内置控制面板。
+func (v *VideoView) HideControls() error { return v.invoke("hide_controls", nil) }
+
+// SetControlsEnabled 关闭内置面板与点击呼出——自己做控制面板时用。
+func (v *VideoView) SetControlsEnabled(enabled bool) error {
+	return v.invoke("set_controls", enabled)
+}
+
 // LoadURL 加载网页。
 func (v *WebView) LoadURL(url string) error { return v.setProperty("url", url) }
 

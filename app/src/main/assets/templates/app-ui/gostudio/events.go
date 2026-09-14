@@ -44,3 +44,23 @@ func (a *App) OnTimeChange(id string, fn func(time string)) {
 func (a *App) OnItemClick(id string, fn func(position int, text string)) {
 	a.On(id, "item_click", func(e Event) { fn(int(e.Number), e.Text) })
 }
+
+// OnVideoPrepared 注册视频就绪，参数为总时长（毫秒）。
+func (a *App) OnVideoPrepared(id string, fn func(durationMs int)) {
+	a.On(id, "video_prepared", func(e Event) { fn(int(e.Number)) })
+}
+
+// OnVideoProgress 注册播放进度，播放中约每 0.5 秒回调一次，参数为当前位置（毫秒）。
+func (a *App) OnVideoProgress(id string, fn func(positionMs int)) {
+	a.On(id, "video_progress", func(e Event) { fn(int(e.Number)) })
+}
+
+// OnVideoEnd 注册视频播放结束。
+func (a *App) OnVideoEnd(id string, fn func()) {
+	a.On(id, "video_end", func(Event) { fn() })
+}
+
+// OnVideoError 注册视频播放出错。
+func (a *App) OnVideoError(id string, fn func()) {
+	a.On(id, "video_error", func(Event) { fn() })
+}

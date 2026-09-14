@@ -41,7 +41,6 @@ import android.widget.TextClock
 import android.widget.TextView
 import android.widget.TimePicker
 import android.widget.ToggleButton
-import android.widget.VideoView
 import android.widget.ViewFlipper
 import android.webkit.WebView
 import java.io.File
@@ -136,7 +135,7 @@ class runtime_layout_loader(private val context: Context) {
         "NumberPicker" to { NumberPicker(it) },
         "Chronometer" to { Chronometer(it) },
         "TextClock" to { TextClock(it) },
-        "VideoView" to { VideoView(it) },
+        "VideoView" to { runtime_video_view(it) },
         "WebView" to { WebView(it) }
     )
 

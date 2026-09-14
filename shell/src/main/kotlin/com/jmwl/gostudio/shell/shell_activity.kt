@@ -39,7 +39,6 @@ import android.widget.TextClock
 import android.widget.TextView
 import android.widget.TimePicker
 import android.widget.Toast
-import android.widget.VideoView
 import android.widget.ViewFlipper
 import android.webkit.WebView
 import android.app.Activity
@@ -279,6 +278,9 @@ class shell_activity : Activity() {
                 is RatingBar -> view.setOnRatingBarChangeListener { _, rating, fromUser ->
                     if (fromUser) bridge?.send_event(id, "rating_change", number = rating.toDouble())
                 }
+                is runtime_video_view -> view.on_event = { event, number ->
+                    bridge?.send_event(id, event, number = number)
+                }
                 is DatePicker -> view.init(
                     view.year, view.month, view.dayOfMonth
                 ) { _, year, month, day ->
@@ -483,7 +485,7 @@ class shell_activity : Activity() {
                 is TextClock -> view.format24Hour = raw?.toString()
                 else -> error("组件不支持 format")
             }
-            "video" -> (view as? VideoView)?.setVideoURI(Uri.parse(raw?.toString()))
+            "video" -> (view as? runtime_video_view)?.set_video_uri(Uri.parse(raw?.toString()))
             "url" -> (view as? WebView)?.loadUrl(raw?.toString() ?: error("URL 不能为空"))
             "date" -> set_widget_date(view, raw?.toString() ?: error("日期不能为空"))
             "time" -> {
@@ -520,6 +522,9 @@ class shell_activity : Activity() {
                 else -> "gone"
             }
             "value" -> (view as? NumberPicker)?.value?.toString() ?: error("组件不是数字选择器")
+            "position" -> (view as? runtime_video_view)?.current_position()?.toString() ?: error("组件不是视频")
+            "duration" -> (view as? runtime_video_view)?.duration()?.toString() ?: error("组件不是视频")
+            "is_playing" -> (view as? runtime_video_view)?.is_playing()?.toString() ?: error("组件不是视频")
             "date" -> get_widget_date(view)
             "time" -> (view as? TimePicker)?.let { "%02d:%02d".format(it.hour, it.minute) } ?: error("组件不是时间选择器")
             else -> error("不支持的属性: $name")
@@ -538,17 +543,27 @@ class shell_activity : Activity() {
             }
             "start" -> when (view) {
                 is Chronometer -> view.start()
-                is VideoView -> view.start()
+                is runtime_video_view -> view.start()
                 is ViewFlipper -> view.startFlipping()
                 else -> error("组件不支持 start")
             }
             "stop" -> when (view) {
                 is Chronometer -> view.stop()
-                is VideoView -> view.stopPlayback()
+                is runtime_video_view -> view.stop_playback()
                 is ViewFlipper -> view.stopFlipping()
                 else -> error("组件不支持 stop")
             }
-            "pause" -> (view as? VideoView)?.pause() ?: error("组件不是视频")
+            "pause" -> (view as? runtime_video_view)?.pause() ?: error("组件不是视频")
+            "seek" -> {
+                val video = view as? runtime_video_view ?: error("组件不是视频")
+                video.seek_to((value.opt("value") as? Number)?.toInt() ?: error("seek 需要 number 毫秒"))
+            }
+            "show_controls" -> (view as? runtime_video_view)?.show_controls() ?: error("组件不是视频")
+            "hide_controls" -> (view as? runtime_video_view)?.hide_controls() ?: error("组件不是视频")
+            "set_controls" -> {
+                val video = view as? runtime_video_view ?: error("组件不是视频")
+                video.set_controls_enabled(value.opt("value") as? Boolean ?: error("set_controls 需要 bool"))
+            }
             "reload" -> (view as? WebView)?.reload() ?: error("组件不是 WebView")
             "go_back" -> (view as? WebView)?.takeIf { it.canGoBack() }?.goBack() ?: error("网页不能后退")
             "go_forward" -> (view as? WebView)?.takeIf { it.canGoForward() }?.goForward() ?: error("网页不能前进")
