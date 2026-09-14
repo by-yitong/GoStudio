@@ -38,32 +38,6 @@ jobs:
       # 非空 = 免构建测试模式：只测通知链路
       TEST_APK_URL: ${{ github.event.inputs.apk_url }}
     steps:
-      # ===== 测试模式：下载现成 APK 当产物，跳过构建 =====
-      # （正式模式的产物整理在构建之后，同一个 id）
-      - name: 准备产物与版本信息
-        id: apk
-        run: |
-          if [ -n "$TEST_APK_URL" ]; then
-            curl -fsSL --retry 2 --max-time 600 -o apk-to-send.apk "$TEST_APK_URL"
-            ls -la apk-to-send.apk
-            echo "file=apk-to-send.apk" >> "$GITHUB_OUTPUT"
-            echo "version_name=test" >> "$GITHUB_OUTPUT"
-            echo "version_code=0" >> "$GITHUB_OUTPUT"
-            echo "tag=notify-test" >> "$GITHUB_OUTPUT"
-            printf '## 更新内容\n（通知链路测试，非正式发布）\n' > release_body.md
-          else
-            TAG="${GITHUB_REF_NAME}"
-            cp app/build/outputs/apk/release/app-release.apk "GoStudio-${TAG}.apk"
-            NAME=$(sed -n 's/.*"versionName": *"\([^"]*\)".*/\1/p' app/build/outputs/apk/release/output-metadata.json)
-            CODE=$(sed -n 's/.*"versionCode": *\([0-9]*\).*/\1/p' app/build/outputs/apk/release/output-metadata.json)
-            echo "file=GoStudio-${TAG}.apk" >> "$GITHUB_OUTPUT"
-            echo "version_name=${NAME}" >> "$GITHUB_OUTPUT"
-            echo "version_code=${CODE}" >> "$GITHUB_OUTPUT"
-            echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
-            printf '## 更新内容\n（发布后在此补充）\n\n## 安装包\n- GoStudio-%s.apk\n- versionName: %s\n- versionCode: %s\n' \
-              "$TAG" "$NAME" "$CODE" > release_body.md
-          fi
-
       # ===== 正式模式：构建 + 发布 =====
       - uses: actions/checkout@v4
         if: env.TEST_APK_URL == ''
@@ -101,6 +75,32 @@ jobs:
         run: |
           set -o pipefail
           ./gradlew :app:assembleRelease --no-daemon 2>&1 | tee build.log
+
+      # ===== 整理产物与版本信息（两种模式都跑）=====
+      # 放在构建之后：正式模式拷贝刚构建的 APK；测试模式下载现成 APK（无需 checkout）
+      - name: 准备产物与版本信息
+        id: apk
+        run: |
+          if [ -n "$TEST_APK_URL" ]; then
+            curl -fsSL --retry 2 --max-time 600 -o apk-to-send.apk "$TEST_APK_URL"
+            ls -la apk-to-send.apk
+            echo "file=apk-to-send.apk" >> "$GITHUB_OUTPUT"
+            echo "version_name=test" >> "$GITHUB_OUTPUT"
+            echo "version_code=0" >> "$GITHUB_OUTPUT"
+            echo "tag=notify-test" >> "$GITHUB_OUTPUT"
+            printf '## 更新内容\n（通知链路测试，非正式发布）\n' > release_body.md
+          else
+            TAG="${GITHUB_REF_NAME}"
+            cp app/build/outputs/apk/release/app-release.apk "GoStudio-${TAG}.apk"
+            NAME=$(sed -n 's/.*"versionName": *"\([^"]*\)".*/\1/p' app/build/outputs/apk/release/output-metadata.json)
+            CODE=$(sed -n 's/.*"versionCode": *\([0-9]*\).*/\1/p' app/build/outputs/apk/release/output-metadata.json)
+            echo "file=GoStudio-${TAG}.apk" >> "$GITHUB_OUTPUT"
+            echo "version_name=${NAME}" >> "$GITHUB_OUTPUT"
+            echo "version_code=${CODE}" >> "$GITHUB_OUTPUT"
+            echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+            printf '## 更新内容\n（发布后在此补充）\n\n## 安装包\n- GoStudio-%s.apk\n- versionName: %s\n- versionCode: %s\n' \
+              "$TAG" "$NAME" "$CODE" > release_body.md
+          fi
 
       - name: 创建 Release 并上传 APK
         if: env.TEST_APK_URL == ''
