@@ -40,7 +40,8 @@ object apk_packer {
         version_code: Int = 1,
         icon_file: File? = null,
         image_dir: File? = null,
-        float_dir: File? = null
+        float_dir: File? = null,
+        audio_dir: File? = null
     ): Result<File> = runCatching {
         val work_dir = File(context.cacheDir, "apkpack").apply { mkdirs() }
 
@@ -52,7 +53,7 @@ object apk_packer {
 
         // 2. 注入
         val injected = File(work_dir, "injected.apk")
-        inject(template, injected, layout_file, binary_file, image_dir, float_dir)
+        inject(template, injected, layout_file, binary_file, image_dir, float_dir, audio_dir)
 
         // 3. 改写 Manifest（名称/包名/版本）
         val rewritten = File(work_dir, "rewritten.apk")
@@ -78,7 +79,8 @@ object apk_packer {
         layout_file: File,
         binary_file: File,
         image_dir: File?,
-        float_dir: File?
+        float_dir: File?,
+        audio_dir: File?
     ) {
         ZipFile(template).use { zf ->
             ZipOutputStream(FileOutputStream(output)).use { zos ->
@@ -121,6 +123,13 @@ object apk_packer {
                     image_dir.walkTopDown().filter { it.isFile }.forEach { file ->
                         val relative = file.relativeTo(image_dir).path
                         add_entry(zos, "assets/app/images/$relative", file)
+                    }
+                }
+                // 项目 audio/ 目录（PlayAudio 本地音频），与 images/ 同一套打包约定
+                if (audio_dir?.isDirectory == true) {
+                    audio_dir.walkTopDown().filter { it.isFile }.forEach { file ->
+                        val relative = file.relativeTo(audio_dir).path
+                        add_entry(zos, "assets/app/audio/$relative", file)
                     }
                 }
             }

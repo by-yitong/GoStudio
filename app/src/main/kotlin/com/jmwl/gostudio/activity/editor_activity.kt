@@ -1543,7 +1543,8 @@ class editor_activity : ComponentActivity() {
                     version_code = app_config.version_code,
                     icon_file = icon_file,
                     image_dir = File(project_dir, "images"),
-                    float_dir = File(project_dir, "floats")
+                    float_dir = File(project_dir, "floats"),
+                    audio_dir = File(project_dir, "audio")
                 )
             }
             output_panel_state.task_running = false

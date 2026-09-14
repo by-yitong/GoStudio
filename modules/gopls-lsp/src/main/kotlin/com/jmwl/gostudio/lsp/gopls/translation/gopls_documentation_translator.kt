@@ -214,16 +214,24 @@ class gopls_documentation_translator(
     }
 
     private fun has_translatable_prose(markdown: String): Boolean {
-        val without_fenced_code = markdown.replace(Regex("```.*?```", RegexOption.DOT_MATCHES_ALL), "")
-            .replace(Regex("~~~.*?~~~", RegexOption.DOT_MATCHES_ALL), "")
-        return without_fenced_code.any { it.isLetter() }
+        return strip_code_blocks(markdown).any { it.isLetter() }
     }
 
+    /**
+     * 中文检测：只统计正文。签名代码块（```go ... ```、行内 `code`）全是英文标识符，
+     * 若计入分母会把“中文文档 + 长英文签名”的函数稀释到阈值以下、仍被送去翻译。
+     */
     private fun looks_like_target_language(text: String): Boolean {
-        val target_chars = text.count { char -> Character.UnicodeScript.of(char.code) == Character.UnicodeScript.HAN }
-        val letters = text.count { char -> char.isLetter() }
+        val prose = strip_code_blocks(text)
+        val target_chars = prose.count { char -> Character.UnicodeScript.of(char.code) == Character.UnicodeScript.HAN }
+        val letters = prose.count { char -> char.isLetter() }
         return letters > 0 && target_chars.toFloat() / letters >= 0.30f
     }
+
+    private fun strip_code_blocks(markdown: String): String = markdown
+        .replace(Regex("```.*?```", RegexOption.DOT_MATCHES_ALL), "")
+        .replace(Regex("~~~.*?~~~", RegexOption.DOT_MATCHES_ALL), "")
+        .replace(Regex("`[^`\n]+`"), "")
 
     private companion object {
         private val gson = com.google.gson.Gson()

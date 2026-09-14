@@ -280,7 +280,7 @@ class LspDiagnosticTooltipLayout(
             }
         } else if (command != null) {
             editor.coroutineScope.launch(Dispatchers.Main) {
-                editor.eventManager.emit("workspace/executeCommand") {
+                editor.eventManager.emitAsync("workspace/executeCommand") {
                     put("command", command.command)
                     put("args", command.arguments ?: emptyList<Any>())
                 }

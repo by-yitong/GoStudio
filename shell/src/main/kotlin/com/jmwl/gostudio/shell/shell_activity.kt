@@ -14,6 +14,7 @@ import android.os.Vibrator
 import android.os.VibratorManager
 import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.media.MediaPlayer
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
@@ -69,6 +70,8 @@ class shell_activity : Activity() {
     private val page_stack = ArrayDeque<runtime_layout_loader.Result>()
     private lateinit var page_container: FrameLayout
     private lateinit var floating_windows: floating_window_manager
+    /** Go 侧 PlayAudio 的音频播放器；单实例，新的 PlayAudio 替换上一段。 */
+    private var audio_player: MediaPlayer? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -95,6 +98,7 @@ class shell_activity : Activity() {
         }
         binary_file.setExecutable(true, false)
         copy_asset_dir("app/images", File(filesDir, "images"), overwrite = true)
+        copy_asset_dir("app/audio", File(filesDir, "audio"), overwrite = true)
         // 页面布局：项目根目录的其他 xml 一并解包，供 app.ShowPage 使用
         assets.list("app")?.filter { it.endsWith(".xml") }?.forEach { name ->
             assets.open("app/$name").use { input ->
@@ -163,6 +167,7 @@ class shell_activity : Activity() {
 
     override fun onDestroy() {
         if (::floating_windows.isInitialized) floating_windows.close_all()
+        stop_audio_player()
         bridge?.send_lifecycle("destroy")
         Handler(Looper.getMainLooper()).postDelayed({ bridge?.stop() }, 150)
         super.onDestroy()
@@ -628,6 +633,45 @@ class shell_activity : Activity() {
 
     fun on_quit() = finish()
 
+    /** 停止并释放当前音频播放器；stop 过的 MediaPlayer 不能复用，下次播放重建。 */
+    private fun stop_audio_player() {
+        audio_player?.let { player ->
+            runCatching { player.stop() }
+            runCatching { player.release() }
+        }
+        audio_player = null
+    }
+
+    /** 播放音频：http/https 网络地址直接播，其余按项目相对路径（与 images/ 资源同一基准）解析。 */
+    private fun play_audio(source: String, loop: Boolean) {
+        stop_audio_player()
+        val player = MediaPlayer()
+        try {
+            if (source.startsWith("http://") || source.startsWith("https://")) {
+                player.setDataSource(source)
+            } else {
+                val raw_file = File(source.removePrefix("./"))
+                val audio_file = if (raw_file.isAbsolute) raw_file else File(filesDir, raw_file.path)
+                check(audio_file.isFile) { "音频文件不存在: ${audio_file.absolutePath}" }
+                player.setDataSource(audio_file.absolutePath)
+            }
+            player.isLooping = loop
+            player.setOnErrorListener { failed, _, _ ->
+                append_log("音频播放出错，已停止")
+                runCatching { failed.release() }
+                if (audio_player === failed) audio_player = null
+                true
+            }
+            // prepareAsync 不阻塞主线程（system 调用在主线程有 5s 超时），就绪后在回调里开始播放
+            player.setOnPreparedListener { it.start() }
+            player.prepareAsync()
+            audio_player = player
+        } catch (e: Exception) {
+            runCatching { player.release() }
+            throw e
+        }
+    }
+
     fun on_system_call(action: String, msg: JSONObject): String {
         return when (action) {
             "toast" -> {
@@ -699,6 +743,24 @@ class shell_activity : Activity() {
                     putExtra(Intent.EXTRA_TEXT, msg.optString("text"))
                 }
                 startActivity(Intent.createChooser(intent, msg.optString("title", "分享")))
+                ""
+            }
+            "audio_play" -> {
+                play_audio(msg.optString("text"), msg.optBoolean("boolean"))
+                ""
+            }
+            "audio_pause" -> {
+                val player = audio_player ?: error("没有正在播放的音频")
+                runCatching { player.pause() }.getOrElse { error("音频尚未准备好") }
+                ""
+            }
+            "audio_resume" -> {
+                val player = audio_player ?: error("没有正在播放的音频")
+                runCatching { player.start() }.getOrElse { error("音频尚未准备好") }
+                ""
+            }
+            "audio_stop" -> {
+                stop_audio_player()
                 ""
             }
             "float_can" -> if (floating_windows.can_show()) "true" else "false"

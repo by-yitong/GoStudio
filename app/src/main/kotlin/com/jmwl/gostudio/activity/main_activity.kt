@@ -70,7 +70,7 @@ class main_activity : ComponentActivity() {
                 }
                 androidx.compose.runtime.LaunchedEffect(Unit) {
                     kotlinx.coroutines.delay(2500)
-                    update_controller.check()
+                    update_controller.check(auto = true)
                 }
                 com.jmwl.gostudio.ui.dialogs.main.app_update_dialog(
                     controller = update_controller,

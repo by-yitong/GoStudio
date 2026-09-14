@@ -57,6 +57,7 @@ class app_update_controller(private val context: Context) {
 
     companion object {
         const val REPO = "by-yitong/GoStudio"
+        private const val PREFS_KEY_DISMISSED_VERSION = "dismissed_version"
         private val tag_version_regex = Regex("""v?(\d+(?:\.\d+)+)""")
 
         /** 当前版本名（如 "1.0.1"） */
@@ -72,14 +73,19 @@ class app_update_controller(private val context: Context) {
         .connectTimeout(12, TimeUnit.SECONDS)
         .readTimeout(20, TimeUnit.SECONDS)
         .build()
+    private val prefs = context.getSharedPreferences("app_update_prefs", Context.MODE_PRIVATE)
 
     var step: app_update_step by mutableStateOf(app_update_step.Idle)
         private set
 
     private var download_job: Job? = null
 
-    /** 检查 GitHub 最新 release；结果同时写入 [step]（有更新时） */
-    suspend fun check(): app_update_check_result = withContext(Dispatchers.IO) {
+    /**
+     * 检查 GitHub 最新 release；结果同时写入 [step]（有更新时）。
+     * [auto] 为启动时的静默检查：用户点过「以后再说」的版本不再弹窗；
+     * 手动检查（设置页）始终弹出。
+     */
+    suspend fun check(auto: Boolean = false): app_update_check_result = withContext(Dispatchers.IO) {
         val local_version = current_version_name(context)
         runCatching {
             val request = Request.Builder()
@@ -95,6 +101,8 @@ class app_update_controller(private val context: Context) {
                     ?: throw IllegalStateException("最新 Release 未找到 APK 安装包")
                 if (!is_newer_version(info.tag, local_version)) {
                     app_update_check_result.UpToDate
+                } else if (auto && is_version_dismissed(info.tag)) {
+                    app_update_check_result.UpToDate
                 } else {
                     step = app_update_step.Available(info)
                     app_update_check_result.UpdateAvailable(info)
@@ -104,6 +112,20 @@ class app_update_controller(private val context: Context) {
             app_update_check_result.Error(error.message ?: "网络请求失败")
         }
     }
+
+    /** 用户对某版本点了「以后再说」：记录版本号，之后启动自动检查不再弹该版本 */
+    fun dismiss_update(tag: String) {
+        prefs.edit().putString(PREFS_KEY_DISMISSED_VERSION, normalize_version(tag)).apply()
+    }
+
+    private fun is_version_dismissed(tag: String): Boolean {
+        val dismissed = prefs.getString(PREFS_KEY_DISMISSED_VERSION, null) ?: return false
+        return normalize_version(tag) == dismissed && dismissed.isNotBlank()
+    }
+
+    /** `v1.0.13` / `1.0.13` 统一成可比的版本号，解析失败时退回原始 tag */
+    private fun normalize_version(tag: String): String =
+        tag_version_regex.find(tag)?.groupValues?.get(1) ?: tag.trim()
 
     fun start_download(info: app_update_info) {
         if (download_job?.isActive == true) return

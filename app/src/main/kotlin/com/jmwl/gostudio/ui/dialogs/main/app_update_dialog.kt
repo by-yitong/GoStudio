@@ -70,8 +70,13 @@ fun app_update_dialog(
 
     when (val current = step) {
         is app_update_step.Available -> {
+            // 点「以后再说」或点弹窗外关闭：记住该版本，启动自动检查不再弹（手动检查仍会弹）
+            val dismiss_available = {
+                controller.dismiss_update(current.info.tag)
+                on_dismiss()
+            }
             AlertDialog(
-                onDismissRequest = on_dismiss,
+                onDismissRequest = dismiss_available,
                 containerColor = colors.dialog_bg,
                 title = {
                     Text(
@@ -120,7 +125,7 @@ fun app_update_dialog(
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = on_dismiss) {
+                    TextButton(onClick = dismiss_available) {
                         Text("以后再说", color = colors.subtitle)
                     }
                 }

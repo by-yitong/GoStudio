@@ -336,7 +336,7 @@ internal fun gostudio_learn_tracks(): List<learn_track> = listOf(
             learn_lesson(
                 id = "gostudio-app-media",
                 title = "WebView 与媒体组件",
-                summary = "网页、视频、计时器与时钟。",
+                summary = "网页、视频、音频、计时器与时钟。",
                 est_minutes = 6,
                 steps = listOf(
                     learn_step.concept(
@@ -380,6 +380,17 @@ internal fun gostudio_learn_tracks(): List<learn_track> = listOf(
                                 app.Chronometer("timer").Start()
 
                                 app.TextClock("clock").SetFormat("HH:mm:ss")
+                                """
+                            ),
+                            learn_block.text("`PlayAudio` 播放音频（本地路径或网络 URL），不需要布局里放组件。本地文件放项目 `audio/` 目录、以 `\"audio/文件名\"` 引用（打包 APK 时会一并打进包）。可选第二个参数传 `true` 循环播放，同一时间只有一段音频，再次 `PlayAudio` 会替换当前播放："),
+                            learn_block.code(
+                                """
+                                app.PlayAudio("https://example.com/music.mp3")
+
+                                app.PlayAudio("audio/bgm.mp3", true) // 项目内文件，循环播放
+                                app.PauseAudio()                     // 暂停
+                                app.ResumeAudio()                    // 继续
+                                app.StopAudio()                      // 停止
                                 """
                             ),
                             learn_block.callout(
