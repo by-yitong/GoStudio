@@ -745,39 +745,6 @@ fun ai_system_notice(text: String) {
 }
 
 /**
- * 暂停横幅：agent 处于暂停态时显示在输入区上方，点击「继续」恢复。
- */
-@Composable
-fun ai_pause_banner(queued_count: Int = 0, on_resume: () -> Unit) {
-    val colors = app_theme_provider.colors
-    Surface(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 4.dp),
-        shape = RoundedCornerShape(12.dp),
-        color = colors.warning_bg.copy(alpha = 0.5f)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Icon(Icons.Default.PauseCircle, contentDescription = null, tint = colors.warning, modifier = Modifier.size(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text("已暂停", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = colors.card_text_title)
-                Text(
-                    text = if (queued_count > 0) "已排队 $queued_count 条消息，恢复后发送" else "当前步骤已完成，输入消息或点继续",
-                    fontSize = 10.5.sp, color = colors.subtitle
-                )
-            }
-            TextButton(onClick = on_resume) {
-                Icon(Icons.Default.PlayArrow, contentDescription = null, tint = colors.title_highlight, modifier = Modifier.size(15.dp))
-                Spacer(Modifier.width(2.dp))
-                Text("继续", fontSize = 13.sp, color = colors.title_highlight)
-            }
-        }
-    }
-}
-
-/**
  * 上下文压缩进行中指示器：消息流末尾显示（压缩要调一次模型，可能数秒）。
  */
 @Composable

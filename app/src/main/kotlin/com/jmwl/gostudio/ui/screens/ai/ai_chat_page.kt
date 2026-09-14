@@ -84,13 +84,14 @@ fun ai_chat_page(
     var input by rememberSaveable { mutableStateOf("") }
     var cursor_pos by remember { mutableStateOf(0) }
     val is_running by agent.is_running.collectAsState()
-    val is_paused by agent.is_paused.collectAsState()
     val is_compacting by agent.compaction_running.collectAsState()
     val context_usage by agent.context_usage.collectAsState()
     val queued_count by agent.queued_count.collectAsState()
+    // 消息列表经 StateFlow 收集：发射即重组（此前直接读 SnapshotStateList 曾出现回复完成但 UI 卡「思考中」）
+    val agent_messages = agent.messages.collectAsState().value
     val list_state = rememberLazyListState()
     val show_thinking = remember { com.jmwl.gostudio.ai.load_ai_settings(context).show_thinking_process }
-    val last_text_len = agent.messages.lastOrNull()?.text?.length ?: 0
+    val last_text_len = agent_messages.lastOrNull()?.text?.length ?: 0
     var show_usage_sheet by remember { mutableStateOf(false) }
 
     // 最近会话抽屉
@@ -119,11 +120,11 @@ fun ai_chat_page(
     }
 
     // 新消息 or 流式增长 or 等待气泡出现时自动滚到底
-    LaunchedEffect(agent.messages.size, last_text_len, is_running) {
-        if (agent.messages.isNotEmpty()) {
+    LaunchedEffect(agent_messages.size, last_text_len, is_running) {
+        if (agent_messages.isNotEmpty()) {
             // 等待气泡是列表尾部的额外 item：显示中滚到它，否则滚到最后一条消息
-            val waiting = is_running && agent.messages.none { it.streaming }
-            list_state.animateScrollToItem(agent.messages.size - if (waiting) 0 else 1)
+            val waiting = is_running && agent_messages.none { it.streaming }
+            list_state.animateScrollToItem(agent_messages.size - if (waiting) 0 else 1)
         }
     }
 
@@ -264,7 +265,7 @@ fun ai_chat_page(
             }
 
             // 消息流
-            if (agent.messages.isEmpty()) {
+            if (agent_messages.isEmpty()) {
                 Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -286,7 +287,7 @@ fun ai_chat_page(
                     state = list_state,
                     contentPadding = PaddingValues(vertical = 6.dp)
                 ) {
-                    itemsIndexed(agent.messages, key = { _, msg -> msg.uid }) { index, msg ->
+                    itemsIndexed(agent_messages, key = { _, msg -> msg.uid }) { index, msg ->
                         ai_message_bubble(
                             message = msg,
                             show_thinking = show_thinking,
@@ -302,7 +303,7 @@ fun ai_chat_page(
                         )
                     }
                     // agent 运行中但还没有流式占位消息（发送后到占位插入前、工具轮次之间）：显示等待气泡
-                    if (is_running && agent.messages.none { it.streaming }) {
+                    if (is_running && agent_messages.none { it.streaming }) {
                         item(key = "waiting-bubble") { ai_waiting_bubble() }
                     }
                     // 上下文压缩进行中（要调一次模型生成摘要，可能数秒）
@@ -312,10 +313,8 @@ fun ai_chat_page(
                 }
             }
 
-            // 待发送附件 chips / 暂停横幅 / 排队提示
-            if (is_paused && !is_running) {
-                ai_pause_banner(queued_count = queued_count, on_resume = { agent.resume() })
-            } else if (queued_count > 0 && is_running) {
+            // 待发送附件 chips / 排队提示
+            if (queued_count > 0 && is_running) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 2.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -464,30 +463,14 @@ fun ai_chat_page(
                 }
 
                 if (is_running) {
-                    // 运行中：暂停（当前步骤完成后停住，消息排队保留）+ 停止
-                    FilledIconButton(
-                        onClick = { if (is_paused) agent.resume() else agent.pause() },
-                        modifier = Modifier.size(38.dp),
-                        shape = CircleShape,
-                        colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = if (is_paused) colors.success else colors.warning
-                        )
-                    ) {
-                        Icon(
-                            if (is_paused) Icons.Default.PlayArrow else Icons.Default.Pause,
-                            contentDescription = if (is_paused) "继续" else "暂停",
-                            tint = colors.dialog_clone_text,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                    Spacer(Modifier.width(6.dp))
+                    // 运行中：停止（取消本轮，排队消息清空）
                     FilledIconButton(
                         onClick = { agent.cancel() },
                         modifier = Modifier.size(38.dp),
                         shape = CircleShape,
                         colors = IconButtonDefaults.filledIconButtonColors(containerColor = colors.danger)
                     ) {
-                        Icon(Icons.Default.Stop, contentDescription = "停止", tint = colors.dialog_clone_text, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.Close, contentDescription = "停止", tint = colors.dialog_clone_text, modifier = Modifier.size(22.dp))
                     }
                 } else {
                     FilledIconButton(

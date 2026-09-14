@@ -218,6 +218,25 @@ class runtime_host_activity : AppCompatActivity(), runtime_bridge.protocol_handl
         return true
     }
 
+    /** 用新页面替换栈顶：当前页出栈（返回键不再回到它）。先加载成功再出栈，失败时保留当前页。 */
+    private fun replace_page(layout_name: String): String? {
+        val file = File(project_dir, layout_name)
+        if (!file.isFile) return "页面布局不存在: $layout_name"
+        return try {
+            val page = runtime_layout_loader(this).load(file, project_dir)
+            if (page_stack.isNotEmpty()) {
+                val removed = page_stack.removeLast()
+                removed.views.forEach { (id, view) ->
+                    if (views_by_id[id] === view) views_by_id.remove(id)
+                }
+            }
+            show_page(page)
+            null
+        } catch (e: Exception) {
+            describe_layout_error(e)
+        }
+    }
+
     private fun wire_widget_events(id: String, view: View) {
             // AdapterView（Spinner/ListView/GridView）禁止 setOnClickListener，系统会直接抛异常；
             // 列表类的条目点击走下方 item_click
@@ -700,6 +719,13 @@ class runtime_host_activity : AppCompatActivity(), runtime_bridge.protocol_handl
             "float_can" -> if (floating_windows.can_show()) "true" else "false"
             "show_page" -> {
                 val page_error = push_page(msg.optString("text"))
+                if (page_error != null) {
+                    append_log("错误: $page_error")
+                    error(page_error)
+                } else ""
+            }
+            "replace_page" -> {
+                val page_error = replace_page(msg.optString("text"))
                 if (page_error != null) {
                     append_log("错误: $page_error")
                     error(page_error)

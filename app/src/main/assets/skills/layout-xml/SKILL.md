@@ -110,6 +110,8 @@ app.OnDialog(func(button string) { /* Dialog 按钮回调 */ })
 - 项目根的 layout.xml 是首页；在项目根再建 `page2.xml`、`settings.xml` 等同级 xml 文件即为新页面
   （必须与 layout.xml 同目录，不要放子文件夹）
 - 跳转（压栈）：`app.ShowPage("page2.xml")`；返回（弹栈）：`app.Back()`；系统返回键也会自动弹出页面
+- 替换当前页（当前页出栈、返回键不回到它）：`app.ReplacePage("main.xml")`，
+  典型场景是登录成功后替换到主页；新页面加载失败时当前页保持不变
 - 页面切换时控件表自动切换，不同页面可以有同名 id，但建议避免混淆
 - ViewFlipper 可做同屏轮播（子视图 + autoStart/flipInterval），Go 侧 `app.ViewFlipper("vf").ShowNext()` / `ShowPrevious()`
 

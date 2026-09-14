@@ -14,9 +14,12 @@
         android:usesCleartextTraffic="true"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
         <!-- activity 必须用全限定名：打包时会替换 package，相对名会解析错 -->
+        <!-- configChanges：转屏/键盘等配置变化不销毁重建，避免重建期间撞上
+             app.bin 覆写与旧 Go 进程的竞态（ETXTBSY）导致闪退 -->
         <activity
             android:name="com.jmwl.gostudio.shell.shell_activity"
             android:exported="true"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|density"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

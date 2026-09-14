@@ -162,6 +162,9 @@ internal fun editor_screen(
     /** 递增触发器：App 编译完成并进入运行界面后切走编译日志 */
     sidebar_log_close_trigger: Int = 0,
     on_open_designer: () -> Unit = {},
+    /** App 界面项目（app-ui 模板）才显示「生成控件声明」入口 */
+    is_app_ui_project: Boolean = false,
+    on_generate_widget_bindings: () -> Unit = {},
     /** AI 设置覆盖层打开或正在退出时，禁用 AI 页自身返回处理 */
     ai_settings_visible: Boolean = false
 ) {
@@ -351,6 +354,8 @@ internal fun editor_screen(
                                 markdown_preview_enabled = !markdown_preview_enabled
                             },
                             on_open_designer = on_open_designer,
+                            is_app_ui_project = is_app_ui_project,
+                            on_generate_widget_bindings = on_generate_widget_bindings,
                             on_test = on_test,
                             on_pack = on_pack,
                             on_tidy = on_tidy,

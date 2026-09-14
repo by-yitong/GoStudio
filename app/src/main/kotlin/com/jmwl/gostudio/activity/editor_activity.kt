@@ -141,6 +141,11 @@ class editor_activity : ComponentActivity() {
     private var ai_open_trigger by mutableStateOf(0)
     private var sidebar_log_open_trigger by mutableStateOf(0)
     private var sidebar_log_close_trigger by mutableStateOf(0)
+    /** 是否为 App 界面项目（决定「生成控件声明」入口是否显示） */
+    private val is_app_ui_project: Boolean by lazy {
+        ::project_dir.isInitialized &&
+            project_manager.read_project_template(project_dir.absolutePath) == "app-ui"
+    }
     /** AI 文件变更通知器（工具改文件后刷新编辑器） */
     private var ai_file_change_notifier: com.jmwl.gostudio.ai.ai_file_change_notifier? = null
     /** AI 设置页覆盖层开关 */
@@ -450,6 +455,8 @@ class editor_activity : ComponentActivity() {
             sidebar_log_open_trigger = sidebar_log_open_trigger,
             sidebar_log_close_trigger = sidebar_log_close_trigger,
             on_open_designer = ::open_layout_designer,
+            is_app_ui_project = is_app_ui_project,
+            on_generate_widget_bindings = ::generate_widget_bindings,
             ai_settings_visible = show_ai_settings || ai_settings_exiting
         )
 
@@ -1161,6 +1168,60 @@ class editor_activity : ComponentActivity() {
         layout_designer_launcher.launch(intent)
     }
 
+    /** 更多菜单「生成控件声明」：把当前布局 xml 中带 id 的控件生成为 ui.go，并在入口文件插入 bind 调用。 */
+    private fun generate_widget_bindings() {
+        val xml_path = state.current_file_path?.takeIf { it.endsWith(".xml") } ?: return
+        if (state.read_only) {
+            app_toast.show(this, "只读模式不能生成控件声明", app_toast.LENGTH_SHORT)
+            return
+        }
+        lifecycleScope.launch {
+            save_dirty_open_files(show_toast = false)
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    val xml_file = File(xml_path)
+                    val generation = editor_generate_widget_bindings(xml_file.readText(), xml_file.name)
+                        .getOrThrow()
+                    val ui_file = File(project_dir, generation.source.file_name)
+                    ui_file.writeText(generation.content)
+
+                    // 入口文件（run_entry 或 main.go）里插入 bind 调用
+                    val build = project_manager.read_project_build_config(project_dir.absolutePath)
+                    val entry = File(project_dir, build.run_entry).canonicalFile
+                    val target = (entry.takeIf { it.isFile } ?: File(project_dir, "main.go")).canonicalFile
+                    var bind_status = editor_bind_call_status.ANCHOR_MISSING
+                    if (target.isFile) {
+                        val insertion = editor_insert_bind_call(target.readText(), generation.source.bind_func)
+                        if (insertion.status == editor_bind_call_status.INSERTED) {
+                            target.writeText(insertion.content)
+                        }
+                        bind_status = insertion.status
+                    }
+                    val message = buildString {
+                        append("已生成 ${ui_file.name}（${generation.bindings.size} 个控件）")
+                        when (bind_status) {
+                            editor_bind_call_status.INSERTED ->
+                                append("，已插入 ${generation.source.bind_func}(app)")
+                            editor_bind_call_status.ALREADY_PRESENT -> {}
+                            editor_bind_call_status.ANCHOR_MISSING ->
+                                append("；请手动调用 ${generation.source.bind_func}(app)")
+                        }
+                    }
+                    message to listOfNotNull(
+                        ui_file.absolutePath,
+                        target.takeIf { it.isFile }?.absolutePath
+                    )
+                }
+            }
+            result.onSuccess { (message, changed_paths) ->
+                refresh_files_after_ai_edit(changed_paths)
+                app_toast.show(this@editor_activity, message, app_toast.LENGTH_LONG)
+            }.onFailure { error ->
+                app_toast.show(this@editor_activity, "生成失败：${error.message.orEmpty()}", app_toast.LENGTH_LONG)
+            }
+        }
+    }
+
     private fun request_select_tab(file_path: String) {
         if (file_path == state.current_file_path) return
 
@@ -1566,14 +1627,25 @@ class editor_activity : ComponentActivity() {
         }
     }
 
-    /** 旧项目 App SDK 缺新 API 或仍使用旧导入名时，自动升级并迁移。 */
+    /**
+     * 旧项目 App SDK 缺新 API 或仍使用旧导入名时，自动升级并迁移。
+     * 判定两层：文件存在性（老迁移）+ sdk_version.txt 版本号（模板改动递增，
+     * 老项目没有版本文件或版本落后时重拷，让 page.go 等文件级新增 API 生效）。
+     */
     private fun upgrade_app_ui_runtime_sdk_if_needed(): List<String> {
         if (!File(project_dir, "layout.xml").isFile) return emptyList()
         val changed_paths = mutableListOf<String>()
         val sdk_dir = File(project_dir, "gostudio")
         val sdk_file = File(sdk_dir, "gostudio.go")
         val root_mod = File(project_dir, "go.mod")
-        val sdk_is_current = sdk_file.isFile &&
+        val template_version = runCatching {
+            gostudio_application.instance.assets.open("templates/app-ui/gostudio/sdk_version.txt")
+                .bufferedReader().use { it.readText().trim() }
+        }.getOrNull()
+        val version_is_current = template_version == null ||
+            File(sdk_dir, "sdk_version.txt").takeIf { it.isFile }?.readText()?.trim() == template_version
+        val sdk_is_current = version_is_current &&
+            sdk_file.isFile &&
             sdk_file.readText().contains("package appsdk") &&
             File(sdk_dir, "view.go").isFile &&
             File(sdk_dir, "image.go").isFile &&

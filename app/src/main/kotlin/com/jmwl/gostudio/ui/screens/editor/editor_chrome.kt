@@ -290,6 +290,9 @@ fun editor_top_bar(
     markdown_preview_enabled: Boolean = false,
     on_toggle_markdown_mode: () -> Unit = {},
     on_open_designer: () -> Unit = {},
+    /** App 界面项目打开 xml 布局时，「更多」菜单显示「生成控件声明」 */
+    is_app_ui_project: Boolean = false,
+    on_generate_widget_bindings: () -> Unit = {},
     on_test: () -> Unit = {},
     on_pack: () -> Unit = {},
     on_tidy: () -> Unit = {},
@@ -430,6 +433,16 @@ fun editor_top_bar(
                         ) {
                             more_menu_open = false
                             on_pack()
+                        }
+                        editor_menu_divider()
+                    }
+                    if (is_xml_file && is_app_ui_project) {
+                        editor_menu_item(
+                            icon = Icons.Default.Code,
+                            label = "生成控件声明"
+                        ) {
+                            more_menu_open = false
+                            on_generate_widget_bindings()
                         }
                         editor_menu_divider()
                     }

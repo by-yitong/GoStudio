@@ -2,7 +2,6 @@ package com.jmwl.gostudio.ai
 
 import android.os.Handler
 import android.os.Looper
-import androidx.compose.runtime.mutableStateListOf
 import com.jmwl.gostudio.ai.tools.ai_tool_registry
 import com.jmwl.gostudio.ai.tools.execute_safely
 import com.jmwl.gostudio.ai.tools.string_or
@@ -22,12 +21,7 @@ import kotlinx.coroutines.withContext
  * - [skill_manager]：skill 索引注入 system prompt
  * - [mcp_manager]：MCP 工具服务器（start/stop 生命周期）
  * - [file_change_notifier]：write/edit 改文件后通知编辑器刷新
- * - [steering_queue]：运行中排队新消息
- *
- * 暂停/恢复（参考 pi 的 turn 边界机制）：
- * [pause] 后 agent 不会打断正在进行的流式回复或工具调用，而是在
- * 「当前工具批次结束、下一轮请求前」的边界停下；排队的 steering 消息保留，
- * [resume] 时注入并继续循环。
+ * - [steering_queue]：运行中排队新消息（当前步骤结束后自动发送）
  *
  * 自动上下文压缩（参考 pi 的 threshold compaction）：
  * 每次发送/每轮请求前估算上下文用量，超过阈值（[ai_settings_state.compact_threshold_percent]）
@@ -46,14 +40,21 @@ class ai_agent_loop(
     private val file_change_notifier: ai_file_change_notifier? = null,
     private val steering_queue: ai_steering_queue? = null
 ) {
-    val messages = mutableStateListOf<ai_message>()
+    /**
+     * 消息列表（不可变快照，每次变更发射新 List）。
+     *
+     * 历史教训：这里曾是 mutableStateListOf + 后台线程 Handler post + sendApplyNotifications
+     * 的组合，依赖 Compose 快照通知时序，先后打了 5 个补丁（copy() 强制重组、快照失效通知、
+     * 身份/下标三级定位、占位原子添加、finally 兜底清 streaming）仍出现「回复完成但 UI 卡在
+     * 思考中、退出重进才显示」——同页的 is_running 等 StateFlow 状态却一直正常。
+     * 根治：消息与其它状态统一走 StateFlow 通道，发射即重组，与线程/快照/Handler 时序解耦。
+     * 变更统一经 [mutate_messages] 在主线程串行执行（读-改-写原子性靠单线程 confinement 保证）。
+     */
+    private val _messages = MutableStateFlow<List<ai_message>>(emptyList())
+    val messages: StateFlow<List<ai_message>> = _messages
 
     private val _is_running = MutableStateFlow(false)
     val is_running: StateFlow<Boolean> = _is_running
-
-    /** 暂停中（当前步骤完成后停住，等待 resume 或新消息） */
-    private val _is_paused = MutableStateFlow(false)
-    val is_paused: StateFlow<Boolean> = _is_paused
 
     /** 正在执行上下文压缩（UI 显示压缩指示器） */
     private val _compaction_running = MutableStateFlow(false)
@@ -73,7 +74,6 @@ class ai_agent_loop(
 
     private var current_job: Job? = null
     private var cancelled = false
-    @Volatile private var paused = false
     private val main_handler = Handler(Looper.getMainLooper())
 
     /** 最近一次构建的 system prompt 长度（上下文用量估算用，避免每次重读 AGENTS.md） */
@@ -83,34 +83,31 @@ class ai_agent_loop(
     private var initialized = false
 
     private fun on_main(action: () -> Unit) {
-        val run = {
-            action()
-            // 组合外的快照状态写入（messages 列表等）不会主动通知 Compose 应用变更，
-            // 在静止无输入的界面上可能一直不刷新：数据已更新但 UI 停留在旧状态，触摸才恢复。
-            // 显式发送应用通知，强制失效→重组立即生效。
-            androidx.compose.runtime.snapshots.Snapshot.sendApplyNotifications()
+        // 所有 _messages 读-改-写与 is_running 复位都排进主线程队列串行执行：
+        // 既保证变更原子性，也保证「最终消息落地 → is_running=false」的顺序
+        //（反过来会出现回复完成瞬间先看到发送按钮、思考中气泡闪一下才变内容的竞态）。
+        if (Looper.myLooper() == Looper.getMainLooper()) action()
+        else main_handler.post(action)
+    }
+
+    /** 在主线程对消息列表做原子读-改-写（发射新 List 通知 UI） */
+    private fun mutate_messages(transform: (MutableList<ai_message>) -> Unit) {
+        on_main {
+            val next = _messages.value.toMutableList()
+            transform(next)
+            _messages.value = next
         }
-        if (Looper.myLooper() == Looper.getMainLooper()) run()
-        else main_handler.post(run)
     }
 
     /**
-     * 把 [target] 的最新状态刷进消息列表（触发 Compose 重组）。
-     * 按优先级定位：身份（===）→ 缓存下标（执行时读取并校验同角色同时间戳，防串位）→ 追加。
-     * 任何一条路径成功都能保证 UI 看到最终内容（尤其是错误信息），不会卡在流式占位。
+     * 把 [target] 的最新状态刷进消息列表。
+     * uid 在 copy() 间保持不变，直接按 uid 定位替换；找不到（会话中途被清空/切换）则追加，
+     * 保证错误信息等最终内容不会静默丢失（不会卡在流式占位）。
      */
-    private fun post_assistant_refresh(target: ai_message, index_holder: IntArray) {
-        on_main {
-            val identity_idx = messages.indexOfFirst { it === target }
-            val fallback_index = index_holder[0]
-            when {
-                identity_idx >= 0 -> messages[identity_idx] = target.copy()
-                fallback_index in messages.indices &&
-                    messages[fallback_index].role == target.role &&
-                    messages[fallback_index].timestamp == target.timestamp ->
-                    messages[fallback_index] = target.copy()
-                else -> messages.add(target.copy())
-            }
+    private fun post_assistant_refresh(target: ai_message) {
+        mutate_messages { list ->
+            val idx = list.indexOfFirst { it.uid == target.uid }
+            if (idx >= 0) list[idx] = target.copy() else list.add(target.copy())
         }
     }
 
@@ -124,7 +121,7 @@ class ai_agent_loop(
                 val target_id = it.read_current_session_id() ?: session_id
                 if (target_id != session_id) session_id = target_id
                 val history = it.load_session(target_id)
-                if (history.isNotEmpty()) on_main { messages.addAll(history) }
+                if (history.isNotEmpty()) on_main { _messages.value = history }
             }
             // 发现 skill
             skill_manager?.discover()
@@ -146,8 +143,8 @@ class ai_agent_loop(
         }
         val settings = settings_provider()
         if (!settings.is_configured()) {
-            on_main {
-                messages.add(ai_message(
+            mutate_messages { list ->
+                list.add(ai_message(
                     role = ai_message_role.ASSISTANT,
                     text = "⚠️ AI 还没配置。请点击右上角 ⚙️ 设置，填写 API 提供商和密钥。",
                     is_error = true
@@ -155,69 +152,26 @@ class ai_agent_loop(
             }
             return
         }
-        // 暂停中收到新消息：注入排队消息 + 本条，解除暂停继续跑
-        if (_is_paused.value) {
-            paused = false
-            _is_paused.value = false
-            val queued = steering_queue?.drain() ?: emptyList()
-            _queued_count.value = 0
-            for (q in queued) {
-                val processed_q = input_processor?.process(q) ?: q
-                on_main { messages.add(ai_message(role = ai_message_role.USER, text = processed_q)) }
-            }
-        }
         // 过 input_processor（@引用、/命令、/skill）
         val processed = input_processor?.process(text) ?: text
         on_main {
-            messages.add(ai_message(role = ai_message_role.USER, text = processed))
+            _messages.value = _messages.value + ai_message(role = ai_message_role.USER, text = processed)
             refresh_context_usage()
         }
         start_loop()
     }
 
     /**
-     * 暂停：不打断当前流式回复/工具调用，在其完成后的边界停住。
-     * 排队的 steering 消息保留，resume 时注入。
+     * 停止：取消正在跑的 loop（打断流式回复/工具调用），排队消息作废。
      */
-    fun pause() {
-        if (!_is_running.value) return
-        paused = true
-        _is_paused.value = true
-    }
-
-    /**
-     * 恢复：loop 还在跑则下个边界自然继续；已停在暂停点则注入排队消息并重启循环。
-     */
-    fun resume() {
-        if (!_is_paused.value) return
-        paused = false
-        _is_paused.value = false
-        if (_is_running.value) return
-        val queued = steering_queue?.drain() ?: emptyList()
-        _queued_count.value = 0
-        for (q in queued) {
-            val processed = input_processor?.process(q) ?: q
-            on_main { messages.add(ai_message(role = ai_message_role.USER, text = processed)) }
-        }
-        val last = messages.lastOrNull()
-        val can_continue = queued.isNotEmpty() ||
-            last?.role == ai_message_role.TOOL ||
-            (last?.role == ai_message_role.ASSISTANT && last.tool_calls.isNotEmpty())
-        if (can_continue) start_loop()
-    }
-
     fun cancel() {
         cancelled = true
-        paused = false
-        _is_paused.value = false
         _queued_count.value = 0
         current_job?.cancel()
         on_main {
             _is_running.value = false
-            // 用 copy() 替换实例才能触发 Compose 重组（直接改 var 字段 UI 看不见）
-            for (i in messages.indices) {
-                if (messages[i].streaming) messages[i] = messages[i].copy(streaming = false)
-            }
+            // 清掉流式占位标记，避免「思考中」残留
+            _messages.value = _messages.value.map { if (it.streaming) it.copy(streaming = false) else it }
         }
     }
 
@@ -226,7 +180,7 @@ class ai_agent_loop(
         steering_queue?.clear()
         _queued_count.value = 0
         on_main {
-            messages.clear()
+            _messages.value = emptyList()
             refresh_context_usage()
         }
         session_store?.delete_session(session_id)
@@ -241,16 +195,13 @@ class ai_agent_loop(
     /** 切换到指定会话：清内存 → 加载该会话历史 → 重设 session_id */
     suspend fun switch_session(new_id: String) {
         if (_is_running.value) cancel()
-        paused = false
-        _is_paused.value = false
         steering_queue?.clear()
         _queued_count.value = 0
         session_id = new_id
         session_store?.set_current_session_id(new_id)
         val history = session_store?.load_session(new_id) ?: emptyList()
         on_main {
-            messages.clear()
-            messages.addAll(history)
+            _messages.value = history
             refresh_context_usage()
         }
     }
@@ -258,15 +209,13 @@ class ai_agent_loop(
     /** 新建空会话：生成时间戳 id，清内存 */
     fun new_session(): String {
         if (_is_running.value) cancel()
-        paused = false
-        _is_paused.value = false
         steering_queue?.clear()
         _queued_count.value = 0
         val new_id = "chat-" + System.currentTimeMillis()
         session_id = new_id
         session_store?.set_current_session_id(new_id)
         on_main {
-            messages.clear()
+            _messages.value = emptyList()
             refresh_context_usage()
         }
         return new_id
@@ -288,22 +237,16 @@ class ai_agent_loop(
      */
     fun regenerate_last() {
         if (_is_running.value) return
-        if (messages.isEmpty()) return
-        on_main {
-            // 从后往前找最后一条 assistant
-            var lastAssistantIdx = -1
-            for (i in messages.indices.reversed()) {
-                if (messages[i].role == ai_message_role.ASSISTANT) {
-                    lastAssistantIdx = i
-                    break
-                }
-            }
-            if (lastAssistantIdx < 0) return@on_main
-            // 删除该 assistant 及其之后的所有消息
-            while (messages.size > lastAssistantIdx) messages.removeAt(messages.size - 1)
-            // 上一条 user 必须存在才能重跑
-            val hasUser = messages.any { it.role == ai_message_role.USER }
-            if (!hasUser) return@on_main
+        val current = _messages.value
+        if (current.isEmpty()) return
+        val last_assistant_idx = current.indexOfLast { it.role == ai_message_role.ASSISTANT }
+        if (last_assistant_idx < 0) return
+        // 删除该 assistant 及其后所有消息后，必须还剩 user 消息才能重跑
+        if (current.subList(0, last_assistant_idx).none { it.role == ai_message_role.USER }) return
+        val target_uid = current[last_assistant_idx].uid
+        mutate_messages { list ->
+            val idx = list.indexOfFirst { it.uid == target_uid }
+            if (idx >= 0) while (list.size > idx) list.removeAt(list.size - 1)
         }
         persist_session_via_scope()
         start_loop()
@@ -314,20 +257,22 @@ class ai_agent_loop(
      */
     fun delete_message(index: Int) {
         if (_is_running.value) return
-        if (index !in messages.indices) return
-        on_main {
-            val msg = messages[index]
-            messages.removeAt(index)
+        if (index !in _messages.value.indices) return
+        val msg = _messages.value[index]
+        mutate_messages { list ->
+            val idx = list.indexOfFirst { it.uid == msg.uid }
+            if (idx < 0) return@mutate_messages
+            list.removeAt(idx)
             // 若删的是 assistant，移除紧随其后的 TOOL 消息（直到下一条 user/assistant）
             if (msg.role == ai_message_role.ASSISTANT) {
-                while (messages.size > index && messages[index].role == ai_message_role.TOOL) {
-                    messages.removeAt(index)
+                while (list.size > idx && list[idx].role == ai_message_role.TOOL) {
+                    list.removeAt(idx)
                 }
             }
             // 若删的是 user，其后紧随的 assistant+tool 一并删（避免悬空）
             if (msg.role == ai_message_role.USER) {
-                while (messages.size > index && messages[index].role != ai_message_role.USER) {
-                    messages.removeAt(index)
+                while (list.size > idx && list[idx].role != ai_message_role.USER) {
+                    list.removeAt(idx)
                 }
             }
             refresh_context_usage()
@@ -340,15 +285,17 @@ class ai_agent_loop(
      */
     fun edit_and_resend_user(index: Int, new_text: String) {
         if (_is_running.value) return
-        if (index !in messages.indices) return
+        val target = _messages.value.getOrNull(index) ?: return
+        if (target.role != ai_message_role.USER) return
         val trimmed = new_text.trim()
         if (trimmed.isEmpty()) return
         val processed = input_processor?.process(trimmed) ?: trimmed
-        on_main {
-            if (messages[index].role != ai_message_role.USER) return@on_main
-            messages[index] = messages[index].copy(text = processed)
+        mutate_messages { list ->
+            val idx = list.indexOfFirst { it.uid == target.uid }
+            if (idx < 0) return@mutate_messages
+            list[idx] = list[idx].copy(text = processed)
             // 删除其后所有消息
-            while (messages.size > index + 1) messages.removeAt(messages.size - 1)
+            while (list.size > idx + 1) list.removeAt(list.size - 1)
             refresh_context_usage()
         }
         persist_session_via_scope()
@@ -396,7 +343,7 @@ class ai_agent_loop(
         while (true) {
             // 每轮重读设置：会话内切换模型即时生效（下一轮请求用新模型）
             settings = settings_provider()
-            if (iteration_guard >= settings.max_agent_iterations || cancelled || paused) break
+            if (iteration_guard >= settings.max_agent_iterations || cancelled) break
             iteration_guard++
 
             val enabled_tool_names = if (settings.enable_tools) tool_registry.all().map { it.name } else emptyList()
@@ -411,7 +358,8 @@ class ai_agent_loop(
             }
             on_main { refresh_context_usage() }
 
-            val history_snapshot = on_main_and_wait { messages.toList() }
+            // 经主线程读取：保证排在 send_user_message 等刚 post 的消息写入之后（请求不丢用户消息）
+            val history_snapshot = on_main_and_wait { _messages.value }
             val request_messages = buildList {
                 add(ai_message(role = ai_message_role.SYSTEM, text = system_prompt))
                 addAll(history_snapshot.filter {
@@ -423,14 +371,9 @@ class ai_agent_loop(
             val tools_api = if (settings.enable_tools) tool_registry.to_api_tools() else emptyList()
 
             val assistant_msg = ai_message(role = ai_message_role.ASSISTANT, streaming = true)
-            val msg_index_holder = intArrayOf(-1)
-            // 添加占位和记录下标必须在同一个 post 里原子完成：
-            // 403 等错误可能在几十毫秒内返回，拆成两个 post 会出现下标还是 -1 的竞态窗口，
-            // 导致错误更新被静默丢弃、UI 永远停在「思考中」。
-            on_main {
-                messages.add(assistant_msg)
-                msg_index_holder[0] = messages.size - 1
-            }
+            // 占位以 copy() 入列（避免 IO 线程还在原地变异的实例被组合直接读取）；
+            // 后续刷新一律按 uid 定位（copy 保持 uid），无下标竞态。
+            mutate_messages { list -> list.add(assistant_msg.copy()) }
 
             val collected_tool_calls = mutableListOf<ai_tool_call>()
             var had_error = false
@@ -438,12 +381,12 @@ class ai_agent_loop(
             client.stream_chat(final_messages, tools_api, object : ai_stream_callback {
                 override fun on_text(delta: String) {
                     assistant_msg.text += delta
-                    post_assistant_refresh(assistant_msg, msg_index_holder)
+                    post_assistant_refresh(assistant_msg)
                 }
                 override fun on_reasoning(delta: String) {
                     // reasoning 模型的思考链增量（UI 展示用，不发给 API）
                     assistant_msg.reasoning += delta
-                    post_assistant_refresh(assistant_msg, msg_index_holder)
+                    post_assistant_refresh(assistant_msg)
                 }
                 override fun on_done(tool_calls: List<ai_tool_call>) {
                     collected_tool_calls.addAll(tool_calls)
@@ -459,32 +402,35 @@ class ai_agent_loop(
                     assistant_msg.is_error = true
                     assistant_msg.streaming = false
                     had_error = true
-                    post_assistant_refresh(assistant_msg, msg_index_holder)
+                    post_assistant_refresh(assistant_msg)
                 }
             })
 
             assistant_msg.streaming = false
-            post_assistant_refresh(assistant_msg, msg_index_holder)
+            post_assistant_refresh(assistant_msg)
 
             if (had_error || cancelled) break
             if (collected_tool_calls.isEmpty()) break
 
             // 固化 tool_calls
             val execs = collected_tool_calls.map { ai_tool_execution(call = it) }
-            on_main {
-                val idx = msg_index_holder[0]
-                if (idx in messages.indices) {
-                    messages[idx] = messages[idx].copy(tool_calls = collected_tool_calls, tool_executions = execs)
+            mutate_messages { list ->
+                val idx = list.indexOfFirst { it.uid == assistant_msg.uid }
+                if (idx >= 0) {
+                    list[idx] = list[idx].copy(tool_calls = collected_tool_calls, tool_executions = execs)
                 }
             }
 
             val changed_files = mutableListOf<String>()
 
             for (exec in execs) {
-                // 暂停/取消：不启动下一个工具（已完成的保留）
-                if (cancelled || paused) break
+                // 取消：不启动下一个工具（已完成的保留）
+                if (cancelled) break
                 exec.status = ai_tool_status.RUNNING
-                on_main { msg_index_holder[0].let { idx -> if (idx in messages.indices) messages[idx] = update_execution(messages[idx], exec) } }
+                mutate_messages { list ->
+                    val idx = list.indexOfFirst { it.uid == assistant_msg.uid }
+                    if (idx >= 0) list[idx] = update_execution(list[idx], exec)
+                }
 
                 val tool = tool_registry.get(exec.call.name)
                 val params = JsonParser.parseString(exec.call.arguments_json).asJsonObject
@@ -511,13 +457,17 @@ class ai_agent_loop(
                     params.string_or("path").takeIf { it.isNotBlank() }?.let { changed_files.add(it) }
                 }
 
-                on_main { msg_index_holder[0].let { idx -> if (idx in messages.indices) messages[idx] = update_execution(messages[idx], exec) } }
+                // 工具执行完成：更新状态卡片（DONE/ERROR）
+                mutate_messages { list ->
+                    val idx = list.indexOfFirst { it.uid == assistant_msg.uid }
+                    if (idx >= 0) list[idx] = update_execution(list[idx], exec)
+                }
                 on_main {
-                    messages.add(ai_message(
+                    _messages.value = _messages.value + ai_message(
                         role = ai_message_role.TOOL,
                         text = exec.to_result_content(),
                         tool_call_id = exec.call.id
-                    ))
+                    )
                 }
             }
 
@@ -527,29 +477,16 @@ class ai_agent_loop(
             }
             // 持久化会话
             persist_session()
-
-            // 暂停边界：当前工具批次结束、下一轮请求前停住（保留 steering 队列）
-            if (paused && !cancelled) {
-                on_main {
-                    messages.add(ai_message(
-                        role = ai_message_role.ASSISTANT,
-                        text = "⏸ 已暂停。当前步骤已完成，排队的消息已保留。输入新消息或点击「继续」恢复。",
-                        is_system_notice = true
-                    ))
-                    _is_running.value = false
-                }
-                return@withContext
-            }
         }
 
-        // 处理 steering 队列：有排队消息则作为新 user 消息继续（暂停时保留队列不处理）
-        val steering = if (paused) emptyList() else (steering_queue?.drain() ?: emptyList())
-        if (!paused) _queued_count.value = 0
+        // 处理 steering 队列：有排队消息则作为新 user 消息继续
+        val steering = steering_queue?.drain() ?: emptyList()
+        _queued_count.value = 0
         on_main { _is_running.value = false }
         if (steering.isNotEmpty() && !cancelled) {
             for (msg in steering) {
                 val processed = input_processor?.process(msg) ?: msg
-                on_main { messages.add(ai_message(role = ai_message_role.USER, text = processed)) }
+                mutate_messages { list -> list.add(ai_message(role = ai_message_role.USER, text = processed)) }
             }
             start_loop()
             return@withContext
@@ -557,10 +494,10 @@ class ai_agent_loop(
 
         if (iteration_guard >= settings.max_agent_iterations && !cancelled) {
             on_main {
-                messages.add(ai_message(
+                _messages.value = _messages.value + ai_message(
                     role = ai_message_role.ASSISTANT,
                     text = "（已达到最大轮次 ${settings.max_agent_iterations}，停止以避免失控。如需继续请重新描述需求。）"
-                ))
+                )
             }
         }
         persist_session()
@@ -572,7 +509,9 @@ class ai_agent_loop(
             // 捕获 loop 内任何异常，显示到对话里（避免静默失败）
             val err_text = "⚠️ agent loop 异常: ${e.javaClass.simpleName}: ${e.message ?: ""}"
             on_main {
-                messages.add(ai_message(role = ai_message_role.ASSISTANT, text = err_text, is_error = true))
+                _messages.value = _messages.value + ai_message(
+                    role = ai_message_role.ASSISTANT, text = err_text, is_error = true
+                )
                 _is_running.value = false
             }
         } finally {
@@ -580,9 +519,7 @@ class ai_agent_loop(
             on_main {
                 if (current_job === this_job) {
                     // 兜底：结束任何残留的流式占位，防止「思考中」永久卡住
-                    for (i in messages.indices) {
-                        if (messages[i].streaming) messages[i] = messages[i].copy(streaming = false)
-                    }
+                    _messages.value = _messages.value.map { if (it.streaming) it.copy(streaming = false) else it }
                     _is_running.value = false
                 }
                 refresh_context_usage()
@@ -602,7 +539,7 @@ class ai_agent_loop(
     private suspend fun perform_compaction(settings: ai_settings_state, force: Boolean): Boolean {
         val limit_chars = settings.effective_context_chars()
         val used_chars = on_main_and_wait {
-            last_system_prompt_len + messages.sumOf { it.estimated_chars().toLong() }
+            last_system_prompt_len + _messages.value.sumOf { it.estimated_chars().toLong() }
         }
         if (!force && !ai_compaction.should_compact(used_chars, limit_chars, settings.compact_threshold_percent)) {
             return false
@@ -610,19 +547,17 @@ class ai_agent_loop(
         // 近期保留量：上限的 20%，至少 8000 字符（参考 pi keepRecentTokens=20K/200K 的比例）
         val keep_recent = (limit_chars * 0.2f).toInt().coerceAtLeast(8_000)
         // 已有摘要 → 增量合并模式
-        val prev_summary = on_main_and_wait { messages.firstOrNull { it.is_summary }?.text }
+        val prev_summary = on_main_and_wait { _messages.value.firstOrNull { it.is_summary }?.text }
 
         _compaction_running.value = true
         try {
-            val snapshot = on_main_and_wait { messages.toList() }
+            val snapshot = on_main_and_wait { _messages.value }
             val result = ai_compaction.compact(snapshot, keep_recent, ai_client(settings), prev_summary)
             if (result == null) return false
             // 回写：[新摘要] + 保留的近期消息
             on_main {
-                val kept = messages.drop(result.compacted_count)
-                messages.clear()
-                messages.add(result.summary_message)
-                messages.addAll(kept)
+                val kept = _messages.value.drop(result.compacted_count)
+                _messages.value = listOf(result.summary_message) + kept
             }
             persist_session()
             return true
@@ -637,25 +572,21 @@ class ai_agent_loop(
      */
     private suspend fun hard_trim_history(settings: ai_settings_state) {
         val limit_chars = settings.effective_context_chars()
-        val used_chars = on_main_and_wait { messages.sumOf { it.estimated_chars().toLong() } }
+        val used_chars = on_main_and_wait { _messages.value.sumOf { it.estimated_chars().toLong() } }
         if (used_chars <= limit_chars) return
         // 保留近期约 60% 上限
         val keep_recent = (limit_chars * 0.6f).toInt()
-        val snapshot = on_main_and_wait { messages.toList() }
+        val snapshot = on_main_and_wait { _messages.value }
         val cut = ai_compaction.find_cut_point(snapshot, keep_recent)
         if (cut <= 0) return
-        on_main {
-            val kept = messages.drop(cut)
-            messages.clear()
-            messages.addAll(kept)
-        }
+        on_main { _messages.value = _messages.value.drop(cut) }
     }
 
     /** 估算上下文用量并更新 StateFlow（主线程调用；徽标/压缩判断的数据源） */
     private fun refresh_context_usage() {
         val settings = settings_provider()
         val limit = settings.effective_context_chars().toLong().coerceAtLeast(1)
-        val used = last_system_prompt_len + messages.sumOf { it.estimated_chars().toLong() }
+        val used = last_system_prompt_len + _messages.value.sumOf { it.estimated_chars().toLong() }
         _context_usage.value = (used.toFloat() / limit).coerceIn(0f, 1.5f)
     }
 
@@ -682,7 +613,7 @@ class ai_agent_loop(
 
     private suspend fun persist_session() {
         session_store?.let { store ->
-            val snapshot = on_main_and_wait { messages.toList() }
+            val snapshot = on_main_and_wait { _messages.value }
             withContext(Dispatchers.IO) { store.save_session(session_id, snapshot) }
         }
     }
@@ -695,8 +626,6 @@ class ai_agent_loop(
     }
 
     private suspend fun <T> on_main_and_wait(action: () -> T): T = withContext(Dispatchers.Main) {
-        val result = action()
-        androidx.compose.runtime.snapshots.Snapshot.sendApplyNotifications()
-        result
+        action()
     }
 }

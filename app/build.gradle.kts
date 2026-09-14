@@ -106,6 +106,8 @@ dependencies {
     testImplementation("com.google.truth:truth:1.4.5")
     // 单元测试里替换 Android 的 org.json 空桩（默认 stub 调用即抛异常）
     testImplementation("org.json:json:20240303")
+    // 单元测试里提供 XmlPullParser 真实实现（布局解析相关逻辑的 JVM 测试）
+    testImplementation("net.sf.kxml:kxml2:2.3.0")
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.process)
     implementation(libs.androidx.lifecycle.runtime.ktx)

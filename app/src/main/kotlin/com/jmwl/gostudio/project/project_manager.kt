@@ -776,6 +776,16 @@ func main() {
         }
     }
 
+    /** 读取项目模板类型（如 app-ui）；非 GoStudio 项目或读取失败返回空串。 */
+    fun read_project_template(path: String): String {
+        return try {
+            val config_file = project_config_file(File(path))
+            json.fromJson(config_file.readText(), project_config::class.java)?.template.orEmpty()
+        } catch (_: Exception) {
+            ""
+        }
+    }
+
     fun save_project_ide_config(path: String, ide_config: project_ide_config): Result<Unit> {
         return runCatching {
             val project_dir = File(path)

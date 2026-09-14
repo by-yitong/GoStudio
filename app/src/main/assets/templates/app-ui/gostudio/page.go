@@ -11,3 +11,10 @@ func (a *App) ShowPage(layout string) error {
 func (a *App) Back() error {
 	return a.call(message{Op: "system", Action: "back_page"})
 }
+
+// ReplacePage 用新页面替换当前页：当前页出栈，返回键不会回到它。
+// 典型场景：登录成功后 ReplacePage("main.xml")，返回键不再回到登录页。
+// 新页面加载失败时保留当前页不变。
+func (a *App) ReplacePage(layout string) error {
+	return a.call(message{Op: "system", Action: "replace_page", Text: layout})
+}

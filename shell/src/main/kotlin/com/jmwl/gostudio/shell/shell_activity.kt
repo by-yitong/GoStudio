@@ -80,9 +80,20 @@ class shell_activity : Activity() {
         assets.open("app/layout.xml").use { input ->
             layout_file.outputStream().use { input.copyTo(it) }
         }
+        // app.bin 走「临时文件 + rename」：转屏等配置变化触发 Activity 重建时，
+        // 旧 Go 进程可能仍在执行 app.bin（进程在其 onDestroy 后 150ms 才被杀），
+        // Linux 禁止写打开运行中的可执行文件（ETXTBSY），直接覆写会抛异常闪退；
+        // rename 替换正在执行的文件是允许的，旧进程继续用旧 inode。
+        val binary_tmp = File(filesDir, "app.bin.tmp")
         assets.open("app/app.bin").use { input ->
-            binary_file.outputStream().use { input.copyTo(it) }
+            binary_tmp.outputStream().use { input.copyTo(it) }
         }
+        binary_tmp.setExecutable(true, false)
+        if (!binary_tmp.renameTo(binary_file)) {
+            binary_file.delete()
+            binary_tmp.renameTo(binary_file)
+        }
+        binary_file.setExecutable(true, false)
         copy_asset_dir("app/images", File(filesDir, "images"), overwrite = true)
         // 页面布局：项目根目录的其他 xml 一并解包，供 app.ShowPage 使用
         assets.list("app")?.filter { it.endsWith(".xml") }?.forEach { name ->
@@ -210,6 +221,25 @@ class shell_activity : Activity() {
         )
         views_by_id.putAll(top.views)
         return true
+    }
+
+    /** 用新页面替换栈顶：当前页出栈（返回键不再回到它）。先加载成功再出栈，失败时保留当前页。 */
+    private fun replace_page(layout_name: String): String? {
+        val file = File(filesDir, layout_name)
+        if (!file.isFile) return "页面布局不存在: $layout_name"
+        return try {
+            val page = runtime_layout_loader(this).load(file, filesDir)
+            if (page_stack.isNotEmpty()) {
+                val removed = page_stack.removeLast()
+                removed.views.forEach { (id, view) ->
+                    if (views_by_id[id] === view) views_by_id.remove(id)
+                }
+            }
+            show_page(page)
+            null
+        } catch (e: Exception) {
+            describe_layout_error(e)
+        }
     }
 
     private fun wire_widget_events(id: String, view: View) {
@@ -674,6 +704,13 @@ class shell_activity : Activity() {
             "float_can" -> if (floating_windows.can_show()) "true" else "false"
             "show_page" -> {
                 val page_error = push_page(msg.optString("text"))
+                if (page_error != null) {
+                    append_log("错误: $page_error")
+                    error(page_error)
+                } else ""
+            }
+            "replace_page" -> {
+                val page_error = replace_page(msg.optString("text"))
                 if (page_error != null) {
                     append_log("错误: $page_error")
                     error(page_error)
