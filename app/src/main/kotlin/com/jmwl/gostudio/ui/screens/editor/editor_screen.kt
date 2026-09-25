@@ -192,6 +192,9 @@ internal fun editor_screen(
     var create_dialog_request by remember { mutableStateOf<editor_create_dialog_request?>(null) }
     var show_ai_page by remember { mutableStateOf(false) }
     var show_project_config by remember { mutableStateOf(false) }
+    // 全屏 Git 页（提交历史/分支），由 Git 面板顶栏入口打开
+    var show_git_page by remember { mutableStateOf(false) }
+    var git_page_initial_tab by remember { mutableStateOf(git_page_tab.HISTORY) }
     // 插件工具：每个已启用的工具在「更多」菜单独立一项（内置插件默认启用）
     var plugin_tools by remember { mutableStateOf(plugin_manager.enabled_tools(tool_engine.supported_kinds)) }
     var active_tool by remember { mutableStateOf<plugin_tool_def?>(null) }
@@ -263,6 +266,9 @@ internal fun editor_screen(
 
     // 项目配置页打开时返回键先关闭页面
     BackHandler(enabled = show_project_config) { show_project_config = false }
+
+    // 全屏 Git 页打开时返回键先关闭页面
+    BackHandler(enabled = show_git_page) { show_git_page = false }
 
     LaunchedEffect(search_visible) {
         if (search_visible) {
@@ -682,6 +688,10 @@ internal fun editor_screen(
                 drawer_open = false
                 on_file_position_click(path, line, column)
             },
+            on_open_git_page = { tab ->
+                git_page_initial_tab = tab
+                show_git_page = true
+            },
             on_drag = { drag_amount ->
                 drawer_width = (drawer_width.value + drag_amount.x).coerceIn(300f, 480f).dp
             }
@@ -808,6 +818,15 @@ internal fun editor_screen(
                     modifier = Modifier.fillMaxSize()
                 )
             }
+        }
+
+        // 全屏 Git 页（提交历史/分支），侧栏 Git 面板顶栏入口进入；与 AI 页覆盖层同层级
+        if (show_git_page) {
+            editor_git_page(
+                project_root_path = project_root_path,
+                initial_tab = git_page_initial_tab,
+                on_close = { show_git_page = false }
+            )
         }
     }
 }

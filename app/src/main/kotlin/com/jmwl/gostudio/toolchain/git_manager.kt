@@ -65,7 +65,7 @@ object git_manager {
         }
     }
 
-    private suspend fun run_git(
+    internal suspend fun run_git(
         project_root: String,
         args: String,
         timeout_ms: Long = COMMAND_TIMEOUT_MS,
@@ -155,7 +155,7 @@ object git_manager {
     }
 
     /** 本地仓库没有身份配置时提交会失败；默认补一个仅作用于当前仓库的身份。 */
-    private suspend fun ensure_local_identity(
+    internal suspend fun ensure_local_identity(
         project_root: String,
         previous_output: String = ""
     ): Boolean {
@@ -203,9 +203,6 @@ object git_manager {
 
     suspend fun create_branch(project_root: String, branch: String): Boolean =
         branch.isNotBlank() && run_git(project_root, "checkout -b ${shell_quote(branch.trim())}").first
-
-    suspend fun pull(project_root: String): Boolean =
-        run_git(project_root, "pull --ff-only", timeout_ms = 60_000L).first
 
     suspend fun push(project_root: String): Boolean =
         run_git(project_root, "push", timeout_ms = 60_000L).first
@@ -283,6 +280,28 @@ object git_manager {
         return true
     }
 
+    /** 只提交已暂存内容（不做任何 add）；message 空或当前无暂存变更时返回 false。 */
+    suspend fun commit_staged(project_root: String, message: String): Boolean {
+        if (message.isBlank()) return false
+        val (cached_ok, cached_out) = run_git(
+            project_root,
+            "diff --cached --name-only",
+            timeout_ms = 8_000L
+        )
+        if (!cached_ok || cached_out.isBlank()) return false
+        if (!ensure_local_identity(project_root)) return false
+        val (commit_ok, commit_out) = run_git(
+            project_root,
+            "commit -m ${shell_quote(message.trim())}",
+            timeout_ms = 20_000L
+        )
+        if (!commit_ok) {
+            android.util.Log.w(LOG_TAG, "git commit failed: $commit_out")
+            return false
+        }
+        return true
+    }
+
     suspend fun stage(project_root: String, paths: List<String>): Boolean =
         run_git(project_root, "add -- ${quote_paths(paths)}").first
 
@@ -313,6 +332,6 @@ internal fun shell_quote(value: String): String =
     if (value.isNotEmpty() && value.none { it in " \t\"'\\$`<>&|;(){}*?[]!~#\n" }) value
     else "'" + value.replace("'", "'\\''") + "'"
 
-private fun quote_paths(paths: List<String>): String =
+internal fun quote_paths(paths: List<String>): String =
     paths.filter { it.isNotBlank() }
         .joinToString(" ") { shell_quote(it) }

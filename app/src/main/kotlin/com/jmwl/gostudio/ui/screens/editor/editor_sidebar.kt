@@ -86,6 +86,7 @@ internal fun editor_sidebar(
     on_directory_click: (String) -> Unit,
     on_file_click: (String) -> Unit,
     on_file_position_click: (String, Int, Int) -> Unit,
+    on_open_git_page: (git_page_tab) -> Unit = {},
     on_drag: (Offset) -> Unit
 ) {
 
@@ -172,6 +173,7 @@ internal fun editor_sidebar(
                             editor_sidebar_tool.GIT -> editor_git_panel(
                                 project_root_path = project_root_path,
                                 on_open_file = on_file_click,
+                                on_open_git_page = on_open_git_page,
                                 modifier = Modifier.fillMaxSize()
                             )
                             editor_sidebar_tool.LOG -> editor_log_panel(
