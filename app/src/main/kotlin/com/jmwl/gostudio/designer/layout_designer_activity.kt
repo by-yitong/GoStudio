@@ -492,9 +492,6 @@ private fun designer_screen(
     // tree 为 null 表示根布局已删除、布局被清空，此时添加的第一个组件将成为新根
     var tree by remember { mutableStateOf(initial_tree) }
     var selected by remember { mutableStateOf<d_node?>(null) }
-    // 选中代数：仅在真正的选择事件（点预览/点树/新增/粘贴/删除）时递增，用于重置属性面板就地编辑器草稿；
-    // 属性值修改引发的 deep_copy 重建不递增，避免打断输入框/滑杆
-    var selection_gen by remember { mutableIntStateOf(0) }
     var preview_revision by remember { mutableIntStateOf(0) }
     var clipboard by remember { mutableStateOf<d_node?>(null) }
     var has_unsaved_changes by remember { mutableStateOf(false) }
@@ -518,7 +515,6 @@ private fun designer_screen(
 
     fun select(node: d_node?) {
         selected = node
-        selection_gen++
     }
 
     /** 添加组件/布局；target 为空时落到选中容器（无则根节点），布局为空时创建新根。 */
@@ -700,13 +696,12 @@ private fun designer_screen(
         }
     }
 
-    // 属性面板：选中组件的就地编辑（兼容「更多属性」对话框兜底）
+    // 属性面板：选中组件的属性行式列表（点行弹窗编辑）
     if (show_property_sheet && selected != null) {
         val node = selected!!
         designer_property_sheet(
             node = node,
             is_root = node === tree,
-            selection_gen = selection_gen,
             project_dir = project_dir,
             on_attr_change = { attr, value ->
                 val cur = tree

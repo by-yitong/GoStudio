@@ -91,19 +91,6 @@ private val COLOR_PRESETS = listOf("#1B1C1F", "#FFFFFF", "#5CCFE6", "#FF6B6B", "
 /* ---------- 通用小件 ---------- */
 
 @Composable
-private fun sheet_field_colors() = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor = app_theme_provider.colors.dialog_input_border,
-    unfocusedBorderColor = app_theme_provider.colors.dialog_input_hint.copy(alpha = 0.5f),
-    focusedTextColor = app_theme_provider.colors.dialog_input_text,
-    unfocusedTextColor = app_theme_provider.colors.dialog_input_text,
-    cursorColor = app_theme_provider.colors.dialog_input_border,
-    focusedLabelColor = app_theme_provider.colors.dialog_input_border,
-    unfocusedLabelColor = app_theme_provider.colors.dialog_input_hint,
-    focusedContainerColor = app_theme_provider.colors.dialog_input_bg,
-    unfocusedContainerColor = app_theme_provider.colors.dialog_input_bg
-)
-
-@Composable
 private fun designer_chip(
     text: String,
     selected: Boolean,
@@ -180,7 +167,6 @@ private fun sheet_title(text: String, onClose: (() -> Unit)? = null) {
 internal fun designer_property_sheet(
     node: d_node,
     is_root: Boolean,
-    selection_gen: Int,
     project_dir: File,
     on_attr_change: (attr: String, value: String) -> Unit,
     on_delete: () -> Unit,
@@ -196,8 +182,6 @@ internal fun designer_property_sheet(
     val attr_list = defined_attrs + node.attrs.keys.filter { it !in defined_attrs }
     var show_delete_confirm by remember { mutableStateOf(false) }
     var editing_attr by remember { mutableStateOf<String?>(null) }
-    // 「更多属性」对话框确认后同步重置就地编辑器的本地草稿
-    var dialog_gen by remember { androidx.compose.runtime.mutableIntStateOf(0) }
 
     if (show_delete_confirm) {
         AlertDialog(
@@ -274,53 +258,13 @@ internal fun designer_property_sheet(
                 }
             }
 
-            // 属性分组卡片（就地编辑）
+            // 属性分组卡片：左名称右当前值，点击行弹窗修改
             property_groups_for(attr_list).forEach { group ->
                 Spacer(Modifier.height(12.dp))
                 sheet_card {
                     Column(Modifier.fillMaxWidth().padding(12.dp)) {
                         Text(group.title, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = colors.dialog_text)
                         group.attrs.forEach { attr ->
-                            property_inline_row(
-                                attr = attr,
-                                node = node,
-                                selection_gen = selection_gen,
-                                dialog_gen = dialog_gen,
-                                project_dir = project_dir,
-                                on_change = on_attr_change
-                            )
-                        }
-                    }
-                }
-            }
-
-            // 更多属性：保留原对话框编辑能力（清除、原始值等）
-            Spacer(Modifier.height(12.dp))
-            var more_open by remember { mutableStateOf(false) }
-            sheet_card {
-                Column(Modifier.fillMaxWidth().padding(12.dp)) {
-                    Row(
-                        Modifier.fillMaxWidth().heightIn(min = 40.dp).clickable { more_open = !more_open },
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "更多属性（对话框编辑）",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = colors.dialog_text,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Text("${attr_list.size} 项", fontSize = 10.sp, color = colors.dialog_hint)
-                        Spacer(Modifier.width(4.dp))
-                        Icon(
-                            if (more_open) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                            contentDescription = null,
-                            tint = colors.dialog_hint,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                    if (more_open) {
-                        attr_list.forEach { attr ->
                             more_attr_row(attr = attr, value = node.attrs[attr] ?: "", on_edit = { editing_attr = attr })
                         }
                     }
@@ -356,7 +300,7 @@ internal fun designer_property_sheet(
         }
     }
 
-    // 更多属性对话框兜底（沿用原 PropertyEditDialog 全部能力）
+    // 属性编辑对话框（属性行点击进入，沿用类型化编辑/清除/原始值全部能力）
     editing_attr?.let { attr ->
         PropertyEditDialog(
             node = node,
@@ -364,337 +308,10 @@ internal fun designer_property_sheet(
             project_dir = project_dir,
             on_confirm = { newValue ->
                 on_attr_change(attr, newValue)
-                dialog_gen++
                 editing_attr = null
             },
             on_dismiss = { editing_attr = null }
         )
-    }
-}
-
-/* ---------- 就地属性编辑器 ---------- */
-
-@Composable
-private fun property_inline_row(
-    attr: String,
-    node: d_node,
-    selection_gen: Int,
-    dialog_gen: Int,
-    project_dir: File,
-    on_change: (String, String) -> Unit
-) {
-    val spec = property_spec_for(attr)
-    val colors = app_theme_provider.colors
-    Column(Modifier.fillMaxWidth().padding(top = 8.dp)) {
-        if (spec.kind != property_kind.BOOLEAN) {
-            Text(ATTR_CN[attr] ?: attr, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = colors.dialog_text)
-            Spacer(Modifier.height(4.dp))
-        }
-        when (spec.kind) {
-            property_kind.TEXT -> inline_text(attr, node, selection_gen, dialog_gen, on_change, single_line = true)
-            property_kind.MULTILINE_TEXT -> inline_text(attr, node, selection_gen, dialog_gen, on_change, single_line = false)
-            property_kind.SIZE -> inline_size(attr, node, selection_gen, dialog_gen, on_change)
-            property_kind.SINGLE_CHOICE -> inline_single_choice(attr, node, on_change)
-            property_kind.MULTI_CHOICE -> inline_multi_choice(attr, node, on_change)
-            property_kind.BOOLEAN -> inline_boolean(attr, node, on_change)
-            property_kind.NUMBER -> inline_number(attr, node, selection_gen, dialog_gen, on_change)
-            property_kind.DIMENSION -> inline_dimension(attr, node, selection_gen, dialog_gen, on_change)
-            property_kind.COLOR -> inline_color(attr, node, selection_gen, dialog_gen, on_change)
-            property_kind.IMAGE -> inline_image(attr, node, selection_gen, dialog_gen, project_dir, on_change)
-        }
-    }
-}
-
-@Composable
-private fun inline_text(
-    attr: String,
-    node: d_node,
-    selection_gen: Int,
-    dialog_gen: Int,
-    on_change: (String, String) -> Unit,
-    single_line: Boolean
-) {
-    var field by remember(selection_gen, attr, dialog_gen) { mutableStateOf(node.attrs[attr] ?: "") }
-    OutlinedTextField(
-        value = field,
-        onValueChange = { field = it; on_change(attr, it) },
-        singleLine = single_line,
-        maxLines = if (single_line) 1 else 4,
-        textStyle = TextStyle(fontSize = 13.sp),
-        colors = sheet_field_colors(),
-        modifier = Modifier.fillMaxWidth().heightIn(min = 40.dp)
-    )
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun inline_size(
-    attr: String,
-    node: d_node,
-    selection_gen: Int,
-    dialog_gen: Int,
-    on_change: (String, String) -> Unit
-) {
-    val spec = property_spec_for(attr)
-    val current = node.attrs[attr] ?: ""
-    var custom by remember(selection_gen, attr, dialog_gen) { mutableStateOf(if (current in spec.options) "" else current) }
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        spec.options.forEach { option ->
-            designer_chip(
-                text = property_display(attr, option),
-                selected = current == option,
-                onClick = { on_change(attr, option) }
-            )
-        }
-    }
-    Spacer(Modifier.height(8.dp))
-    OutlinedTextField(
-        value = custom,
-        onValueChange = { custom = it; on_change(attr, it) },
-        singleLine = true,
-        label = { Text("自定义，如 96dp") },
-        textStyle = TextStyle(fontSize = 13.sp),
-        colors = sheet_field_colors(),
-        modifier = Modifier.fillMaxWidth().heightIn(min = 40.dp)
-    )
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun inline_single_choice(attr: String, node: d_node, on_change: (String, String) -> Unit) {
-    val spec = property_spec_for(attr)
-    val current = node.attrs[attr] ?: ""
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        designer_chip(text = "未设置", selected = current.isBlank(), onClick = { on_change(attr, "") })
-        spec.options.forEach { option ->
-            designer_chip(
-                text = property_display(attr, option),
-                selected = current == option,
-                onClick = { on_change(attr, option) }
-            )
-        }
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun inline_multi_choice(attr: String, node: d_node, on_change: (String, String) -> Unit) {
-    val spec = property_spec_for(attr)
-    val flags = (node.attrs[attr] ?: "").split("|", ",", " ").filter { it.isNotBlank() }.toSet()
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        spec.options.forEach { option ->
-            val checked = option in flags
-            designer_chip(
-                text = property_display(attr, option),
-                selected = checked,
-                onClick = {
-                    val next = if (checked) flags - option else flags + option
-                    on_change(attr, next.joinToString("|"))
-                }
-            )
-        }
-    }
-}
-
-@Composable
-private fun inline_boolean(attr: String, node: d_node, on_change: (String, String) -> Unit) {
-    val colors = app_theme_provider.colors
-    val current = node.attrs[attr] ?: ""
-    Row(Modifier.fillMaxWidth().heightIn(min = 40.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(ATTR_CN[attr] ?: attr, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = colors.dialog_text, modifier = Modifier.weight(1f))
-        if (current.isBlank()) {
-            Text("未设置", fontSize = 10.sp, color = colors.dialog_hint)
-            Spacer(Modifier.width(8.dp))
-        }
-        Switch(
-            checked = current.equals("true", true) || current == "1",
-            onCheckedChange = { on_change(attr, it.toString()) },
-            colors = SwitchDefaults.colors(
-                checkedTrackColor = colors.dialog_icon,
-                checkedThumbColor = colors.dialog_bg,
-                uncheckedTrackColor = colors.dialog_hint.copy(alpha = 0.4f),
-                uncheckedThumbColor = colors.dialog_text
-            )
-        )
-    }
-}
-
-@Composable
-private fun slider_colors() = SliderDefaults.colors(
-    thumbColor = app_theme_provider.colors.dialog_icon,
-    activeTrackColor = app_theme_provider.colors.dialog_icon,
-    inactiveTrackColor = app_theme_provider.colors.dialog_hint.copy(alpha = 0.3f)
-)
-
-@Composable
-private fun inline_number(
-    attr: String,
-    node: d_node,
-    selection_gen: Int,
-    dialog_gen: Int,
-    on_change: (String, String) -> Unit
-) {
-    val spec = property_spec_for(attr)
-    var field by remember(selection_gen, attr, dialog_gen) { mutableStateOf(node.attrs[attr] ?: "") }
-    val parsed = field.toFloatOrNull() ?: spec.min
-    Slider(
-        value = parsed.coerceIn(spec.min, spec.max),
-        onValueChange = {
-            val snapped = ((it / spec.step).roundToInt() * spec.step).coerceIn(spec.min, spec.max)
-            val text = format_number(snapped)
-            field = text
-            on_change(attr, text)
-        },
-        valueRange = spec.min..spec.max,
-        steps = if (spec.step >= (spec.max - spec.min)) 0 else (((spec.max - spec.min) / spec.step).toInt() - 2).coerceAtLeast(0),
-        colors = slider_colors(),
-        modifier = Modifier.fillMaxWidth().height(40.dp)
-    )
-    Spacer(Modifier.height(4.dp))
-    OutlinedTextField(
-        value = field,
-        onValueChange = {
-            field = it
-            it.toFloatOrNull()?.let { v -> on_change(attr, format_number(v.coerceIn(spec.min, spec.max))) }
-        },
-        singleLine = true,
-        label = { Text("数值") },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        textStyle = TextStyle(fontSize = 13.sp),
-        colors = sheet_field_colors(),
-        modifier = Modifier.fillMaxWidth().heightIn(min = 40.dp)
-    )
-}
-
-/** 从 "16dp"/"18sp" 等维度值解析数值部分 */
-private fun dimension_value(value: String): Float? =
-    Regex("^[0-9.]+").find(value.trim())?.value?.toFloatOrNull()
-
-@Composable
-private fun inline_dimension(
-    attr: String,
-    node: d_node,
-    selection_gen: Int,
-    dialog_gen: Int,
-    on_change: (String, String) -> Unit
-) {
-    val spec = property_spec_for(attr)
-    var field by remember(selection_gen, attr, dialog_gen) { mutableStateOf(node.attrs[attr] ?: "") }
-    val parsed = dimension_value(field) ?: 0f
-    Slider(
-        value = parsed.coerceIn(spec.min, spec.max),
-        onValueChange = {
-            val snapped = ((it / spec.step).roundToInt() * spec.step).coerceIn(spec.min, spec.max)
-            val text = format_number(snapped) + spec.unit
-            field = text
-            on_change(attr, text)
-        },
-        valueRange = spec.min..spec.max,
-        colors = slider_colors(),
-        modifier = Modifier.fillMaxWidth().height(40.dp)
-    )
-    Spacer(Modifier.height(4.dp))
-    OutlinedTextField(
-        value = field,
-        onValueChange = {
-            field = it
-            // 半截输入（如 "16d"）不落库，避免预览反复解析失败；清空即移除属性
-            if (it.isBlank() || dimension_value(it) != null) on_change(attr, it)
-        },
-        singleLine = true,
-        label = { Text("如 16${spec.unit}（清空移除）") },
-        textStyle = TextStyle(fontSize = 13.sp),
-        colors = sheet_field_colors(),
-        modifier = Modifier.fillMaxWidth().heightIn(min = 40.dp)
-    )
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun inline_color(
-    attr: String,
-    node: d_node,
-    selection_gen: Int,
-    dialog_gen: Int,
-    on_change: (String, String) -> Unit
-) {
-    val colors = app_theme_provider.colors
-    var field by remember(selection_gen, attr, dialog_gen) { mutableStateOf(node.attrs[attr] ?: "") }
-    OutlinedTextField(
-        value = field,
-        onValueChange = { field = it; on_change(attr, it) },
-        singleLine = true,
-        label = { Text("颜色值，如 #5CCFE6") },
-        textStyle = TextStyle(fontSize = 13.sp),
-        colors = sheet_field_colors(),
-        modifier = Modifier.fillMaxWidth().heightIn(min = 40.dp)
-    )
-    Spacer(Modifier.height(8.dp))
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        if (field.isNotBlank()) {
-            Surface(
-                shape = RoundedCornerShape(6.dp),
-                color = parse_preview_color(field, colors.dialog_icon),
-                border = BorderStroke(0.5.dp, colors.editor_divider),
-                modifier = Modifier.size(36.dp)
-            ) {}
-        }
-        COLOR_PRESETS.forEach { hex ->
-            Surface(
-                onClick = { field = hex; on_change(attr, hex) },
-                shape = RoundedCornerShape(6.dp),
-                color = parse_preview_color(hex, colors.dialog_icon),
-                border = BorderStroke(0.5.dp, colors.editor_divider),
-                modifier = Modifier.size(40.dp)
-            ) {}
-        }
-    }
-}
-
-@Composable
-private fun inline_image(
-    attr: String,
-    node: d_node,
-    selection_gen: Int,
-    dialog_gen: Int,
-    project_dir: File,
-    on_change: (String, String) -> Unit
-) {
-    val colors = app_theme_provider.colors
-    val context = LocalContext.current
-    var field by remember(selection_gen, attr, dialog_gen) { mutableStateOf(node.attrs[attr] ?: "") }
-    val image_launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        if (uri != null) {
-            val saved = copy_selected_image(context, uri, project_dir)
-            if (saved != null) {
-                field = saved
-                on_change(attr, saved)
-            }
-        }
-    }
-    OutlinedTextField(
-        value = field,
-        onValueChange = { field = it; on_change(attr, it) },
-        singleLine = true,
-        label = { Text("项目相对路径，如 images/logo.png") },
-        textStyle = TextStyle(fontSize = 13.sp),
-        colors = sheet_field_colors(),
-        modifier = Modifier.fillMaxWidth().heightIn(min = 40.dp)
-    )
-    Spacer(Modifier.height(8.dp))
-    OutlinedButton(
-        onClick = { image_launcher.launch("image/*") },
-        modifier = Modifier.heightIn(min = 40.dp)
-    ) {
-        Icon(Icons.Default.Add, contentDescription = null, tint = colors.dialog_icon, modifier = Modifier.size(16.dp))
-        Spacer(Modifier.width(4.dp))
-        Text("从相册 / 文件选择", fontSize = 12.sp, color = colors.dialog_icon)
     }
 }
 
