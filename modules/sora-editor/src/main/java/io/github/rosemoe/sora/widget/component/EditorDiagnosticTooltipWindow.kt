@@ -107,12 +107,38 @@ open class EditorDiagnosticTooltipWindow(editor: CodeEditor) : EditorPopupWindow
         applyColorScheme()
     }
 
+    /** 光标是否在函数调用的圆括号内：从光标向前扫描，先遇到未闭合的 `(` 即在括号内；遇 `{`/`}` 视为块边界即不在调用内。 */
+    private fun isCursorInsideCallParens(cursorIndex: Int): Boolean {
+        val content = editor.text ?: return false
+        val safeIndex = cursorIndex.coerceIn(0, content.length)
+        var depth = 0
+        var i = safeIndex - 1
+        while (i >= 0) {
+            when (content[i]) {
+                ')' -> depth++
+                '(' -> {
+                    depth--
+                    if (depth < 0) return true
+                }
+                '{', '}' -> return false
+            }
+            i--
+        }
+        return false
+    }
+
     private fun registerEditorEvents() {
         eventManager.subscribeEvent<SelectionChangeEvent> { event, _ ->
             if (!isEnabled || editor.isInMouseMode) {
                 return@subscribeEvent
             }
             if (event.isSelected || (event.cause != SelectionChangeEvent.CAUSE_TAP && event.cause != SelectionChangeEvent.CAUSE_TEXT_MODIFICATION)) {
+                updateDiagnostic(null, null, null)
+                return@subscribeEvent
+            }
+            // 光标在函数调用的圆括号内时让位给签名提示：用户多半正在写参数，
+            // 此时“缺少参数/语法错误”类诊断不打扰（波浪线与诊断列表仍可见）。
+            if (isCursorInsideCallParens(event.left.index)) {
                 updateDiagnostic(null, null, null)
                 return@subscribeEvent
             }
