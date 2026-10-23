@@ -1,6 +1,9 @@
 package com.jmwl.gostudio.ui.screens.editor
 
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -8,12 +11,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jmwl.gostudio.ui.theme.app_theme_provider
@@ -41,8 +46,8 @@ fun cursor_chip(
 }
 
 /**
- * 键盘上方符号栏：固定两行——第一行 // 注释 + 常用符号，第二行快捷代码片段。
- * 原来的上拉展开手势已去掉，高度恒定（两行 34dp + 行距 6dp + 竖向 padding 6dp）。
+ * 键盘上方符号栏：默认单行（// 注释 + 常用符号），上拉展开第二行（快捷代码片段）、下拉收起。
+ * 符号与片段为纯文本 token，不加按钮底色包裹。
  */
 @Composable
 fun editor_symbol_bar(
@@ -51,6 +56,12 @@ fun editor_symbol_bar(
 ) {
 
     val colors = app_theme_provider.colors
+    var expanded by remember { mutableStateOf(false) }
+    var drag_accumulator by remember { mutableStateOf(0f) }
+    val bar_height by animateDpAsState(
+        targetValue = if (expanded) 88.dp else 44.dp,
+        animationSpec = tween(180)
+    )
     val symbols = remember {
         listOf(
             "TAB", ":=", ".", ",", ";", ":", "(", ")", "{", "}",
@@ -58,7 +69,7 @@ fun editor_symbol_bar(
             "func", "if", "for", "range", "return"
         )
     }
-    // 快捷代码片段：label 显示在按钮上，点击插入完整代码（多行含 \n\t）
+    // 快捷代码片段：label 显示在栏上，点击插入完整代码（多行含 \n\t）
     val snippets = remember {
         listOf(
             "err ret" to "if err != nil {\n\treturn\n}",
@@ -82,108 +93,155 @@ fun editor_symbol_bar(
         color = colors.editor_bg,
         tonalElevation = 0.dp
     ) {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 6.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+                .height(bar_height)
+                .pointerInput(Unit) {
+                    detectVerticalDragGestures(
+                        onDragStart = { drag_accumulator = 0f },
+                        onVerticalDrag = { _, drag_amount ->
+                            drag_accumulator += drag_amount
+                            when {
+                                drag_accumulator < -22f -> {
+                                    expanded = true
+                                    drag_accumulator = 0f
+                                }
+                                drag_accumulator > 22f -> {
+                                    expanded = false
+                                    drag_accumulator = 0f
+                                }
+                            }
+                        },
+                        onDragEnd = { drag_accumulator = 0f },
+                        onDragCancel = { drag_accumulator = 0f }
+                    )
+                }
         ) {
-            // 第一行：// 注释 + 常用符号
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(34.dp)
-                    .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(7.dp)
-            ) {
-                editor_symbol_comment_button(on_click = on_toggle_comment)
-                symbols.forEach { symbol ->
-                    editor_symbol_button(
-                        symbol = symbol,
+            if (expanded) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    editor_symbols_row(
+                        symbols = symbols,
+                        on_insert = on_insert,
+                        on_toggle_comment = on_toggle_comment
+                    )
+                    editor_snippets_row(
+                        snippets = snippets,
                         on_insert = on_insert
                     )
                 }
-            }
-            // 第二行：快捷代码片段
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(34.dp)
-                    .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(7.dp)
-            ) {
-                snippets.forEach { (label, code) ->
-                    editor_snippet_button(
-                        label = label,
-                        code = code,
-                        on_insert = on_insert
-                    )
-                }
+            } else {
+                editor_symbols_row(
+                    symbols = symbols,
+                    on_insert = on_insert,
+                    on_toggle_comment = on_toggle_comment,
+                    vertical_padding = 5.dp
+                )
             }
         }
     }
 }
 
 @Composable
-private fun editor_symbol_button(
-    symbol: String,
-    on_insert: (String) -> Unit
+private fun editor_symbols_row(
+    symbols: List<String>,
+    on_insert: (String) -> Unit,
+    on_toggle_comment: () -> Unit,
+    vertical_padding: Dp = 0.dp
 ) {
-    val colors = app_theme_provider.colors
-    Surface(
+    Row(
         modifier = Modifier
-            .height(34.dp)
-            .clickable { on_insert(symbol) },
-        shape = RoundedCornerShape(8.dp),
-        color = colors.editor_button_bg
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 8.dp, vertical = vertical_padding),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(7.dp)
     ) {
-        Box(
-            modifier = Modifier.padding(horizontal = 10.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                symbol,
-                color = colors.editor_text,
-                fontSize = 12.5.sp,
-                maxLines = 1,
-                softWrap = false
+        editor_symbol_comment_button(on_click = on_toggle_comment)
+        symbols.forEach { symbol ->
+            editor_symbol_token(
+                symbol = symbol,
+                on_insert = on_insert
             )
         }
     }
 }
 
-/** 快捷代码片段按钮：label 上屏显示，点击插入完整代码；样式与符号 chip 一致。 */
 @Composable
-private fun editor_snippet_button(
+private fun editor_snippets_row(
+    snippets: List<Pair<String, String>>,
+    on_insert: (String) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(7.dp)
+    ) {
+        snippets.forEach { (label, code) ->
+            editor_snippet_token(
+                label = label,
+                code = code,
+                on_insert = on_insert
+            )
+        }
+    }
+}
+
+/** 纯文本符号 token：不加按钮底色，整行高 34dp 可点。 */
+@Composable
+private fun editor_symbol_token(
+    symbol: String,
+    on_insert: (String) -> Unit
+) {
+    val colors = app_theme_provider.colors
+    Box(
+        modifier = Modifier
+            .height(34.dp)
+            .clickable { on_insert(symbol) }
+            .padding(horizontal = 8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            symbol,
+            color = colors.editor_text,
+            fontSize = 13.sp,
+            maxLines = 1,
+            softWrap = false
+        )
+    }
+}
+
+/** 快捷代码片段 token：label 上屏（hint 色与符号区分），点击插入完整代码。 */
+@Composable
+private fun editor_snippet_token(
     label: String,
     code: String,
     on_insert: (String) -> Unit
 ) {
     val colors = app_theme_provider.colors
-    Surface(
+    Box(
         modifier = Modifier
             .height(34.dp)
             .semantics { contentDescription = "插入 $label 对应代码" }
-            .clickable { on_insert(code) },
-        shape = RoundedCornerShape(8.dp),
-        color = colors.editor_button_bg
+            .clickable { on_insert(code) }
+            .padding(horizontal = 10.dp),
+        contentAlignment = Alignment.Center
     ) {
-        Box(
-            modifier = Modifier.padding(horizontal = 12.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                label,
-                color = colors.editor_text,
-                fontSize = 12.5.sp,
-                maxLines = 1,
-                softWrap = false
-            )
-        }
+        Text(
+            label,
+            color = colors.editor_hint,
+            fontSize = 12.5.sp,
+            maxLines = 1,
+            softWrap = false
+        )
     }
 }
 
