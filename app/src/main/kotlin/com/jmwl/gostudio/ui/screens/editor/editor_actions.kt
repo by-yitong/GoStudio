@@ -18,6 +18,7 @@ import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.UnfoldMore
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
@@ -71,6 +72,7 @@ fun editor_floating_actions(
     on_undo: () -> Unit,
     on_redo: () -> Unit,
     on_format: () -> Unit,
+    on_toggle_call_args: () -> Unit,
     on_save: () -> Unit,
     on_toggle_search: () -> Unit,
     modifier: Modifier = Modifier
@@ -129,6 +131,14 @@ fun editor_floating_actions(
                         enabled = can_format,
                         tint = if (can_format) colors.editor_text else colors.editor_hint,
                         on_click = on_format
+                    )
+                    // 展开/折叠参数：光标在函数调用括号内时，参数一行一个展开（Go 多行风格），再点折叠回单行
+                    compact_floating_icon_button(
+                        icon = Icons.Default.UnfoldMore,
+                        content_description = "展开/折叠参数",
+                        enabled = can_format,
+                        tint = if (can_format) colors.editor_text else colors.editor_hint,
+                        on_click = on_toggle_call_args
                     )
                 }
             }

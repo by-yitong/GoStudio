@@ -414,6 +414,7 @@ class editor_activity : ComponentActivity() {
             on_tidy = { run_go_mod_tidy() },
             on_save = { request_save_file() },
             on_format = { format_current_file() },
+            on_toggle_call_args = { toggle_call_args_multiline() },
             on_toggle_read_only = { toggle_read_only() },
             on_undo = { undo() },
             on_redo = { redo() },
@@ -3061,6 +3062,49 @@ class editor_activity : ComponentActivity() {
             text.endBatchEdit()
         }
 
+        update_history_state()
+        editor.invalidate()
+    }
+
+    /**
+     * 浮动条「展开/折叠参数」：光标所在函数调用的括号内，
+     * 把参数一行一个展开（Go 多行风格，尾逗号 + 闭括号单独一行），再点折叠回单行。
+     * 纯文本变换（call_args_formatter），不依赖 gopls；一次替换保证一次 undo 可整体撤销。
+     */
+    private fun toggle_call_args_multiline() {
+        if (state.read_only) return
+        val file_path = state.current_file_path ?: return
+        if (!file_path.endsWith(".go", ignoreCase = true)) {
+            app_toast.show(this, "仅支持 Go 文件", app_toast.LENGTH_SHORT)
+            return
+        }
+
+        val text = editor.text
+        val content = text.toString()
+        val cursor_index = editor.cursor.left().index
+        val range = call_args_formatter.find_enclosing_call(content, cursor_index)
+        if (range == null) {
+            app_toast.show(this, "光标不在函数调用的括号内", app_toast.LENGTH_SHORT)
+            return
+        }
+        val arg_text = content.substring(range.open_offset + 1, range.close_offset)
+        if (call_args_formatter.split_top_level_args(arg_text).isEmpty()) {
+            app_toast.show(this, "没有参数", app_toast.LENGTH_SHORT)
+            return
+        }
+        val transform = call_args_formatter.format_call_args(content, cursor_index) ?: return
+
+        text.beginBatchEdit()
+        try {
+            text.replace(range.open_offset, range.close_offset + 1, transform.new_call_text)
+        } finally {
+            text.endBatchEdit()
+        }
+
+        // 恢复光标到参数区内（展开：最后一个参数行尾逗号后；折叠：闭括号前）
+        val new_index = (range.open_offset + transform.new_cursor).coerceIn(0, text.length)
+        val indexer = text.indexer
+        editor.setSelection(indexer.getCharLine(new_index), indexer.getCharColumn(new_index))
         update_history_state()
         editor.invalidate()
     }

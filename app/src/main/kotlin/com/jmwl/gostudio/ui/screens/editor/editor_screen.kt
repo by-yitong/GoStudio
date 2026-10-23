@@ -119,6 +119,8 @@ internal fun editor_screen(
     on_tidy: () -> Unit = {},
     on_save: () -> Unit,
     on_format: () -> Unit,
+    /** 浮动条「展开/折叠参数」：把光标所在调用的参数展开为 Go 多行风格/折叠回单行 */
+    on_toggle_call_args: () -> Unit = {},
     on_toggle_read_only: () -> Unit,
     on_undo: () -> Unit,
     on_redo: () -> Unit,
@@ -505,6 +507,7 @@ internal fun editor_screen(
                                 on_undo = on_undo,
                                 on_redo = on_redo,
                                 on_format = on_format,
+                                on_toggle_call_args = on_toggle_call_args,
                                 on_save = on_save,
                                 on_toggle_search = { search_visible = !search_visible }
                             )
@@ -882,6 +885,7 @@ private fun editor_cursor_overlays(
     on_undo: () -> Unit,
     on_redo: () -> Unit,
     on_format: () -> Unit,
+    on_toggle_call_args: () -> Unit,
     on_save: () -> Unit,
     on_toggle_search: () -> Unit
 ) {
@@ -898,6 +902,7 @@ private fun editor_cursor_overlays(
         on_undo = on_undo,
         on_redo = on_redo,
         on_format = on_format,
+        on_toggle_call_args = on_toggle_call_args,
         on_save = on_save,
         on_toggle_search = on_toggle_search
     )
