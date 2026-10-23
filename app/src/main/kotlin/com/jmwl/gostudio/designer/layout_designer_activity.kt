@@ -2,34 +2,20 @@ package com.jmwl.gostudio.designer
 
 import android.app.Activity
 import android.content.Intent
-import android.graphics.Color as AColor
 import android.os.Bundle
-import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
-import android.widget.LinearLayout
-import android.widget.ScrollView
-import android.widget.TextView
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AccountTree
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Save
-import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -40,8 +26,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.foundation.text.KeyboardOptions
 import com.jmwl.gostudio.runtime.runtime_layout_loader
 import com.jmwl.gostudio.runtime.strip_xml_comments
 import com.jmwl.gostudio.ui.toast.app_toast
@@ -50,8 +34,9 @@ import java.io.File
 import kotlin.math.roundToInt
 
 /**
- * AndLua 式布局设计器（独立页面）：
- * 左抽屉=组件面板 / 中间=实时预览（可点选） / 右抽屉=选中组件属性。
+ * AndLua 式布局设计器（独立页面，底部弹窗一体化交互）：
+ * 中间=实时预览（点选组件弹底部属性面板，就地编辑即改即生效）/ 顶栏=组件树、条件添加按钮、保存。
+ * 属性未覆盖的类型经「更多属性」走原对话框兜底；添加目录与组件树全部走底部弹窗（见 layout_designer_sheets.kt）。
  * 通过 Intent 传入项目目录，读取 layout.xml；返回时写回结果。
  * 可选 EXTRA_LAYOUT_FILE 指定编辑项目内其他 xml 布局文件（默认 layout.xml）。
  */
@@ -74,12 +59,10 @@ class layout_designer_activity : androidx.activity.ComponentActivity() {
             return
         }
 
-        // 状态栏颜色与工作区背景一致
-        window.statusBarColor = android.graphics.Color.parseColor("#1B1C1F")
-        window.navigationBarColor = android.graphics.Color.parseColor("#1B1C1F")
-
+        // 沉浸式系统栏：透明状态栏 + 由主题决定图标深浅（app_theme_provider 内统一处理）
+        enableEdgeToEdge()
         setContent {
-            MaterialTheme {
+            app_theme_provider {
                 designer_screen(
                     initial_xml = initial,
                     initial_tree = initial_tree,
@@ -127,7 +110,7 @@ class layout_designer_activity : androidx.activity.ComponentActivity() {
 
 /* ---------- 组件树模型 ---------- */
 
-private class d_node(
+internal class d_node(
     val tag: String,
     val attrs: MutableMap<String, String> = mutableMapOf(),
     val children: MutableList<d_node> = mutableListOf(),
@@ -146,14 +129,14 @@ private val CONTAINERS = setOf(
     "LinearLayout", "FrameLayout", "RelativeLayout", "ScrollView", "HorizontalScrollView",
     "NestedScrollView", "GridLayout", "TableLayout", "TableRow", "RadioGroup", "ViewFlipper"
 )
-private val WIDGET_TAGS = listOf(
+internal val WIDGET_TAGS = listOf(
     "TextView", "EditText", "AutoCompleteTextView", "Button", "ImageView", "ImageButton",
     "CheckBox", "RadioButton", "Switch", "ToggleButton", "ProgressBar", "SeekBar",
     "RatingBar", "Spinner", "ListView", "GridView", "DatePicker", "TimePicker",
     "CalendarView", "NumberPicker", "Chronometer", "TextClock", "VideoView",
     "WebView", "View", "Space"
 )
-private val LAYOUT_TAGS = listOf(
+internal val LAYOUT_TAGS = listOf(
     "LinearLayout", "FrameLayout", "RelativeLayout", "GridLayout", "TableLayout",
     "TableRow", "RadioGroup", "ScrollView", "HorizontalScrollView",
     "NestedScrollView", "ViewFlipper"
@@ -217,7 +200,7 @@ private val PARENT_ATTRS = mapOf(
     ),
     "GridLayout" to listOf("layout_row", "layout_column", "layout_rowSpan", "layout_columnSpan")
 )
-private val ATTR_CN = mapOf(
+internal val ATTR_CN = mapOf(
     "id" to "ID", "text" to "文本", "hint" to "提示", "textSize" to "字号",
     "textColor" to "文字颜色", "textColorHint" to "提示颜色", "background" to "背景",
     "layout_width" to "宽度", "layout_height" to "高度", "layout_margin" to "外边距",
@@ -241,9 +224,9 @@ private val ATTR_CN = mapOf(
     "flipInterval" to "切换间隔"
 )
 
-private enum class property_kind { TEXT, MULTILINE_TEXT, SINGLE_CHOICE, MULTI_CHOICE, BOOLEAN, NUMBER, DIMENSION, COLOR, SIZE, IMAGE }
+internal enum class property_kind { TEXT, MULTILINE_TEXT, SINGLE_CHOICE, MULTI_CHOICE, BOOLEAN, NUMBER, DIMENSION, COLOR, SIZE, IMAGE }
 
-private data class property_spec(
+internal data class property_spec(
     val kind: property_kind,
     val options: List<String> = emptyList(),
     val min: Float = 0f,
@@ -252,11 +235,11 @@ private data class property_spec(
     val unit: String = "dp"
 )
 
-private val SIZE_OPTIONS = listOf("wrap_content", "match_parent")
+internal val SIZE_OPTIONS = listOf("wrap_content", "match_parent")
 private val GRAVITY_OPTIONS = listOf("top", "bottom", "left", "right", "center", "center_vertical", "center_horizontal")
 
 /** 属性编辑器类型：枚举用单选/多选，数值用滑杆，尺寸/颜色/文本分别适配。 */
-private fun property_spec_for(attr: String): property_spec = when (attr) {
+internal fun property_spec_for(attr: String): property_spec = when (attr) {
     "orientation" -> property_spec(property_kind.SINGLE_CHOICE, listOf("vertical", "horizontal"))
     "layout_width", "layout_height" -> property_spec(property_kind.SIZE, SIZE_OPTIONS)
     "gravity", "layout_gravity" -> property_spec(property_kind.MULTI_CHOICE, GRAVITY_OPTIONS)
@@ -288,7 +271,7 @@ private fun property_spec_for(attr: String): property_spec = when (attr) {
     else -> property_spec(property_kind.TEXT)
 }
 
-private fun property_display(attr: String, value: String): String {
+internal fun property_display(attr: String, value: String): String {
     if (value.isBlank()) return "未设置"
     return when (property_spec_for(attr).kind) {
         property_kind.BOOLEAN -> if (value.equals("true", true) || value == "1") "是" else "否"
@@ -309,9 +292,9 @@ private fun property_display(attr: String, value: String): String {
         else -> value
     }
 }
-private data class property_group(val title: String, val attrs: List<String>)
+internal data class property_group(val title: String, val attrs: List<String>)
 
-private fun property_groups_for(attrs: List<String>): List<property_group> {
+internal fun property_groups_for(attrs: List<String>): List<property_group> {
     val consumed = mutableSetOf<String>()
     fun take(predicate: (String) -> Boolean): List<String> {
         val values = attrs.filter { it !in consumed && predicate(it) }
@@ -345,7 +328,7 @@ private fun property_groups_for(attrs: List<String>): List<property_group> {
 
 private val ADAPTER_TAGS = setOf("Spinner", "ListView", "GridView")
 
-private fun component_events(tag: String): List<Pair<String, String>> {
+internal fun component_events(tag: String): List<Pair<String, String>> {
     val events = mutableListOf(
         // AdapterView 类组件无法触发普通 click，运行时改发 item_click
         if (tag in ADAPTER_TAGS) "item_click" to "条目点击事件" else "click" to "点击事件",
@@ -366,10 +349,10 @@ private fun component_events(tag: String): List<Pair<String, String>> {
     return events
 }
 
-private fun tag_cn(tag: String) = TAG_CN[tag] ?: tag
+internal fun tag_cn(tag: String) = TAG_CN[tag] ?: tag
 
 /** 按控件类型和父容器返回属性字段，避免给普通按钮显示无意义的日期/列表属性。 */
-private fun attrs_for(tag: String, parent_tag: String? = null): List<String> {
+internal fun attrs_for(tag: String, parent_tag: String? = null): List<String> {
     val result = COMMON_ATTRS.toMutableList()
     if (tag == "TextView" || tag == "EditText" || tag == "AutoCompleteTextView" ||
         tag in setOf("Button", "CheckBox", "RadioButton", "Switch", "ToggleButton", "Chronometer", "TextClock")
@@ -489,6 +472,12 @@ private fun find_node(root: d_node, target: d_node): d_node? {
     return match(root)
 }
 
+private fun find_by_id(root: d_node, id: String): d_node? {
+    if (root.id == id) return root
+    root.children.forEach { c -> find_by_id(c, id)?.let { return it } }
+    return null
+}
+
 /* ---------- 设计器界面 ---------- */
 
 @Composable
@@ -503,12 +492,19 @@ private fun designer_screen(
     // tree 为 null 表示根布局已删除、布局被清空，此时添加的第一个组件将成为新根
     var tree by remember { mutableStateOf(initial_tree) }
     var selected by remember { mutableStateOf<d_node?>(null) }
+    // 选中代数：仅在真正的选择事件（点预览/点树/新增/粘贴/删除）时递增，用于重置属性面板就地编辑器草稿；
+    // 属性值修改引发的 deep_copy 重建不递增，避免打断输入框/滑杆
+    var selection_gen by remember { mutableIntStateOf(0) }
     var preview_revision by remember { mutableIntStateOf(0) }
-    var left_open by remember { mutableStateOf(true) }
-    var right_open by remember { mutableStateOf(false) }
     var clipboard by remember { mutableStateOf<d_node?>(null) }
     var has_unsaved_changes by remember { mutableStateOf(false) }
     var show_exit_confirm by remember { mutableStateOf(false) }
+    // 底部弹窗：属性面板 / 组件树 / 添加目录（0=组件 1=布局，null=关）
+    var show_property_sheet by remember { mutableStateOf(false) }
+    var show_tree_sheet by remember { mutableStateOf(false) }
+    var catalog_section by remember { mutableStateOf<Int?>(null) }
+    // 组件树里点选后让预览滚动到该组件可见
+    var scroll_token by remember { mutableIntStateOf(0) }
     val context = LocalContext.current
     val colors = app_theme_provider.colors
 
@@ -520,8 +516,93 @@ private fun designer_screen(
         has_unsaved_changes = true
     }
 
+    fun select(node: d_node?) {
+        selected = node
+        selection_gen++
+    }
+
+    /** 添加组件/布局；target 为空时落到选中容器（无则根节点），布局为空时创建新根。 */
+    fun add_component(tag: String, target: d_node?, select_new: Boolean = true) {
+        val cur = tree
+        val node: d_node
+        if (cur == null) {
+            // 布局已清空：第一个添加的组件/布局直接作为新根节点（空占位树使 id 从 1 编号）
+            node = d_node(tag, default_attrs(tag, d_node("")))
+            tree = node
+        } else {
+            val t = target?.takeIf { it.is_container } ?: cur
+            node = d_node(tag, default_attrs(tag, cur))
+            node.parent = t
+            t.children.add(node)
+            tree = cur.deep_copy()
+        }
+        val copy = tree!!
+        if (select_new) {
+            select(find_node(copy, node))
+        } else {
+            // 保持当前选中（容器）指向重建后的新对象
+            selected?.let { keep -> selected = find_node(copy, keep) }
+        }
+        rebuild_from_tree()
+    }
+
+    fun delete_component(node: d_node) {
+        val cur = tree ?: return
+        if (node === cur) {
+            // 删除根布局：清空整个布局，之后添加的第一个组件成为新根
+            tree = null
+            select(null)
+            show_property_sheet = false
+        } else {
+            remove_node(cur, node)
+            tree = cur.deep_copy()
+            if (selected === node) {
+                select(null)
+                show_property_sheet = false
+            } else {
+                selected?.let { keep -> selected = find_node(tree!!, keep) }
+            }
+        }
+        rebuild_from_tree()
+    }
+
+    fun move_node(node: d_node, direction: Int) {
+        val cur = tree ?: return
+        val parent = node.parent ?: return
+        val index = parent.children.indexOf(node)
+        val new_index = index + direction
+        if (new_index !in parent.children.indices) return
+        parent.children.removeAt(index)
+        parent.children.add(new_index, node)
+        tree = cur.deep_copy()
+        selected?.let { keep -> selected = find_node(tree!!, keep) }
+        rebuild_from_tree()
+    }
+
+    fun paste_into(container: d_node) {
+        val clip = clipboard ?: return
+        val cur = tree ?: return
+        val copy = clip.deep_copy()
+        // 重置复制的 id 避免冲突
+        if (copy.attrs.containsKey("id")) {
+            copy.attrs["id"] = next_id(cur, copy.tag)
+        }
+        copy.parent = container
+        container.children.add(copy)
+        tree = cur.deep_copy()
+        select(find_node(tree!!, copy))
+        rebuild_from_tree()
+    }
+
     BackHandler(enabled = has_unsaved_changes && !show_exit_confirm) {
         show_exit_confirm = true
+    }
+    // 弹窗打开时返回键先关弹窗（后注册者优先）
+    val sheet_open = show_property_sheet || show_tree_sheet || catalog_section != null
+    BackHandler(enabled = sheet_open) {
+        show_property_sheet = false
+        show_tree_sheet = false
+        catalog_section = null
     }
 
     if (show_exit_confirm) {
@@ -540,7 +621,7 @@ private fun designer_screen(
                     show_exit_confirm = false
                     has_unsaved_changes = false
                     (context as? Activity)?.finish()
-                }) { Text("丢弃", color = androidx.compose.ui.graphics.Color(0xFFFF6B6B)) }
+                }) { Text("丢弃", color = colors.danger) }
             },
             containerColor = colors.editor_bg,
             titleContentColor = colors.editor_text,
@@ -548,459 +629,188 @@ private fun designer_screen(
         )
     }
 
-    Box(Modifier.fillMaxSize()) {
-            // 中间：实时预览（全屏，点选控件后自动弹右抽屉）
+    Column(Modifier.fillMaxSize().background(colors.editor_bg)) {
+        // 顶栏：组件树 / 条件添加按钮 / 保存
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(horizontal = 8.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                onClick = { show_tree_sheet = true },
+                shape = RoundedCornerShape(50),
+                color = colors.editor_button_bg,
+                modifier = Modifier.size(40.dp)
+            ) {
+                Icon(
+                    Icons.Default.AccountTree,
+                    contentDescription = "组件树",
+                    tint = if (show_tree_sheet) colors.editor_icon else colors.editor_toolbar_icon,
+                    modifier = Modifier.padding(10.dp).size(20.dp)
+                )
+            }
+            Spacer(Modifier.weight(1f))
+            // 选中容器（或布局为空）时才有添加入口
+            androidx.compose.animation.AnimatedVisibility(
+                visible = selected?.is_container == true || tree == null
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    top_bar_add_button("添加组件") { catalog_section = 0 }
+                    Spacer(Modifier.width(8.dp))
+                    top_bar_add_button("添加布局") { catalog_section = 1 }
+                }
+            }
+            Spacer(Modifier.width(8.dp))
+            Surface(
+                onClick = {
+                    has_unsaved_changes = false
+                    on_save(current_xml())
+                },
+                shape = RoundedCornerShape(50),
+                color = colors.editor_button_bg,
+                modifier = Modifier.size(40.dp)
+            ) {
+                Icon(
+                    Icons.Default.Save,
+                    contentDescription = "保存",
+                    tint = colors.editor_toolbar_icon,
+                    modifier = Modifier.padding(10.dp).size(20.dp)
+                )
+            }
+        }
+
+        // 中间：实时预览（点选组件 → 弹底部属性面板）
+        Box(Modifier.fillMaxWidth().weight(1f).navigationBarsPadding()) {
             RealtimePreview(
                 xml = xml,
                 project_dir = project_dir,
                 revision = preview_revision,
+                selected_id = selected?.id,
+                scroll_token = scroll_token,
                 on_select = { id ->
-                    selected = tree?.let { find_by_id(it, id) }
+                    tree?.let { find_by_id(it, id) }?.let {
+                        select(it)
+                        show_property_sheet = true
+                    }
                 },
                 modifier = Modifier.fillMaxSize()
             )
-
-            // 悬浮顶栏：组件树 / 保存 / 属性（半透明圆角按钮悬浮在预览上）
-            Row(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .fillMaxWidth()
-                    .statusBarsPadding()
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // 组件树
-                Surface(
-                    onClick = { left_open = !left_open },
-                    shape = RoundedCornerShape(50),
-                    color = colors.editor_bg.copy(alpha = 0.85f),
-                    shadowElevation = 4.dp
-                ) {
-                    Icon(
-                        Icons.Default.AccountTree,
-                        contentDescription = "组件树",
-                        tint = if (left_open) colors.editor_icon else colors.editor_hint,
-                        modifier = Modifier.padding(10.dp).size(19.dp)
-                    )
-                }
-                Spacer(Modifier.weight(1f))
-                // 保存
-                Surface(
-                    onClick = {
-                        has_unsaved_changes = false
-                        on_save(current_xml())
-                    },
-                    shape = RoundedCornerShape(50),
-                    color = colors.editor_bg.copy(alpha = 0.85f),
-                    shadowElevation = 4.dp
-                ) {
-                    Icon(
-                        Icons.Default.Save,
-                        contentDescription = "保存",
-                        tint = colors.editor_icon,
-                        modifier = Modifier.padding(10.dp).size(19.dp)
-                    )
-                }
-                Spacer(Modifier.width(10.dp))
-                // 属性
-                Surface(
-                    onClick = { right_open = !right_open },
-                    shape = RoundedCornerShape(50),
-                    color = colors.editor_bg.copy(alpha = 0.85f),
-                    shadowElevation = 4.dp
-                ) {
-                    Icon(
-                        Icons.Default.Tune,
-                        contentDescription = "属性",
-                        tint = if (right_open) colors.editor_icon else colors.editor_hint,
-                        modifier = Modifier.padding(10.dp).size(19.dp)
-                    )
-                }
-            }
-
-            // 抽屉互斥：打开左关右
-            LaunchedEffect(left_open) { if (left_open) right_open = false }
-            LaunchedEffect(right_open) { if (right_open) left_open = false }
-
-            // 点击抽屉外区域关闭抽屉（透明遮罩浮在预览上，位于抽屉下层）
-            if (left_open || right_open) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clickable(
-                            indication = null,
-                            interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-                        ) {
-                            left_open = false
-                            right_open = false
-                        }
-                )
-            }
-
-            // 左抽屉：组件树（从 XML 解析的层级结构，点击选中）
-            androidx.compose.animation.AnimatedVisibility(
-                visible = left_open,
-                enter = androidx.compose.animation.slideInHorizontally { -it } + androidx.compose.animation.fadeIn(),
-                exit = androidx.compose.animation.slideOutHorizontally { -it } + androidx.compose.animation.fadeOut(),
-                modifier = Modifier.align(Alignment.CenterStart).fillMaxHeight()
-            ) {
-                Surface(shadowElevation = 8.dp, color = colors.editor_bg) {
-                    ComponentTree(
-                        root = tree,
-                        selected = selected,
-                        on_select = { node ->
-                            selected = node
-                        },
-                        on_add = { tag ->
-                            val cur = tree
-                            if (cur == null) {
-                                // 布局已清空：第一个添加的组件/布局直接作为新根节点（空占位树使 id 从 1 编号）
-                                val node = d_node(tag, default_attrs(tag, d_node("")))
-                                tree = node
-                                selected = node
-                            } else {
-                                val target = selected?.takeIf { it.is_container } ?: cur
-                                val node = d_node(tag, default_attrs(tag, cur))
-                                node.parent = target
-                                target.children.add(node)
-                                selected = node
-                                tree = cur.deep_copy().also { selected = find_node(it, node) }
-                            }
-                            rebuild_from_tree()
-                        },
-                        on_copy = { node -> clipboard = node.deep_copy() },
-                        on_paste = { container ->
-                            clipboard?.let { clip ->
-                                val cur = tree ?: return@let
-                                val copy = clip.deep_copy()
-                                // 重置复制的 id 避免冲突
-                                if (copy.attrs.containsKey("id")) {
-                                    copy.attrs["id"] = next_id(cur, copy.tag)
-                                }
-                                copy.parent = container
-                                container.children.add(copy)
-                                tree = cur.deep_copy().also { selected = find_node(it, copy) }
-                                rebuild_from_tree()
-                            }
-                        },
-                        on_delete = { node ->
-                            val cur = tree
-                            if (cur != null && node === cur) {
-                                // 删除根布局：清空整个布局，之后添加的第一个组件成为新根
-                                tree = null
-                                selected = null
-                            } else if (cur != null) {
-                                remove_node(cur, node)
-                                if (selected === node) selected = null
-                                tree = cur.deep_copy()
-                            }
-                            rebuild_from_tree()
-                        },
-                        on_move = { node, direction ->
-                            val cur = tree
-                            val parent = node.parent
-                            if (cur != null && parent != null) {
-                                val index = parent.children.indexOf(node)
-                            val new_index = index + direction
-                            if (new_index in parent.children.indices) {
-                                parent.children.removeAt(index)
-                                parent.children.add(new_index, node)
-                                tree = cur.deep_copy().also { selected = find_node(it, node) }
-                                rebuild_from_tree()
-                                }
-                            }
-                        },
-                        clipboard_node = clipboard,
-                        modifier = Modifier.width(220.dp).fillMaxHeight()
-                    )
-                }
-            }
-
-            // 右抽屉：属性面板（从右滑入，浮层）
-            androidx.compose.animation.AnimatedVisibility(
-                visible = right_open,
-                enter = androidx.compose.animation.slideInHorizontally { it } + androidx.compose.animation.fadeIn(),
-                exit = androidx.compose.animation.slideOutHorizontally { it } + androidx.compose.animation.fadeOut(),
-                modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight()
-            ) {
-                Surface(shadowElevation = 8.dp, color = colors.editor_bg) {
-                    PropertyDrawer(
-                        node = selected,
-                        is_root = selected === tree,
-                        on_change = {
-                            val cur = tree
-                            if (cur != null) {
-                                tree = cur.deep_copy().also { selected = find_node(it, selected!!) }
-                                rebuild_from_tree()
-                            }
-                        },
-                        on_delete = {
-                            val cur = selected
-                            val root = tree
-                            if (cur != null && root != null) {
-                                if (cur === root) {
-                                    // 删除根布局：清空整个布局
-                                    tree = null
-                                } else {
-                                    remove_node(root, cur)
-                                    tree = root.deep_copy()
-                                }
-                                selected = null
-                                rebuild_from_tree()
-                            }
-                        },
-                        project_dir = project_dir,
-                        on_open_event = { component_id, event_type ->
-                            val cur = tree
-                            val tag = selected?.tag
-                            if (cur != null && tag != null) {
-                                on_open_event(serialize(cur), component_id, event_type, tag)
-                            }
-                        },
-                        modifier = Modifier.width(240.dp).fillMaxHeight()
-                    )
-                }
-            }
         }
     }
 
-private fun find_by_id(root: d_node, id: String): d_node? {
-    if (root.id == id) return root
-    root.children.forEach { c -> find_by_id(c, id)?.let { return it } }
-    return null
-}
-
-/* 左抽屉：组件树 + 添加面板 */
-@Composable
-private fun ComponentTree(
-    root: d_node?,
-    selected: d_node?,
-    on_select: (d_node) -> Unit,
-    on_add: (String) -> Unit,
-    on_copy: (d_node) -> Unit,
-    on_paste: (d_node) -> Unit,
-    on_delete: (d_node) -> Unit,
-    on_move: (d_node, Int) -> Unit,
-    clipboard_node: d_node?,
-    modifier: Modifier = Modifier
-) {
-    // 根 Column 不整体滚动：组件树与展开的添加面板用 weight 平分剩余高度，各自内部滚动。
-    Column(modifier.padding(vertical = 8.dp)) {
-        Text(
-            "组件树",
-            fontSize = 10.sp,
-            fontWeight = FontWeight.Bold,
-            color = app_theme_provider.colors.editor_icon,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
-        )
-        // 树形列表：限高（占剩余空间的份额），超出内部滚动
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-        ) {
-            if (root == null) {
-                // 根布局被删除后的空状态提示
-                Text(
-                    "布局为空\n从下方添加组件或布局\n第一个添加的将成为根节点",
-                    fontSize = 11.sp,
-                    lineHeight = 17.sp,
-                    color = app_theme_provider.colors.editor_hint,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 10.dp)
-                )
-            } else {
-                TreeRow(root, 0, selected, on_select, on_copy, on_paste, on_delete, on_move, clipboard_node != null, clipboard_node?.tag)
-            }
-        }
-        // 折叠卡片：组件 / 布局
-        Spacer(Modifier.height(10.dp))
-        ExpandableCard(title = "添加组件", modifier = Modifier.padding(horizontal = 10.dp)) {
-            AddList(tags = WIDGET_TAGS, on_add = on_add)
-        }
-        Spacer(Modifier.height(6.dp))
-        ExpandableCard(title = "添加布局", modifier = Modifier.padding(horizontal = 10.dp)) {
-            AddList(tags = LAYOUT_TAGS, on_add = on_add)
-        }
-    }
-}
-
-@Composable
-private fun TreeRow(
-    node: d_node,
-    depth: Int,
-    selected: d_node?,
-    on_select: (d_node) -> Unit,
-    on_copy: (d_node) -> Unit,
-    on_paste: (d_node) -> Unit,
-    on_delete: (d_node) -> Unit,
-    on_move: (d_node, Int) -> Unit,
-    has_clipboard: Boolean,
-    clipboard_tag: String?
-) {
-    val is_sel = node === selected
-    val is_root = depth == 0
-    val colors = app_theme_provider.colors
-    var menu_open by remember { mutableStateOf(false) }
-    var confirm_delete_root by remember { mutableStateOf(false) }
-
-    // 根布局删除确认：会连带清空所有子组件
-    if (confirm_delete_root) {
-        AlertDialog(
-            onDismissRequest = { confirm_delete_root = false },
-            title = { Text("删除根布局", fontSize = 15.sp, fontWeight = FontWeight.Bold) },
-            text = { Text("将删除根布局及全部子组件，整个布局会被清空。确定吗？", fontSize = 13.sp) },
-            confirmButton = {
-                TextButton(onClick = {
-                    confirm_delete_root = false
-                    on_delete(node)
-                }) { Text("删除", color = androidx.compose.ui.graphics.Color(0xFFFF6B6B)) }
+    // 属性面板：选中组件的就地编辑（兼容「更多属性」对话框兜底）
+    if (show_property_sheet && selected != null) {
+        val node = selected!!
+        designer_property_sheet(
+            node = node,
+            is_root = node === tree,
+            selection_gen = selection_gen,
+            project_dir = project_dir,
+            on_attr_change = { attr, value ->
+                val cur = tree
+                val live = selected
+                if (cur != null && live != null) {
+                    if (value.isBlank()) live.attrs.remove(attr) else live.attrs[attr] = value
+                    tree = cur.deep_copy()
+                    selected = find_node(tree!!, live)
+                    rebuild_from_tree()
+                }
             },
-            dismissButton = {
-                TextButton(onClick = { confirm_delete_root = false }) { Text("取消") }
+            on_delete = { selected?.let { delete_component(it) } },
+            on_add_child = { tag -> add_component(tag, target = selected, select_new = false) },
+            on_open_catalog = {
+                show_property_sheet = false
+                catalog_section = 0
             },
-            containerColor = colors.editor_bg,
-            titleContentColor = colors.editor_text,
-            textContentColor = colors.editor_hint
+            on_open_event = { component_id, event_type ->
+                val cur = tree
+                if (cur != null) {
+                    on_open_event(serialize(cur), component_id, event_type, node.tag)
+                }
+            },
+            on_dismiss = { show_property_sheet = false }
         )
     }
 
-    Box {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .combinedClickable(
-                    onClick = { on_select(node) },
-                    onLongClick = { menu_open = true }
-                )
-                .background(if (is_sel) colors.editor_icon.copy(alpha = 0.15f) else androidx.compose.ui.graphics.Color.Transparent)
-                .padding(start = (12 + depth * 16).dp, top = 6.dp, bottom = 6.dp, end = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (node.is_container) {
-                Text("▾ ", fontSize = 10.sp, color = colors.editor_hint)
-            } else {
-                Text("· ", fontSize = 10.sp, color = colors.editor_hint)
-            }
-            Text(
-                tag_cn(node.tag),
-                fontSize = 12.sp,
-                color = if (is_sel) colors.editor_icon else colors.editor_text,
-                fontWeight = if (is_sel) FontWeight.Bold else FontWeight.Normal
-            )
-            node.id.takeIf { it.isNotBlank() }?.let {
-                Text("  #$it", fontSize = 10.sp, color = colors.editor_hint)
-            }
-        }
-
-        DropdownMenu(expanded = menu_open, onDismissRequest = { menu_open = false }) {
-            DropdownMenuItem(
-                text = { Text("复制", fontSize = 13.sp) },
-                onClick = { on_copy(node); menu_open = false }
-            )
-            if (is_root) {
-                DropdownMenuItem(
-                    text = { Text("删除根布局", fontSize = 13.sp, color = androidx.compose.ui.graphics.Color(0xFFFF6B6B)) },
-                    onClick = { menu_open = false; confirm_delete_root = true }
-                )
-            } else {
-                DropdownMenuItem(
-                    text = { Text("删除", fontSize = 13.sp, color = androidx.compose.ui.graphics.Color(0xFFFF6B6B)) },
-                    onClick = { on_delete(node); menu_open = false }
-                )
-                DropdownMenuItem(
-                    text = { Text("上移", fontSize = 13.sp) },
-                    onClick = { on_move(node, -1); menu_open = false }
-                )
-                DropdownMenuItem(
-                    text = { Text("下移", fontSize = 13.sp) },
-                    onClick = { on_move(node, 1); menu_open = false }
-                )
-            }
-            if (node.is_container && has_clipboard) {
-                DropdownMenuItem(
-                    text = { Text("粘贴${clipboard_tag?.let { " (${tag_cn(it)})" } ?: ""}", fontSize = 13.sp) },
-                    onClick = { on_paste(node); menu_open = false }
-                )
-            }
-        }
+    // 添加目录：组件 24 / 布局 11 分组（中文名）
+    catalog_section?.let { section ->
+        designer_catalog_sheet(
+            initial_section = section,
+            has_root = tree != null,
+            on_add = { tag ->
+                catalog_section = null
+                add_component(tag, target = selected?.takeIf { it.is_container })
+            },
+            on_dismiss = { catalog_section = null }
+        )
     }
-    node.children.forEach { child ->
-        TreeRow(child, depth + 1, selected, on_select, on_copy, on_paste, on_delete, on_move, has_clipboard, clipboard_tag)
+
+    // 组件树：与预览选中双向同步
+    if (show_tree_sheet) {
+        designer_tree_sheet(
+            root = tree,
+            selected = selected,
+            has_clipboard = clipboard != null,
+            clipboard_tag = clipboard?.tag,
+            on_select = { node ->
+                select(node)
+                scroll_token++
+            },
+            on_copy = { node -> clipboard = node.deep_copy() },
+            on_paste = { container -> paste_into(container) },
+            on_delete = { node -> delete_component(node) },
+            on_move = { node, direction -> move_node(node, direction) },
+            on_dismiss = { show_tree_sheet = false }
+        )
     }
 }
 
-/* 折叠卡片：头部按钮 + 展开内容与组件树按 weight 平分抽屉高度 */
+/** 顶栏「添加组件 / 添加布局」胶囊按钮（选中容器或空布局时出现） */
 @Composable
-private fun ColumnScope.ExpandableCard(title: String, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
+private fun top_bar_add_button(text: String, on_click: () -> Unit) {
     val colors = app_theme_provider.colors
     Surface(
-        onClick = { expanded = !expanded },
-        shape = RoundedCornerShape(10.dp),
-        color = colors.editor_button_bg,
-        modifier = modifier
+        onClick = on_click,
+        shape = RoundedCornerShape(50),
+        color = colors.editor_icon.copy(alpha = 0.14f),
+        modifier = Modifier.heightIn(min = 40.dp)
     ) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(title, fontSize = 12.sp, color = colors.editor_text, modifier = Modifier.weight(1f))
-            Text(if (expanded) "▾" else "▸", fontSize = 12.sp, color = colors.editor_hint)
-        }
-    }
-    androidx.compose.animation.AnimatedVisibility(
-        visible = expanded,
-        // 展开时占一份权重，与组件树（及另一张展开的卡片）平分；收起时不占空间。
-        modifier = if (expanded) modifier.weight(1f) else Modifier
-    ) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(top = 4.dp)
+        Row(
+            Modifier.padding(horizontal = 12.dp).heightIn(min = 40.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            content()
-        }
-    }
-}
-
-/* 添加列表：单行展示，空间更紧凑 */
-@Composable
-private fun AddList(tags: List<String>, on_add: (String) -> Unit) {
-    val colors = app_theme_provider.colors
-    tags.forEach { tag ->
-        Surface(
-            onClick = { on_add(tag) },
-            shape = RoundedCornerShape(8.dp),
-            color = colors.editor_button_bg.copy(alpha = 0.6f),
-            modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)
-        ) {
-            Text(
-                tag_cn(tag),
-                fontSize = 11.sp,
-                color = colors.editor_text,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 9.dp)
+            Icon(
+                Icons.Default.Add,
+                contentDescription = null,
+                tint = colors.editor_icon,
+                modifier = Modifier.size(16.dp)
             )
+            Spacer(Modifier.width(4.dp))
+            Text(text, fontSize = 12.sp, color = colors.editor_icon)
         }
     }
 }
 
-/* 左抽屉：组件列表 */
-/* 中间：实时预览（原生渲染 + 点选） */
+/* 中间：实时预览（原生渲染 + 点选 + overlay 选中描边） */
 @Composable
 private fun RealtimePreview(
     xml: String,
     project_dir: File,
     revision: Int,
+    selected_id: String?,
+    scroll_token: Int,
     on_select: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     var result by remember { mutableStateOf<runtime_layout_loader.Result?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
-
-    // 选中高亮色（半透明青蓝，与工作区强调色一致）
-    val highlight = 0x335CCFE6.toInt()
+    val colors = app_theme_provider.colors
+    val canvas_bg = colors.editor_bg.toArgb()
+    val stroke_color = colors.editor_icon.toArgb()
+    val fill_color = colors.editor_icon.copy(alpha = 0.16f).toArgb()
 
     LaunchedEffect(xml, revision) {
         error = null
@@ -1018,11 +828,21 @@ private fun RealtimePreview(
         }.fold(onSuccess = { result = it }, onFailure = { error = it.message })
     }
 
-    Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))) {
+    // 从组件树选中时把预览滚动到该组件可见（无滚动父容器时无副作用）
+    LaunchedEffect(scroll_token, selected_id) {
+        if (scroll_token > 0 && !selected_id.isNullOrBlank()) {
+            val view = result?.views?.get(selected_id) ?: return@LaunchedEffect
+            view.post {
+                view.requestRectangleOnScreen(android.graphics.Rect(0, 0, view.width, view.height))
+            }
+        }
+    }
+
+    Box(modifier.fillMaxSize().background(colors.editor_button_bg.copy(alpha = 0.3f))) {
         if (xml.isBlank()) {
             // 空布局占位提示
             Text(
-                "布局为空\n从左侧添加组件或布局作为根节点",
+                "布局为空\n点顶部「添加组件 / 添加布局」创建根节点",
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -1033,27 +853,18 @@ private fun RealtimePreview(
             Text("解析错误: $it", color = MaterialTheme.colorScheme.error, fontSize = 11.sp, modifier = Modifier.align(Alignment.TopCenter).padding(8.dp))
         }
         result?.let { r ->
-            var selected_id by remember { mutableStateOf<String?>(null) }
             AndroidView(
                 factory = { ctx ->
                     val frame = FrameLayout(ctx)
-                    frame.setBackgroundColor(0xFFF5F5F8.toInt())
+                    frame.setBackgroundColor(canvas_bg)
                     frame
                 },
                 update = { frame ->
                     frame.removeAllViews()
                     (r.root.parent as? ViewGroup)?.removeView(r.root)
                     frame.addView(r.root, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
-                    fun select(id: String, view: View) {
-                        // 清除旧高亮
-                        r.views[selected_id]?.setBackgroundColor(0x00000000)
-                        // 设置新高亮
-                        view.setBackgroundColor(highlight)
-                        selected_id = id
-                        on_select(id)
-                    }
                     r.views.forEach { (id, view) ->
-                        // 所有可点控件：点击=选中高亮，不触发输入/长按
+                        // 所有可点控件：点击=选中，不触发输入/长按
                         view.isFocusable = false
                         view.isFocusableInTouchMode = false
                         view.isLongClickable = false
@@ -1064,9 +875,22 @@ private fun RealtimePreview(
                         }
                         // AdapterView 禁止 setOnClickListener（系统会抛异常），改用触摸选中
                         if (view is android.widget.AdapterView<*>) {
-                            view.setOnTouchListener { _, _ -> select(id, view); false }
+                            view.setOnTouchListener { _, _ -> on_select(id); false }
                         } else {
-                            view.setOnClickListener { select(id, view) }
+                            view.setOnClickListener { on_select(id) }
+                        }
+                    }
+                    // 选中高亮：前景 overlay 描边 + 半透明填充，不改控件背景
+                    r.views.values.forEach { it.overlay.clear() }
+                    selected_id?.takeIf { it.isNotBlank() }?.let { id ->
+                        r.views[id]?.let { v ->
+                            v.overlay.add(
+                                selection_highlight_drawable(
+                                    stroke_color = stroke_color,
+                                    fill_color = fill_color,
+                                    density = v.resources.displayMetrics.density
+                                )
+                            )
                         }
                     }
                 },
@@ -1076,436 +900,49 @@ private fun RealtimePreview(
     }
 }
 
-/* 右抽屉：属性编辑 */
-@Composable
-private fun PropertyDrawer(
-    node: d_node?,
-    is_root: Boolean,
-    project_dir: File,
-    on_change: () -> Unit,
-    on_delete: () -> Unit,
-    on_open_event: (String, String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val colors = app_theme_provider.colors
-    val defined_attrs = attrs_for(node?.tag ?: "", node?.parent?.tag)
-    val attr_list = defined_attrs + node?.attrs?.keys.orEmpty().filter { it !in defined_attrs }
+/** 选中描边 Drawable：画在 ViewOverlay 之上，不污染控件自身背景 */
+private class selection_highlight_drawable(
+    private val stroke_color: Int,
+    private val fill_color: Int,
+    private val density: Float
+) : android.graphics.drawable.Drawable() {
+    private val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
 
-    var show_delete_confirm by remember { mutableStateOf(false) }
-
-    // 删除确认弹窗
-    if (show_delete_confirm) {
-        AlertDialog(
-            onDismissRequest = { show_delete_confirm = false },
-            title = { Text("删除组件", fontSize = 15.sp, fontWeight = FontWeight.Bold) },
-            text = {
-                val desc = "确定删除 ${tag_cn(node?.tag ?: "")}${node?.id?.takeIf { it.isNotBlank() }?.let { " (#$it)" } ?: ""} 吗？"
-                Text(if (is_root) "根布局删除后整个布局将被清空，确定吗？" else desc, fontSize = 13.sp)
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    show_delete_confirm = false
-                    on_delete()
-                }) { Text("删除", color = androidx.compose.ui.graphics.Color(0xFFFF6B6B)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { show_delete_confirm = false }) { Text("取消") }
-            },
-            containerColor = app_theme_provider.colors.editor_bg,
-            titleContentColor = app_theme_provider.colors.editor_text,
-            textContentColor = app_theme_provider.colors.editor_hint
-        )
+    override fun draw(canvas: android.graphics.Canvas) {
+        val w = bounds.width().toFloat()
+        val h = bounds.height().toFloat()
+        if (w <= 0f || h <= 0f) return
+        val radius = density * 4f
+        paint.style = android.graphics.Paint.Style.FILL
+        paint.color = fill_color
+        canvas.drawRoundRect(0f, 0f, w, h, radius, radius, paint)
+        val stroke = density * 2f
+        val half = stroke / 2f
+        paint.style = android.graphics.Paint.Style.STROKE
+        paint.color = stroke_color
+        paint.strokeWidth = stroke
+        canvas.drawRoundRect(half, half, w - half, h - half, radius, radius, paint)
     }
 
-    Column(modifier.verticalScroll(rememberScrollState()).padding(10.dp)) {
-        if (node == null) {
-            Text("未选中组件\n点击预览或组件树", fontSize = 11.sp, color = app_theme_provider.colors.editor_hint)
-            return@Column
-        }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(node.tag, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = app_theme_provider.colors.editor_icon)
-            node.id.takeIf { it.isNotBlank() }?.let {
-                Spacer(Modifier.width(6.dp))
-                Text("#$it", fontSize = 11.sp, color = app_theme_provider.colors.editor_hint)
-            }
-            Spacer(Modifier.weight(1f))
-            IconButton(onClick = { show_delete_confirm = true }, modifier = Modifier.size(28.dp)) {
-                Icon(Icons.Default.Delete, "删除", tint = androidx.compose.ui.graphics.Color(0xFFFF6B6B), modifier = Modifier.size(15.dp))
-            }
-        }
-        Spacer(Modifier.height(10.dp))
-        var editing_attr by remember(node) { mutableStateOf<String?>(null) }
-        var expanded_group by remember(node) { mutableStateOf<String?>(null) }
-        property_groups_for(attr_list).forEach { group ->
-            PropertyGroupCard(
-                title = group.title,
-                attrs = group.attrs,
-                node = node,
-                expanded = expanded_group == group.title,
-                on_toggle = {
-                    expanded_group = if (expanded_group == group.title) null else group.title
-                },
-                on_edit = { editing_attr = it }
-            )
-        }
-
-        if (!is_root) {
-            Spacer(Modifier.height(10.dp))
-            Text(
-                "事件",
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold,
-                color = colors.editor_icon,
-                modifier = Modifier.padding(start = 2.dp)
-            )
-            Spacer(Modifier.height(5.dp))
-            if (node.id.isBlank()) {
-                Text(
-                    "先设置 ID 后才能生成事件",
-                    fontSize = 10.sp,
-                    color = colors.editor_hint,
-                    modifier = Modifier.padding(start = 2.dp)
-                )
-            } else {
-                component_events(node.tag).forEach { event ->
-                    Surface(
-                        onClick = { on_open_event(node.id, event.first) },
-                        shape = RoundedCornerShape(8.dp),
-                        color = colors.editor_icon.copy(alpha = 0.14f),
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)
-                    ) {
-                        Text(
-                            event.second,
-                            fontSize = 11.sp,
-                            color = colors.editor_icon,
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 9.dp)
-                        )
-                    }
-                }
-            }
-        }
-
-        editing_attr?.let { attr ->
-            PropertyEditDialog(
-                node = node,
-                attr = attr,
-                project_dir = project_dir,
-                on_confirm = { newValue ->
-                    if (newValue.isBlank()) node.attrs.remove(attr) else node.attrs[attr] = newValue
-                    editing_attr = null
-                    // 确认后立即刷新 XML 与预览
-                    on_change()
-                },
-                on_dismiss = { editing_attr = null }
-            )
-        }
+    override fun setAlpha(alpha: Int) {
+        paint.alpha = alpha
     }
+
+    override fun setColorFilter(color_filter: android.graphics.ColorFilter?) {
+        paint.colorFilter = color_filter
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun getOpacity() = android.graphics.PixelFormat.TRANSLUCENT
 }
 
-
-/* 属性折叠面板：标题固定，内容区固定高度并独立滚动 */
-@Composable
-private fun PropertyGroupCard(
-    title: String,
-    attrs: List<String>,
-    node: d_node,
-    expanded: Boolean,
-    on_toggle: () -> Unit,
-    on_edit: (String) -> Unit
-) {
-    val colors = app_theme_provider.colors
-    Column(Modifier.fillMaxWidth().padding(vertical = 3.dp)) {
-        Surface(
-            onClick = on_toggle,
-            shape = RoundedCornerShape(8.dp),
-            color = colors.editor_button_bg.copy(alpha = 0.65f),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 9.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    title,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = colors.editor_text,
-                    modifier = Modifier.weight(1f)
-                )
-                Text("${attrs.size} 项", fontSize = 9.sp, color = colors.editor_hint)
-                Spacer(Modifier.width(6.dp))
-                Text(if (expanded) "▾" else "▸", fontSize = 11.sp, color = colors.editor_hint)
-            }
-        }
-        if (expanded) {
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .height(176.dp)
-                    .verticalScroll(rememberScrollState())
-                    .padding(top = 4.dp)
-            ) {
-                attrs.forEach { attr ->
-                    PropertyRow(
-                        attr = attr,
-                        value = node.attrs[attr] ?: "",
-                        node = node,
-                        on_edit = on_edit
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun PropertyRow(
-    attr: String,
-    value: String,
-    node: d_node,
-    on_edit: (String) -> Unit
-) {
-    val colors = app_theme_provider.colors
-    Surface(
-        onClick = { on_edit(attr) },
-        shape = RoundedCornerShape(8.dp),
-        color = colors.editor_button_bg.copy(alpha = 0.45f),
-        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)
-    ) {
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 9.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                ATTR_CN[attr] ?: attr,
-                fontSize = 11.sp,
-                color = colors.editor_text,
-                modifier = Modifier.weight(1f)
-            )
-            if (property_spec_for(attr).kind == property_kind.COLOR && value.isNotBlank()) {
-                Box(
-                    Modifier
-                        .size(12.dp)
-                        .background(parse_preview_color(value), RoundedCornerShape(3.dp))
-                )
-                Spacer(Modifier.width(6.dp))
-            }
-            Text(
-                property_display(attr, value),
-                fontSize = 10.sp,
-                color = if (value.isBlank()) colors.editor_hint else colors.editor_icon,
-                maxLines = 1
-            )
-            Spacer(Modifier.width(4.dp))
-            Icon(
-                Icons.Default.ChevronRight,
-                contentDescription = "修改",
-                tint = colors.editor_hint,
-                modifier = Modifier.size(13.dp)
-            )
-        }
-    }
-}
-
-/* 属性弹窗：按属性类型提供单选、多选、开关、滑杆、颜色与文本编辑 */
-@Composable
-private fun PropertyEditDialog(
-    node: d_node,
-    attr: String,
-    project_dir: File,
-    on_confirm: (String) -> Unit,
-    on_dismiss: () -> Unit
-) {
-    val spec = property_spec_for(attr)
-    val initial = node.attrs[attr] ?: ""
-    var text by remember(attr, node) { mutableStateOf(initial) }
-    var flags by remember(attr, node) {
-        mutableStateOf(initial.split("|", ",", " ").filter { it.isNotBlank() })
-    }
-    var number by remember(attr, node) {
-        mutableFloatStateOf(initial.toFloatOrNull() ?: spec.min)
-    }
-    var checked by remember(attr, node) { mutableStateOf(initial.equals("true", true) || initial == "1") }
-
-    AlertDialog(
-        onDismissRequest = on_dismiss,
-        title = { Text(ATTR_CN[attr] ?: attr, fontSize = 15.sp, fontWeight = FontWeight.Bold) },
-        text = {
-            Column(Modifier.fillMaxWidth()) {
-                when (spec.kind) {
-                    property_kind.SIZE -> {
-                        var custom by remember(attr, node) { mutableStateOf(initial.isNotBlank() && initial !in SIZE_OPTIONS) }
-                        spec.options.forEach { option ->
-                            Row(
-                                Modifier.fillMaxWidth().clickable { custom = false; text = option }.padding(vertical = 5.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                RadioButton(selected = !custom && text == option, onClick = { custom = false; text = option })
-                                Text(property_display(attr, option), fontSize = 13.sp)
-                            }
-                        }
-                        Row(
-                            Modifier.fillMaxWidth().clickable { custom = true; if (text in SIZE_OPTIONS) text = "" }.padding(vertical = 5.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(selected = custom, onClick = { custom = true; if (text in SIZE_OPTIONS) text = "" })
-                            Text("自定义尺寸", fontSize = 13.sp)
-                        }
-                        OutlinedTextField(
-                            value = text,
-                            onValueChange = { text = it },
-                            enabled = custom,
-                            singleLine = true,
-                            label = { Text("如 96dp") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                    property_kind.SINGLE_CHOICE -> spec.options.forEach { option ->
-                        Row(
-                            Modifier.fillMaxWidth().clickable { text = option }.padding(vertical = 5.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(selected = text == option, onClick = { text = option })
-                            Text(property_display(attr, option), fontSize = 13.sp)
-                        }
-                    }
-                    property_kind.MULTI_CHOICE -> {
-                        Text("可多选，组合后作用于布局", fontSize = 10.sp, color = app_theme_provider.colors.editor_hint)
-                        spec.options.forEach { option ->
-                            val checked_now = option in flags
-                            Row(
-                                Modifier.fillMaxWidth().clickable {
-                                    flags = if (checked_now) flags - option else flags + option
-                                    text = flags.joinToString("|")
-                                }.padding(vertical = 3.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Checkbox(
-                                    checked = checked_now,
-                                    onCheckedChange = {
-                                        flags = if (it) flags + option else flags - option
-                                        text = flags.joinToString("|")
-                                    }
-                                )
-                                Text(property_display(attr, option), fontSize = 13.sp)
-                            }
-                        }
-                    }
-                    property_kind.BOOLEAN -> Row(verticalAlignment = Alignment.CenterVertically) {
-                        Switch(checked = checked, onCheckedChange = { checked = it; text = it.toString() })
-                        Spacer(Modifier.width(8.dp))
-                        Text(if (checked) "开启" else "关闭", fontSize = 13.sp)
-                    }
-                    property_kind.NUMBER, property_kind.DIMENSION -> {
-                        if (spec.kind == property_kind.NUMBER) {
-                            Slider(
-                                value = number,
-                                onValueChange = { number = (it / spec.step).roundToInt() * spec.step },
-                                valueRange = spec.min..spec.max,
-                                steps = if (spec.step >= (spec.max - spec.min)) 0 else (((spec.max - spec.min) / spec.step).toInt() - 2).coerceAtLeast(0)
-                            )
-                            Text("当前：${format_number(number)}", fontSize = 11.sp, color = app_theme_provider.colors.editor_hint)
-                            Spacer(Modifier.height(8.dp))
-                        }
-                        OutlinedTextField(
-                            value = if (spec.kind == property_kind.NUMBER) {
-                                format_number(number)
-                            } else text,
-                            onValueChange = {
-                                text = it
-                                it.toFloatOrNull()?.let { v -> number = v.coerceIn(spec.min, spec.max) }
-                            },
-                            singleLine = true,
-                            label = { Text(if (spec.kind == property_kind.DIMENSION) "如 16${spec.unit}" else "数值") },
-                            keyboardOptions = if (spec.kind == property_kind.NUMBER) KeyboardOptions(keyboardType = KeyboardType.Number) else KeyboardOptions.Default,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                    property_kind.IMAGE -> {
-                        val context = LocalContext.current
-                        val image_launcher = rememberLauncherForActivityResult(
-                            ActivityResultContracts.GetContent()
-                        ) { uri ->
-                            if (uri != null) {
-                                val saved = copy_selected_image(context, uri, project_dir)
-                                if (saved != null) text = saved
-                            }
-                        }
-                        OutlinedTextField(
-                            value = text,
-                            onValueChange = { text = it },
-                            singleLine = true,
-                            label = { Text("项目相对路径，如 images/logo.png") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        TextButton(onClick = { image_launcher.launch("image/*") }) {
-                            Text("从相册 / 文件选择", color = app_theme_provider.colors.editor_icon)
-                        }
-                    }
-                    property_kind.COLOR -> {
-                        OutlinedTextField(
-                            value = text,
-                            onValueChange = { text = it },
-                            singleLine = true,
-                            label = { Text("颜色值，如 #5CCFE6") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            listOf("#1B1C1F", "#FFFFFF", "#5CCFE6", "#FF6B6B", "#66BB6A", "#FFCA28").forEach { color ->
-                                Box(
-                                    Modifier
-                                        .size(28.dp)
-                                        .background(parse_preview_color(color), RoundedCornerShape(6.dp))
-                                        .clickable { text = color }
-                                )
-                            }
-                        }
-                    }
-                    property_kind.MULTILINE_TEXT -> OutlinedTextField(
-                        value = text,
-                        onValueChange = { text = it },
-                        label = { Text("内容") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    property_kind.TEXT -> OutlinedTextField(
-                        value = text,
-                        onValueChange = { text = it },
-                        singleLine = true,
-                        label = { Text("内容") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            Row {
-                TextButton(onClick = { on_confirm("") }) { Text("清除", color = app_theme_provider.colors.editor_hint) }
-                TextButton(onClick = {
-                    val result = when (spec.kind) {
-                        property_kind.BOOLEAN -> checked.toString()
-                        property_kind.NUMBER -> format_number(number)
-                        else -> text
-                    }
-                    on_confirm(result)
-                }) { Text("确定", color = app_theme_provider.colors.editor_icon) }
-            }
-        },
-        dismissButton = { TextButton(onClick = on_dismiss) { Text("取消") } },
-        containerColor = app_theme_provider.colors.editor_bg,
-        titleContentColor = app_theme_provider.colors.editor_text,
-        textContentColor = app_theme_provider.colors.editor_text
-    )
-}
-
-private fun format_number(value: Float): String =
+internal fun format_number(value: Float): String =
     if (value % 1f == 0f) value.roundToInt().toString() else {
         val one_decimal = (value * 10f).roundToInt() / 10f
         one_decimal.toString()
     }
 
-private fun copy_selected_image(context: android.content.Context, uri: android.net.Uri, project_dir: File): String? {
+internal fun copy_selected_image(context: android.content.Context, uri: android.net.Uri, project_dir: File): String? {
     val dir = File(project_dir, "images").apply { mkdirs() }
     val extension = when (context.contentResolver.getType(uri)?.lowercase()) {
         "image/png" -> "png"
@@ -1522,6 +959,7 @@ private fun copy_selected_image(context: android.content.Context, uri: android.n
     }.getOrNull()
 }
 
-private fun parse_preview_color(value: String): androidx.compose.ui.graphics.Color =
+/** 解析用户布局里的颜色值（解析失败回退主题色，由调用方传入） */
+internal fun parse_preview_color(value: String, fallback: androidx.compose.ui.graphics.Color): androidx.compose.ui.graphics.Color =
     runCatching { androidx.compose.ui.graphics.Color(android.graphics.Color.parseColor(value)) }
-        .getOrDefault(androidx.compose.ui.graphics.Color(0xFF5CCFE6.toInt()))
+        .getOrDefault(fallback)
