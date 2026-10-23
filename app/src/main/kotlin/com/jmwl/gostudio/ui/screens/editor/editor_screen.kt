@@ -131,7 +131,6 @@ internal fun editor_screen(
     on_replace_all: (String) -> Unit,
     on_clear_search: () -> Unit,
     on_insert_symbol: (String) -> Unit,
-    on_toggle_comment: () -> Unit = {},
     on_create_file: (String, String, editor_create_file_template) -> Unit,
     on_create_folder: (String, String) -> Unit,
     on_refresh_files: (String) -> Unit,
@@ -347,8 +346,6 @@ internal fun editor_screen(
                     ) {
                         editor_top_bar(
                             project_name = safe_project_name,
-                            has_changes = has_changes,
-                            on_save = on_save,
                             read_only = read_only,
                             has_open_file = has_open_file,
                             on_toggle_drawer = { drawer_open = !drawer_open },
@@ -555,8 +552,7 @@ internal fun editor_screen(
                 // 这样自动补全弹窗只会出现在编辑器区域内，不会压到键盘上方的符号输入区。
                 if (show_symbol_bar) {
                     editor_symbol_bar(
-                        on_insert = on_insert_symbol,
-                        on_toggle_comment = on_toggle_comment
+                        on_insert = on_insert_symbol
                     )
                 }
 

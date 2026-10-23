@@ -51,8 +51,7 @@ fun cursor_chip(
  */
 @Composable
 fun editor_symbol_bar(
-    on_insert: (String) -> Unit,
-    on_toggle_comment: () -> Unit
+    on_insert: (String) -> Unit
 ) {
 
     val colors = app_theme_provider.colors
@@ -127,8 +126,7 @@ fun editor_symbol_bar(
                 ) {
                     editor_symbols_row(
                         symbols = symbols,
-                        on_insert = on_insert,
-                        on_toggle_comment = on_toggle_comment
+                        on_insert = on_insert
                     )
                     editor_snippets_row(
                         snippets = snippets,
@@ -139,7 +137,6 @@ fun editor_symbol_bar(
                 editor_symbols_row(
                     symbols = symbols,
                     on_insert = on_insert,
-                    on_toggle_comment = on_toggle_comment,
                     vertical_padding = 5.dp
                 )
             }
@@ -151,7 +148,6 @@ fun editor_symbol_bar(
 private fun editor_symbols_row(
     symbols: List<String>,
     on_insert: (String) -> Unit,
-    on_toggle_comment: () -> Unit,
     vertical_padding: Dp = 0.dp
 ) {
     Row(
@@ -162,7 +158,6 @@ private fun editor_symbols_row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(7.dp)
     ) {
-        editor_symbol_comment_button(on_click = on_toggle_comment)
         symbols.forEach { symbol ->
             editor_symbol_token(
                 symbol = symbol,
@@ -242,32 +237,6 @@ private fun editor_snippet_token(
             maxLines = 1,
             softWrap = false
         )
-    }
-}
-
-/** 注释切换按钮：给当前行（或选区各行）加/去 // 注释。 */
-@Composable
-private fun editor_symbol_comment_button(
-    on_click: () -> Unit
-) {
-    val colors = app_theme_provider.colors
-    Surface(
-        modifier = Modifier
-            .size(width = 44.dp, height = 34.dp)
-            .clickable { on_click() },
-        shape = RoundedCornerShape(8.dp),
-        color = colors.editor_button_bg
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Text(
-                "//",
-                color = colors.editor_text,
-                fontSize = 12.5.sp,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                softWrap = false
-            )
-        }
     }
 }
 

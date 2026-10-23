@@ -427,7 +427,6 @@ class editor_activity : ComponentActivity() {
             on_replace_all = { replacement -> replace_all_matches(replacement) },
             on_clear_search = { clear_search() },
             on_insert_symbol = { symbol -> insert_symbol(symbol) },
-            on_toggle_comment = { toggle_line_comment() },
             on_create_file = { parent_path, name, template -> create_project_file(parent_path, name, template) },
             on_create_folder = { parent_path, name -> create_project_folder(parent_path, name) },
             on_refresh_files = { path -> refresh_file_tree(path) },

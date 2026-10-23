@@ -271,14 +271,12 @@ fun plugin_tool_icon(name: String): ImageVector = when (name.lowercase()) {
 }
 
 /**
- * 工作区顶栏：抽屉切换 · 项目名 · 保存 · 直接运行 · AI · 更多菜单。
+ * 工作区顶栏：抽屉切换 · 项目名 · 直接运行 · AI · 更多菜单。
  * 构建/测试等次级任务收纳在更多菜单；菜单视觉对齐 CodeAssist 的圆角浮层。
  */
 @Composable
 fun editor_top_bar(
     project_name: String,
-    has_changes: Boolean,
-    on_save: () -> Unit,
     read_only: Boolean,
     has_open_file: Boolean,
     on_toggle_drawer: () -> Unit,
@@ -346,13 +344,6 @@ fun editor_top_bar(
                     on_click = on_toggle_markdown_mode
                 )
             }
-
-            editor_top_bar_icon_button(
-                icon = Icons.Default.Save,
-                content_description = "保存",
-                tint = if (has_changes) accent else colors.editor_toolbar_icon,
-                on_click = on_save
-            )
 
             if (build_running) {
                 editor_top_bar_icon_button(

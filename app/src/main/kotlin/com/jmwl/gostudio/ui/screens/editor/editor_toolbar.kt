@@ -4,7 +4,6 @@ import com.jmwl.gostudio.editor.core.R
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Undo
@@ -111,7 +110,7 @@ private fun editor_toolbar_icon_button(
     tint: Color? = null
 ) {
     val colors = app_theme_provider.colors
-    editor_toolbar_surface(enabled = enabled, on_click = on_click) {
+    editor_toolbar_tap_target(enabled = enabled, on_click = on_click) {
         Icon(
             imageVector = icon,
             contentDescription = content_description,
@@ -129,7 +128,7 @@ private fun editor_toolbar_painter_button(
     on_click: () -> Unit
 ) {
     val colors = app_theme_provider.colors
-    editor_toolbar_surface(enabled = enabled, on_click = on_click) {
+    editor_toolbar_tap_target(enabled = enabled, on_click = on_click) {
         Icon(
             painter = painterResource(icon_res),
             contentDescription = content_description,
@@ -139,23 +138,19 @@ private fun editor_toolbar_painter_button(
     }
 }
 
-/** 工具栏按钮外壳：44x36dp 热区、8dp 圆角、禁用态不可点击。 */
+/** 工具栏点击位：44x36dp 热区、纯图标无底色，禁用态不可点击。 */
 @Composable
-private fun editor_toolbar_surface(
+private fun editor_toolbar_tap_target(
     enabled: Boolean,
     on_click: () -> Unit,
     content: @Composable () -> Unit
 ) {
-    val colors = app_theme_provider.colors
-    Surface(
+    Box(
         modifier = Modifier
             .size(width = 44.dp, height = 36.dp)
             .clickable(enabled = enabled, onClick = on_click),
-        shape = RoundedCornerShape(8.dp),
-        color = colors.editor_button_bg
+        contentAlignment = Alignment.Center
     ) {
-        Box(contentAlignment = Alignment.Center) {
-            content()
-        }
+        content()
     }
 }
