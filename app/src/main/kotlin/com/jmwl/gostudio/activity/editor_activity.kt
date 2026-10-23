@@ -61,8 +61,10 @@ import com.jmwl.gostudio.lsp.gopls.gopls_lsp_project
 import com.jmwl.gostudio.lsp.gopls.translation.gopls_translation_settings
 import com.jmwl.gostudio.lsp.gopls.apply_code_action
 import com.jmwl.gostudio.lsp.gopls.current_diagnostics
+import com.jmwl.gostudio.lsp.gopls.is_hover_available
 import com.jmwl.gostudio.lsp.gopls.request_code_actions
 import com.jmwl.gostudio.lsp.gopls.request_definition
+import com.jmwl.gostudio.lsp.gopls.request_hover
 import com.jmwl.gostudio.editor.theme.editor_theme_manager
 import com.jmwl.gostudio.ui.dialogs.editor.editor_exit_confirm_dialog
 import com.jmwl.gostudio.ui.dialogs.editor.editor_unsaved_file_dialog
@@ -131,6 +133,11 @@ class editor_activity : ComponentActivity() {
     private var sheet_actions by mutableStateOf(emptyList<com.jmwl.gostudio.lsp.gopls.gopls_code_action>())
     private var sheet_actions_loading by mutableStateOf(false)
     private var sheet_actions_job: Job? = null
+    private var hover_sheet_open by mutableStateOf(false)
+    private var hover_detail by mutableStateOf<com.jmwl.gostudio.lsp.gopls.gopls_hover_detail?>(null)
+    private var hover_detail_loading by mutableStateOf(false)
+    private var hover_detail_error by mutableStateOf<String?>(null)
+    private var hover_detail_job: Job? = null
 
     /** AI agent（在 project_dir 初始化后于 initialize_project 创建） */
     private var ai_agent: com.jmwl.gostudio.ai.ai_agent_loop? = null
@@ -504,6 +511,17 @@ class editor_activity : ComponentActivity() {
             )
         }
 
+        // 符号详情弹层（长按工具栏「详情」打开）
+        if (hover_sheet_open) {
+            BackHandler { hover_sheet_open = false }
+            com.jmwl.gostudio.ui.screens.editor.editor_hover_detail_sheet(
+                detail = hover_detail,
+                loading = hover_detail_loading,
+                error = hover_detail_error,
+                on_dismiss = { hover_sheet_open = false }
+            )
+        }
+
         if (state.show_exit_dialog) {
             editor_exit_confirm_dialog(
                 on_confirm = { confirm_close_editor() },
@@ -531,8 +549,63 @@ class editor_activity : ComponentActivity() {
             current_comment_action = { current_line_comment_action() },
             on_toggle_comment = { toggle_line_comment() },
             on_ai_action = { action, selection -> handle_ai_action_from_editor(action, selection) },
+            can_show_details = { can_request_hover_details() },
+            on_show_details = { open_hover_detail_sheet() },
             initial_styles_timeout_ms = initial_editor_styles_timeout_ms
         )
+    }
+
+    /** 长按工具栏「详情」按钮可见性：当前文件是 .go 且 gopls 已连接且 hover 设置开启。 */
+    private fun can_request_hover_details(): Boolean {
+        val path = state.current_file_path ?: return false
+        if (!is_go_file(path)) return false
+        if (!state.editor_settings.gopls_hover) return false
+        val project = gopls_project ?: return false
+        return project.is_hover_available(File(path))
+    }
+
+    /** 打开符号详情弹层：取当前选区（或光标）中点请求 gopls hover，结果交给底部弹窗。 */
+    private fun open_hover_detail_sheet() {
+        val project = gopls_project ?: run {
+            app_toast.show(this, "gopls 未就绪", app_toast.LENGTH_SHORT)
+            return
+        }
+        val path = state.current_file_path ?: return
+        if (!is_go_file(path)) return
+        if (!::editor.isInitialized) return
+
+        // 选区中点落在符号内部；无选区时用光标位置
+        val cursor = editor.cursor
+        val char_index = if (cursor.isSelected && cursor.right().index > cursor.left().index) {
+            (cursor.left().index + cursor.right().index) / 2
+        } else {
+            cursor.left().index
+        }
+        val position = editor.text.getIndexer().getCharPosition(char_index)
+
+        hover_sheet_open = true
+        hover_detail_loading = true
+        hover_detail = null
+        hover_detail_error = null
+        hover_detail_job?.cancel()
+        hover_detail_job = lifecycleScope.launch {
+            try {
+                val result = withContext(Dispatchers.IO) {
+                    project.request_hover(File(path), editor, position.line, position.column)
+                }
+                hover_detail_loading = false
+                if (result == null) {
+                    hover_detail_error = "未找到该位置的符号详情"
+                } else {
+                    hover_detail = result
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                hover_detail_loading = false
+                hover_detail_error = "查询失败: ${e.message}"
+            }
+        }
     }
 
     /** 编辑器选区 AI 动作：打开 AI 弹窗并注入提示 */

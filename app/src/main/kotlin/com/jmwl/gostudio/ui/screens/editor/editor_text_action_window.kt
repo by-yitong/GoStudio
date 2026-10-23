@@ -8,6 +8,7 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import com.jmwl.gostudio.editor.core.R
+import com.jmwl.gostudio.R as AppR
 import io.github.rosemoe.sora.R as SoraR
 import io.github.rosemoe.sora.widget.CodeEditor
 import io.github.rosemoe.sora.widget.component.EditorTextActionWindow
@@ -17,21 +18,27 @@ class editor_text_action_window(
     private val editor: CodeEditor,
     private val current_comment_action: () -> Boolean?,
     private val on_toggle_comment: () -> Unit,
-    private val on_ai_action: ((String, String) -> Unit)? = null
+    private val on_ai_action: ((String, String) -> Unit)? = null,
+    private val can_show_details: () -> Boolean = { false },
+    private val on_show_details: () -> Unit = {}
 ) : EditorTextActionWindow(editor) {
 
     private var comment_button: ImageButton? = null
     private var ai_button: ImageButton? = null
+    private var details_button: ImageButton? = null
 
     init {
         val comment = create_comment_button()
         comment_button = comment
         val ai = create_ai_button()
         ai_button = ai
+        val details = create_details_button()
+        details_button = details
         val scroll_view = getView().findViewById<HorizontalScrollView>(SoraR.id.panel_hv)
         val action_container = scroll_view?.getChildAt(0) as? LinearLayout
         action_container?.addView(comment)
         action_container?.addView(ai)
+        action_container?.addView(details)
         apply_action_button_color()
     }
 
@@ -45,6 +52,12 @@ class editor_text_action_window(
         }
         // AI 按钮：仅在选中文本且配置了回调时显示
         ai_button?.visibility = if (editor.cursor.isSelected && on_ai_action != null) {
+            View.VISIBLE
+        } else {
+            View.GONE
+        }
+        // 详情按钮：选中文本且 hover 详情可用（.go + gopls 已连接 + 设置开启）时显示
+        details_button?.visibility = if (editor.cursor.isSelected && can_show_details()) {
             View.VISIBLE
         } else {
             View.GONE
@@ -85,6 +98,14 @@ class editor_text_action_window(
         }
     }
 
+    /** 详情动作按钮：请求当前选区/光标位置的 hover 详情（底部弹窗展示） */
+    private fun create_details_button(): ImageButton {
+        return create_action_button(AppR.drawable.ic_editor_details, "详情") {
+            on_show_details()
+            dismiss()
+        }
+    }
+
     private fun create_action_button(icon_res: Int, description: String, on_click: () -> Unit): ImageButton {
         return ImageButton(editor.context).apply {
             scaleType = ImageView.ScaleType.CENTER
@@ -109,6 +130,7 @@ class editor_text_action_window(
     private fun apply_action_button_color() {
         val color = editor.colorScheme.getColor(EditorColorScheme.TEXT_ACTION_WINDOW_ICON_COLOR)
         comment_button?.setColorFilter(color)
+        details_button?.setColorFilter(color)
     }
 
     private fun Int.dp_to_px(): Int {

@@ -28,21 +28,3 @@ fun isCursorInsideParens(content: Content, cursorIndex: Int): Boolean {
     }
     return false
 }
-
-/**
- * 判断指定索引处的字符是否为标识符字符（字母 / 数字 / 下划线）。
- */
-fun isIdentifierChar(ch: Char): Boolean {
-    return ch.isLetterOrDigit() || ch == '_'
-}
-
-/**
- * 判断光标是否位于标识符上（光标左侧或右侧紧邻标识符字符）。
- */
-fun isCursorOnIdentifier(content: Content, cursorIndex: Int): Boolean {
-    val len = content.length
-    val safeIndex = cursorIndex.coerceIn(0, len)
-    val beforeOk = safeIndex > 0 && isIdentifierChar(content[safeIndex - 1])
-    val afterOk = safeIndex < len && isIdentifierChar(content[safeIndex])
-    return beforeOk || afterOk
-}
