@@ -5,7 +5,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.HorizontalScrollView
 import android.widget.ImageButton
-import android.widget.ImageView
 import android.widget.LinearLayout
 import com.jmwl.gostudio.editor.core.R
 import com.jmwl.gostudio.R as AppR
@@ -128,13 +127,13 @@ class editor_text_action_window(
 
     private fun create_action_button(icon_res: Int, description: String, on_click: () -> Unit): ImageButton {
         return ImageButton(editor.context).apply {
-            scaleType = ImageView.ScaleType.CENTER
             setImageResource(icon_res)
             contentDescription = description
             val selectable_background = TypedValue()
             editor.context.theme.resolveAttribute(android.R.attr.selectableItemBackground, selectable_background, true)
             setBackgroundResource(selectable_background.resourceId)
-            layoutParams = LinearLayout.LayoutParams(45.dp_to_px(), ViewGroup.LayoutParams.MATCH_PARENT)
+            // 与基类面板按钮同规格：45x45dp 格子（text_compose_panel.xml），图标由 drawable 自身 20dp 控制
+            layoutParams = LinearLayout.LayoutParams(45.dp_to_px(), 45.dp_to_px())
             setOnClickListener { on_click() }
         }
     }
