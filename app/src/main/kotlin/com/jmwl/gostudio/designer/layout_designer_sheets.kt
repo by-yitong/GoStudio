@@ -49,6 +49,8 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -217,7 +219,6 @@ internal fun designer_property_sheet(
             Modifier
                 .fillMaxWidth()
                 .heightIn(max = max_height)
-                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp)
         ) {
             // 标题行：组件中文名 / tag / id + 删除
@@ -237,63 +238,85 @@ internal fun designer_property_sheet(
                 }
             }
 
-            // 容器：添加子组件快捷区
+            // 容器：添加子组件快捷区（平铺，不套卡片）
             if (node.is_container) {
+                Spacer(Modifier.height(12.dp))
+                Text("添加子组件", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = colors.dialog_text)
+                Spacer(Modifier.height(2.dp))
+                Text("点击即加入该容器", fontSize = 12.sp, color = colors.dialog_hint)
                 Spacer(Modifier.height(8.dp))
-                sheet_card {
-                    Column(Modifier.fillMaxWidth().padding(12.dp)) {
-                        Text("添加子组件", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = colors.dialog_text)
-                        Spacer(Modifier.height(4.dp))
-                        Text("点击即加入该容器", fontSize = 10.sp, color = colors.dialog_hint)
-                        Spacer(Modifier.height(8.dp))
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            QUICK_CHILD_TAGS.forEach { tag ->
-                                designer_chip(text = tag_cn(tag), selected = false, onClick = { on_add_child(tag) })
-                            }
-                            designer_chip(text = "全部组件", selected = false, accent = true, onClick = on_open_catalog)
-                        }
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    QUICK_CHILD_TAGS.forEach { tag ->
+                        designer_chip(text = tag_cn(tag), selected = false, onClick = { on_add_child(tag) })
                     }
+                    designer_chip(text = "全部组件", selected = false, accent = true, onClick = on_open_catalog)
                 }
             }
 
-            // 属性分组卡片：左名称右当前值，点击行弹窗修改
-            property_groups_for(attr_list).forEach { group ->
-                Spacer(Modifier.height(12.dp))
-                sheet_card {
-                    Column(Modifier.fillMaxWidth().padding(12.dp)) {
-                        Text(group.title, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = colors.dialog_text)
-                        group.attrs.forEach { attr ->
-                            more_attr_row(attr = attr, value = node.attrs[attr] ?: "", on_edit = { editing_attr = attr })
-                        }
-                    }
-                }
-            }
+            // 分页：属性各组一页（基础/布局/文本/组件，空组自动隐藏）+ 事件页；行式列表平铺
+            val property_tabs = property_groups_for(attr_list).map { it.title to it.attrs }
+            val tabs = if (is_root) property_tabs else property_tabs + listOf("事件" to emptyList<String>())
+            var active_tab by remember(node) { mutableStateOf(0) }
+            val safe_tab = active_tab.coerceIn(0, tabs.lastIndex)
 
-            // 事件（保留原通路）
-            if (!is_root) {
-                Spacer(Modifier.height(12.dp))
-                Text("事件", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = colors.dialog_icon)
-                Spacer(Modifier.height(4.dp))
-                if (node.id.isBlank()) {
-                    Text("先设置 ID 后才能生成事件", fontSize = 10.sp, color = colors.dialog_hint)
-                } else {
-                    component_events(node.tag).forEach { event ->
-                        Surface(
-                            onClick = { on_open_event(node.id, event.first) },
-                            shape = RoundedCornerShape(8.dp),
-                            color = colors.dialog_icon.copy(alpha = 0.14f),
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)
-                        ) {
+            Spacer(Modifier.height(12.dp))
+            TabRow(
+                selectedTabIndex = safe_tab,
+                containerColor = Color.Transparent
+            ) {
+                tabs.forEachIndexed { index, (title, _) ->
+                    Tab(
+                        selected = index == safe_tab,
+                        onClick = { active_tab = index },
+                        text = {
                             Text(
-                                event.second,
-                                fontSize = 11.sp,
-                                color = colors.dialog_icon,
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 10.dp)
+                                title,
+                                fontSize = 13.sp,
+                                fontWeight = if (index == safe_tab) FontWeight.SemiBold else FontWeight.Normal,
+                                color = if (index == safe_tab) colors.dialog_text else colors.dialog_hint,
+                                maxLines = 1
                             )
                         }
+                    )
+                }
+            }
+
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                val current_tab = tabs.getOrNull(safe_tab)
+                if (current_tab?.first == "事件") {
+                    // 事件页（保留原通路）
+                    Spacer(Modifier.height(8.dp))
+                    if (node.id.isBlank()) {
+                        Text("先设置 ID 后才能生成事件", fontSize = 12.sp, color = colors.dialog_hint)
+                    } else {
+                        component_events(node.tag).forEach { event ->
+                            Surface(
+                                onClick = { on_open_event(node.id, event.first) },
+                                shape = RoundedCornerShape(8.dp),
+                                color = colors.dialog_icon.copy(alpha = 0.14f),
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)
+                            ) {
+                                Text(
+                                    event.second,
+                                    fontSize = 12.sp,
+                                    color = colors.dialog_icon,
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 10.dp)
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    // 属性页：左名称右当前值，点击行弹窗修改
+                    current_tab?.second?.forEach { attr ->
+                        more_attr_row(attr = attr, value = node.attrs[attr] ?: "", on_edit = { editing_attr = attr })
                     }
                 }
             }
