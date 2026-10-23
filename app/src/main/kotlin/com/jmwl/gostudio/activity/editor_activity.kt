@@ -114,9 +114,6 @@ class editor_activity : ComponentActivity() {
     private var gopls_connect_job: Job? = null
     private val gopls_skipped_files = mutableSetOf<String>()
 
-    /** 光标是否在可跳转定义的标识符上，true 时编辑器右上角显示跳转图标 */
-    private val _can_goto_definition = MutableStateFlow(false)
-    val can_goto_definition: kotlinx.coroutines.flow.StateFlow<Boolean> = _can_goto_definition
     /** 跳转定义进行中（请求 gopls 时短暂置 true，避免重复点击） */
     private val _goto_in_progress = MutableStateFlow(false)
     val goto_in_progress: kotlinx.coroutines.flow.StateFlow<Boolean> = _goto_in_progress
@@ -328,7 +325,6 @@ class editor_activity : ComponentActivity() {
     @Composable
     private fun editor_activity_content() {
         val colors = app_theme_provider.colors
-        val goto_running by goto_in_progress.collectAsState()
         val ai_settings_visibility = remember { MutableTransitionState(false) }
         LaunchedEffect(show_ai_settings) {
             if (ai_settings_visibility.targetState != show_ai_settings) {
@@ -442,9 +438,6 @@ class editor_activity : ComponentActivity() {
             on_directory_click = { path -> toggle_directory(path) },
             on_file_click = { path -> request_open_file(path) },
             on_file_position_click = { path, line, column -> open_file_at(path, line, column) },
-            can_goto_definition_flow = can_goto_definition,
-            goto_definition_running = goto_running,
-            on_goto_definition = { goto_definition() },
             structure_file_name = state.current_file_path?.let { File(it).name },
             structure_symbols = structure_symbols,
             on_structure_navigate = { line -> navigate_to_structure_line(line) },
@@ -551,6 +544,11 @@ class editor_activity : ComponentActivity() {
             on_ai_action = { action, selection -> handle_ai_action_from_editor(action, selection) },
             can_show_details = { can_request_hover_details() },
             on_show_details = { open_hover_detail_sheet() },
+            can_show_goto = {
+                val path = state.current_file_path
+                path != null && is_go_file(path) && gopls_project != null
+            },
+            on_goto_definition = { goto_definition() },
             initial_styles_timeout_ms = initial_editor_styles_timeout_ms
         )
     }
@@ -660,33 +658,10 @@ class editor_activity : ComponentActivity() {
         state.cursor_column = column + 1
         state.cursor_selected = changed_editor.cursor.isSelected
 
-        // 判断光标是否在可跳转的标识符上（非选区状态，且光标紧邻字母/下划线）
-        val on_identifier = if (!changed_editor.cursor.isSelected) {
-            is_cursor_on_identifier(changed_editor, line, column)
-        } else {
-            false
-        }
-        _can_goto_definition.value = on_identifier
-
         active_tab()?.let { tab ->
             tab.cursor_line = line
             tab.cursor_column = column
         }
-    }
-
-    /** 判断光标是否位于标识符上（字母/数字/下划线），用于决定是否显示跳转定义图标 */
-    private fun is_cursor_on_identifier(editor: CodeEditor, line: Int, column: Int): Boolean {
-        val text = editor.text ?: return false
-        // 优先看光标左侧字符，再看右侧
-        if (column > 0) {
-            val ch = text.charAt(line, column - 1)
-            if (ch.isLetterOrDigit() || ch == '_') return true
-        }
-        if (column < text.getColumnCount(line)) {
-            val ch = text.charAt(line, column)
-            if (ch.isLetterOrDigit() || ch == '_') return true
-        }
-        return false
     }
 
     private fun update_editor_settings(settings: editor_settings_state) {

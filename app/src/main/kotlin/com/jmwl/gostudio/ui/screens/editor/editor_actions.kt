@@ -15,8 +15,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -64,8 +62,8 @@ fun editor_symbol_bar(
     val symbols = remember {
         listOf(
             "TAB", ":=", ".", ",", ";", ":", "(", ")", "{", "}",
-            "[", "<-", "...", "=", "==", "!=", "!", "&&", "||",
-            "func", "if", "for", "range", "return"
+            "[", "]", "\"\"", "''", "<-", "...", "=", "==", "!=",
+            "!", "&&", "||", "func", "if", "for", "range", "return"
         )
     }
     // 快捷代码片段：label 显示在栏上，点击插入完整代码（多行含 \n\t）
@@ -240,49 +238,3 @@ private fun editor_snippet_token(
     }
 }
 
-/** 跳转到定义的胶囊按钮，由编辑器底部中间展示。 */
-@Composable
-fun goto_definition_chip(
-    running: Boolean,
-    on_click: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val colors = app_theme_provider.colors
-    val text_measurer = rememberTextMeasurer()
-    val density = LocalDensity.current
-    val label = "跳转定义"
-    val label_width = text_measurer.measure(
-        text = label,
-        style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-    ).size.width
-    val chip_width = with(density) { (label_width + 50.dp.toPx()).toDp() }
-
-    Surface(
-        modifier = modifier
-            .size(width = chip_width, height = 32.dp)
-            .clickable(enabled = !running) { on_click() },
-        shape = RoundedCornerShape(16.dp),
-        color = colors.editor_panel_overlay
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = if (running) "…" else "⇲",
-                color = colors.title_highlight,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1
-            )
-            Text(
-                text = label,
-                color = colors.title_highlight,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1
-            )
-        }
-    }
-}

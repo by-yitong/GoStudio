@@ -20,12 +20,15 @@ class editor_text_action_window(
     private val on_toggle_comment: () -> Unit,
     private val on_ai_action: ((String, String) -> Unit)? = null,
     private val can_show_details: () -> Boolean = { false },
-    private val on_show_details: () -> Unit = {}
+    private val on_show_details: () -> Unit = {},
+    private val can_show_goto: () -> Boolean = { false },
+    private val on_goto_definition: () -> Unit = {}
 ) : EditorTextActionWindow(editor) {
 
     private var comment_button: ImageButton? = null
     private var ai_button: ImageButton? = null
     private var details_button: ImageButton? = null
+    private var goto_button: ImageButton? = null
 
     init {
         val comment = create_comment_button()
@@ -34,11 +37,14 @@ class editor_text_action_window(
         ai_button = ai
         val details = create_details_button()
         details_button = details
+        val goto = create_goto_button()
+        goto_button = goto
         val scroll_view = getView().findViewById<HorizontalScrollView>(SoraR.id.panel_hv)
         val action_container = scroll_view?.getChildAt(0) as? LinearLayout
         action_container?.addView(comment)
         action_container?.addView(ai)
         action_container?.addView(details)
+        action_container?.addView(goto)
         apply_action_button_color()
     }
 
@@ -58,6 +64,12 @@ class editor_text_action_window(
         }
         // 详情按钮：选中文本且 hover 详情可用（.go + gopls 已连接 + 设置开启）时显示
         details_button?.visibility = if (editor.cursor.isSelected && can_show_details()) {
+            View.VISIBLE
+        } else {
+            View.GONE
+        }
+        // 跳转定义按钮：选中文本且 .go 文件 gopls 已连接时显示（替代原底部胶囊与长按菜单入口）
+        goto_button?.visibility = if (editor.cursor.isSelected && can_show_goto()) {
             View.VISIBLE
         } else {
             View.GONE
@@ -106,6 +118,14 @@ class editor_text_action_window(
         }
     }
 
+    /** 跳转定义动作按钮：跳到当前选区/光标所在标识符的定义 */
+    private fun create_goto_button(): ImageButton {
+        return create_action_button(AppR.drawable.ic_editor_goto, "跳转定义") {
+            on_goto_definition()
+            dismiss()
+        }
+    }
+
     private fun create_action_button(icon_res: Int, description: String, on_click: () -> Unit): ImageButton {
         return ImageButton(editor.context).apply {
             scaleType = ImageView.ScaleType.CENTER
@@ -131,6 +151,7 @@ class editor_text_action_window(
         val color = editor.colorScheme.getColor(EditorColorScheme.TEXT_ACTION_WINDOW_ICON_COLOR)
         comment_button?.setColorFilter(color)
         details_button?.setColorFilter(color)
+        goto_button?.setColorFilter(color)
     }
 
     private fun Int.dp_to_px(): Int {

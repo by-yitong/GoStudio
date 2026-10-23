@@ -31,6 +31,8 @@ internal class editor_tab_lifecycle(
     private val on_ai_action: ((String, String) -> Unit)? = null,
     private val can_show_details: () -> Boolean = { false },
     private val on_show_details: () -> Unit = {},
+    private val can_show_goto: () -> Boolean = { false },
+    private val on_goto_definition: () -> Unit = {},
     private val initial_styles_timeout_ms: Long
 ) {
     fun create_editor(file_path: String?): CodeEditor {
@@ -58,7 +60,9 @@ internal class editor_tab_lifecycle(
                     on_toggle_comment = on_toggle_comment,
                     on_ai_action = on_ai_action,
                     can_show_details = can_show_details,
-                    on_show_details = on_show_details
+                    on_show_details = on_show_details,
+                    can_show_goto = can_show_goto,
+                    on_goto_definition = on_goto_definition
                 )
             )
             val code_editor = this

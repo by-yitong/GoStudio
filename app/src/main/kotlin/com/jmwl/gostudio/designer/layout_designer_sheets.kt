@@ -4,6 +4,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -375,7 +376,7 @@ internal fun PropertyEditDialog(
 
     AlertDialog(
         onDismissRequest = on_dismiss,
-        title = { Text(ATTR_CN[attr] ?: attr, fontSize = 15.sp, fontWeight = FontWeight.Bold) },
+        title = { Text(ATTR_CN[attr] ?: attr, fontSize = 16.sp, fontWeight = FontWeight.Bold) },
         text = {
             Column(Modifier.fillMaxWidth()) {
                 when (spec.kind) {
@@ -383,19 +384,19 @@ internal fun PropertyEditDialog(
                         var custom by remember(attr, node) { mutableStateOf(initial.isNotBlank() && initial !in SIZE_OPTIONS) }
                         spec.options.forEach { option ->
                             Row(
-                                Modifier.fillMaxWidth().clickable { custom = false; text = option }.padding(vertical = 5.dp),
+                                Modifier.fillMaxWidth().clickable { custom = false; text = option }.padding(vertical = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 RadioButton(selected = !custom && text == option, onClick = { custom = false; text = option })
-                                Text(property_display(attr, option), fontSize = 13.sp)
+                                Text(property_display(attr, option), fontSize = 14.sp)
                             }
                         }
                         Row(
-                            Modifier.fillMaxWidth().clickable { custom = true; if (text in SIZE_OPTIONS) text = "" }.padding(vertical = 5.dp),
+                            Modifier.fillMaxWidth().clickable { custom = true; if (text in SIZE_OPTIONS) text = "" }.padding(vertical = 6.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             RadioButton(selected = custom, onClick = { custom = true; if (text in SIZE_OPTIONS) text = "" })
-                            Text("自定义尺寸", fontSize = 13.sp)
+                            Text("自定义尺寸", fontSize = 14.sp)
                         }
                         OutlinedTextField(
                             value = text,
@@ -408,22 +409,22 @@ internal fun PropertyEditDialog(
                     }
                     property_kind.SINGLE_CHOICE -> spec.options.forEach { option ->
                         Row(
-                            Modifier.fillMaxWidth().clickable { text = option }.padding(vertical = 5.dp),
+                            Modifier.fillMaxWidth().clickable { text = option }.padding(vertical = 6.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             RadioButton(selected = text == option, onClick = { text = option })
-                            Text(property_display(attr, option), fontSize = 13.sp)
+                            Text(property_display(attr, option), fontSize = 14.sp)
                         }
                     }
                     property_kind.MULTI_CHOICE -> {
-                        Text("可多选，组合后作用于布局", fontSize = 10.sp, color = colors.dialog_hint)
+                        Text("可多选，组合后作用于布局", fontSize = 12.sp, color = colors.dialog_hint)
                         spec.options.forEach { option ->
                             val checked_now = option in flags
                             Row(
                                 Modifier.fillMaxWidth().clickable {
                                     flags = if (checked_now) flags - option else flags + option
                                     text = flags.joinToString("|")
-                                }.padding(vertical = 3.dp),
+                                }.padding(vertical = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Checkbox(
@@ -433,14 +434,14 @@ internal fun PropertyEditDialog(
                                         text = flags.joinToString("|")
                                     }
                                 )
-                                Text(property_display(attr, option), fontSize = 13.sp)
+                                Text(property_display(attr, option), fontSize = 14.sp)
                             }
                         }
                     }
                     property_kind.BOOLEAN -> Row(verticalAlignment = Alignment.CenterVertically) {
                         Switch(checked = checked, onCheckedChange = { checked = it; text = it.toString() })
                         Spacer(Modifier.width(8.dp))
-                        Text(if (checked) "开启" else "关闭", fontSize = 13.sp)
+                        Text(if (checked) "开启" else "关闭", fontSize = 14.sp)
                     }
                     property_kind.NUMBER, property_kind.DIMENSION -> {
                         if (spec.kind == property_kind.NUMBER) {
@@ -450,7 +451,7 @@ internal fun PropertyEditDialog(
                                 valueRange = spec.min..spec.max,
                                 steps = if (spec.step >= (spec.max - spec.min)) 0 else (((spec.max - spec.min) / spec.step).toInt() - 2).coerceAtLeast(0)
                             )
-                            Text("当前：${format_number(number)}", fontSize = 11.sp, color = colors.dialog_hint)
+                            Text("当前：${format_number(number)}", fontSize = 12.sp, color = colors.dialog_hint)
                             Spacer(Modifier.height(8.dp))
                         }
                         OutlinedTextField(
@@ -497,13 +498,32 @@ internal fun PropertyEditDialog(
                             label = { Text("颜色值，如 #5CCFE6") },
                             modifier = Modifier.fillMaxWidth()
                         )
-                        Spacer(Modifier.height(8.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Spacer(Modifier.height(12.dp))
+                        // 当前颜色实时预览：输入什么色值立刻看到
+                        Box(
+                            Modifier
+                                .fillMaxWidth()
+                                .height(28.dp)
+                                .background(parse_preview_color(text.ifBlank { "#00000000" }, colors.dialog_icon), RoundedCornerShape(8.dp))
+                                .border(
+                                    width = 1.dp,
+                                    color = colors.dialog_input_border,
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             COLOR_PRESETS.forEach { color ->
+                                val selected = text.equals(color, ignoreCase = true)
                                 Box(
                                     Modifier
-                                        .size(28.dp)
-                                        .background(parse_preview_color(color, colors.dialog_icon), RoundedCornerShape(6.dp))
+                                        .size(32.dp)
+                                        .background(parse_preview_color(color, colors.dialog_icon), RoundedCornerShape(8.dp))
+                                        .border(
+                                            width = if (selected) 2.dp else 1.dp,
+                                            color = if (selected) colors.dialog_icon else colors.dialog_input_border,
+                                            shape = RoundedCornerShape(8.dp)
+                                        )
                                         .clickable { text = color }
                                 )
                             }

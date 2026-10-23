@@ -23,8 +23,6 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -48,9 +46,7 @@ import com.jmwl.gostudio.plugins.plugin_manager
 import com.jmwl.gostudio.plugins.plugin_tool_def
 import com.jmwl.gostudio.tools.tool_engine
 import kotlinx.coroutines.launch
-import io.github.rosemoe.sora.event.InterceptTarget
 import io.github.rosemoe.sora.event.EventReceiver
-import io.github.rosemoe.sora.event.LongPressEvent
 import io.github.rosemoe.sora.event.PublishSearchResultEvent
 import io.github.rosemoe.sora.widget.CodeEditor
 import kotlin.math.roundToInt
@@ -60,12 +56,6 @@ private enum class editor_create_dialog_type { FILE, FOLDER }
 private data class editor_create_dialog_request(
     val type: editor_create_dialog_type,
     val parent_path: String
-)
-
-private data class editor_long_press_menu(
-    val position: Offset,
-    val line: Int,
-    val column: Int
 )
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
@@ -83,7 +73,6 @@ internal fun editor_screen(
     cursor_line_provider: () -> Int,
     cursor_column_provider: () -> Int,
     cursor_selected_provider: () -> Boolean,
-    can_goto_definition_flow: kotlinx.coroutines.flow.StateFlow<Boolean>,
     has_changes: Boolean,
     loading: Boolean,
     read_only: Boolean,
@@ -139,8 +128,6 @@ internal fun editor_screen(
     on_directory_click: (String) -> Unit,
     on_file_click: (String) -> Unit,
     on_file_position_click: (String, Int, Int) -> Unit,
-    goto_definition_running: Boolean,
-    on_goto_definition: () -> Unit,
     structure_file_name: String? = null,
     structure_symbols: List<com.jmwl.gostudio.editor.core.editor_outline_symbol> = emptyList(),
     on_structure_navigate: (Int) -> Unit = {},
@@ -209,7 +196,6 @@ internal fun editor_screen(
         if (ai_open_trigger > 0) show_ai_page = true
     }
     var editor_focused by remember { mutableStateOf(false) }
-    var long_press_menu by remember { mutableStateOf<editor_long_press_menu?>(null) }
     val terminal_state = remember_editor_terminal_state()
     val drawer_progress = remember { Animatable(0f) }
     val coroutine_scope = rememberCoroutineScope()
@@ -231,7 +217,6 @@ internal fun editor_screen(
             editor.clearFocus()
             editor_focused = false
             search_visible = false
-            long_press_menu = null
         }
     }
 
@@ -290,21 +275,6 @@ internal fun editor_screen(
                 val searcher = event.getSearcher()
                 searcher.hasQuery() && searcher.matchedPositionCount > 0
             }.getOrDefault(false)
-        })
-        onDispose { receipt.unsubscribe() }
-    }
-
-    DisposableEffect(editor) {
-        val receipt = editor.subscribeEvent(LongPressEvent::class.java, EventReceiver { event, _ ->
-            editor.selectWord(event.line, event.column)
-            if (editor.cursor.isSelected) {
-                long_press_menu = editor_long_press_menu(
-                    position = Offset(event.x, event.y),
-                    line = event.line,
-                    column = event.column
-                )
-                event.intercept(InterceptTarget.TARGET_EDITOR or InterceptTarget.TARGET_RECEIVERS)
-            }
         })
         onDispose { receipt.unsubscribe() }
     }
@@ -422,71 +392,6 @@ internal fun editor_screen(
                             on_focus_change = { focused -> editor_focused = focused }
                         )
 
-                        long_press_menu?.let { menu ->
-                            Box(
-                                modifier = Modifier
-                                    .offset {
-                                        IntOffset(
-                                            menu.position.x.roundToInt(),
-                                            menu.position.y.roundToInt()
-                                        )
-                                    }
-                                    .size(0.dp)
-                            ) {
-                                DropdownMenu(
-                                    expanded = true,
-                                    onDismissRequest = { long_press_menu = null }
-                                ) {
-                                    DropdownMenuItem(
-                                        text = { Text("跳转定义") },
-                                        onClick = {
-                                            val column_count = editor.text?.getColumnCount(menu.line) ?: 0
-                                            editor.setSelection(menu.line, (menu.column + 1).coerceAtMost(column_count))
-                                            long_press_menu = null
-                                            on_goto_definition()
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text("复制") },
-                                        onClick = {
-                                            editor.copyText(false)
-                                            long_press_menu = null
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text("粘贴") },
-                                        enabled = !read_only,
-                                        onClick = {
-                                            editor.pasteText()
-                                            long_press_menu = null
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text("全选") },
-                                        onClick = {
-                                            editor.selectAll()
-                                            long_press_menu = null
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text("搜索") },
-                                        onClick = {
-                                            long_press_menu = null
-                                            search_visible = true
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text("格式化") },
-                                        enabled = !read_only,
-                                        onClick = {
-                                            long_press_menu = null
-                                            on_format()
-                                        }
-                                    )
-                                }
-                            }
-                        }
-
                         // 左下角行列号（独立叶子：光标移动只重组这一小块）
                         Box(
                             modifier = Modifier
@@ -559,13 +464,6 @@ internal fun editor_screen(
                 // 底部只留导航条安全距离
                 Spacer(modifier = Modifier.navigationBarsPadding())
             }
-
-            editor_definition_overlay(
-                can_goto_definition_flow = can_goto_definition_flow,
-                goto_definition_running = goto_definition_running,
-                on_goto_definition = on_goto_definition,
-                bottom_padding = if (show_symbol_bar) 54.dp else 10.dp
-            )
         }
 
         // 左缘右滑：跟手拉出左侧抽屉
@@ -845,30 +743,6 @@ private fun markdown_preview_panel(
             ai_markdown_text(
                 text = text,
                 color = colors.editor_text
-            )
-        }
-    }
-}
-
-@Composable
-private fun BoxScope.editor_definition_overlay(
-    can_goto_definition_flow: kotlinx.coroutines.flow.StateFlow<Boolean>,
-    goto_definition_running: Boolean,
-    on_goto_definition: () -> Unit,
-    bottom_padding: androidx.compose.ui.unit.Dp
-) {
-    val can_goto by can_goto_definition_flow.collectAsState()
-    if (can_goto) {
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .imePadding()
-                .navigationBarsPadding()
-                .padding(bottom = bottom_padding)
-        ) {
-            goto_definition_chip(
-                running = goto_definition_running,
-                on_click = on_goto_definition
             )
         }
     }
