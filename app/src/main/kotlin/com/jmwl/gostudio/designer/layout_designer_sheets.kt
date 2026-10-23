@@ -354,6 +354,7 @@ private fun more_attr_row(attr: String, value: String, on_edit: () -> Unit) {
 
 /* ---------- 属性对话框（兜底，沿用原交互） ---------- */
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun PropertyEditDialog(
     node: d_node,
@@ -363,6 +364,8 @@ internal fun PropertyEditDialog(
     on_dismiss: () -> Unit
 ) {
     val colors = app_theme_provider.colors
+    val sheet_state = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val max_height = (LocalConfiguration.current.screenHeightDp * 0.72f).dp
     val spec = property_spec_for(attr)
     val initial = node.attrs[attr] ?: ""
     var text by remember(attr, node) { mutableStateOf(initial) }
@@ -374,11 +377,37 @@ internal fun PropertyEditDialog(
     }
     var checked by remember(attr, node) { mutableStateOf(initial.equals("true", true) || initial == "1") }
 
-    AlertDialog(
+    fun confirm_result(): String = when (spec.kind) {
+        property_kind.BOOLEAN -> checked.toString()
+        property_kind.NUMBER -> format_number(number)
+        else -> text
+    }
+
+    ModalBottomSheet(
         onDismissRequest = on_dismiss,
-        title = { Text(ATTR_CN[attr] ?: attr, fontSize = 16.sp, fontWeight = FontWeight.Bold) },
-        text = {
+        sheetState = sheet_state,
+        containerColor = colors.dialog_bg,
+        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+    ) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .heightIn(max = max_height)
+        ) {
+            // 标题行：中文属性名 + 原始属性名
             Column(Modifier.fillMaxWidth()) {
+                Text(ATTR_CN[attr] ?: attr, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = colors.dialog_text)
+                Spacer(Modifier.height(2.dp))
+                Text(attr, fontSize = 11.sp, color = colors.dialog_hint)
+            }
+            Spacer(Modifier.height(12.dp))
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState())
+            ) {
                 when (spec.kind) {
                     property_kind.SIZE -> {
                         var custom by remember(attr, node) { mutableStateOf(initial.isNotBlank() && initial !in SIZE_OPTIONS) }
@@ -544,25 +573,21 @@ internal fun PropertyEditDialog(
                     )
                 }
             }
-        },
-        confirmButton = {
-            Row {
+            Spacer(Modifier.height(16.dp))
+            // 底部操作行：清除 | 取消 | 确定
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 TextButton(onClick = { on_confirm("") }) { Text("清除", color = colors.dialog_hint) }
-                TextButton(onClick = {
-                    val result = when (spec.kind) {
-                        property_kind.BOOLEAN -> checked.toString()
-                        property_kind.NUMBER -> format_number(number)
-                        else -> text
-                    }
-                    on_confirm(result)
-                }) { Text("确定", color = colors.dialog_icon) }
+                Spacer(Modifier.weight(1f))
+                TextButton(onClick = on_dismiss) { Text("取消", color = colors.dialog_hint) }
+                TextButton(onClick = { on_confirm(confirm_result()) }) { Text("确定", color = colors.dialog_icon) }
             }
-        },
-        dismissButton = { TextButton(onClick = on_dismiss) { Text("取消") } },
-        containerColor = colors.dialog_bg,
-        titleContentColor = colors.dialog_text,
-        textContentColor = colors.dialog_text
-    )
+            Spacer(Modifier.height(16.dp))
+        }
+    }
 }
 
 /* ---------- 添加目录底部面板 ---------- */
