@@ -376,6 +376,23 @@ internal fun editor_screen(
                             on_open_project_config = { show_project_config = true }
                         )
                     }
+                    // 顶栏正下方的编辑工具栏：收编原右上角浮动条（热区过小且遮挡代码）
+                    if (has_open_file && !show_markdown_preview) {
+                        editor_toolbar(
+                            can_undo = can_undo,
+                            can_redo = can_redo,
+                            has_changes = has_changes,
+                            can_format = !read_only,
+                            format_selection_provider = cursor_selected_provider,
+                            search_active = search_visible,
+                            on_undo = on_undo,
+                            on_redo = on_redo,
+                            on_save = on_save,
+                            on_format = on_format,
+                            on_toggle_call_args = on_toggle_call_args,
+                            on_toggle_search = { search_visible = !search_visible }
+                        )
+                    }
                     // 文件标签栏保持在顶部
                     if (has_open_file) {
                         editor_tabs_bar(
@@ -482,34 +499,6 @@ internal fun editor_screen(
                             editor_cursor_position_chip(
                                 cursor_line_provider = cursor_line_provider,
                                 cursor_column_provider = cursor_column_provider
-                            )
-                        }
-
-                        Column(
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .padding(6.dp),
-                            horizontalAlignment = Alignment.End,
-                            verticalArrangement = Arrangement.spacedBy(7.dp)
-                        ) {
-                            // 光标相关状态全部在这个叶子组合里读取：
-                            // 光标移动只重组这一小块，不会带动整个 editor_screen
-                            editor_cursor_overlays(
-                                cursor_selected_provider = cursor_selected_provider,
-                                can_undo = can_undo,
-                                can_redo = can_redo,
-                                has_changes = has_changes,
-                                can_format = !read_only,
-                                show_format = true,
-                                show_save = true,
-                                show_search = true,
-                                search_active = search_visible,
-                                on_undo = on_undo,
-                                on_redo = on_redo,
-                                on_format = on_format,
-                                on_toggle_call_args = on_toggle_call_args,
-                                on_save = on_save,
-                                on_toggle_search = { search_visible = !search_visible }
                             )
                         }
 
@@ -863,49 +852,6 @@ private fun markdown_preview_panel(
             )
         }
     }
-}
-
-/**
- * 光标区叶子组合：悬浮按钮（含搜索入口）。
- * 光标选区/可跳转状态只在这里读取，光标每次移动仅重组此组合，
- * 避免整个 editor_screen（顶栏/标签栏）跟着重新执行。
- * 行列号 chip 在别处（左下角）单独作为叶子读取。
- */
-@Composable
-private fun editor_cursor_overlays(
-    cursor_selected_provider: () -> Boolean,
-    can_undo: Boolean,
-    can_redo: Boolean,
-    has_changes: Boolean,
-    can_format: Boolean,
-    show_format: Boolean,
-    show_save: Boolean,
-    show_search: Boolean,
-    search_active: Boolean,
-    on_undo: () -> Unit,
-    on_redo: () -> Unit,
-    on_format: () -> Unit,
-    on_toggle_call_args: () -> Unit,
-    on_save: () -> Unit,
-    on_toggle_search: () -> Unit
-) {
-    editor_floating_actions(
-        can_undo = can_undo,
-        can_redo = can_redo,
-        has_changes = has_changes,
-        can_format = can_format,
-        format_selection = cursor_selected_provider(),
-        show_format = show_format,
-        show_save = show_save,
-        show_search = show_search,
-        search_active = search_active,
-        on_undo = on_undo,
-        on_redo = on_redo,
-        on_format = on_format,
-        on_toggle_call_args = on_toggle_call_args,
-        on_save = on_save,
-        on_toggle_search = on_toggle_search
-    )
 }
 
 @Composable
