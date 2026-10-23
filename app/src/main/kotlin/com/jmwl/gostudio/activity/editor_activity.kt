@@ -2557,6 +2557,8 @@ class editor_activity : ComponentActivity() {
             val lsp_editor = lsp_project.get_or_create_editor(file, editor)
             lsp_editor.isEnableHover = state.editor_settings.gopls_hover
             lsp_editor.isEnableSignatureHelp = state.editor_settings.gopls_signature_help
+            // 参数名等内嵌提示（浅色，不写入文件）：展开/折叠参数后随内容变化自动刷新
+            lsp_editor.isEnableInlayHint = true
             lsp_editor.eventListener = { _, new_status, old_status ->
                 if (new_status != old_status) {
                     log_gopls_status(file, new_status)
