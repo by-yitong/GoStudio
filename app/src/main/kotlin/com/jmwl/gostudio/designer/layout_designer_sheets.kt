@@ -218,7 +218,7 @@ internal fun designer_property_sheet(
         Column(
             Modifier
                 .fillMaxWidth()
-                .heightIn(max = max_height)
+                .height(max_height)
                 .padding(horizontal = 16.dp)
         ) {
             // 标题行：组件中文名 / tag / id + 删除
@@ -416,7 +416,7 @@ internal fun PropertyEditDialog(
             Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
-                .heightIn(max = max_height)
+                .height(max_height)
         ) {
             // 标题行：中文属性名 + 原始属性名
             Column(Modifier.fillMaxWidth()) {
@@ -641,7 +641,7 @@ internal fun designer_catalog_sheet(
         Column(
             Modifier
                 .fillMaxWidth()
-                .heightIn(max = max_height)
+                .height(max_height)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp)
         ) {
@@ -733,7 +733,7 @@ internal fun designer_tree_sheet(
         Column(
             Modifier
                 .fillMaxWidth()
-                .heightIn(max = max_height)
+                .height(max_height)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 12.dp)
         ) {
