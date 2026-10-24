@@ -127,6 +127,8 @@ open class SignatureHelpWindow(
     }
 
     open fun show(signatureHelp: SignatureHelp) {
+        // 临时诊断(logcat tag=GoStudioSig)：查明后删除
+        android.util.Log.w("GoStudioSig", "窗口show: enabled=${isEnabled()} signatures=${signatureHelp.signatures.size} diagnosticShowing=${editor.getComponent<EditorDiagnosticTooltipWindow>().isShowing}")
         if (!isEnabled()) {
             return
         }
@@ -140,6 +142,7 @@ open class SignatureHelpWindow(
         this.signatureHelp = signatureHelp
         renderSignatureHelp()
         if (!updateWindowSizeAndLocation()) {
+            android.util.Log.w("GoStudioSig", "窗口show: 定位失败(上下都放不下) dismissed")
             dismiss()
             return
         }
