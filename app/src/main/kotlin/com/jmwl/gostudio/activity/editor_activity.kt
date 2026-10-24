@@ -62,6 +62,7 @@ import com.jmwl.gostudio.lsp.gopls.translation.gopls_translation_settings
 import com.jmwl.gostudio.lsp.gopls.apply_code_action
 import com.jmwl.gostudio.lsp.gopls.current_diagnostics
 import com.jmwl.gostudio.lsp.gopls.is_hover_available
+import com.jmwl.gostudio.lsp.gopls.warm_up_analysis
 import com.jmwl.gostudio.lsp.gopls.request_code_actions
 import com.jmwl.gostudio.lsp.gopls.request_definition
 import com.jmwl.gostudio.lsp.gopls.request_hover
@@ -112,6 +113,7 @@ class editor_activity : ComponentActivity() {
     private var textmate_prewarm_started = false
     private var gopls_project: gopls_lsp_project? = null
     private var gopls_connect_job: Job? = null
+    private var gopls_warmup_job: Job? = null
     private val gopls_skipped_files = mutableSetOf<String>()
 
     /** 跳转定义进行中（请求 gopls 时短暂置 true，避免重复点击） */
@@ -2563,6 +2565,9 @@ class editor_activity : ComponentActivity() {
                     if (new_status == LspEditorStatus.CONNECTED) {
                         // 连接完成后 gopls 很快会推送首批诊断，稍等再读容器
                         schedule_diagnostics_refresh(1500L)
+                        // VS Code 式预热：后台强制 gopls 完成当前文件依赖树类型检查，
+                        // 让 net/http 这类冷包的首次签名提示/补全不再超时
+                        warm_up_gopls(file)
                     }
                 }
             }
@@ -2641,6 +2646,15 @@ class editor_activity : ComponentActivity() {
     // ---- LSP 诊断（问题页签 / 诊断弹层） ----
 
     /** 编辑后防抖刷新诊断（gopls 推送有延迟，默认 800ms 后读容器）。 */
+    /** VS Code 式预热：连上 gopls 后台请求一次 documentSymbol，强制完成依赖树类型检查。 */
+    private fun warm_up_gopls(file: File) {
+        val project = gopls_project ?: return
+        gopls_warmup_job?.cancel()
+        gopls_warmup_job = lifecycleScope.launch(Dispatchers.IO) {
+            runCatching { project.warm_up_analysis(file) }
+        }
+    }
+
     private fun schedule_diagnostics_refresh(delay_ms: Long = 800L) {
         diagnostics_job?.cancel()
         diagnostics_job = lifecycleScope.launch {

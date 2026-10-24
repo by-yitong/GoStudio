@@ -35,6 +35,7 @@ import io.github.rosemoe.sora.lsp.utils.asLspPosition
 import io.github.rosemoe.sora.lsp.utils.createTextDocumentIdentifier
 import io.github.rosemoe.sora.text.CharPosition
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
@@ -60,15 +61,29 @@ class SignatureHelpEvent : AsyncEventListener() {
             position.asLspPosition()
         )
 
-        val future = requestManager.signatureHelp(signatureHelpParams) ?: return@withContext
+        // VS Code 式"不轻易放弃"：包冷启动（如 net/http 首次触达）时 gopls 响应慢或为空，
+        // 首次尝试失败后延迟重试一次，期间不硬性放弃，让晚到的答案仍能弹出。
+        var signatureHelp: SignatureHelp? = null
+        var attempt = 0
+        while (attempt < 2 && signatureHelp?.signatures.isNullOrEmpty()) {
+            attempt++
+            val future = requestManager.signatureHelp(signatureHelpParams) ?: return@withContext
+            this@SignatureHelpEvent.future = future.thenAccept { }
+            try {
+                withTimeout(Timeout[Timeouts.SIGNATURE].toLong()) {
+                    signatureHelp = future.await()
+                }
+            } catch (e: Exception) {
+                // 超时/失败：空结果走重试，第二次仍失败则放弃
+            }
+            if (attempt == 1 && signatureHelp?.signatures.isNullOrEmpty()) {
+                delay(2500)
+            }
+        }
 
-        this@SignatureHelpEvent.future = future.thenAccept { }
-
-        val signatureHelp: SignatureHelp?
-
-        withTimeout(Timeout[Timeouts.SIGNATURE].toLong()) {
-            signatureHelp =
-                future.await()
+        if (signatureHelp?.signatures.isNullOrEmpty()) {
+            editor.showSignatureHelp(null)
+            return@withContext
         }
 
         val translatedSignatureHelp = editor.project.documentationTranslator.translateSignatureHelp(signatureHelp)
