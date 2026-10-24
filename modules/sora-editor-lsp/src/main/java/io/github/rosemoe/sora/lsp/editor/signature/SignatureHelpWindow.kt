@@ -128,11 +128,17 @@ open class SignatureHelpWindow(
 
     open fun show(signatureHelp: SignatureHelp) {
         if (!isEnabled()) {
+            diag("窗口未启用")
             return
         }
         val isInDiagnostic = editor.getComponent<EditorDiagnosticTooltipWindow>().isShowing
 
         if (signatureHelp.signatures.isEmpty() || isInDiagnostic) {
+            if (signatureHelp.signatures.isEmpty()) {
+                diag("签名为空")
+            } else {
+                diag("被诊断窗压制")
+            }
             dismiss()
             return
         }
@@ -140,10 +146,18 @@ open class SignatureHelpWindow(
         this.signatureHelp = signatureHelp
         renderSignatureHelp()
         if (!updateWindowSizeAndLocation()) {
+            diag("定位失败")
             dismiss()
             return
         }
         show()
+    }
+
+    // 临时诊断探针：定位签名提示不弹的断点，查明后删除
+    private fun diag(message: String) {
+        editor.post {
+            android.widget.Toast.makeText(editor.context, "[诊断]$message", android.widget.Toast.LENGTH_SHORT).show()
+        }
     }
 
     override fun dismiss() {
