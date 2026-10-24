@@ -82,6 +82,13 @@ class SignatureHelpEvent : AsyncEventListener() {
         }
 
         if (signatureHelp?.signatures.isNullOrEmpty()) {
+            // 临时诊断：只在最终失败时提示，弹出了参数提示则不打扰；查明后删除
+            val origin = editor.editor
+            origin?.post {
+                android.widget.Toast.makeText(
+                    origin.context, "[诊断]签名:重试后仍为空", android.widget.Toast.LENGTH_SHORT
+                ).show()
+            }
             editor.showSignatureHelp(null)
             return@withContext
         }

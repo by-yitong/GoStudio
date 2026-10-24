@@ -2651,7 +2651,13 @@ class editor_activity : ComponentActivity() {
         val project = gopls_project ?: return
         gopls_warmup_job?.cancel()
         gopls_warmup_job = lifecycleScope.launch(Dispatchers.IO) {
-            runCatching { project.warm_up_analysis(file) }
+            val start = android.os.SystemClock.elapsedRealtime()
+            val result = runCatching { project.warm_up_analysis(file) }
+            val ms = android.os.SystemClock.elapsedRealtime() - start
+            withContext(Dispatchers.Main) {
+                // 预热耗时反映依赖树加载速度（net/http 这类大包首次会明显更久）
+                output_panel_state.append_log("gopls: 预热${if (result.isSuccess) "完成" else "失败"} ${ms}ms")
+            }
         }
     }
 
