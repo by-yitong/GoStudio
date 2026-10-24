@@ -149,6 +149,7 @@ class editor_text_action_window(
     private fun apply_action_button_color() {
         val color = editor.colorScheme.getColor(EditorColorScheme.TEXT_ACTION_WINDOW_ICON_COLOR)
         comment_button?.setColorFilter(color)
+        ai_button?.setColorFilter(color)
         details_button?.setColorFilter(color)
         goto_button?.setColorFilter(color)
     }

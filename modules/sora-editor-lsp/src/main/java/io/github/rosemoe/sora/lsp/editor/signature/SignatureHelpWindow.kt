@@ -174,18 +174,23 @@ open class SignatureHelpWindow(
         val selection = editor.cursor.left()
         val charX = editor.getCharOffsetX(selection.line, selection.column)
         val margin = editor.dpUnit * 10
-        val anchor =
-            editor.getCharOffsetY(selection.line, selection.column) - editor.rowHeight - margin
+        val cursorTop = editor.getCharOffsetY(selection.line, selection.column)
         val maxY = (editor.height - height).coerceAtLeast(0)
-        val aboveTop = anchor - height
-        if (aboveTop < 0) {
-            // Avoid forcing the popup below the caret so we don't cover completion window
-            return false
-        }
-        val windowY = aboveTop.coerceAtMost(maxY.toFloat())
         val windowX = (charX - width / 2).coerceAtLeast(0f)
-        setLocationAbsolutely(windowX.toInt(), windowY.toInt())
-        return true
+
+        val aboveTop = cursorTop - editor.rowHeight - margin - height
+        if (aboveTop >= 0) {
+            setLocationAbsolutely(windowX.toInt(), aboveTop.coerceAtMost(maxY.toFloat()).toInt())
+            return true
+        }
+        // 上方放不下时退到光标行下方：小屏（键盘+符号栏压缩编辑区）时上方常不足，
+        // 原实现直接放弃导致签名提示永远弹不出。补全列表显示时本来就不会走到这里（show() 已拦截）。
+        val belowTop = cursorTop + editor.rowHeight + margin
+        if (belowTop <= maxY) {
+            setLocationAbsolutely(windowX.toInt(), belowTop.toInt())
+            return true
+        }
+        return false
     }
 
     private fun renderSignatureHelp() {
