@@ -60,38 +60,15 @@ class SignatureHelpEvent : AsyncEventListener() {
             position.asLspPosition()
         )
 
-        // 临时诊断探针：定位签名提示不弹的断点，查明后删除
-        fun diag(message: String) {
-            val origin = editor.editor ?: return
-            origin.post {
-                android.widget.Toast.makeText(origin.context, "[诊断]$message", android.widget.Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        val future = requestManager.signatureHelp(signatureHelpParams)
-        if (future == null) {
-            diag("签名:请求未发出(能力未就绪或被禁用)")
-            return@withContext
-        }
+        val future = requestManager.signatureHelp(signatureHelpParams) ?: return@withContext
 
         this@SignatureHelpEvent.future = future.thenAccept { }
 
         val signatureHelp: SignatureHelp?
 
-        try {
-            withTimeout(Timeout[Timeouts.SIGNATURE].toLong()) {
-                signatureHelp =
-                    future.await()
-            }
-        } catch (e: Exception) {
-            diag("签名:请求失败 ${e.message}")
-            return@withContext
-        }
-
-        if (signatureHelp == null || signatureHelp.signatures.isNullOrEmpty()) {
-            diag("签名:结果为空")
-            editor.showSignatureHelp(null)
-            return@withContext
+        withTimeout(Timeout[Timeouts.SIGNATURE].toLong()) {
+            signatureHelp =
+                future.await()
         }
 
         val translatedSignatureHelp = editor.project.documentationTranslator.translateSignatureHelp(signatureHelp)
