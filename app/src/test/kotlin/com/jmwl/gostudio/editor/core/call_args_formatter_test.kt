@@ -231,7 +231,7 @@ class call_args_formatter_test {
 
     @Test
     fun `empty args expand to indented blank line and fold back`() {
-        val expanded = formatter.format_call_args("http.Post()", 11)!!
+        val expanded = formatter.format_call_args("http.Post()", 10)!!
         assertThat(expanded.new_call_text).isEqualTo("(\n\t\n)")
         assertThat(expanded.new_cursor).isEqualTo("(\n\t".length)
 
