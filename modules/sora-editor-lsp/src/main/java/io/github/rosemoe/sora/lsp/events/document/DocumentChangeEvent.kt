@@ -31,13 +31,11 @@ import io.github.rosemoe.sora.lsp.events.EventContext
 import io.github.rosemoe.sora.lsp.events.EventType
 import io.github.rosemoe.sora.lsp.events.getByClass
 import io.github.rosemoe.sora.lsp.utils.createDidChangeTextDocumentParams
-import io.github.rosemoe.sora.lsp.utils.createRange
 import io.github.rosemoe.sora.lsp.utils.createTextDocumentContentChangeEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.eclipse.lsp4j.DidChangeTextDocumentParams
 import org.eclipse.lsp4j.TextDocumentContentChangeEvent
-import org.eclipse.lsp4j.TextDocumentSyncKind
 import java.util.concurrent.CompletableFuture
 
 class DocumentChangeEvent : AsyncEventListener() {
@@ -76,42 +74,15 @@ class DocumentChangeEvent : AsyncEventListener() {
         )
     }
 
-    private fun createIncrementTextDocumentContentChangeEvent(
-        editor: LspEditor,
-        data: ContentChangeEvent
-    ): List<TextDocumentContentChangeEvent> {
-        val text = data.changedText.toString()
-        return listOf(
-            editor.uri.createTextDocumentContentChangeEvent(
-                if (data.action == ContentChangeEvent.ACTION_DELETE) {
-                    createRange(
-                        data.changeStart,
-                        data.changeEnd
-                    )
-                } else {
-                    createRange(
-                        data.changeStart,
-                        data.changeStart
-                    )
-                },
-                if (data.action == ContentChangeEvent.ACTION_DELETE) "" else text
-            )
-        )
-    }
-
-
     private fun createDidChangeTextDocumentParams(
         editor: LspEditor,
-        data: ContentChangeEvent
+        @Suppress("UNUSED_PARAMETER") data: ContentChangeEvent
     ): DidChangeTextDocumentParams {
-        val kind = editor.textDocumentSyncKind
-        val isFullSync = kind == TextDocumentSyncKind.None || kind == TextDocumentSyncKind.Full
-
+        // 始终全量同步：增量同步的删除区间换算在删行时会与 gopls 侧文本错位，
+        // 导致诊断行号整体偏移（删掉错误代码后错误提示串到上一行，重开文件才恢复）。
+        // 手机场景文件小，全量同步代价可忽略，换取一致性。
         return editor.uri.createDidChangeTextDocumentParams(
-            if (isFullSync) createFullTextDocumentContentChangeEvent(editor) else createIncrementTextDocumentContentChangeEvent(
-                editor,
-                data
-            )
+            createFullTextDocumentContentChangeEvent(editor)
         )
     }
 }
