@@ -38,7 +38,7 @@ class LspEditorScrollEvent(private val editor: LspEditor) :
     EventReceiver<ScrollEvent> {
 
     override fun onReceive(event: ScrollEvent, unsubscribe: Unsubscribe) {
-        if (!editor.isConnected || editor.isEnableInlayHint) {
+        if (!editor.isConnected || !editor.isEnableInlayHint) {
             return
         }
 
