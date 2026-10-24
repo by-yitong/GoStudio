@@ -3134,11 +3134,6 @@ class editor_activity : ComponentActivity() {
             app_toast.show(this, "光标不在函数调用的括号内", app_toast.LENGTH_SHORT)
             return
         }
-        val arg_text = content.substring(range.open_offset + 1, range.close_offset)
-        if (call_args_formatter.split_top_level_args(arg_text).isEmpty()) {
-            app_toast.show(this, "没有参数", app_toast.LENGTH_SHORT)
-            return
-        }
         val transform = call_args_formatter.format_call_args(content, cursor_index) ?: return
 
         text.beginBatchEdit()

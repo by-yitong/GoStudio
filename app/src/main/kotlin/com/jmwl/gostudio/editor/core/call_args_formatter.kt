@@ -78,7 +78,8 @@ object call_args_formatter {
     }
 
     /**
-     * 智能切换入口：光标不在调用括号内或参数区为空 → null（调用方给 toast）。
+     * 智能切换入口：光标不在调用括号内 → null（调用方给 toast）。
+     * 空参数 `foo()` 也可展开（成带缩进的空行，光标落在该行等待输入），再点折叠回 `foo()`。
      *
      * 判定规则：取开括号后到**第一个顶层逗号**（无逗号则到闭括号）之间的文本——
      * 含换行 → 当前是展开态 → 执行折叠；不含换行 → 执行展开。
@@ -88,7 +89,6 @@ object call_args_formatter {
         val range = find_enclosing_call(content, cursor) ?: return null
         val arg_text = content.substring(range.open_offset + 1, range.close_offset)
         val args = split_top_level_args(arg_text)
-        if (args.isEmpty()) return null
 
         val probe_end = first_top_level_comma_index(arg_text)
             .let { if (it < 0) arg_text.length else it }
@@ -100,7 +100,7 @@ object call_args_formatter {
         }
     }
 
-    /** `foo(a, b)` ⟹ `foo(\n\ta,\n\tb,\n)`：缩进 = 调用行前导空白 + 一个 \t；每个参数 trim 后独占一行、行尾加逗号；`)` 单独一行、与调用行同缩进。 */
+    /** `foo(a, b)` ⟹ `foo(\n\ta,\n\tb,\n)`：缩进 = 调用行前导空白 + 一个 \t；每个参数 trim 后独占一行、行尾加逗号；`)` 单独一行、与调用行同缩进。空参数展开为带缩进的空行。 */
     private fun expand_call(
         content: String,
         range: call_args_range,
@@ -112,7 +112,11 @@ object call_args_formatter {
         val base_indent = content.substring(line_start, ws_end)
         val arg_indent = base_indent + "\t"
 
-        val body = args.joinToString("\n") { arg_indent + it.trim() + "," }
+        val body = if (args.isEmpty()) {
+            arg_indent
+        } else {
+            args.joinToString("\n") { arg_indent + it.trim() + "," }
+        }
         return call_args_transform(
             new_call_text = "(\n" + body + "\n" + base_indent + ")",
             new_cursor = "(\n".length + body.length

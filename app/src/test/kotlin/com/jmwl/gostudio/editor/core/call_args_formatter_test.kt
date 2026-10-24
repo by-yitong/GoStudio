@@ -230,9 +230,19 @@ class call_args_formatter_test {
     // ---------- 边界 ----------
 
     @Test
-    fun `empty args returns null`() {
-        assertThat(formatter.format_call_args("foo()", 4)).isNull()
-        assertThat(formatter.format_call_args("foo(   )", 4)).isNull()
+    fun `empty args expand to indented blank line and fold back`() {
+        val expanded = formatter.format_call_args("http.Post()", 11)!!
+        assertThat(expanded.new_call_text).isEqualTo("(\n\t\n)")
+        assertThat(expanded.new_cursor).isEqualTo("(\n\t".length)
+
+        val folded = formatter.format_call_args("http.Post(\n\t\n)", 12)!!
+        assertThat(folded.new_call_text).isEqualTo("()")
+    }
+
+    @Test
+    fun `whitespace only args also expand`() {
+        val expanded = formatter.format_call_args("foo(   )", 4)!!
+        assertThat(expanded.new_call_text).isEqualTo("(\n\t\n)")
     }
 
     @Test
