@@ -54,7 +54,7 @@ open class SignatureHelpWindow(
 ) {
     private lateinit var rootView: View
     private val maxWidth = (editor.width * 0.727).toInt()
-    private val maxHeight = (editor.dpUnit * 355).toInt()
+    private val maxHeight = (editor.dpUnit * 220).toInt()
     private val buffer = FloatArray(2)
     protected val eventManager = editor.createSubEventManager()
     private var signatureHelp: SignatureHelp? = null
@@ -127,8 +127,6 @@ open class SignatureHelpWindow(
     }
 
     open fun show(signatureHelp: SignatureHelp) {
-        // 临时诊断(logcat tag=GoStudioSig)：查明后删除
-        android.util.Log.w("GoStudioSig", "窗口show: enabled=${isEnabled()} signatures=${signatureHelp.signatures.size} diagnosticShowing=${editor.getComponent<EditorDiagnosticTooltipWindow>().isShowing}")
         if (!isEnabled()) {
             return
         }
@@ -142,7 +140,6 @@ open class SignatureHelpWindow(
         this.signatureHelp = signatureHelp
         renderSignatureHelp()
         if (!updateWindowSizeAndLocation()) {
-            android.util.Log.w("GoStudioSig", "窗口show: 定位失败(上下都放不下) dismissed")
             dismiss()
             return
         }
@@ -167,7 +164,10 @@ open class SignatureHelpWindow(
         )
 
         val width = rootView.measuredWidth
+        // 弹窗高度封顶为编辑区的 40%：小屏（键盘+符号栏压缩编辑区）时原测量值
+        // 可能比编辑区还高，导致任何位置都放不下或大面积遮挡代码
         val height = rootView.measuredHeight
+            .coerceAtMost((editor.height * 0.4f).toInt().coerceAtLeast(1))
 
         setSize(width, height)
         return updateWindowPosition()
@@ -193,7 +193,17 @@ open class SignatureHelpWindow(
             setLocationAbsolutely(windowX.toInt(), belowTop.toInt())
             return true
         }
-        return false
+        // 上下都放不下（光标行贴近编辑区底部且弹窗较高）：夹到编辑区底部显示，
+        // 并向上滚动编辑区把光标行露出到弹窗上方——正在编辑的行永远不被遮挡
+        setLocationAbsolutely(windowX.toInt(), maxY)
+        val cursor_viewport_y = cursorTop - editor.offsetY + editor.rowHeight
+        if (cursor_viewport_y > maxY) {
+            editor.scrollTo(
+                editor.offsetX,
+                (cursorTop - maxY + editor.rowHeight + margin).toInt().coerceAtLeast(0)
+            )
+        }
+        return true
     }
 
     private fun renderSignatureHelp() {

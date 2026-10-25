@@ -61,30 +61,19 @@ class SignatureHelpEvent : AsyncEventListener() {
             position.asLspPosition()
         )
 
-        // 临时诊断(logcat tag=GoStudioSig)：查明 http.* 无签名提示的根因后删除
-        fun sig_log(message: String) {
-            android.util.Log.w("GoStudioSig", "$message @${position.line}:${position.column} ${editor.uri}")
-        }
-        sig_log("请求发起")
-
         // VS Code 式"不轻易放弃"：包冷启动（如 net/http 首次触达）时 gopls 响应慢或为空，
         // 首次尝试失败后延迟重试一次，期间不硬性放弃，让晚到的答案仍能弹出。
         var signatureHelp: SignatureHelp? = null
         var attempt = 0
         while (attempt < 2 && signatureHelp?.signatures.isNullOrEmpty()) {
             attempt++
-            val future = requestManager.signatureHelp(signatureHelpParams) ?: run {
-                sig_log("第${attempt}次:请求未发出(future为null)")
-                return@withContext
-            }
+            val future = requestManager.signatureHelp(signatureHelpParams) ?: return@withContext
             this@SignatureHelpEvent.future = future.thenAccept { }
             try {
                 withTimeout(Timeout[Timeouts.SIGNATURE].toLong()) {
                     signatureHelp = future.await()
                 }
-                sig_log("第${attempt}次:返回${signatureHelp?.signatures?.size ?: 0}个签名")
-            } catch (e: Exception) {
-                sig_log("第${attempt}次:异常 ${e.javaClass.simpleName} ${e.message}")
+            } catch (_: Exception) {
             }
             if (attempt == 1 && signatureHelp?.signatures.isNullOrEmpty()) {
                 delay(2500)
@@ -92,11 +81,9 @@ class SignatureHelpEvent : AsyncEventListener() {
         }
 
         if (signatureHelp?.signatures.isNullOrEmpty()) {
-            sig_log("最终:空,不弹窗")
             editor.showSignatureHelp(null)
             return@withContext
         }
-        sig_log("最终:${signatureHelp?.signatures?.size}个签名,交给窗口")
         val translatedSignatureHelp = editor.project.documentationTranslator.translateSignatureHelp(signatureHelp)
         editor.showSignatureHelp(translatedSignatureHelp)
     }
