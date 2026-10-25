@@ -4,10 +4,12 @@ import android.content.Context
 import com.android.apksig.ApkSigner
 import java.io.File
 import java.io.FileOutputStream
-import java.security.KeyStore
+import java.security.KeyFactory
 import java.security.PrivateKey
-import java.security.cert.Certificate
+import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
+import java.security.spec.PKCS8EncodedKeySpec
+import java.util.Base64
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
@@ -18,7 +20,7 @@ import java.util.zip.ZipOutputStream
  * 流程：
  * 1. 从 assets 复制壳模板（未签名）到临时目录
  * 2. 重写 ZIP：保留原条目（跳过 META-INF 旧签名），追加 assets/app/layout.xml 与 assets/app/app.bin
- * 3. apksig v1+v2 签名（内置 pack.keystore）
+ * 3. apksig v1+v2 签名（内置 pack.key / pack.crt）
  */
 object apk_packer {
 
@@ -227,15 +229,19 @@ object apk_packer {
         }
     }
 
-    /** v1+v2 签名，输出到目标文件。 */
+    /**
+     * v1+v2 签名，输出到目标文件。
+     *
+     * 密钥不走平台 PKCS12 KeyStore：Android 内置的裁剪版 BouncyCastle 不支持新版
+     * keytool 生成的 PBES2/HmacSHA256 格式，load() 时 MAC 构造直接抛
+     * InvalidKeyException。PEM（PKCS#8 私钥 + X.509 证书）由 Conscrypt 解析，
+     * 与系统版本无关。密钥材料与原 pack.keystore 完全相同。
+     */
     private fun sign(context: Context, input: File, output: File) {
-        val key_store = KeyStore.getInstance("PKCS12")
-        context.assets.open("apkpack/pack.keystore").use { input_stream ->
-            key_store.load(input_stream, KEYSTORE_PASSWORD.toCharArray())
+        val private_key = load_private_key(context)
+        val certificate = context.assets.open("apkpack/pack.crt").use { stream ->
+            CertificateFactory.getInstance("X.509").generateCertificate(stream) as X509Certificate
         }
-        val entry = key_store.getEntry(KEY_ALIAS, KeyStore.PasswordProtection(KEYSTORE_PASSWORD.toCharArray()))
-        val private_key = (entry as KeyStore.PrivateKeyEntry).privateKey
-        val certificate = entry.certificate as X509Certificate
 
         val signer_config = ApkSigner.SignerConfig.Builder(
             "CERT", private_key as PrivateKey, listOf<X509Certificate>(certificate)
@@ -250,7 +256,17 @@ object apk_packer {
             .sign()
     }
 
+    private fun load_private_key(context: Context): PrivateKey {
+        val pem = context.assets.open("apkpack/pack.key").use { stream ->
+            stream.readBytes().toString(Charsets.US_ASCII)
+        }
+        val base64 = pem
+            .replace("-----BEGIN PRIVATE KEY-----", "")
+            .replace("-----END PRIVATE KEY-----", "")
+            .filterNot { it == '\n' || it == '\r' }
+        val der = Base64.getDecoder().decode(base64)
+        return KeyFactory.getInstance("RSA").generatePrivate(PKCS8EncodedKeySpec(der))
+    }
+
     private const val FIXED_TIME = 315532800000L // 2000-01-01，保证构建可重复
-    private const val KEYSTORE_PASSWORD = "gostudio"
-    private const val KEY_ALIAS = "pack"
 }

@@ -1615,6 +1615,7 @@ class editor_activity : ComponentActivity() {
                     }
                 },
                 onFailure = { e ->
+                    logger_manager.e("editor_activity", "APK 打包失败", e)
                     output_panel_state.append_output("打包失败: ${e.message}", editor_output_line_level.ERROR)
                     app_toast.show(this@editor_activity, "打包失败", app_toast.LENGTH_LONG)
                 }
