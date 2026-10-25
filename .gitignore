@@ -18,9 +18,11 @@ build/
 *.iml
 .DS_Store
 
-# 签名密钥
+# 签名密钥（release 私钥放 local.properties 指向的本地路径，不入库）
 *.jks
 *.keystore
+# 例外：运行时给打包产物签名的公共密钥，密码/别名硬编码在 apk_packer.kt，必须随仓库分发
+!app/src/main/assets/apkpack/pack.keystore
 
 # 备份 / 临时
 *.tar
