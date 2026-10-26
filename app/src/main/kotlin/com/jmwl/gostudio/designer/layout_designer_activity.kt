@@ -910,14 +910,18 @@ private fun RealtimePreview(
                             view.setInputType(android.text.InputType.TYPE_NULL)
                             view.keyListener = null
                         }
-                        // AdapterView 禁止 setOnClickListener（系统会抛异常），改用触摸选中
+                        // 布局常被 match_parent 的子控件整片盖住，单击只能选中最上层的子控件；
+                        // 长按任意子控件（含列表等 AdapterView）= 直接选中它所在的布局
+                        view.setOnLongClickListener { on_long_select(id); true }
+                        // AdapterView 禁止 setOnClickListener（系统会抛异常），改用触摸选中；
+                        // 抬起才触发，避免触摸即弹面板与长按手势打架
                         if (view is android.widget.AdapterView<*>) {
-                            view.setOnTouchListener { _, _ -> on_select(id); false }
+                            view.setOnTouchListener { _, e ->
+                                if (e.actionMasked == android.view.MotionEvent.ACTION_UP) on_select(id)
+                                false
+                            }
                         } else {
                             view.setOnClickListener { on_select(id) }
-                            // 布局常被 match_parent 的子控件整片盖住，单击只能选中最上层的子控件；
-                            // 长按任意子控件 = 直接选中它所在的布局，绕开遮挡
-                            view.setOnLongClickListener { on_long_select(id); true }
                         }
                     }
                     // 根布局空白处（未被子控件消费的点击）也要能选中：
