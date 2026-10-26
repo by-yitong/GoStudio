@@ -41,11 +41,12 @@ import com.jmwl.gostudio.project_file_tree.project_file_tree_colors
 import com.jmwl.gostudio.ui.theme.app_theme_provider
 import com.jmwl.gostudio.ui.theme.motion
 
-/** 左侧抽屉的工具页签。六个工具统一放在顶部，可横向滑动发现。 */
+/** 左侧抽屉的工具页签。七个工具统一放在顶部，可横向滑动发现。 */
 internal enum class editor_sidebar_tool {
     FILE,
     SEARCH,
     STRUCTURE,
+    ERROR,
     GIT,
     LOG,
     TERMINAL
@@ -77,6 +78,8 @@ internal fun editor_sidebar(
     on_project_search: suspend (String) -> List<editor_project_search_hit>,
     file_diagnostics: List<com.jmwl.gostudio.lsp.gopls.gopls_diagnostic>,
     on_diagnostic_click: (com.jmwl.gostudio.lsp.gopls.gopls_diagnostic) -> Unit,
+    /** 错误面板「AI 修复」：把当前文件全部诊断发给 AI 修复 */
+    on_ai_fix_diagnostics: () -> Unit,
     on_tool_selected: (editor_sidebar_tool) -> Unit,
     on_new_file: (String) -> Unit,
     on_new_folder: (String) -> Unit,
@@ -97,6 +100,7 @@ internal fun editor_sidebar(
             editor_tool_item(editor_sidebar_tool.FILE, Icons.Default.Folder, "文件"),
             editor_tool_item(editor_sidebar_tool.SEARCH, Icons.Default.Search, "搜索"),
             editor_tool_item(editor_sidebar_tool.STRUCTURE, Icons.Default.AccountTree, "结构"),
+            editor_tool_item(editor_sidebar_tool.ERROR, Icons.Default.ErrorOutline, "错误"),
             editor_tool_item(editor_sidebar_tool.GIT, Icons.Default.CallSplit, "Git"),
             editor_tool_item(editor_sidebar_tool.LOG, Icons.AutoMirrored.Filled.ListAlt, "日志"),
             editor_tool_item(editor_sidebar_tool.TERMINAL, Icons.Default.Terminal, "终端")
@@ -170,6 +174,13 @@ internal fun editor_sidebar(
                                 on_navigate = on_structure_navigate,
                                 modifier = Modifier.fillMaxSize()
                             )
+                            editor_sidebar_tool.ERROR -> editor_errors_panel(
+                                file_name = structure_file_name,
+                                diagnostics = file_diagnostics,
+                                on_diagnostic_click = on_diagnostic_click,
+                                on_ai_fix_all = on_ai_fix_diagnostics,
+                                modifier = Modifier.fillMaxSize()
+                            )
                             editor_sidebar_tool.GIT -> editor_git_panel(
                                 project_root_path = project_root_path,
                                 on_open_file = on_file_click,
@@ -178,8 +189,6 @@ internal fun editor_sidebar(
                             )
                             editor_sidebar_tool.LOG -> editor_log_panel(
                                 state = output_panel_state,
-                                diagnostics = file_diagnostics,
-                                on_diagnostic_click = on_diagnostic_click,
                                 modifier = Modifier.fillMaxSize()
                             )
                             editor_sidebar_tool.TERMINAL -> editor_terminal_panel(

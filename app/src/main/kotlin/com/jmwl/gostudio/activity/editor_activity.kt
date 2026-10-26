@@ -432,6 +432,11 @@ class editor_activity : ComponentActivity() {
             on_replace_all = { replacement -> replace_all_matches(replacement) },
             on_clear_search = { clear_search() },
             on_insert_symbol = { symbol -> insert_symbol(symbol) },
+            on_move_cursor = { direction -> move_cursor_direction(direction) },
+            // 符号栏自定义内容来自编辑器设置（onResume 重载后自动生效）
+            symbol_bar_symbols = state.editor_settings.symbol_bar_symbols,
+            symbol_bar_snippets = state.editor_settings.symbol_bar_snippets,
+            on_ai_fix_diagnostics = { ai_fix_all_diagnostics() },
             on_create_file = { parent_path, name, template -> create_project_file(parent_path, name, template) },
             on_create_folder = { parent_path, name -> create_project_folder(parent_path, name) },
             on_refresh_files = { path -> refresh_file_tree(path) },
@@ -619,6 +624,29 @@ class editor_activity : ComponentActivity() {
             "fix" -> "这段代码有问题，请帮我修复：\n```\n${selection.take(2000)}\n```"
             else -> "请处理这段代码：\n```\n${selection.take(2000)}\n```"
         }
+        ai_open_trigger += 1
+        agent.send_user_message(prompt)
+    }
+
+    /** 错误面板「AI 修复」：把当前文件全部诊断拼成清单发给 AI 直接修复。 */
+    private fun ai_fix_all_diagnostics() {
+        val agent = ai_agent ?: run {
+            app_toast.show(this, "AI 助手未就绪", app_toast.LENGTH_SHORT)
+            return
+        }
+        val diagnostics = file_diagnostics
+        if (diagnostics.isEmpty()) {
+            app_toast.show(this, "当前文件没有诊断", app_toast.LENGTH_SHORT)
+            return
+        }
+        val file_name = state.current_file_path?.substringAfterLast('/') ?: "当前文件"
+        val list = diagnostics.joinToString("\n") { d ->
+            val severity = when (d.severity) {
+                1 -> "错误"; 2 -> "警告"; else -> "信息"
+            }
+            "- $severity 行${d.line + 1}: ${d.message.lineSequence().firstOrNull() ?: ""}"
+        }
+        val prompt = "请修复 $file_name 中的所有诊断问题（可直接读写项目文件），逐条修复后说明改动：\n$list"
         ai_open_trigger += 1
         agent.send_user_message(prompt)
     }
@@ -3189,6 +3217,23 @@ class editor_activity : ComponentActivity() {
             editor.commitText(commit_text, false, false)
         }
         update_history_state()
+    }
+
+    /** 符号栏方向键：左/右移动一格（行首/行尾截断），上/下移动一行（首行/末行截断）。 */
+    private fun move_cursor_direction(direction: editor_cursor_move) {
+        val line = editor.cursor.leftLine
+        val column = editor.cursor.leftColumn
+        val (target_line, target_column) = when (direction) {
+            editor_cursor_move.LEFT ->
+                line to (column - 1).coerceAtLeast(0)
+            editor_cursor_move.RIGHT ->
+                line to (column + 1).coerceAtMost(editor.text.getColumnCount(line))
+            editor_cursor_move.UP ->
+                (line - 1).coerceAtLeast(0) to column
+            editor_cursor_move.DOWN ->
+                (line + 1).coerceAtMost(editor.text.lineCount - 1) to column
+        }
+        editor.setSelection(target_line, target_column)
     }
 
     private fun update_search(

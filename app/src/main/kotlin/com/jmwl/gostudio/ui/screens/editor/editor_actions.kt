@@ -19,7 +19,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.jmwl.gostudio.editor.model.default_symbol_bar_snippets
+import com.jmwl.gostudio.editor.model.default_symbol_bar_symbols
 import com.jmwl.gostudio.ui.theme.app_theme_provider
+
+/** 符号栏方向键回调用的光标移动方向。 */
+internal enum class editor_cursor_move { LEFT, RIGHT, UP, DOWN }
 
 @Composable
 fun cursor_chip(
@@ -44,12 +49,16 @@ fun cursor_chip(
 }
 
 /**
- * 键盘上方符号栏：默认单行（// 注释 + 常用符号），上拉展开第二行（快捷代码片段）、下拉收起。
- * 符号与片段为纯文本 token，不加按钮底色包裹。
+ * 键盘上方符号栏：第一行 // 注释与常用符号，上拉展开第二行（方向键 + 快捷代码片段）、下拉收起。
+ * 符号、方向键与片段均为纯文本 token，不加按钮底色包裹。
+ * 符号与片段列表来自编辑器设置（可自定义），默认值见 editor_settings_state 的 default_* 常量。
  */
 @Composable
-fun editor_symbol_bar(
-    on_insert: (String) -> Unit
+internal fun editor_symbol_bar(
+    on_insert: (String) -> Unit,
+    on_move_cursor: (editor_cursor_move) -> Unit,
+    symbols: List<String> = default_symbol_bar_symbols,
+    snippets: List<Pair<String, String>> = default_symbol_bar_snippets
 ) {
 
     val colors = app_theme_provider.colors
@@ -59,28 +68,6 @@ fun editor_symbol_bar(
         targetValue = if (expanded) 88.dp else 44.dp,
         animationSpec = tween(180)
     )
-    val symbols = remember {
-        listOf(
-            "TAB", ":=", ".", ",", ";", ":", "(", ")", "{", "}",
-            "[", "]", "\"\"", "''", "<-", "...", "=", "==", "!=",
-            "!", "&&", "||", "func", "if", "for", "range", "return"
-        )
-    }
-    // 快捷代码片段：label 显示在栏上，点击插入完整代码（多行含 \n\t）
-    val snippets = remember {
-        listOf(
-            "err ret" to "if err != nil {\n\treturn\n}",
-            "ret err" to "if err != nil {\n\treturn err\n}",
-            "range" to "for _, v := range ",
-            "func" to "func name() {\n\n}",
-            "defer" to "defer func() {\n\t\n}()",
-            "go" to "go func() {\n\t\n}()",
-            "make" to "make([]T, 0)",
-            "map" to "map[string]T{}",
-            "sprintf" to "fmt.Sprintf(\"%v\", )",
-            "println" to "fmt.Println()"
-        )
-    }
 
     Surface(
         modifier = Modifier
@@ -128,7 +115,8 @@ fun editor_symbol_bar(
                     )
                     editor_snippets_row(
                         snippets = snippets,
-                        on_insert = on_insert
+                        on_insert = on_insert,
+                        on_move_cursor = on_move_cursor
                     )
                 }
             } else {
@@ -168,7 +156,8 @@ private fun editor_symbols_row(
 @Composable
 private fun editor_snippets_row(
     snippets: List<Pair<String, String>>,
-    on_insert: (String) -> Unit
+    on_insert: (String) -> Unit,
+    on_move_cursor: (editor_cursor_move) -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -178,6 +167,11 @@ private fun editor_snippets_row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(7.dp)
     ) {
+        // 第二行最前：固定方向键，先于快捷片段渲染，不受 snippets 列表影响
+        editor_cursor_move_token("←", editor_cursor_move.LEFT, on_move_cursor)
+        editor_cursor_move_token("→", editor_cursor_move.RIGHT, on_move_cursor)
+        editor_cursor_move_token("↑", editor_cursor_move.UP, on_move_cursor)
+        editor_cursor_move_token("↓", editor_cursor_move.DOWN, on_move_cursor)
         snippets.forEach { (label, code) ->
             editor_snippet_token(
                 label = label,
@@ -185,6 +179,31 @@ private fun editor_snippets_row(
                 on_insert = on_insert
             )
         }
+    }
+}
+
+/** 光标方向键 token：与符号 token 同样式（纯文本无底色），点击回调移动方向。 */
+@Composable
+private fun editor_cursor_move_token(
+    label: String,
+    direction: editor_cursor_move,
+    on_move_cursor: (editor_cursor_move) -> Unit
+) {
+    val colors = app_theme_provider.colors
+    Box(
+        modifier = Modifier
+            .height(34.dp)
+            .clickable { on_move_cursor(direction) }
+            .padding(horizontal = 8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            label,
+            color = colors.editor_text,
+            fontSize = 13.sp,
+            maxLines = 1,
+            softWrap = false
+        )
     }
 }
 

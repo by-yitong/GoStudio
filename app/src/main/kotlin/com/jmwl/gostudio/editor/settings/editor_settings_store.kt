@@ -6,6 +6,8 @@ import android.content.Context
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import java.io.File
+import org.json.JSONArray
+import org.json.JSONObject
 
 internal const val editor_settings_prefs_name = "editor_settings"
 
@@ -60,7 +62,15 @@ internal fun load_editor_settings(context: Context): editor_settings_state {
             font_family = prefs.getString("font_family", defaults.font_family).orEmpty(),
             imported_font_path = imported_font_path
         ),
-        imported_font_path = imported_font_path
+        imported_font_path = imported_font_path,
+        symbol_bar_symbols = decode_symbol_bar_symbols(
+            prefs.getString("symbol_bar_symbols", null),
+            fallback = defaults.symbol_bar_symbols
+        ),
+        symbol_bar_snippets = decode_symbol_bar_snippets(
+            prefs.getString("symbol_bar_snippets", null),
+            fallback = defaults.symbol_bar_snippets
+        )
     )
 }
 
@@ -94,6 +104,8 @@ internal fun save_editor_settings(context: Context, settings: editor_settings_st
         .putInt("tab_size", settings.tab_size)
         .putString("font_family", settings.font_family)
         .putString("imported_font_path", settings.imported_font_path)
+        .putString("symbol_bar_symbols", encode_symbol_bar_symbols(settings.symbol_bar_symbols))
+        .putString("symbol_bar_snippets", encode_symbol_bar_snippets(settings.symbol_bar_snippets))
         .apply()
 
     val translation_prefs = translation_key_prefs(context)
@@ -115,6 +127,43 @@ private fun normalize_editor_font_family(font_family: String, imported_font_path
         }
         else -> editor_settings_state().font_family
     }
+}
+
+/** 符号栏符号列表 → JSONArray 字符串持久化。 */
+private fun encode_symbol_bar_symbols(symbols: List<String>): String {
+    val array = JSONArray()
+    symbols.forEach { symbol -> array.put(symbol) }
+    return array.toString()
+}
+
+/** 快捷片段列表 → JSONArray of {"label":..,"code":..} 持久化。 */
+private fun encode_symbol_bar_snippets(snippets: List<Pair<String, String>>): String {
+    val array = JSONArray()
+    snippets.forEach { (label, code) ->
+        array.put(JSONObject().put("label", label).put("code", code))
+    }
+    return array.toString()
+}
+
+/** key 缺失/JSON 解析异常时回退默认值。 */
+private fun decode_symbol_bar_symbols(raw: String?, fallback: List<String>): List<String> {
+    if (raw == null) return fallback
+    return runCatching {
+        val array = JSONArray(raw)
+        List(array.length()) { index -> array.getString(index) }
+    }.getOrDefault(fallback)
+}
+
+/** key 缺失/JSON 解析异常时回退默认值。 */
+private fun decode_symbol_bar_snippets(raw: String?, fallback: List<Pair<String, String>>): List<Pair<String, String>> {
+    if (raw == null) return fallback
+    return runCatching {
+        val array = JSONArray(raw)
+        List(array.length()) { index ->
+            val item = array.getJSONObject(index)
+            item.getString("label") to item.getString("code")
+        }
+    }.getOrDefault(fallback)
 }
 
 @Volatile

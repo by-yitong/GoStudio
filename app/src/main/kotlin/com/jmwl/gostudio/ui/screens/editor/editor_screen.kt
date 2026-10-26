@@ -2,6 +2,8 @@ package com.jmwl.gostudio.ui.screens.editor
 
 import com.jmwl.gostudio.editor.model.editor_tab_item
 import com.jmwl.gostudio.editor.model.editor_file_node
+import com.jmwl.gostudio.editor.model.default_symbol_bar_snippets
+import com.jmwl.gostudio.editor.model.default_symbol_bar_symbols
 import com.jmwl.gostudio.project.project_ide_config
 
 import androidx.activity.compose.BackHandler
@@ -120,6 +122,13 @@ internal fun editor_screen(
     on_replace_all: (String) -> Unit,
     on_clear_search: () -> Unit,
     on_insert_symbol: (String) -> Unit,
+    /** 符号栏方向键：左/右/上/下移动光标一格 */
+    on_move_cursor: (editor_cursor_move) -> Unit,
+    /** 符号栏第一行符号与第二行快捷片段（来自编辑器设置，可自定义） */
+    symbol_bar_symbols: List<String> = default_symbol_bar_symbols,
+    symbol_bar_snippets: List<Pair<String, String>> = default_symbol_bar_snippets,
+    /** 错误面板「AI 修复」：把当前文件全部诊断发给 AI 修复 */
+    on_ai_fix_diagnostics: () -> Unit = {},
     on_create_file: (String, String, editor_create_file_template) -> Unit,
     on_create_folder: (String, String) -> Unit,
     on_refresh_files: (String) -> Unit,
@@ -457,7 +466,10 @@ internal fun editor_screen(
                 // 这样自动补全弹窗只会出现在编辑器区域内，不会压到键盘上方的符号输入区。
                 if (show_symbol_bar) {
                     editor_symbol_bar(
-                        on_insert = on_insert_symbol
+                        on_insert = on_insert_symbol,
+                        on_move_cursor = on_move_cursor,
+                        symbols = symbol_bar_symbols,
+                        snippets = symbol_bar_snippets
                     )
                 }
 
@@ -555,6 +567,7 @@ internal fun editor_screen(
                 on_project_search = on_project_search,
                 file_diagnostics = file_diagnostics,
                 on_diagnostic_click = on_diagnostic_click,
+                on_ai_fix_diagnostics = on_ai_fix_diagnostics,
                 on_tool_selected = { selected_tool = it },
             on_new_file = { parent_path ->
                 create_dialog_request = editor_create_dialog_request(editor_create_dialog_type.FILE, parent_path)

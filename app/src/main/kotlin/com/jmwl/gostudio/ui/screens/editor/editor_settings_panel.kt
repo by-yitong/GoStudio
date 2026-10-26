@@ -33,6 +33,7 @@ fun editor_settings_panel(
     on_settings_change: (editor_settings_state) -> Unit,
     on_import_font: () -> Unit,
     on_open_theme_settings: () -> Unit,
+    on_open_symbol_settings: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val colors = app_theme_provider.colors
@@ -95,12 +96,29 @@ fun editor_settings_panel(
         }
 
         editor_settings_group_title("主题")
-        editor_settings_navigation_card(
-            icon = Icons.Default.Palette,
-            title = "编辑器主题",
-            description = "调整编辑器与高亮颜色",
-            on_click = on_open_theme_settings
-        )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+        ) {
+            editor_settings_navigation_card(
+                icon = Icons.Default.Palette,
+                title = "编辑器主题",
+                description = "调整编辑器与高亮颜色",
+                shape = editor_settings_group_item_shape(is_top = true, is_bottom = false),
+                on_click = on_open_theme_settings
+            )
+
+            editor_settings_group_divider()
+
+            editor_settings_navigation_card(
+                icon = Icons.Default.Keyboard,
+                title = "符号栏",
+                description = "自定义符号与快捷片段",
+                shape = editor_settings_group_item_shape(is_top = false, is_bottom = true),
+                on_click = on_open_symbol_settings
+            )
+        }
 
         switch_groups.forEach { group ->
             editor_settings_group_title(group.title)
@@ -501,6 +519,7 @@ private fun editor_settings_navigation_card(
     icon: ImageVector,
     title: String,
     description: String,
+    shape: RoundedCornerShape = RoundedCornerShape(12.dp),
     on_click: () -> Unit
 ) {
     val colors = app_theme_provider.colors

@@ -47,7 +47,8 @@ import kotlinx.coroutines.withContext
 @Composable
 fun editor_settings_screen(
     on_back: () -> Unit,
-    on_theme_click: () -> Unit
+    on_theme_click: () -> Unit,
+    on_symbol_bar_click: () -> Unit
 ) {
     val context = LocalContext.current
     val colors = app_theme_provider.colors
@@ -99,6 +100,7 @@ fun editor_settings_screen(
                 on_settings_change = ::update_settings,
                 on_import_font = { import_font_launcher.launch("font/*") },
                 on_open_theme_settings = on_theme_click,
+                on_open_symbol_settings = on_symbol_bar_click,
                 modifier = Modifier.fillMaxSize()
             )
         }

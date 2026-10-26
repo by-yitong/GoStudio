@@ -9,6 +9,28 @@ data class editor_tab_item(
     val pinned: Boolean
 )
 
+/** 符号栏第一行默认符号（原硬编码于 editor_symbol_bar，现作为自定义的默认值）。
+ *  注意：必须是 public——editor-core 模块的 internal 对 :app 模块不可见。 */
+val default_symbol_bar_symbols = listOf(
+    "//", "TAB", ":=", ".", ",", ";", ":", "(", ")", "{", "}",
+    "[", "]", "\"\"", "''", "<-", "...", "=", "==", "!=",
+    "!", "&&", "||", "func", "if", "for", "range", "return"
+)
+
+/** 符号栏第二行默认快捷片段：label 显示在栏上，code 为点击插入的完整代码（多行含 \n\t）。 */
+val default_symbol_bar_snippets = listOf(
+    "err ret" to "if err != nil {\n\treturn\n}",
+    "ret err" to "if err != nil {\n\treturn err\n}",
+    "range" to "for _, v := range ",
+    "func" to "func name() {\n\n}",
+    "defer" to "defer func() {\n\t\n}()",
+    "go" to "go func() {\n\t\n}()",
+    "make" to "make([]T, 0)",
+    "map" to "map[string]T{}",
+    "sprintf" to "fmt.Sprintf(\"%v\", )",
+    "println" to "fmt.Println()"
+)
+
 data class editor_settings_state(
     val word_wrap: Boolean = false,
     val line_numbers: Boolean = true,
@@ -37,6 +59,10 @@ data class editor_settings_state(
     val font_size: Float = 14f,
     val tab_size: Int = 4,
     val font_family: String = "jetbrains_mono",
-    val imported_font_path: String = ""
+    val imported_font_path: String = "",
+    /** 键盘上方符号栏第一行符号（自定义，见 default_symbol_bar_symbols） */
+    val symbol_bar_symbols: List<String> = default_symbol_bar_symbols,
+    /** 符号栏第二行快捷片段 label→插入代码（方向键固定，不在此配置） */
+    val symbol_bar_snippets: List<Pair<String, String>> = default_symbol_bar_snippets
 )
 

@@ -60,6 +60,7 @@ import com.jmwl.gostudio.ui.dialogs.main.toolchain_custom_install_dialog
 import com.jmwl.gostudio.ui.screens.ai.ai_chat_screen
 import com.jmwl.gostudio.ui.screens.ai.ai_settings_screen
 import com.jmwl.gostudio.ui.screens.editor.editor_settings_screen
+import com.jmwl.gostudio.ui.screens.editor.editor_symbol_settings_screen
 import com.jmwl.gostudio.ui.screens.editor.editor_theme_settings_screen
 import com.jmwl.gostudio.ui.screens.main.git_settings_screen
 import com.jmwl.gostudio.ui.theme.app_theme_preset
@@ -84,6 +85,7 @@ private val route_levels = mapOf(
     "ai_settings" to 2,
     "git_settings" to 2,
     "editor_theme_settings" to 3,
+    "editor_symbol_settings" to 3,
     "learn_track" to 2,
     "learn_lesson" to 3
 )
@@ -352,10 +354,12 @@ fun main_navigation(
             composable("editor_settings") {
                 editor_settings_screen(
                     on_back = { nav_controller.popBackStack() },
-                    on_theme_click = { nav_controller.navigate("editor_theme_settings") }
+                    on_theme_click = { nav_controller.navigate("editor_theme_settings") },
+                    on_symbol_bar_click = { nav_controller.navigate("editor_symbol_settings") }
                 )
             }
             composable("editor_theme_settings") { editor_theme_settings_screen(on_back = { nav_controller.popBackStack() }) }
+            composable("editor_symbol_settings") { editor_symbol_settings_screen(on_back = { nav_controller.popBackStack() }) }
             composable("agent") {
                 androidx.compose.runtime.LaunchedEffect(Unit) { ai_agent.initialize() }
                 ai_chat_screen(
