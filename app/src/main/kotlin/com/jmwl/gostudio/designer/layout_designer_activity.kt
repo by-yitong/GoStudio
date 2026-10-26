@@ -461,7 +461,8 @@ private fun remove_node(root: d_node, target: d_node): Boolean {
     return walk(root)
 }
 
-private fun find_node(root: d_node, target: d_node): d_node? {
+// internal：designer_reorder_sheet 也要按内容定位重建树中的存活节点
+internal fun find_node(root: d_node, target: d_node): d_node? {
     if (root === target) return root
     // deep_copy 后引用不同，按内容匹配：tag + id + 子节点数
     fun match(n: d_node): d_node? {
@@ -496,10 +497,13 @@ private fun designer_screen(
     var clipboard by remember { mutableStateOf<d_node?>(null) }
     var has_unsaved_changes by remember { mutableStateOf(false) }
     var show_exit_confirm by remember { mutableStateOf(false) }
-    // 底部弹窗：属性面板 / 组件树 / 添加目录（0=组件 1=布局，null=关）
+    // 底部弹窗：属性面板 / 组件树 / 拖拽排序 / 添加目录（0=组件 1=布局，null=关）
     var show_property_sheet by remember { mutableStateOf(false) }
     var show_tree_sheet by remember { mutableStateOf(false) }
+    var show_reorder_sheet by remember { mutableStateOf(false) }
     var catalog_section by remember { mutableStateOf<Int?>(null) }
+    // 目录是否从属性面板打开：关闭目录时据此回开属性面板
+    var catalog_return by remember { mutableStateOf(false) }
     // 组件树里点选后让预览滚动到该组件可见
     var scroll_token by remember { mutableIntStateOf(0) }
     val context = LocalContext.current
@@ -575,6 +579,18 @@ private fun designer_screen(
         rebuild_from_tree()
     }
 
+    /** 拖拽排序落位：整组按新顺序写回 parent，长度不一致视为过期事件直接丢弃。 */
+    fun reorder_children(parent: d_node, ordered: List<d_node>) {
+        val cur = tree ?: return
+        if (ordered.size != parent.children.size) return
+        parent.children.clear()
+        parent.children.addAll(ordered)
+        ordered.forEach { it.parent = parent }
+        tree = cur.deep_copy()
+        selected?.let { keep -> selected = find_node(tree!!, keep) }
+        rebuild_from_tree()
+    }
+
     fun paste_into(container: d_node) {
         val clip = clipboard ?: return
         val cur = tree ?: return
@@ -594,11 +610,18 @@ private fun designer_screen(
         show_exit_confirm = true
     }
     // 弹窗打开时返回键先关弹窗（后注册者优先）
-    val sheet_open = show_property_sheet || show_tree_sheet || catalog_section != null
+    val sheet_open = show_property_sheet || show_tree_sheet || show_reorder_sheet || catalog_section != null
     BackHandler(enabled = sheet_open) {
+        // 返回键与关闭按钮行为一致：排序弹窗回组件树；从属性面板打开的目录回属性面板
+        val reorder_to_tree = show_reorder_sheet
+        val catalog_to_property = catalog_section != null && catalog_return
         show_property_sheet = false
         show_tree_sheet = false
+        show_reorder_sheet = false
         catalog_section = null
+        catalog_return = false
+        if (reorder_to_tree) show_tree_sheet = true
+        if (catalog_to_property) show_property_sheet = selected != null
     }
 
     if (show_exit_confirm) {
@@ -648,9 +671,9 @@ private fun designer_screen(
                 )
             }
             Spacer(Modifier.weight(1f))
-            // 选中容器（或布局为空）时才有添加入口
+            // 仅空布局时顶栏保留添加入口（创建第一个根节点）；非空布局的添加在属性面板头部
             androidx.compose.animation.AnimatedVisibility(
-                visible = selected?.is_container == true || tree == null
+                visible = tree == null
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     top_bar_add_button("添加组件") { catalog_section = 0 }
@@ -714,10 +737,10 @@ private fun designer_screen(
                 }
             },
             on_delete = { selected?.let { delete_component(it) } },
-            on_add_child = { tag -> add_component(tag, target = selected, select_new = false) },
-            on_open_catalog = {
+            on_open_catalog = { section ->
                 show_property_sheet = false
-                catalog_section = 0
+                catalog_section = section
+                catalog_return = true
             },
             on_open_event = { component_id, event_type ->
                 val cur = tree
@@ -729,7 +752,7 @@ private fun designer_screen(
         )
     }
 
-    // 添加目录：组件 24 / 布局 11 分组（中文名）
+    // 添加目录：组件 24 / 布局 11 分组（中文名）；从属性面板打开时关闭后回开属性面板
     catalog_section?.let { section ->
         designer_catalog_sheet(
             initial_section = section,
@@ -737,8 +760,17 @@ private fun designer_screen(
             on_add = { tag ->
                 catalog_section = null
                 add_component(tag, target = selected?.takeIf { it.is_container })
+                // 加完直接看到新组件的属性面板
+                if (selected != null) show_property_sheet = true
+                catalog_return = false
             },
-            on_dismiss = { catalog_section = null }
+            on_dismiss = {
+                catalog_section = null
+                if (catalog_return) {
+                    catalog_return = false
+                    show_property_sheet = selected != null
+                }
+            }
         )
     }
 
@@ -752,17 +784,37 @@ private fun designer_screen(
             on_select = { node ->
                 select(node)
                 scroll_token++
+                // 点选即关树弹窗并打开属性面板，减少来回切换
+                show_tree_sheet = false
+                show_property_sheet = true
             },
             on_copy = { node -> clipboard = node.deep_copy() },
             on_paste = { container -> paste_into(container) },
             on_delete = { node -> delete_component(node) },
             on_move = { node, direction -> move_node(node, direction) },
+            on_open_reorder = {
+                show_tree_sheet = false
+                show_reorder_sheet = true
+            },
             on_dismiss = { show_tree_sheet = false }
+        )
+    }
+
+    // 拖拽排序：从组件树进入，关闭后回到组件树
+    if (show_reorder_sheet) {
+        designer_reorder_sheet(
+            root = tree,
+            initial_parent = selected?.takeIf { it.is_container } ?: tree,
+            on_reorder = ::reorder_children,
+            on_dismiss = {
+                show_reorder_sheet = false
+                show_tree_sheet = true
+            }
         )
     }
 }
 
-/** 顶栏「添加组件 / 添加布局」胶囊按钮（选中容器或空布局时出现） */
+/** 顶栏「添加组件 / 添加布局」胶囊按钮（仅空布局时出现，用于创建根节点） */
 @Composable
 private fun top_bar_add_button(text: String, on_click: () -> Unit) {
     val colors = app_theme_provider.colors
