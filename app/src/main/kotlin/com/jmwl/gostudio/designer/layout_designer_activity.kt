@@ -502,8 +502,6 @@ private fun designer_screen(
     var show_tree_sheet by remember { mutableStateOf(false) }
     var show_reorder_sheet by remember { mutableStateOf(false) }
     var catalog_section by remember { mutableStateOf<Int?>(null) }
-    // 目录是否从属性面板打开：关闭目录时据此回开属性面板
-    var catalog_return by remember { mutableStateOf(false) }
     // 组件树里点选后让预览滚动到该组件可见
     var scroll_token by remember { mutableIntStateOf(0) }
     val context = LocalContext.current
@@ -609,19 +607,15 @@ private fun designer_screen(
     BackHandler(enabled = has_unsaved_changes && !show_exit_confirm) {
         show_exit_confirm = true
     }
-    // 弹窗打开时返回键先关弹窗（后注册者优先）
+    // 弹窗分层返回：目录 > 属性面板 > 排序 > 组件树，返回键只关最上层（下层不动）
     val sheet_open = show_property_sheet || show_tree_sheet || show_reorder_sheet || catalog_section != null
     BackHandler(enabled = sheet_open) {
-        // 返回键与关闭按钮行为一致：排序弹窗回组件树；从属性面板打开的目录回属性面板
-        val reorder_to_tree = show_reorder_sheet
-        val catalog_to_property = catalog_section != null && catalog_return
-        show_property_sheet = false
-        show_tree_sheet = false
-        show_reorder_sheet = false
-        catalog_section = null
-        catalog_return = false
-        if (reorder_to_tree) show_tree_sheet = true
-        if (catalog_to_property) show_property_sheet = selected != null
+        when {
+            catalog_section != null -> catalog_section = null
+            show_property_sheet -> show_property_sheet = false
+            show_reorder_sheet -> show_reorder_sheet = false
+            show_tree_sheet -> show_tree_sheet = false
+        }
     }
 
     if (show_exit_confirm) {
@@ -709,9 +703,24 @@ private fun designer_screen(
                 selected_id = selected?.id,
                 scroll_token = scroll_token,
                 on_select = { id ->
-                    tree?.let { find_by_id(it, id) }?.let {
-                        select(it)
-                        show_property_sheet = true
+                    // 空串=根布局空白处（根无 id 时没有 views 条目），直接定位根节点
+                    tree?.let { t ->
+                        val node = if (id.isBlank()) t else find_by_id(t, id)
+                        node?.let {
+                            select(it)
+                            show_property_sheet = true
+                        }
+                    }
+                },
+                on_long_select = { id ->
+                    // 长按=选中所在容器：布局被子控件盖住时也能直接选布局；根节点选自己
+                    tree?.let { t ->
+                        val node = if (id.isBlank()) t else find_by_id(t, id)
+                        val target = node?.parent ?: node
+                        target?.let {
+                            select(it)
+                            show_property_sheet = true
+                        }
                     }
                 },
                 modifier = Modifier.fillMaxSize()
@@ -719,7 +728,28 @@ private fun designer_screen(
         }
     }
 
-    // 属性面板：选中组件的属性行式列表（点行弹窗编辑）
+    // 组件树：常驻导航层（点选组件后不关闭，属性面板叠在其上，来回切换节点不用重开）
+    if (show_tree_sheet) {
+        designer_tree_sheet(
+            root = tree,
+            selected = selected,
+            has_clipboard = clipboard != null,
+            clipboard_tag = clipboard?.tag,
+            on_select = { node ->
+                select(node)
+                scroll_token++
+                show_property_sheet = true
+            },
+            on_copy = { node -> clipboard = node.deep_copy() },
+            on_paste = { container -> paste_into(container) },
+            on_delete = { node -> delete_component(node) },
+            on_move = { node, direction -> move_node(node, direction) },
+            on_open_reorder = { show_reorder_sheet = true },
+            on_dismiss = { show_tree_sheet = false }
+        )
+    }
+
+    // 属性面板：选中组件的属性行式列表（点行弹窗编辑）；目录叠加其上时保持不关
     if (show_property_sheet && selected != null) {
         val node = selected!!
         designer_property_sheet(
@@ -737,11 +767,7 @@ private fun designer_screen(
                 }
             },
             on_delete = { selected?.let { delete_component(it) } },
-            on_open_catalog = { section ->
-                show_property_sheet = false
-                catalog_section = section
-                catalog_return = true
-            },
+            on_open_catalog = { section -> catalog_section = section },
             on_open_event = { component_id, event_type ->
                 val cur = tree
                 if (cur != null) {
@@ -752,7 +778,7 @@ private fun designer_screen(
         )
     }
 
-    // 添加目录：组件 24 / 布局 11 分组（中文名）；从属性面板打开时关闭后回开属性面板
+    // 添加目录（最上层）：选完即关，属性面板在下面自动切到新组件
     catalog_section?.let { section ->
         designer_catalog_sheet(
             initial_section = section,
@@ -760,56 +786,20 @@ private fun designer_screen(
             on_add = { tag ->
                 catalog_section = null
                 add_component(tag, target = selected?.takeIf { it.is_container })
-                // 加完直接看到新组件的属性面板
-                if (selected != null) show_property_sheet = true
-                catalog_return = false
+                // 加完自动打开新组件的属性面板（空布局建根后同样直接进面板）
+                show_property_sheet = selected != null
             },
-            on_dismiss = {
-                catalog_section = null
-                if (catalog_return) {
-                    catalog_return = false
-                    show_property_sheet = selected != null
-                }
-            }
+            on_dismiss = { catalog_section = null }
         )
     }
 
-    // 组件树：与预览选中双向同步
-    if (show_tree_sheet) {
-        designer_tree_sheet(
-            root = tree,
-            selected = selected,
-            has_clipboard = clipboard != null,
-            clipboard_tag = clipboard?.tag,
-            on_select = { node ->
-                select(node)
-                scroll_token++
-                // 点选即关树弹窗并打开属性面板，减少来回切换
-                show_tree_sheet = false
-                show_property_sheet = true
-            },
-            on_copy = { node -> clipboard = node.deep_copy() },
-            on_paste = { container -> paste_into(container) },
-            on_delete = { node -> delete_component(node) },
-            on_move = { node, direction -> move_node(node, direction) },
-            on_open_reorder = {
-                show_tree_sheet = false
-                show_reorder_sheet = true
-            },
-            on_dismiss = { show_tree_sheet = false }
-        )
-    }
-
-    // 拖拽排序：从组件树进入，关闭后回到组件树
+    // 拖拽排序：叠在组件树之上，关掉即露出下面的组件树
     if (show_reorder_sheet) {
         designer_reorder_sheet(
             root = tree,
             initial_parent = selected?.takeIf { it.is_container } ?: tree,
             on_reorder = ::reorder_children,
-            on_dismiss = {
-                show_reorder_sheet = false
-                show_tree_sheet = true
-            }
+            on_dismiss = { show_reorder_sheet = false }
         )
     }
 }
@@ -849,6 +839,7 @@ private fun RealtimePreview(
     selected_id: String?,
     scroll_token: Int,
     on_select: (String) -> Unit,
+    on_long_select: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -911,10 +902,9 @@ private fun RealtimePreview(
                     (r.root.parent as? ViewGroup)?.removeView(r.root)
                     frame.addView(r.root, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
                     r.views.forEach { (id, view) ->
-                        // 所有可点控件：点击=选中，不触发输入/长按
+                        // 所有可点控件：点击=选中自身，不触发输入；长按=选中其所在容器
                         view.isFocusable = false
                         view.isFocusableInTouchMode = false
-                        view.isLongClickable = false
                         if (view is android.widget.EditText) {
                             view.isCursorVisible = false
                             view.setInputType(android.text.InputType.TYPE_NULL)
@@ -925,7 +915,17 @@ private fun RealtimePreview(
                             view.setOnTouchListener { _, _ -> on_select(id); false }
                         } else {
                             view.setOnClickListener { on_select(id) }
+                            // 布局常被 match_parent 的子控件整片盖住，单击只能选中最上层的子控件；
+                            // 长按任意子控件 = 直接选中它所在的布局，绕开遮挡
+                            view.setOnLongClickListener { on_long_select(id); true }
                         }
+                    }
+                    // 根布局空白处（未被子控件消费的点击）也要能选中：
+                    // 根无 id 时不在 views 里，用空串作 key，由上层定位根节点
+                    if (r.root !is android.widget.AdapterView<*>) {
+                        val root_key = r.views.entries.firstOrNull { it.value === r.root }?.key ?: ""
+                        r.root.setOnClickListener { on_select(root_key) }
+                        r.root.setOnLongClickListener { on_long_select(root_key); true }
                     }
                     // 选中高亮：前景 overlay 描边 + 半透明填充，不改控件背景
                     r.views.values.forEach { it.overlay.clear() }

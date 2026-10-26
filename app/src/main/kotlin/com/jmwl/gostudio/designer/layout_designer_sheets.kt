@@ -61,6 +61,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -225,6 +226,8 @@ internal fun designer_property_sheet(
             val sections = if (is_root) groups else groups + listOf(property_group("事件", emptyList()))
             val list_state = rememberLazyListState()
             val scope = rememberCoroutineScope()
+            // 切换组件时回到分段顶部；就地改属性不重置（tag+id 未变不触发）
+            LaunchedEffect(node.tag, node.id) { list_state.scrollToItem(0) }
             // 滚动联动：首个可见 item 的序号即当前高亮胶囊
             val active_index by remember { derivedStateOf { list_state.layoutInfo.visibleItemsInfo.firstOrNull()?.index ?: 0 } }
 
