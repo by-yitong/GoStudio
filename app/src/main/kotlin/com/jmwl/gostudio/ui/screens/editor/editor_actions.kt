@@ -3,6 +3,7 @@ package com.jmwl.gostudio.ui.screens.editor
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -58,7 +59,9 @@ internal fun editor_symbol_bar(
     on_insert: (String) -> Unit,
     on_move_cursor: (editor_cursor_move) -> Unit,
     symbols: List<String> = default_symbol_bar_symbols,
-    snippets: List<Pair<String, String>> = default_symbol_bar_snippets
+    snippets: List<Pair<String, String>> = default_symbol_bar_snippets,
+    /** 长按 // 时注释/取消注释当前行。 */
+    on_toggle_comment: () -> Unit = {}
 ) {
 
     val colors = app_theme_provider.colors
@@ -111,7 +114,8 @@ internal fun editor_symbol_bar(
                 ) {
                     editor_symbols_row(
                         symbols = symbols,
-                        on_insert = on_insert
+                        on_insert = on_insert,
+                        on_toggle_comment = on_toggle_comment
                     )
                     editor_snippets_row(
                         snippets = snippets,
@@ -123,7 +127,8 @@ internal fun editor_symbol_bar(
                 editor_symbols_row(
                     symbols = symbols,
                     on_insert = on_insert,
-                    vertical_padding = 5.dp
+                    vertical_padding = 5.dp,
+                    on_toggle_comment = on_toggle_comment
                 )
             }
         }
@@ -134,7 +139,8 @@ internal fun editor_symbol_bar(
 private fun editor_symbols_row(
     symbols: List<String>,
     on_insert: (String) -> Unit,
-    vertical_padding: Dp = 0.dp
+    vertical_padding: Dp = 0.dp,
+    on_toggle_comment: () -> Unit = {}
 ) {
     Row(
         modifier = Modifier
@@ -147,7 +153,9 @@ private fun editor_symbols_row(
         symbols.forEach { symbol ->
             editor_symbol_token(
                 symbol = symbol,
-                on_insert = on_insert
+                on_insert = on_insert,
+                // 长按 // = 注释/取消注释当前行；其它符号无长按行为
+                on_long_click = if (symbol == "//") on_toggle_comment else null
             )
         }
     }
@@ -207,17 +215,22 @@ private fun editor_cursor_move_token(
     }
 }
 
-/** 纯文本符号 token：不加按钮底色，整行高 34dp 可点。 */
+/** 纯文本符号 token：不加按钮底色，整行高 34dp 可点；on_long_click 非空时支持长按（如 // 注释本行）。 */
 @Composable
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 private fun editor_symbol_token(
     symbol: String,
-    on_insert: (String) -> Unit
+    on_insert: (String) -> Unit,
+    on_long_click: (() -> Unit)? = null
 ) {
     val colors = app_theme_provider.colors
     Box(
         modifier = Modifier
             .height(34.dp)
-            .clickable { on_insert(symbol) }
+            .combinedClickable(
+                onClick = { on_insert(symbol) },
+                onLongClick = on_long_click
+            )
             .padding(horizontal = 8.dp),
         contentAlignment = Alignment.Center
     ) {

@@ -433,6 +433,7 @@ class editor_activity : ComponentActivity() {
             on_clear_search = { clear_search() },
             on_insert_symbol = { symbol -> insert_symbol(symbol) },
             on_move_cursor = { direction -> move_cursor_direction(direction) },
+            on_toggle_comment = { toggle_line_comment() },
             // 符号栏自定义内容来自编辑器设置（onResume 重载后自动生效）
             symbol_bar_symbols = state.editor_settings.symbol_bar_symbols,
             symbol_bar_snippets = state.editor_settings.symbol_bar_snippets,
@@ -3219,7 +3220,8 @@ class editor_activity : ComponentActivity() {
         update_history_state()
     }
 
-    /** 符号栏方向键：左/右移动一格（行首/行尾截断），上/下移动一行（首行/末行截断）。 */
+    /** 符号栏方向键：左/右移动一格（行首/行尾截断），上/下移动一行。
+     *  目标行列号必须钳制到该行长度：从长行列号移到短行会越界崩溃（Content.charAt 越界）。 */
     private fun move_cursor_direction(direction: editor_cursor_move) {
         val line = editor.cursor.leftLine
         val column = editor.cursor.leftColumn
@@ -3229,11 +3231,13 @@ class editor_activity : ComponentActivity() {
             editor_cursor_move.RIGHT ->
                 line to (column + 1).coerceAtMost(editor.text.getColumnCount(line))
             editor_cursor_move.UP ->
-                (line - 1).coerceAtLeast(0) to column
+                line - 1 to column
             editor_cursor_move.DOWN ->
-                (line + 1).coerceAtMost(editor.text.lineCount - 1) to column
+                line + 1 to column
         }
-        editor.setSelection(target_line, target_column)
+        val last_line = (editor.text.lineCount - 1).coerceAtLeast(0)
+        val safe_line = target_line.coerceIn(0, last_line)
+        editor.setSelection(safe_line, target_column.coerceAtMost(editor.text.getColumnCount(safe_line)))
     }
 
     private fun update_search(

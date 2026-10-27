@@ -127,6 +127,8 @@ internal fun editor_screen(
     /** 符号栏第一行符号与第二行快捷片段（来自编辑器设置，可自定义） */
     symbol_bar_symbols: List<String> = default_symbol_bar_symbols,
     symbol_bar_snippets: List<Pair<String, String>> = default_symbol_bar_snippets,
+    /** 长按符号栏 // ：注释/取消注释当前行 */
+    on_toggle_comment: () -> Unit = {},
     /** 错误面板「AI 修复」：把当前文件全部诊断发给 AI 修复 */
     on_ai_fix_diagnostics: () -> Unit = {},
     on_create_file: (String, String, editor_create_file_template) -> Unit,
@@ -469,7 +471,8 @@ internal fun editor_screen(
                         on_insert = on_insert_symbol,
                         on_move_cursor = on_move_cursor,
                         symbols = symbol_bar_symbols,
-                        snippets = symbol_bar_snippets
+                        snippets = symbol_bar_snippets,
+                        on_toggle_comment = on_toggle_comment
                     )
                 }
 
