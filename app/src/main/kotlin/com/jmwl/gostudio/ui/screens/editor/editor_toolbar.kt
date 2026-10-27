@@ -10,11 +10,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.jmwl.gostudio.plugins.plugin_tool_def
 import com.jmwl.gostudio.ui.theme.app_theme_provider
 
 /**
- * 顶栏正下方的编辑工具栏：撤销 · 重做 · 搜索 · 保存 · 格式化 · 参数（展开/折叠参数）。
- * 收编原右上角浮动条（22dp 热区过小且遮挡代码），现为六个纯文字按钮（11sp）：
+ * 顶栏正下方的编辑工具栏：撤销 · 重做 · 搜索 · 保存 · 格式化 · 展开参数 · 插件工具（json2code 等）。
+ * 收编原右上角浮动条（22dp 热区过小且遮挡代码），纯文字按钮（11sp）：
  * 高 36dp、宽度随内容（左右 8dp 内边距撑开热区），整行 44dp。
  */
 @Composable
@@ -32,6 +33,9 @@ fun editor_toolbar(
     on_format: () -> Unit,
     on_toggle_call_args: () -> Unit,
     on_toggle_search: () -> Unit,
+    /** 插件工具（如 json2code）：以工具名直接入口到工具弹窗 */
+    tools: List<plugin_tool_def> = emptyList(),
+    on_open_tool: (plugin_tool_def) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val colors = app_theme_provider.colors
@@ -79,10 +83,18 @@ fun editor_toolbar(
             )
             // 展开/折叠参数：光标在函数调用括号内时，参数一行一个展开（Go 多行风格），再点折叠回单行
             editor_toolbar_text_button(
-                label = "参数",
+                label = "展开参数",
                 enabled = can_format,
                 on_click = on_toggle_call_args
             )
+            // 插件工具直达入口（json2code 等），点击打开工具弹窗
+            tools.forEach { tool ->
+                editor_toolbar_text_button(
+                    label = tool.name,
+                    enabled = true,
+                    on_click = { on_open_tool(tool) }
+                )
+            }
         }
     }
 }

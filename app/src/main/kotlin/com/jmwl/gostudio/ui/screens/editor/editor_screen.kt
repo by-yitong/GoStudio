@@ -368,7 +368,9 @@ internal fun editor_screen(
                             on_save = on_save,
                             on_format = on_format,
                             on_toggle_call_args = on_toggle_call_args,
-                            on_toggle_search = { search_visible = !search_visible }
+                            on_toggle_search = { search_visible = !search_visible },
+                            tools = plugin_tools,
+                            on_open_tool = { active_tool = it }
                         )
                     }
                     // 文件标签栏保持在顶部
