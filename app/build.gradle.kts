@@ -15,7 +15,7 @@ android {
         applicationId = "com.jmwl.gostudio"
         minSdk = 26
         targetSdk = 28
-        versionCode = 118
+        versionCode = 119
         versionName = "1.0.17"
 
         ndk {
